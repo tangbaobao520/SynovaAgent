@@ -1,8 +1,94 @@
 {
-  "generated_at": "2026-09-16 19:00:59",
-  "version": "1.0",
-  "product_progress_pct": 1,
-  "total_lines": 26,
+  "generated_at": "2026-09-20 22:31:29",
+  "version": "1.1",
+  "total_lines": 29,
+  "lines_v1": 28,
+  "lines_v2": [
+    "federated-evolution"
+  ],
+  "buckets": {
+    "schema": "discrete-health-buckets/1",
+    "authority": "docs/authority/产品完成度定义与推进总纲-20260918.md §1.2（v1，2026-09-18） + docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md §二（v1.1，2026-09-19） + 方案-项目度量-从声明驱动到事实驱动.md §四/§六（创始人授权引用）",
+    "granularity": "acceptance_point(product-lines.yaml)",
+    "denominator": 174,
+    "denominator_note": "与 `docs/synova/project/ledger.json` 的 totals.buckets 分母不同（此处 = product-lines.yaml 验收点数；账本 = V1 断言表条数）——同名档不可跨件混读，各档自带 denominator",
+    "healthy": {
+      "count": 0,
+      "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['healthy']['count'];print('healthy=%s' % v)\"",
+      "definition": "总纲 §1.2「健康」（live && testedThroughEntry）的可判定代理：验收点六态 = verified（审计员 PASS 或创始人演示核验；机器绿但未审 ≠ 此档）",
+      "source": "证据记录（六态状态机出口 verified）",
+      "reason": null
+    },
+    "written_not_wired": {
+      "count": 3,
+      "evidence_cmd": "python3 - written_not_wired <<'PY'\nimport glob, re, sys\nrows = [[c.strip() for c in l.strip().strip('|').split('|')]\n        for l in open(sorted(glob.glob('docs/synova/project/26线-V1验收标准*.md'))[-1], encoding='utf-8')\n        if re.match(r'^\\|\\s*\\d+-\\d+\\s*\\|', l)]\nprint('written_not_wired=%d' % sum(1 for r in rows if len(r) >= 5 and r[3] == 'pending_wiring'))\nPY",
+      "definition": "总纲 §1.2「写了没接」（implemented=true, wired=false）：V1 断言表「证据」列= pending_wiring 撤回标记（D809；显式声明，非 grep 静态判定）",
+      "source": "V1 断言表「证据」列 = pending_wiring（D809 撤回标记）",
+      "reason": null
+    },
+    "missing": {
+      "count": null,
+      "evidence_cmd": "python3 - implemented <<'PY'\nimport glob, re, sys\nname = sys.argv[1]\nhits = []\nfor f in (sorted(glob.glob('docs/synova/product-lines/*.yaml'))\n          + sorted(glob.glob('docs/synova/product-lines/evidence/*.json'))):\n    try:\n        txt = open(f, encoding='utf-8').read()\n    except OSError:\n        continue\n    if re.search(r'(?m)^\\s*\"?%s\"?\\s*:' % name, txt):\n        hits.append(f)\nprint('%s=%s' % (name, 'SOURCE_PRESENT' if hits else 'SOURCE_ABSENT'))\nPY",
+      "definition": "总纲 §1.2「缺」（implemented=false）：判定手段 = 代码检索；本口径禁用 grep 型静态判据（事实驱动 §六 实测 3/5=60%），且「无证据」≠「无实现」（诚实规则）",
+      "source": "判定手段 = 代码检索（本口径禁用；事实驱动 §六 实测静态检测 3/5=60%）",
+      "reason": "本仓无「implemented」机器可读源（yaml 与证据记录均无；而总纲 §1.2「缺」的判定手段 = 代码检索，本口径禁用 grep 型静态判据）→ 显式 null，禁猜 0。可复现依据 = 本档可复现命令输出 SOURCE_ABSENT"
+    },
+    "other_states": {
+      "wired_broken": {
+        "count": 4,
+        "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['other_states.wired_broken']['count'];print('wired_broken=%s' % v)\"",
+        "definition": "总纲 §1.2「接了跑不通」（wired=true, live=false）的可判定代理：六态 = failed（机器验证红）或 rejected（审计员否决）——即该点被判定不成立",
+        "source": "证据记录（六态 failed + rejected）",
+        "reason": null
+      },
+      "live_unverified": {
+        "count": 32,
+        "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['other_states.live_unverified']['count'];print('live_unverified=%s' % v)\"",
+        "definition": "总纲 §1.2「能跑未验证」（live=true, testedThroughEntry=false）：六态 = pending_k3（场景/测试绿但审计员未审）——单独成态，绝不并进健康",
+        "source": "证据记录（六态 pending_k3）",
+        "reason": null
+      },
+      "stale": {
+        "count": 36,
+        "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['other_states.stale']['count'];print('stale=%s' % v)\"",
+        "definition": "六态 = stale（曾点亮但证据过期 >14 天，或证据日期后该线 modules 有代码变更）——五态之外的显式态，单列不并入任何档",
+        "source": "证据记录 + git（六态 stale）",
+        "reason": null
+      },
+      "state_unknown": {
+        "count": 99,
+        "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['other_states.state_unknown']['count'];print('state_unknown=%s' % v)\"",
+        "definition": "残余：六态 = uncommitted（无证据 → 五态归属不可判定：缺 / 写了没接 / 接了跑不通三选一，无机器可读源）；显式列出以闭合恒等式，不丢点",
+        "source": "product-lines.yaml 验收点 − 撤回集（六态 uncommitted）",
+        "reason": null
+      }
+    },
+    "identity": {
+      "expr": "healthy + written_not_wired + missing + wired_broken + live_unverified + stale + state_unknown = 验收点总数（denominator）",
+      "terms": [
+        "healthy",
+        "live_unverified",
+        "missing",
+        "stale",
+        "state_unknown",
+        "wired_broken",
+        "written_not_wired"
+      ],
+      "null_terms": [
+        "missing"
+      ],
+      "known_terms_sum": 174,
+      "holds": true,
+      "note": "null 档不参与求和（归属不可判定，禁猜 0）；state_unknown 是显式残余，故恒等式永远闭合——任何验收点都不会被静默丢弃"
+    },
+    "strict_source_absent": {
+      "field": "testedThroughEntry / live / wired / implemented",
+      "reason": "总纲 §1.2 的**严格**五态（live && testedThroughEntry）无机器可读源（e2e 不在 CI，第 0 项 P-3 未立项）。故 buckets.healthy 报的是六态 verified 口径的可判定代理，不冒充严格健康数——数字与口径同时给出，读者可自行判定可信度"
+    }
+  },
+  "deprecated_fields": {
+    "lines[].progress_pct": "D850 取消百分比口径（创始人 2026-09-20 裁定）。保留仅为兼容 win 域消费方 dsh/plugins/synova-dashboards 与 dsh/plugins/task-board-adapter；新消费方一律读 buckets。旧顶层进度字段已删除（破坏性变更，见 PR 遗留清单）"
+  },
   "lines": [
     {
       "id": 1,
@@ -15,6 +101,86 @@
       "total": 8,
       "verified": 0,
       "progress_pct": 0,
+      "buckets": {
+        "schema": "discrete-health-buckets/1",
+        "authority": "docs/authority/产品完成度定义与推进总纲-20260918.md §1.2（v1，2026-09-18） + docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md §二（v1.1，2026-09-19） + 方案-项目度量-从声明驱动到事实驱动.md §四/§六（创始人授权引用）",
+        "granularity": "acceptance_point(product-lines.yaml)",
+        "denominator": 8,
+        "denominator_note": "与 `docs/synova/project/ledger.json` 的 totals.buckets 分母不同（此处 = product-lines.yaml 验收点数；账本 = V1 断言表条数）——同名档不可跨件混读，各档自带 denominator",
+        "healthy": {
+          "count": 0,
+          "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.healthy']['count'];print('healthy=%s' % v)\"",
+          "definition": "总纲 §1.2「健康」（live && testedThroughEntry）的可判定代理：验收点六态 = verified（审计员 PASS 或创始人演示核验；机器绿但未审 ≠ 此档）",
+          "source": "证据记录（六态状态机出口 verified）",
+          "reason": null
+        },
+        "written_not_wired": {
+          "count": 0,
+          "evidence_cmd": "python3 - written_not_wired <<'PY'\nimport glob, re, sys\nrows = [[c.strip() for c in l.strip().strip('|').split('|')]\n        for l in open(sorted(glob.glob('docs/synova/project/26线-V1验收标准*.md'))[-1], encoding='utf-8')\n        if re.match(r'^\\|\\s*\\d+-\\d+\\s*\\|', l)]\nprint('written_not_wired=%d' % sum(1 for r in rows if len(r) >= 5 and r[3] == 'pending_wiring'))\nPY",
+          "definition": "总纲 §1.2「写了没接」（implemented=true, wired=false）：V1 断言表「证据」列= pending_wiring 撤回标记（D809；显式声明，非 grep 静态判定）",
+          "source": "V1 断言表「证据」列 = pending_wiring（D809 撤回标记）",
+          "reason": null
+        },
+        "missing": {
+          "count": null,
+          "evidence_cmd": "python3 - implemented <<'PY'\nimport glob, re, sys\nname = sys.argv[1]\nhits = []\nfor f in (sorted(glob.glob('docs/synova/product-lines/*.yaml'))\n          + sorted(glob.glob('docs/synova/product-lines/evidence/*.json'))):\n    try:\n        txt = open(f, encoding='utf-8').read()\n    except OSError:\n        continue\n    if re.search(r'(?m)^\\s*\"?%s\"?\\s*:' % name, txt):\n        hits.append(f)\nprint('%s=%s' % (name, 'SOURCE_PRESENT' if hits else 'SOURCE_ABSENT'))\nPY",
+          "definition": "总纲 §1.2「缺」（implemented=false）：判定手段 = 代码检索；本口径禁用 grep 型静态判据（事实驱动 §六 实测 3/5=60%），且「无证据」≠「无实现」（诚实规则）",
+          "source": "判定手段 = 代码检索（本口径禁用；事实驱动 §六 实测静态检测 3/5=60%）",
+          "reason": "本仓无「implemented」机器可读源（yaml 与证据记录均无；而总纲 §1.2「缺」的判定手段 = 代码检索，本口径禁用 grep 型静态判据）→ 显式 null，禁猜 0。可复现依据 = 本档可复现命令输出 SOURCE_ABSENT"
+        },
+        "other_states": {
+          "wired_broken": {
+            "count": 0,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.wired_broken']['count'];print('wired_broken=%s' % v)\"",
+            "definition": "总纲 §1.2「接了跑不通」（wired=true, live=false）的可判定代理：六态 = failed（机器验证红）或 rejected（审计员否决）——即该点被判定不成立",
+            "source": "证据记录（六态 failed + rejected）",
+            "reason": null
+          },
+          "live_unverified": {
+            "count": 7,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.live_unverified']['count'];print('live_unverified=%s' % v)\"",
+            "definition": "总纲 §1.2「能跑未验证」（live=true, testedThroughEntry=false）：六态 = pending_k3（场景/测试绿但审计员未审）——单独成态，绝不并进健康",
+            "source": "证据记录（六态 pending_k3）",
+            "reason": null
+          },
+          "stale": {
+            "count": 1,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.stale']['count'];print('stale=%s' % v)\"",
+            "definition": "六态 = stale（曾点亮但证据过期 >14 天，或证据日期后该线 modules 有代码变更）——五态之外的显式态，单列不并入任何档",
+            "source": "证据记录 + git（六态 stale）",
+            "reason": null
+          },
+          "state_unknown": {
+            "count": 0,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.state_unknown']['count'];print('state_unknown=%s' % v)\"",
+            "definition": "残余：六态 = uncommitted（无证据 → 五态归属不可判定：缺 / 写了没接 / 接了跑不通三选一，无机器可读源）；显式列出以闭合恒等式，不丢点",
+            "source": "product-lines.yaml 验收点 − 撤回集（六态 uncommitted）",
+            "reason": null
+          }
+        },
+        "identity": {
+          "expr": "healthy + written_not_wired + missing + wired_broken + live_unverified + stale + state_unknown = 验收点总数（denominator）",
+          "terms": [
+            "healthy",
+            "live_unverified",
+            "missing",
+            "stale",
+            "state_unknown",
+            "wired_broken",
+            "written_not_wired"
+          ],
+          "null_terms": [
+            "missing"
+          ],
+          "known_terms_sum": 8,
+          "holds": true,
+          "note": "null 档不参与求和（归属不可判定，禁猜 0）；state_unknown 是显式残余，故恒等式永远闭合——任何验收点都不会被静默丢弃"
+        },
+        "strict_source_absent": {
+          "field": "testedThroughEntry / live / wired / implemented",
+          "reason": "总纲 §1.2 的**严格**五态（live && testedThroughEntry）无机器可读源（e2e 不在 CI，第 0 项 P-3 未立项）。故 buckets.healthy 报的是六态 verified 口径的可判定代理，不冒充严格健康数——数字与口径同时给出，读者可自行判定可信度"
+        }
+      },
       "k3_gate": "",
       "status_counts": {
         "uncommitted": 0,
@@ -136,6 +302,86 @@
       "total": 7,
       "verified": 0,
       "progress_pct": 0,
+      "buckets": {
+        "schema": "discrete-health-buckets/1",
+        "authority": "docs/authority/产品完成度定义与推进总纲-20260918.md §1.2（v1，2026-09-18） + docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md §二（v1.1，2026-09-19） + 方案-项目度量-从声明驱动到事实驱动.md §四/§六（创始人授权引用）",
+        "granularity": "acceptance_point(product-lines.yaml)",
+        "denominator": 7,
+        "denominator_note": "与 `docs/synova/project/ledger.json` 的 totals.buckets 分母不同（此处 = product-lines.yaml 验收点数；账本 = V1 断言表条数）——同名档不可跨件混读，各档自带 denominator",
+        "healthy": {
+          "count": 0,
+          "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.healthy']['count'];print('healthy=%s' % v)\"",
+          "definition": "总纲 §1.2「健康」（live && testedThroughEntry）的可判定代理：验收点六态 = verified（审计员 PASS 或创始人演示核验；机器绿但未审 ≠ 此档）",
+          "source": "证据记录（六态状态机出口 verified）",
+          "reason": null
+        },
+        "written_not_wired": {
+          "count": 0,
+          "evidence_cmd": "python3 - written_not_wired <<'PY'\nimport glob, re, sys\nrows = [[c.strip() for c in l.strip().strip('|').split('|')]\n        for l in open(sorted(glob.glob('docs/synova/project/26线-V1验收标准*.md'))[-1], encoding='utf-8')\n        if re.match(r'^\\|\\s*\\d+-\\d+\\s*\\|', l)]\nprint('written_not_wired=%d' % sum(1 for r in rows if len(r) >= 5 and r[3] == 'pending_wiring'))\nPY",
+          "definition": "总纲 §1.2「写了没接」（implemented=true, wired=false）：V1 断言表「证据」列= pending_wiring 撤回标记（D809；显式声明，非 grep 静态判定）",
+          "source": "V1 断言表「证据」列 = pending_wiring（D809 撤回标记）",
+          "reason": null
+        },
+        "missing": {
+          "count": null,
+          "evidence_cmd": "python3 - implemented <<'PY'\nimport glob, re, sys\nname = sys.argv[1]\nhits = []\nfor f in (sorted(glob.glob('docs/synova/product-lines/*.yaml'))\n          + sorted(glob.glob('docs/synova/product-lines/evidence/*.json'))):\n    try:\n        txt = open(f, encoding='utf-8').read()\n    except OSError:\n        continue\n    if re.search(r'(?m)^\\s*\"?%s\"?\\s*:' % name, txt):\n        hits.append(f)\nprint('%s=%s' % (name, 'SOURCE_PRESENT' if hits else 'SOURCE_ABSENT'))\nPY",
+          "definition": "总纲 §1.2「缺」（implemented=false）：判定手段 = 代码检索；本口径禁用 grep 型静态判据（事实驱动 §六 实测 3/5=60%），且「无证据」≠「无实现」（诚实规则）",
+          "source": "判定手段 = 代码检索（本口径禁用；事实驱动 §六 实测静态检测 3/5=60%）",
+          "reason": "本仓无「implemented」机器可读源（yaml 与证据记录均无；而总纲 §1.2「缺」的判定手段 = 代码检索，本口径禁用 grep 型静态判据）→ 显式 null，禁猜 0。可复现依据 = 本档可复现命令输出 SOURCE_ABSENT"
+        },
+        "other_states": {
+          "wired_broken": {
+            "count": 0,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.wired_broken']['count'];print('wired_broken=%s' % v)\"",
+            "definition": "总纲 §1.2「接了跑不通」（wired=true, live=false）的可判定代理：六态 = failed（机器验证红）或 rejected（审计员否决）——即该点被判定不成立",
+            "source": "证据记录（六态 failed + rejected）",
+            "reason": null
+          },
+          "live_unverified": {
+            "count": 0,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.live_unverified']['count'];print('live_unverified=%s' % v)\"",
+            "definition": "总纲 §1.2「能跑未验证」（live=true, testedThroughEntry=false）：六态 = pending_k3（场景/测试绿但审计员未审）——单独成态，绝不并进健康",
+            "source": "证据记录（六态 pending_k3）",
+            "reason": null
+          },
+          "stale": {
+            "count": 4,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.stale']['count'];print('stale=%s' % v)\"",
+            "definition": "六态 = stale（曾点亮但证据过期 >14 天，或证据日期后该线 modules 有代码变更）——五态之外的显式态，单列不并入任何档",
+            "source": "证据记录 + git（六态 stale）",
+            "reason": null
+          },
+          "state_unknown": {
+            "count": 3,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.state_unknown']['count'];print('state_unknown=%s' % v)\"",
+            "definition": "残余：六态 = uncommitted（无证据 → 五态归属不可判定：缺 / 写了没接 / 接了跑不通三选一，无机器可读源）；显式列出以闭合恒等式，不丢点",
+            "source": "product-lines.yaml 验收点 − 撤回集（六态 uncommitted）",
+            "reason": null
+          }
+        },
+        "identity": {
+          "expr": "healthy + written_not_wired + missing + wired_broken + live_unverified + stale + state_unknown = 验收点总数（denominator）",
+          "terms": [
+            "healthy",
+            "live_unverified",
+            "missing",
+            "stale",
+            "state_unknown",
+            "wired_broken",
+            "written_not_wired"
+          ],
+          "null_terms": [
+            "missing"
+          ],
+          "known_terms_sum": 7,
+          "holds": true,
+          "note": "null 档不参与求和（归属不可判定，禁猜 0）；state_unknown 是显式残余，故恒等式永远闭合——任何验收点都不会被静默丢弃"
+        },
+        "strict_source_absent": {
+          "field": "testedThroughEntry / live / wired / implemented",
+          "reason": "总纲 §1.2 的**严格**五态（live && testedThroughEntry）无机器可读源（e2e 不在 CI，第 0 项 P-3 未立项）。故 buckets.healthy 报的是六态 verified 口径的可判定代理，不冒充严格健康数——数字与口径同时给出，读者可自行判定可信度"
+        }
+      },
       "k3_gate": "",
       "status_counts": {
         "uncommitted": 3,
@@ -198,7 +444,8 @@
             "docs/synova/product-lines/evidence/test-2026-09-07.json",
             "docs/synova/product-lines/evidence/test-2026-09-12.json",
             "docs/synova/product-lines/evidence/test-2026-09-15-1.json",
-            "docs/synova/product-lines/evidence/test-2026-09-16-1.json"
+            "docs/synova/product-lines/evidence/test-2026-09-16-1.json",
+            "docs/synova/product-lines/evidence/test-2026-09-17.json"
           ],
           "note": "线程存在，长会话上下文管理见线 20"
         },
@@ -231,6 +478,86 @@
       "total": 8,
       "verified": 0,
       "progress_pct": 0,
+      "buckets": {
+        "schema": "discrete-health-buckets/1",
+        "authority": "docs/authority/产品完成度定义与推进总纲-20260918.md §1.2（v1，2026-09-18） + docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md §二（v1.1，2026-09-19） + 方案-项目度量-从声明驱动到事实驱动.md §四/§六（创始人授权引用）",
+        "granularity": "acceptance_point(product-lines.yaml)",
+        "denominator": 8,
+        "denominator_note": "与 `docs/synova/project/ledger.json` 的 totals.buckets 分母不同（此处 = product-lines.yaml 验收点数；账本 = V1 断言表条数）——同名档不可跨件混读，各档自带 denominator",
+        "healthy": {
+          "count": 0,
+          "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.healthy']['count'];print('healthy=%s' % v)\"",
+          "definition": "总纲 §1.2「健康」（live && testedThroughEntry）的可判定代理：验收点六态 = verified（审计员 PASS 或创始人演示核验；机器绿但未审 ≠ 此档）",
+          "source": "证据记录（六态状态机出口 verified）",
+          "reason": null
+        },
+        "written_not_wired": {
+          "count": 0,
+          "evidence_cmd": "python3 - written_not_wired <<'PY'\nimport glob, re, sys\nrows = [[c.strip() for c in l.strip().strip('|').split('|')]\n        for l in open(sorted(glob.glob('docs/synova/project/26线-V1验收标准*.md'))[-1], encoding='utf-8')\n        if re.match(r'^\\|\\s*\\d+-\\d+\\s*\\|', l)]\nprint('written_not_wired=%d' % sum(1 for r in rows if len(r) >= 5 and r[3] == 'pending_wiring'))\nPY",
+          "definition": "总纲 §1.2「写了没接」（implemented=true, wired=false）：V1 断言表「证据」列= pending_wiring 撤回标记（D809；显式声明，非 grep 静态判定）",
+          "source": "V1 断言表「证据」列 = pending_wiring（D809 撤回标记）",
+          "reason": null
+        },
+        "missing": {
+          "count": null,
+          "evidence_cmd": "python3 - implemented <<'PY'\nimport glob, re, sys\nname = sys.argv[1]\nhits = []\nfor f in (sorted(glob.glob('docs/synova/product-lines/*.yaml'))\n          + sorted(glob.glob('docs/synova/product-lines/evidence/*.json'))):\n    try:\n        txt = open(f, encoding='utf-8').read()\n    except OSError:\n        continue\n    if re.search(r'(?m)^\\s*\"?%s\"?\\s*:' % name, txt):\n        hits.append(f)\nprint('%s=%s' % (name, 'SOURCE_PRESENT' if hits else 'SOURCE_ABSENT'))\nPY",
+          "definition": "总纲 §1.2「缺」（implemented=false）：判定手段 = 代码检索；本口径禁用 grep 型静态判据（事实驱动 §六 实测 3/5=60%），且「无证据」≠「无实现」（诚实规则）",
+          "source": "判定手段 = 代码检索（本口径禁用；事实驱动 §六 实测静态检测 3/5=60%）",
+          "reason": "本仓无「implemented」机器可读源（yaml 与证据记录均无；而总纲 §1.2「缺」的判定手段 = 代码检索，本口径禁用 grep 型静态判据）→ 显式 null，禁猜 0。可复现依据 = 本档可复现命令输出 SOURCE_ABSENT"
+        },
+        "other_states": {
+          "wired_broken": {
+            "count": 0,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.wired_broken']['count'];print('wired_broken=%s' % v)\"",
+            "definition": "总纲 §1.2「接了跑不通」（wired=true, live=false）的可判定代理：六态 = failed（机器验证红）或 rejected（审计员否决）——即该点被判定不成立",
+            "source": "证据记录（六态 failed + rejected）",
+            "reason": null
+          },
+          "live_unverified": {
+            "count": 1,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.live_unverified']['count'];print('live_unverified=%s' % v)\"",
+            "definition": "总纲 §1.2「能跑未验证」（live=true, testedThroughEntry=false）：六态 = pending_k3（场景/测试绿但审计员未审）——单独成态，绝不并进健康",
+            "source": "证据记录（六态 pending_k3）",
+            "reason": null
+          },
+          "stale": {
+            "count": 0,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.stale']['count'];print('stale=%s' % v)\"",
+            "definition": "六态 = stale（曾点亮但证据过期 >14 天，或证据日期后该线 modules 有代码变更）——五态之外的显式态，单列不并入任何档",
+            "source": "证据记录 + git（六态 stale）",
+            "reason": null
+          },
+          "state_unknown": {
+            "count": 7,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.state_unknown']['count'];print('state_unknown=%s' % v)\"",
+            "definition": "残余：六态 = uncommitted（无证据 → 五态归属不可判定：缺 / 写了没接 / 接了跑不通三选一，无机器可读源）；显式列出以闭合恒等式，不丢点",
+            "source": "product-lines.yaml 验收点 − 撤回集（六态 uncommitted）",
+            "reason": null
+          }
+        },
+        "identity": {
+          "expr": "healthy + written_not_wired + missing + wired_broken + live_unverified + stale + state_unknown = 验收点总数（denominator）",
+          "terms": [
+            "healthy",
+            "live_unverified",
+            "missing",
+            "stale",
+            "state_unknown",
+            "wired_broken",
+            "written_not_wired"
+          ],
+          "null_terms": [
+            "missing"
+          ],
+          "known_terms_sum": 8,
+          "holds": true,
+          "note": "null 档不参与求和（归属不可判定，禁猜 0）；state_unknown 是显式残余，故恒等式永远闭合——任何验收点都不会被静默丢弃"
+        },
+        "strict_source_absent": {
+          "field": "testedThroughEntry / live / wired / implemented",
+          "reason": "总纲 §1.2 的**严格**五态（live && testedThroughEntry）无机器可读源（e2e 不在 CI，第 0 项 P-3 未立项）。故 buckets.healthy 报的是六态 verified 口径的可判定代理，不冒充严格健康数——数字与口径同时给出，读者可自行判定可信度"
+        }
+      },
       "k3_gate": "",
       "status_counts": {
         "uncommitted": 7,
@@ -310,6 +637,86 @@
       "total": 8,
       "verified": 0,
       "progress_pct": 0,
+      "buckets": {
+        "schema": "discrete-health-buckets/1",
+        "authority": "docs/authority/产品完成度定义与推进总纲-20260918.md §1.2（v1，2026-09-18） + docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md §二（v1.1，2026-09-19） + 方案-项目度量-从声明驱动到事实驱动.md §四/§六（创始人授权引用）",
+        "granularity": "acceptance_point(product-lines.yaml)",
+        "denominator": 8,
+        "denominator_note": "与 `docs/synova/project/ledger.json` 的 totals.buckets 分母不同（此处 = product-lines.yaml 验收点数；账本 = V1 断言表条数）——同名档不可跨件混读，各档自带 denominator",
+        "healthy": {
+          "count": 0,
+          "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.healthy']['count'];print('healthy=%s' % v)\"",
+          "definition": "总纲 §1.2「健康」（live && testedThroughEntry）的可判定代理：验收点六态 = verified（审计员 PASS 或创始人演示核验；机器绿但未审 ≠ 此档）",
+          "source": "证据记录（六态状态机出口 verified）",
+          "reason": null
+        },
+        "written_not_wired": {
+          "count": 0,
+          "evidence_cmd": "python3 - written_not_wired <<'PY'\nimport glob, re, sys\nrows = [[c.strip() for c in l.strip().strip('|').split('|')]\n        for l in open(sorted(glob.glob('docs/synova/project/26线-V1验收标准*.md'))[-1], encoding='utf-8')\n        if re.match(r'^\\|\\s*\\d+-\\d+\\s*\\|', l)]\nprint('written_not_wired=%d' % sum(1 for r in rows if len(r) >= 5 and r[3] == 'pending_wiring'))\nPY",
+          "definition": "总纲 §1.2「写了没接」（implemented=true, wired=false）：V1 断言表「证据」列= pending_wiring 撤回标记（D809；显式声明，非 grep 静态判定）",
+          "source": "V1 断言表「证据」列 = pending_wiring（D809 撤回标记）",
+          "reason": null
+        },
+        "missing": {
+          "count": null,
+          "evidence_cmd": "python3 - implemented <<'PY'\nimport glob, re, sys\nname = sys.argv[1]\nhits = []\nfor f in (sorted(glob.glob('docs/synova/product-lines/*.yaml'))\n          + sorted(glob.glob('docs/synova/product-lines/evidence/*.json'))):\n    try:\n        txt = open(f, encoding='utf-8').read()\n    except OSError:\n        continue\n    if re.search(r'(?m)^\\s*\"?%s\"?\\s*:' % name, txt):\n        hits.append(f)\nprint('%s=%s' % (name, 'SOURCE_PRESENT' if hits else 'SOURCE_ABSENT'))\nPY",
+          "definition": "总纲 §1.2「缺」（implemented=false）：判定手段 = 代码检索；本口径禁用 grep 型静态判据（事实驱动 §六 实测 3/5=60%），且「无证据」≠「无实现」（诚实规则）",
+          "source": "判定手段 = 代码检索（本口径禁用；事实驱动 §六 实测静态检测 3/5=60%）",
+          "reason": "本仓无「implemented」机器可读源（yaml 与证据记录均无；而总纲 §1.2「缺」的判定手段 = 代码检索，本口径禁用 grep 型静态判据）→ 显式 null，禁猜 0。可复现依据 = 本档可复现命令输出 SOURCE_ABSENT"
+        },
+        "other_states": {
+          "wired_broken": {
+            "count": 0,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.wired_broken']['count'];print('wired_broken=%s' % v)\"",
+            "definition": "总纲 §1.2「接了跑不通」（wired=true, live=false）的可判定代理：六态 = failed（机器验证红）或 rejected（审计员否决）——即该点被判定不成立",
+            "source": "证据记录（六态 failed + rejected）",
+            "reason": null
+          },
+          "live_unverified": {
+            "count": 2,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.live_unverified']['count'];print('live_unverified=%s' % v)\"",
+            "definition": "总纲 §1.2「能跑未验证」（live=true, testedThroughEntry=false）：六态 = pending_k3（场景/测试绿但审计员未审）——单独成态，绝不并进健康",
+            "source": "证据记录（六态 pending_k3）",
+            "reason": null
+          },
+          "stale": {
+            "count": 0,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.stale']['count'];print('stale=%s' % v)\"",
+            "definition": "六态 = stale（曾点亮但证据过期 >14 天，或证据日期后该线 modules 有代码变更）——五态之外的显式态，单列不并入任何档",
+            "source": "证据记录 + git（六态 stale）",
+            "reason": null
+          },
+          "state_unknown": {
+            "count": 6,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.state_unknown']['count'];print('state_unknown=%s' % v)\"",
+            "definition": "残余：六态 = uncommitted（无证据 → 五态归属不可判定：缺 / 写了没接 / 接了跑不通三选一，无机器可读源）；显式列出以闭合恒等式，不丢点",
+            "source": "product-lines.yaml 验收点 − 撤回集（六态 uncommitted）",
+            "reason": null
+          }
+        },
+        "identity": {
+          "expr": "healthy + written_not_wired + missing + wired_broken + live_unverified + stale + state_unknown = 验收点总数（denominator）",
+          "terms": [
+            "healthy",
+            "live_unverified",
+            "missing",
+            "stale",
+            "state_unknown",
+            "wired_broken",
+            "written_not_wired"
+          ],
+          "null_terms": [
+            "missing"
+          ],
+          "known_terms_sum": 8,
+          "holds": true,
+          "note": "null 档不参与求和（归属不可判定，禁猜 0）；state_unknown 是显式残余，故恒等式永远闭合——任何验收点都不会被静默丢弃"
+        },
+        "strict_source_absent": {
+          "field": "testedThroughEntry / live / wired / implemented",
+          "reason": "总纲 §1.2 的**严格**五态（live && testedThroughEntry）无机器可读源（e2e 不在 CI，第 0 项 P-3 未立项）。故 buckets.healthy 报的是六态 verified 口径的可判定代理，不冒充严格健康数——数字与口径同时给出，读者可自行判定可信度"
+        }
+      },
       "k3_gate": "",
       "status_counts": {
         "uncommitted": 6,
@@ -349,7 +756,8 @@
             "docs/synova/product-lines/evidence/test-2026-09-07.json",
             "docs/synova/product-lines/evidence/test-2026-09-12.json",
             "docs/synova/product-lines/evidence/test-2026-09-15-1.json",
-            "docs/synova/product-lines/evidence/test-2026-09-16-1.json"
+            "docs/synova/product-lines/evidence/test-2026-09-16-1.json",
+            "docs/synova/product-lines/evidence/test-2026-09-17.json"
           ],
           "note": "已有（K3 P0-2：仅飞书+CSV）"
         },
@@ -401,6 +809,86 @@
       "total": 6,
       "verified": 0,
       "progress_pct": 0,
+      "buckets": {
+        "schema": "discrete-health-buckets/1",
+        "authority": "docs/authority/产品完成度定义与推进总纲-20260918.md §1.2（v1，2026-09-18） + docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md §二（v1.1，2026-09-19） + 方案-项目度量-从声明驱动到事实驱动.md §四/§六（创始人授权引用）",
+        "granularity": "acceptance_point(product-lines.yaml)",
+        "denominator": 6,
+        "denominator_note": "与 `docs/synova/project/ledger.json` 的 totals.buckets 分母不同（此处 = product-lines.yaml 验收点数；账本 = V1 断言表条数）——同名档不可跨件混读，各档自带 denominator",
+        "healthy": {
+          "count": 0,
+          "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.healthy']['count'];print('healthy=%s' % v)\"",
+          "definition": "总纲 §1.2「健康」（live && testedThroughEntry）的可判定代理：验收点六态 = verified（审计员 PASS 或创始人演示核验；机器绿但未审 ≠ 此档）",
+          "source": "证据记录（六态状态机出口 verified）",
+          "reason": null
+        },
+        "written_not_wired": {
+          "count": 0,
+          "evidence_cmd": "python3 - written_not_wired <<'PY'\nimport glob, re, sys\nrows = [[c.strip() for c in l.strip().strip('|').split('|')]\n        for l in open(sorted(glob.glob('docs/synova/project/26线-V1验收标准*.md'))[-1], encoding='utf-8')\n        if re.match(r'^\\|\\s*\\d+-\\d+\\s*\\|', l)]\nprint('written_not_wired=%d' % sum(1 for r in rows if len(r) >= 5 and r[3] == 'pending_wiring'))\nPY",
+          "definition": "总纲 §1.2「写了没接」（implemented=true, wired=false）：V1 断言表「证据」列= pending_wiring 撤回标记（D809；显式声明，非 grep 静态判定）",
+          "source": "V1 断言表「证据」列 = pending_wiring（D809 撤回标记）",
+          "reason": null
+        },
+        "missing": {
+          "count": null,
+          "evidence_cmd": "python3 - implemented <<'PY'\nimport glob, re, sys\nname = sys.argv[1]\nhits = []\nfor f in (sorted(glob.glob('docs/synova/product-lines/*.yaml'))\n          + sorted(glob.glob('docs/synova/product-lines/evidence/*.json'))):\n    try:\n        txt = open(f, encoding='utf-8').read()\n    except OSError:\n        continue\n    if re.search(r'(?m)^\\s*\"?%s\"?\\s*:' % name, txt):\n        hits.append(f)\nprint('%s=%s' % (name, 'SOURCE_PRESENT' if hits else 'SOURCE_ABSENT'))\nPY",
+          "definition": "总纲 §1.2「缺」（implemented=false）：判定手段 = 代码检索；本口径禁用 grep 型静态判据（事实驱动 §六 实测 3/5=60%），且「无证据」≠「无实现」（诚实规则）",
+          "source": "判定手段 = 代码检索（本口径禁用；事实驱动 §六 实测静态检测 3/5=60%）",
+          "reason": "本仓无「implemented」机器可读源（yaml 与证据记录均无；而总纲 §1.2「缺」的判定手段 = 代码检索，本口径禁用 grep 型静态判据）→ 显式 null，禁猜 0。可复现依据 = 本档可复现命令输出 SOURCE_ABSENT"
+        },
+        "other_states": {
+          "wired_broken": {
+            "count": 0,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.wired_broken']['count'];print('wired_broken=%s' % v)\"",
+            "definition": "总纲 §1.2「接了跑不通」（wired=true, live=false）的可判定代理：六态 = failed（机器验证红）或 rejected（审计员否决）——即该点被判定不成立",
+            "source": "证据记录（六态 failed + rejected）",
+            "reason": null
+          },
+          "live_unverified": {
+            "count": 1,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.live_unverified']['count'];print('live_unverified=%s' % v)\"",
+            "definition": "总纲 §1.2「能跑未验证」（live=true, testedThroughEntry=false）：六态 = pending_k3（场景/测试绿但审计员未审）——单独成态，绝不并进健康",
+            "source": "证据记录（六态 pending_k3）",
+            "reason": null
+          },
+          "stale": {
+            "count": 0,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.stale']['count'];print('stale=%s' % v)\"",
+            "definition": "六态 = stale（曾点亮但证据过期 >14 天，或证据日期后该线 modules 有代码变更）——五态之外的显式态，单列不并入任何档",
+            "source": "证据记录 + git（六态 stale）",
+            "reason": null
+          },
+          "state_unknown": {
+            "count": 5,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.state_unknown']['count'];print('state_unknown=%s' % v)\"",
+            "definition": "残余：六态 = uncommitted（无证据 → 五态归属不可判定：缺 / 写了没接 / 接了跑不通三选一，无机器可读源）；显式列出以闭合恒等式，不丢点",
+            "source": "product-lines.yaml 验收点 − 撤回集（六态 uncommitted）",
+            "reason": null
+          }
+        },
+        "identity": {
+          "expr": "healthy + written_not_wired + missing + wired_broken + live_unverified + stale + state_unknown = 验收点总数（denominator）",
+          "terms": [
+            "healthy",
+            "live_unverified",
+            "missing",
+            "stale",
+            "state_unknown",
+            "wired_broken",
+            "written_not_wired"
+          ],
+          "null_terms": [
+            "missing"
+          ],
+          "known_terms_sum": 6,
+          "holds": true,
+          "note": "null 档不参与求和（归属不可判定，禁猜 0）；state_unknown 是显式残余，故恒等式永远闭合——任何验收点都不会被静默丢弃"
+        },
+        "strict_source_absent": {
+          "field": "testedThroughEntry / live / wired / implemented",
+          "reason": "总纲 §1.2 的**严格**五态（live && testedThroughEntry）无机器可读源（e2e 不在 CI，第 0 项 P-3 未立项）。故 buckets.healthy 报的是六态 verified 口径的可判定代理，不冒充严格健康数——数字与口径同时给出，读者可自行判定可信度"
+        }
+      },
       "k3_gate": "",
       "status_counts": {
         "uncommitted": 5,
@@ -466,6 +954,86 @@
       "total": 7,
       "verified": 0,
       "progress_pct": 0,
+      "buckets": {
+        "schema": "discrete-health-buckets/1",
+        "authority": "docs/authority/产品完成度定义与推进总纲-20260918.md §1.2（v1，2026-09-18） + docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md §二（v1.1，2026-09-19） + 方案-项目度量-从声明驱动到事实驱动.md §四/§六（创始人授权引用）",
+        "granularity": "acceptance_point(product-lines.yaml)",
+        "denominator": 7,
+        "denominator_note": "与 `docs/synova/project/ledger.json` 的 totals.buckets 分母不同（此处 = product-lines.yaml 验收点数；账本 = V1 断言表条数）——同名档不可跨件混读，各档自带 denominator",
+        "healthy": {
+          "count": 0,
+          "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.healthy']['count'];print('healthy=%s' % v)\"",
+          "definition": "总纲 §1.2「健康」（live && testedThroughEntry）的可判定代理：验收点六态 = verified（审计员 PASS 或创始人演示核验；机器绿但未审 ≠ 此档）",
+          "source": "证据记录（六态状态机出口 verified）",
+          "reason": null
+        },
+        "written_not_wired": {
+          "count": 0,
+          "evidence_cmd": "python3 - written_not_wired <<'PY'\nimport glob, re, sys\nrows = [[c.strip() for c in l.strip().strip('|').split('|')]\n        for l in open(sorted(glob.glob('docs/synova/project/26线-V1验收标准*.md'))[-1], encoding='utf-8')\n        if re.match(r'^\\|\\s*\\d+-\\d+\\s*\\|', l)]\nprint('written_not_wired=%d' % sum(1 for r in rows if len(r) >= 5 and r[3] == 'pending_wiring'))\nPY",
+          "definition": "总纲 §1.2「写了没接」（implemented=true, wired=false）：V1 断言表「证据」列= pending_wiring 撤回标记（D809；显式声明，非 grep 静态判定）",
+          "source": "V1 断言表「证据」列 = pending_wiring（D809 撤回标记）",
+          "reason": null
+        },
+        "missing": {
+          "count": null,
+          "evidence_cmd": "python3 - implemented <<'PY'\nimport glob, re, sys\nname = sys.argv[1]\nhits = []\nfor f in (sorted(glob.glob('docs/synova/product-lines/*.yaml'))\n          + sorted(glob.glob('docs/synova/product-lines/evidence/*.json'))):\n    try:\n        txt = open(f, encoding='utf-8').read()\n    except OSError:\n        continue\n    if re.search(r'(?m)^\\s*\"?%s\"?\\s*:' % name, txt):\n        hits.append(f)\nprint('%s=%s' % (name, 'SOURCE_PRESENT' if hits else 'SOURCE_ABSENT'))\nPY",
+          "definition": "总纲 §1.2「缺」（implemented=false）：判定手段 = 代码检索；本口径禁用 grep 型静态判据（事实驱动 §六 实测 3/5=60%），且「无证据」≠「无实现」（诚实规则）",
+          "source": "判定手段 = 代码检索（本口径禁用；事实驱动 §六 实测静态检测 3/5=60%）",
+          "reason": "本仓无「implemented」机器可读源（yaml 与证据记录均无；而总纲 §1.2「缺」的判定手段 = 代码检索，本口径禁用 grep 型静态判据）→ 显式 null，禁猜 0。可复现依据 = 本档可复现命令输出 SOURCE_ABSENT"
+        },
+        "other_states": {
+          "wired_broken": {
+            "count": 0,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.wired_broken']['count'];print('wired_broken=%s' % v)\"",
+            "definition": "总纲 §1.2「接了跑不通」（wired=true, live=false）的可判定代理：六态 = failed（机器验证红）或 rejected（审计员否决）——即该点被判定不成立",
+            "source": "证据记录（六态 failed + rejected）",
+            "reason": null
+          },
+          "live_unverified": {
+            "count": 1,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.live_unverified']['count'];print('live_unverified=%s' % v)\"",
+            "definition": "总纲 §1.2「能跑未验证」（live=true, testedThroughEntry=false）：六态 = pending_k3（场景/测试绿但审计员未审）——单独成态，绝不并进健康",
+            "source": "证据记录（六态 pending_k3）",
+            "reason": null
+          },
+          "stale": {
+            "count": 0,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.stale']['count'];print('stale=%s' % v)\"",
+            "definition": "六态 = stale（曾点亮但证据过期 >14 天，或证据日期后该线 modules 有代码变更）——五态之外的显式态，单列不并入任何档",
+            "source": "证据记录 + git（六态 stale）",
+            "reason": null
+          },
+          "state_unknown": {
+            "count": 6,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.state_unknown']['count'];print('state_unknown=%s' % v)\"",
+            "definition": "残余：六态 = uncommitted（无证据 → 五态归属不可判定：缺 / 写了没接 / 接了跑不通三选一，无机器可读源）；显式列出以闭合恒等式，不丢点",
+            "source": "product-lines.yaml 验收点 − 撤回集（六态 uncommitted）",
+            "reason": null
+          }
+        },
+        "identity": {
+          "expr": "healthy + written_not_wired + missing + wired_broken + live_unverified + stale + state_unknown = 验收点总数（denominator）",
+          "terms": [
+            "healthy",
+            "live_unverified",
+            "missing",
+            "stale",
+            "state_unknown",
+            "wired_broken",
+            "written_not_wired"
+          ],
+          "null_terms": [
+            "missing"
+          ],
+          "known_terms_sum": 7,
+          "holds": true,
+          "note": "null 档不参与求和（归属不可判定，禁猜 0）；state_unknown 是显式残余，故恒等式永远闭合——任何验收点都不会被静默丢弃"
+        },
+        "strict_source_absent": {
+          "field": "testedThroughEntry / live / wired / implemented",
+          "reason": "总纲 §1.2 的**严格**五态（live && testedThroughEntry）无机器可读源（e2e 不在 CI，第 0 项 P-3 未立项）。故 buckets.healthy 报的是六态 verified 口径的可判定代理，不冒充严格健康数——数字与口径同时给出，读者可自行判定可信度"
+        }
+      },
       "k3_gate": "",
       "status_counts": {
         "uncommitted": 6,
@@ -538,14 +1106,94 @@
       "total": 8,
       "verified": 0,
       "progress_pct": 0,
+      "buckets": {
+        "schema": "discrete-health-buckets/1",
+        "authority": "docs/authority/产品完成度定义与推进总纲-20260918.md §1.2（v1，2026-09-18） + docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md §二（v1.1，2026-09-19） + 方案-项目度量-从声明驱动到事实驱动.md §四/§六（创始人授权引用）",
+        "granularity": "acceptance_point(product-lines.yaml)",
+        "denominator": 8,
+        "denominator_note": "与 `docs/synova/project/ledger.json` 的 totals.buckets 分母不同（此处 = product-lines.yaml 验收点数；账本 = V1 断言表条数）——同名档不可跨件混读，各档自带 denominator",
+        "healthy": {
+          "count": 0,
+          "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.healthy']['count'];print('healthy=%s' % v)\"",
+          "definition": "总纲 §1.2「健康」（live && testedThroughEntry）的可判定代理：验收点六态 = verified（审计员 PASS 或创始人演示核验；机器绿但未审 ≠ 此档）",
+          "source": "证据记录（六态状态机出口 verified）",
+          "reason": null
+        },
+        "written_not_wired": {
+          "count": 0,
+          "evidence_cmd": "python3 - written_not_wired <<'PY'\nimport glob, re, sys\nrows = [[c.strip() for c in l.strip().strip('|').split('|')]\n        for l in open(sorted(glob.glob('docs/synova/project/26线-V1验收标准*.md'))[-1], encoding='utf-8')\n        if re.match(r'^\\|\\s*\\d+-\\d+\\s*\\|', l)]\nprint('written_not_wired=%d' % sum(1 for r in rows if len(r) >= 5 and r[3] == 'pending_wiring'))\nPY",
+          "definition": "总纲 §1.2「写了没接」（implemented=true, wired=false）：V1 断言表「证据」列= pending_wiring 撤回标记（D809；显式声明，非 grep 静态判定）",
+          "source": "V1 断言表「证据」列 = pending_wiring（D809 撤回标记）",
+          "reason": null
+        },
+        "missing": {
+          "count": null,
+          "evidence_cmd": "python3 - implemented <<'PY'\nimport glob, re, sys\nname = sys.argv[1]\nhits = []\nfor f in (sorted(glob.glob('docs/synova/product-lines/*.yaml'))\n          + sorted(glob.glob('docs/synova/product-lines/evidence/*.json'))):\n    try:\n        txt = open(f, encoding='utf-8').read()\n    except OSError:\n        continue\n    if re.search(r'(?m)^\\s*\"?%s\"?\\s*:' % name, txt):\n        hits.append(f)\nprint('%s=%s' % (name, 'SOURCE_PRESENT' if hits else 'SOURCE_ABSENT'))\nPY",
+          "definition": "总纲 §1.2「缺」（implemented=false）：判定手段 = 代码检索；本口径禁用 grep 型静态判据（事实驱动 §六 实测 3/5=60%），且「无证据」≠「无实现」（诚实规则）",
+          "source": "判定手段 = 代码检索（本口径禁用；事实驱动 §六 实测静态检测 3/5=60%）",
+          "reason": "本仓无「implemented」机器可读源（yaml 与证据记录均无；而总纲 §1.2「缺」的判定手段 = 代码检索，本口径禁用 grep 型静态判据）→ 显式 null，禁猜 0。可复现依据 = 本档可复现命令输出 SOURCE_ABSENT"
+        },
+        "other_states": {
+          "wired_broken": {
+            "count": 0,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.wired_broken']['count'];print('wired_broken=%s' % v)\"",
+            "definition": "总纲 §1.2「接了跑不通」（wired=true, live=false）的可判定代理：六态 = failed（机器验证红）或 rejected（审计员否决）——即该点被判定不成立",
+            "source": "证据记录（六态 failed + rejected）",
+            "reason": null
+          },
+          "live_unverified": {
+            "count": 1,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.live_unverified']['count'];print('live_unverified=%s' % v)\"",
+            "definition": "总纲 §1.2「能跑未验证」（live=true, testedThroughEntry=false）：六态 = pending_k3（场景/测试绿但审计员未审）——单独成态，绝不并进健康",
+            "source": "证据记录（六态 pending_k3）",
+            "reason": null
+          },
+          "stale": {
+            "count": 4,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.stale']['count'];print('stale=%s' % v)\"",
+            "definition": "六态 = stale（曾点亮但证据过期 >14 天，或证据日期后该线 modules 有代码变更）——五态之外的显式态，单列不并入任何档",
+            "source": "证据记录 + git（六态 stale）",
+            "reason": null
+          },
+          "state_unknown": {
+            "count": 3,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.state_unknown']['count'];print('state_unknown=%s' % v)\"",
+            "definition": "残余：六态 = uncommitted（无证据 → 五态归属不可判定：缺 / 写了没接 / 接了跑不通三选一，无机器可读源）；显式列出以闭合恒等式，不丢点",
+            "source": "product-lines.yaml 验收点 − 撤回集（六态 uncommitted）",
+            "reason": null
+          }
+        },
+        "identity": {
+          "expr": "healthy + written_not_wired + missing + wired_broken + live_unverified + stale + state_unknown = 验收点总数（denominator）",
+          "terms": [
+            "healthy",
+            "live_unverified",
+            "missing",
+            "stale",
+            "state_unknown",
+            "wired_broken",
+            "written_not_wired"
+          ],
+          "null_terms": [
+            "missing"
+          ],
+          "known_terms_sum": 8,
+          "holds": true,
+          "note": "null 档不参与求和（归属不可判定，禁猜 0）；state_unknown 是显式残余，故恒等式永远闭合——任何验收点都不会被静默丢弃"
+        },
+        "strict_source_absent": {
+          "field": "testedThroughEntry / live / wired / implemented",
+          "reason": "总纲 §1.2 的**严格**五态（live && testedThroughEntry）无机器可读源（e2e 不在 CI，第 0 项 P-3 未立项）。故 buckets.healthy 报的是六态 verified 口径的可判定代理，不冒充严格健康数——数字与口径同时给出，读者可自行判定可信度"
+        }
+      },
       "k3_gate": "",
       "status_counts": {
         "uncommitted": 3,
         "failed": 0,
-        "pending_k3": 2,
+        "pending_k3": 1,
         "verified": 0,
         "rejected": 0,
-        "stale": 3
+        "stale": 4
       },
       "points": [
         {
@@ -602,7 +1250,7 @@
         {
           "id": "7-7",
           "desc": "定时任务容错（cron 失败有记录、可重试）",
-          "status": "pending_k3",
+          "status": "stale",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
             "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
@@ -614,7 +1262,8 @@
             "docs/synova/product-lines/evidence/test-2026-09-07.json",
             "docs/synova/product-lines/evidence/test-2026-09-12.json",
             "docs/synova/product-lines/evidence/test-2026-09-15-1.json",
-            "docs/synova/product-lines/evidence/test-2026-09-16-1.json"
+            "docs/synova/product-lines/evidence/test-2026-09-16-1.json",
+            "docs/synova/product-lines/evidence/test-2026-09-17.json"
           ],
           "note": ""
         },
@@ -638,6 +1287,86 @@
       "total": 6,
       "verified": 0,
       "progress_pct": 0,
+      "buckets": {
+        "schema": "discrete-health-buckets/1",
+        "authority": "docs/authority/产品完成度定义与推进总纲-20260918.md §1.2（v1，2026-09-18） + docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md §二（v1.1，2026-09-19） + 方案-项目度量-从声明驱动到事实驱动.md §四/§六（创始人授权引用）",
+        "granularity": "acceptance_point(product-lines.yaml)",
+        "denominator": 6,
+        "denominator_note": "与 `docs/synova/project/ledger.json` 的 totals.buckets 分母不同（此处 = product-lines.yaml 验收点数；账本 = V1 断言表条数）——同名档不可跨件混读，各档自带 denominator",
+        "healthy": {
+          "count": 0,
+          "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.healthy']['count'];print('healthy=%s' % v)\"",
+          "definition": "总纲 §1.2「健康」（live && testedThroughEntry）的可判定代理：验收点六态 = verified（审计员 PASS 或创始人演示核验；机器绿但未审 ≠ 此档）",
+          "source": "证据记录（六态状态机出口 verified）",
+          "reason": null
+        },
+        "written_not_wired": {
+          "count": 0,
+          "evidence_cmd": "python3 - written_not_wired <<'PY'\nimport glob, re, sys\nrows = [[c.strip() for c in l.strip().strip('|').split('|')]\n        for l in open(sorted(glob.glob('docs/synova/project/26线-V1验收标准*.md'))[-1], encoding='utf-8')\n        if re.match(r'^\\|\\s*\\d+-\\d+\\s*\\|', l)]\nprint('written_not_wired=%d' % sum(1 for r in rows if len(r) >= 5 and r[3] == 'pending_wiring'))\nPY",
+          "definition": "总纲 §1.2「写了没接」（implemented=true, wired=false）：V1 断言表「证据」列= pending_wiring 撤回标记（D809；显式声明，非 grep 静态判定）",
+          "source": "V1 断言表「证据」列 = pending_wiring（D809 撤回标记）",
+          "reason": null
+        },
+        "missing": {
+          "count": null,
+          "evidence_cmd": "python3 - implemented <<'PY'\nimport glob, re, sys\nname = sys.argv[1]\nhits = []\nfor f in (sorted(glob.glob('docs/synova/product-lines/*.yaml'))\n          + sorted(glob.glob('docs/synova/product-lines/evidence/*.json'))):\n    try:\n        txt = open(f, encoding='utf-8').read()\n    except OSError:\n        continue\n    if re.search(r'(?m)^\\s*\"?%s\"?\\s*:' % name, txt):\n        hits.append(f)\nprint('%s=%s' % (name, 'SOURCE_PRESENT' if hits else 'SOURCE_ABSENT'))\nPY",
+          "definition": "总纲 §1.2「缺」（implemented=false）：判定手段 = 代码检索；本口径禁用 grep 型静态判据（事实驱动 §六 实测 3/5=60%），且「无证据」≠「无实现」（诚实规则）",
+          "source": "判定手段 = 代码检索（本口径禁用；事实驱动 §六 实测静态检测 3/5=60%）",
+          "reason": "本仓无「implemented」机器可读源（yaml 与证据记录均无；而总纲 §1.2「缺」的判定手段 = 代码检索，本口径禁用 grep 型静态判据）→ 显式 null，禁猜 0。可复现依据 = 本档可复现命令输出 SOURCE_ABSENT"
+        },
+        "other_states": {
+          "wired_broken": {
+            "count": 0,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.wired_broken']['count'];print('wired_broken=%s' % v)\"",
+            "definition": "总纲 §1.2「接了跑不通」（wired=true, live=false）的可判定代理：六态 = failed（机器验证红）或 rejected（审计员否决）——即该点被判定不成立",
+            "source": "证据记录（六态 failed + rejected）",
+            "reason": null
+          },
+          "live_unverified": {
+            "count": 1,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.live_unverified']['count'];print('live_unverified=%s' % v)\"",
+            "definition": "总纲 §1.2「能跑未验证」（live=true, testedThroughEntry=false）：六态 = pending_k3（场景/测试绿但审计员未审）——单独成态，绝不并进健康",
+            "source": "证据记录（六态 pending_k3）",
+            "reason": null
+          },
+          "stale": {
+            "count": 4,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.stale']['count'];print('stale=%s' % v)\"",
+            "definition": "六态 = stale（曾点亮但证据过期 >14 天，或证据日期后该线 modules 有代码变更）——五态之外的显式态，单列不并入任何档",
+            "source": "证据记录 + git（六态 stale）",
+            "reason": null
+          },
+          "state_unknown": {
+            "count": 1,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.state_unknown']['count'];print('state_unknown=%s' % v)\"",
+            "definition": "残余：六态 = uncommitted（无证据 → 五态归属不可判定：缺 / 写了没接 / 接了跑不通三选一，无机器可读源）；显式列出以闭合恒等式，不丢点",
+            "source": "product-lines.yaml 验收点 − 撤回集（六态 uncommitted）",
+            "reason": null
+          }
+        },
+        "identity": {
+          "expr": "healthy + written_not_wired + missing + wired_broken + live_unverified + stale + state_unknown = 验收点总数（denominator）",
+          "terms": [
+            "healthy",
+            "live_unverified",
+            "missing",
+            "stale",
+            "state_unknown",
+            "wired_broken",
+            "written_not_wired"
+          ],
+          "null_terms": [
+            "missing"
+          ],
+          "known_terms_sum": 6,
+          "holds": true,
+          "note": "null 档不参与求和（归属不可判定，禁猜 0）；state_unknown 是显式残余，故恒等式永远闭合——任何验收点都不会被静默丢弃"
+        },
+        "strict_source_absent": {
+          "field": "testedThroughEntry / live / wired / implemented",
+          "reason": "总纲 §1.2 的**严格**五态（live && testedThroughEntry）无机器可读源（e2e 不在 CI，第 0 项 P-3 未立项）。故 buckets.healthy 报的是六态 verified 口径的可判定代理，不冒充严格健康数——数字与口径同时给出，读者可自行判定可信度"
+        }
+      },
       "k3_gate": "",
       "status_counts": {
         "uncommitted": 1,
@@ -712,6 +1441,86 @@
       "total": 6,
       "verified": 0,
       "progress_pct": 0,
+      "buckets": {
+        "schema": "discrete-health-buckets/1",
+        "authority": "docs/authority/产品完成度定义与推进总纲-20260918.md §1.2（v1，2026-09-18） + docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md §二（v1.1，2026-09-19） + 方案-项目度量-从声明驱动到事实驱动.md §四/§六（创始人授权引用）",
+        "granularity": "acceptance_point(product-lines.yaml)",
+        "denominator": 6,
+        "denominator_note": "与 `docs/synova/project/ledger.json` 的 totals.buckets 分母不同（此处 = product-lines.yaml 验收点数；账本 = V1 断言表条数）——同名档不可跨件混读，各档自带 denominator",
+        "healthy": {
+          "count": 0,
+          "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.healthy']['count'];print('healthy=%s' % v)\"",
+          "definition": "总纲 §1.2「健康」（live && testedThroughEntry）的可判定代理：验收点六态 = verified（审计员 PASS 或创始人演示核验；机器绿但未审 ≠ 此档）",
+          "source": "证据记录（六态状态机出口 verified）",
+          "reason": null
+        },
+        "written_not_wired": {
+          "count": 0,
+          "evidence_cmd": "python3 - written_not_wired <<'PY'\nimport glob, re, sys\nrows = [[c.strip() for c in l.strip().strip('|').split('|')]\n        for l in open(sorted(glob.glob('docs/synova/project/26线-V1验收标准*.md'))[-1], encoding='utf-8')\n        if re.match(r'^\\|\\s*\\d+-\\d+\\s*\\|', l)]\nprint('written_not_wired=%d' % sum(1 for r in rows if len(r) >= 5 and r[3] == 'pending_wiring'))\nPY",
+          "definition": "总纲 §1.2「写了没接」（implemented=true, wired=false）：V1 断言表「证据」列= pending_wiring 撤回标记（D809；显式声明，非 grep 静态判定）",
+          "source": "V1 断言表「证据」列 = pending_wiring（D809 撤回标记）",
+          "reason": null
+        },
+        "missing": {
+          "count": null,
+          "evidence_cmd": "python3 - implemented <<'PY'\nimport glob, re, sys\nname = sys.argv[1]\nhits = []\nfor f in (sorted(glob.glob('docs/synova/product-lines/*.yaml'))\n          + sorted(glob.glob('docs/synova/product-lines/evidence/*.json'))):\n    try:\n        txt = open(f, encoding='utf-8').read()\n    except OSError:\n        continue\n    if re.search(r'(?m)^\\s*\"?%s\"?\\s*:' % name, txt):\n        hits.append(f)\nprint('%s=%s' % (name, 'SOURCE_PRESENT' if hits else 'SOURCE_ABSENT'))\nPY",
+          "definition": "总纲 §1.2「缺」（implemented=false）：判定手段 = 代码检索；本口径禁用 grep 型静态判据（事实驱动 §六 实测 3/5=60%），且「无证据」≠「无实现」（诚实规则）",
+          "source": "判定手段 = 代码检索（本口径禁用；事实驱动 §六 实测静态检测 3/5=60%）",
+          "reason": "本仓无「implemented」机器可读源（yaml 与证据记录均无；而总纲 §1.2「缺」的判定手段 = 代码检索，本口径禁用 grep 型静态判据）→ 显式 null，禁猜 0。可复现依据 = 本档可复现命令输出 SOURCE_ABSENT"
+        },
+        "other_states": {
+          "wired_broken": {
+            "count": 0,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.wired_broken']['count'];print('wired_broken=%s' % v)\"",
+            "definition": "总纲 §1.2「接了跑不通」（wired=true, live=false）的可判定代理：六态 = failed（机器验证红）或 rejected（审计员否决）——即该点被判定不成立",
+            "source": "证据记录（六态 failed + rejected）",
+            "reason": null
+          },
+          "live_unverified": {
+            "count": 1,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.live_unverified']['count'];print('live_unverified=%s' % v)\"",
+            "definition": "总纲 §1.2「能跑未验证」（live=true, testedThroughEntry=false）：六态 = pending_k3（场景/测试绿但审计员未审）——单独成态，绝不并进健康",
+            "source": "证据记录（六态 pending_k3）",
+            "reason": null
+          },
+          "stale": {
+            "count": 1,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.stale']['count'];print('stale=%s' % v)\"",
+            "definition": "六态 = stale（曾点亮但证据过期 >14 天，或证据日期后该线 modules 有代码变更）——五态之外的显式态，单列不并入任何档",
+            "source": "证据记录 + git（六态 stale）",
+            "reason": null
+          },
+          "state_unknown": {
+            "count": 4,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.state_unknown']['count'];print('state_unknown=%s' % v)\"",
+            "definition": "残余：六态 = uncommitted（无证据 → 五态归属不可判定：缺 / 写了没接 / 接了跑不通三选一，无机器可读源）；显式列出以闭合恒等式，不丢点",
+            "source": "product-lines.yaml 验收点 − 撤回集（六态 uncommitted）",
+            "reason": null
+          }
+        },
+        "identity": {
+          "expr": "healthy + written_not_wired + missing + wired_broken + live_unverified + stale + state_unknown = 验收点总数（denominator）",
+          "terms": [
+            "healthy",
+            "live_unverified",
+            "missing",
+            "stale",
+            "state_unknown",
+            "wired_broken",
+            "written_not_wired"
+          ],
+          "null_terms": [
+            "missing"
+          ],
+          "known_terms_sum": 6,
+          "holds": true,
+          "note": "null 档不参与求和（归属不可判定，禁猜 0）；state_unknown 是显式残余，故恒等式永远闭合——任何验收点都不会被静默丢弃"
+        },
+        "strict_source_absent": {
+          "field": "testedThroughEntry / live / wired / implemented",
+          "reason": "总纲 §1.2 的**严格**五态（live && testedThroughEntry）无机器可读源（e2e 不在 CI，第 0 项 P-3 未立项）。故 buckets.healthy 报的是六态 verified 口径的可判定代理，不冒充严格健康数——数字与口径同时给出，读者可自行判定可信度"
+        }
+      },
       "k3_gate": "",
       "status_counts": {
         "uncommitted": 4,
@@ -780,14 +1589,94 @@
       "total": 8,
       "verified": 0,
       "progress_pct": 0,
+      "buckets": {
+        "schema": "discrete-health-buckets/1",
+        "authority": "docs/authority/产品完成度定义与推进总纲-20260918.md §1.2（v1，2026-09-18） + docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md §二（v1.1，2026-09-19） + 方案-项目度量-从声明驱动到事实驱动.md §四/§六（创始人授权引用）",
+        "granularity": "acceptance_point(product-lines.yaml)",
+        "denominator": 8,
+        "denominator_note": "与 `docs/synova/project/ledger.json` 的 totals.buckets 分母不同（此处 = product-lines.yaml 验收点数；账本 = V1 断言表条数）——同名档不可跨件混读，各档自带 denominator",
+        "healthy": {
+          "count": 0,
+          "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.healthy']['count'];print('healthy=%s' % v)\"",
+          "definition": "总纲 §1.2「健康」（live && testedThroughEntry）的可判定代理：验收点六态 = verified（审计员 PASS 或创始人演示核验；机器绿但未审 ≠ 此档）",
+          "source": "证据记录（六态状态机出口 verified）",
+          "reason": null
+        },
+        "written_not_wired": {
+          "count": 0,
+          "evidence_cmd": "python3 - written_not_wired <<'PY'\nimport glob, re, sys\nrows = [[c.strip() for c in l.strip().strip('|').split('|')]\n        for l in open(sorted(glob.glob('docs/synova/project/26线-V1验收标准*.md'))[-1], encoding='utf-8')\n        if re.match(r'^\\|\\s*\\d+-\\d+\\s*\\|', l)]\nprint('written_not_wired=%d' % sum(1 for r in rows if len(r) >= 5 and r[3] == 'pending_wiring'))\nPY",
+          "definition": "总纲 §1.2「写了没接」（implemented=true, wired=false）：V1 断言表「证据」列= pending_wiring 撤回标记（D809；显式声明，非 grep 静态判定）",
+          "source": "V1 断言表「证据」列 = pending_wiring（D809 撤回标记）",
+          "reason": null
+        },
+        "missing": {
+          "count": null,
+          "evidence_cmd": "python3 - implemented <<'PY'\nimport glob, re, sys\nname = sys.argv[1]\nhits = []\nfor f in (sorted(glob.glob('docs/synova/product-lines/*.yaml'))\n          + sorted(glob.glob('docs/synova/product-lines/evidence/*.json'))):\n    try:\n        txt = open(f, encoding='utf-8').read()\n    except OSError:\n        continue\n    if re.search(r'(?m)^\\s*\"?%s\"?\\s*:' % name, txt):\n        hits.append(f)\nprint('%s=%s' % (name, 'SOURCE_PRESENT' if hits else 'SOURCE_ABSENT'))\nPY",
+          "definition": "总纲 §1.2「缺」（implemented=false）：判定手段 = 代码检索；本口径禁用 grep 型静态判据（事实驱动 §六 实测 3/5=60%），且「无证据」≠「无实现」（诚实规则）",
+          "source": "判定手段 = 代码检索（本口径禁用；事实驱动 §六 实测静态检测 3/5=60%）",
+          "reason": "本仓无「implemented」机器可读源（yaml 与证据记录均无；而总纲 §1.2「缺」的判定手段 = 代码检索，本口径禁用 grep 型静态判据）→ 显式 null，禁猜 0。可复现依据 = 本档可复现命令输出 SOURCE_ABSENT"
+        },
+        "other_states": {
+          "wired_broken": {
+            "count": 0,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.wired_broken']['count'];print('wired_broken=%s' % v)\"",
+            "definition": "总纲 §1.2「接了跑不通」（wired=true, live=false）的可判定代理：六态 = failed（机器验证红）或 rejected（审计员否决）——即该点被判定不成立",
+            "source": "证据记录（六态 failed + rejected）",
+            "reason": null
+          },
+          "live_unverified": {
+            "count": 0,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.live_unverified']['count'];print('live_unverified=%s' % v)\"",
+            "definition": "总纲 §1.2「能跑未验证」（live=true, testedThroughEntry=false）：六态 = pending_k3（场景/测试绿但审计员未审）——单独成态，绝不并进健康",
+            "source": "证据记录（六态 pending_k3）",
+            "reason": null
+          },
+          "stale": {
+            "count": 3,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.stale']['count'];print('stale=%s' % v)\"",
+            "definition": "六态 = stale（曾点亮但证据过期 >14 天，或证据日期后该线 modules 有代码变更）——五态之外的显式态，单列不并入任何档",
+            "source": "证据记录 + git（六态 stale）",
+            "reason": null
+          },
+          "state_unknown": {
+            "count": 5,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.state_unknown']['count'];print('state_unknown=%s' % v)\"",
+            "definition": "残余：六态 = uncommitted（无证据 → 五态归属不可判定：缺 / 写了没接 / 接了跑不通三选一，无机器可读源）；显式列出以闭合恒等式，不丢点",
+            "source": "product-lines.yaml 验收点 − 撤回集（六态 uncommitted）",
+            "reason": null
+          }
+        },
+        "identity": {
+          "expr": "healthy + written_not_wired + missing + wired_broken + live_unverified + stale + state_unknown = 验收点总数（denominator）",
+          "terms": [
+            "healthy",
+            "live_unverified",
+            "missing",
+            "stale",
+            "state_unknown",
+            "wired_broken",
+            "written_not_wired"
+          ],
+          "null_terms": [
+            "missing"
+          ],
+          "known_terms_sum": 8,
+          "holds": true,
+          "note": "null 档不参与求和（归属不可判定，禁猜 0）；state_unknown 是显式残余，故恒等式永远闭合——任何验收点都不会被静默丢弃"
+        },
+        "strict_source_absent": {
+          "field": "testedThroughEntry / live / wired / implemented",
+          "reason": "总纲 §1.2 的**严格**五态（live && testedThroughEntry）无机器可读源（e2e 不在 CI，第 0 项 P-3 未立项）。故 buckets.healthy 报的是六态 verified 口径的可判定代理，不冒充严格健康数——数字与口径同时给出，读者可自行判定可信度"
+        }
+      },
       "k3_gate": "",
       "status_counts": {
-        "uncommitted": 6,
+        "uncommitted": 5,
         "failed": 0,
         "pending_k3": 0,
         "verified": 0,
         "rejected": 0,
-        "stale": 2
+        "stale": 3
       },
       "points": [
         {
@@ -800,8 +1689,10 @@
         {
           "id": "10-2",
           "desc": "属性契约对齐（cashBalance↔cash 等 snake/camel）",
-          "status": "uncommitted",
-          "evidence_files": [],
+          "status": "stale",
+          "evidence_files": [
+            "docs/synova/product-lines/evidence/test-2026-09-17.json"
+          ],
           "note": "K3：属性契约断裂"
         },
         {
@@ -830,7 +1721,8 @@
             "docs/synova/product-lines/evidence/test-2026-09-07.json",
             "docs/synova/product-lines/evidence/test-2026-09-12.json",
             "docs/synova/product-lines/evidence/test-2026-09-15-1.json",
-            "docs/synova/product-lines/evidence/test-2026-09-16-1.json"
+            "docs/synova/product-lines/evidence/test-2026-09-16-1.json",
+            "docs/synova/product-lines/evidence/test-2026-09-17.json"
           ],
           "note": "K3：compute-cash-runway-months.ts:60 filter bug"
         },
@@ -875,6 +1767,86 @@
       "total": 7,
       "verified": 0,
       "progress_pct": 0,
+      "buckets": {
+        "schema": "discrete-health-buckets/1",
+        "authority": "docs/authority/产品完成度定义与推进总纲-20260918.md §1.2（v1，2026-09-18） + docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md §二（v1.1，2026-09-19） + 方案-项目度量-从声明驱动到事实驱动.md §四/§六（创始人授权引用）",
+        "granularity": "acceptance_point(product-lines.yaml)",
+        "denominator": 7,
+        "denominator_note": "与 `docs/synova/project/ledger.json` 的 totals.buckets 分母不同（此处 = product-lines.yaml 验收点数；账本 = V1 断言表条数）——同名档不可跨件混读，各档自带 denominator",
+        "healthy": {
+          "count": 0,
+          "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.healthy']['count'];print('healthy=%s' % v)\"",
+          "definition": "总纲 §1.2「健康」（live && testedThroughEntry）的可判定代理：验收点六态 = verified（审计员 PASS 或创始人演示核验；机器绿但未审 ≠ 此档）",
+          "source": "证据记录（六态状态机出口 verified）",
+          "reason": null
+        },
+        "written_not_wired": {
+          "count": 0,
+          "evidence_cmd": "python3 - written_not_wired <<'PY'\nimport glob, re, sys\nrows = [[c.strip() for c in l.strip().strip('|').split('|')]\n        for l in open(sorted(glob.glob('docs/synova/project/26线-V1验收标准*.md'))[-1], encoding='utf-8')\n        if re.match(r'^\\|\\s*\\d+-\\d+\\s*\\|', l)]\nprint('written_not_wired=%d' % sum(1 for r in rows if len(r) >= 5 and r[3] == 'pending_wiring'))\nPY",
+          "definition": "总纲 §1.2「写了没接」（implemented=true, wired=false）：V1 断言表「证据」列= pending_wiring 撤回标记（D809；显式声明，非 grep 静态判定）",
+          "source": "V1 断言表「证据」列 = pending_wiring（D809 撤回标记）",
+          "reason": null
+        },
+        "missing": {
+          "count": null,
+          "evidence_cmd": "python3 - implemented <<'PY'\nimport glob, re, sys\nname = sys.argv[1]\nhits = []\nfor f in (sorted(glob.glob('docs/synova/product-lines/*.yaml'))\n          + sorted(glob.glob('docs/synova/product-lines/evidence/*.json'))):\n    try:\n        txt = open(f, encoding='utf-8').read()\n    except OSError:\n        continue\n    if re.search(r'(?m)^\\s*\"?%s\"?\\s*:' % name, txt):\n        hits.append(f)\nprint('%s=%s' % (name, 'SOURCE_PRESENT' if hits else 'SOURCE_ABSENT'))\nPY",
+          "definition": "总纲 §1.2「缺」（implemented=false）：判定手段 = 代码检索；本口径禁用 grep 型静态判据（事实驱动 §六 实测 3/5=60%），且「无证据」≠「无实现」（诚实规则）",
+          "source": "判定手段 = 代码检索（本口径禁用；事实驱动 §六 实测静态检测 3/5=60%）",
+          "reason": "本仓无「implemented」机器可读源（yaml 与证据记录均无；而总纲 §1.2「缺」的判定手段 = 代码检索，本口径禁用 grep 型静态判据）→ 显式 null，禁猜 0。可复现依据 = 本档可复现命令输出 SOURCE_ABSENT"
+        },
+        "other_states": {
+          "wired_broken": {
+            "count": 0,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.wired_broken']['count'];print('wired_broken=%s' % v)\"",
+            "definition": "总纲 §1.2「接了跑不通」（wired=true, live=false）的可判定代理：六态 = failed（机器验证红）或 rejected（审计员否决）——即该点被判定不成立",
+            "source": "证据记录（六态 failed + rejected）",
+            "reason": null
+          },
+          "live_unverified": {
+            "count": 1,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.live_unverified']['count'];print('live_unverified=%s' % v)\"",
+            "definition": "总纲 §1.2「能跑未验证」（live=true, testedThroughEntry=false）：六态 = pending_k3（场景/测试绿但审计员未审）——单独成态，绝不并进健康",
+            "source": "证据记录（六态 pending_k3）",
+            "reason": null
+          },
+          "stale": {
+            "count": 2,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.stale']['count'];print('stale=%s' % v)\"",
+            "definition": "六态 = stale（曾点亮但证据过期 >14 天，或证据日期后该线 modules 有代码变更）——五态之外的显式态，单列不并入任何档",
+            "source": "证据记录 + git（六态 stale）",
+            "reason": null
+          },
+          "state_unknown": {
+            "count": 4,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.state_unknown']['count'];print('state_unknown=%s' % v)\"",
+            "definition": "残余：六态 = uncommitted（无证据 → 五态归属不可判定：缺 / 写了没接 / 接了跑不通三选一，无机器可读源）；显式列出以闭合恒等式，不丢点",
+            "source": "product-lines.yaml 验收点 − 撤回集（六态 uncommitted）",
+            "reason": null
+          }
+        },
+        "identity": {
+          "expr": "healthy + written_not_wired + missing + wired_broken + live_unverified + stale + state_unknown = 验收点总数（denominator）",
+          "terms": [
+            "healthy",
+            "live_unverified",
+            "missing",
+            "stale",
+            "state_unknown",
+            "wired_broken",
+            "written_not_wired"
+          ],
+          "null_terms": [
+            "missing"
+          ],
+          "known_terms_sum": 7,
+          "holds": true,
+          "note": "null 档不参与求和（归属不可判定，禁猜 0）；state_unknown 是显式残余，故恒等式永远闭合——任何验收点都不会被静默丢弃"
+        },
+        "strict_source_absent": {
+          "field": "testedThroughEntry / live / wired / implemented",
+          "reason": "总纲 §1.2 的**严格**五态（live && testedThroughEntry）无机器可读源（e2e 不在 CI，第 0 项 P-3 未立项）。故 buckets.healthy 报的是六态 verified 口径的可判定代理，不冒充严格健康数——数字与口径同时给出，读者可自行判定可信度"
+        }
+      },
       "k3_gate": "",
       "status_counts": {
         "uncommitted": 4,
@@ -953,6 +1925,86 @@
       "total": 5,
       "verified": 0,
       "progress_pct": 0,
+      "buckets": {
+        "schema": "discrete-health-buckets/1",
+        "authority": "docs/authority/产品完成度定义与推进总纲-20260918.md §1.2（v1，2026-09-18） + docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md §二（v1.1，2026-09-19） + 方案-项目度量-从声明驱动到事实驱动.md §四/§六（创始人授权引用）",
+        "granularity": "acceptance_point(product-lines.yaml)",
+        "denominator": 5,
+        "denominator_note": "与 `docs/synova/project/ledger.json` 的 totals.buckets 分母不同（此处 = product-lines.yaml 验收点数；账本 = V1 断言表条数）——同名档不可跨件混读，各档自带 denominator",
+        "healthy": {
+          "count": 0,
+          "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.healthy']['count'];print('healthy=%s' % v)\"",
+          "definition": "总纲 §1.2「健康」（live && testedThroughEntry）的可判定代理：验收点六态 = verified（审计员 PASS 或创始人演示核验；机器绿但未审 ≠ 此档）",
+          "source": "证据记录（六态状态机出口 verified）",
+          "reason": null
+        },
+        "written_not_wired": {
+          "count": 0,
+          "evidence_cmd": "python3 - written_not_wired <<'PY'\nimport glob, re, sys\nrows = [[c.strip() for c in l.strip().strip('|').split('|')]\n        for l in open(sorted(glob.glob('docs/synova/project/26线-V1验收标准*.md'))[-1], encoding='utf-8')\n        if re.match(r'^\\|\\s*\\d+-\\d+\\s*\\|', l)]\nprint('written_not_wired=%d' % sum(1 for r in rows if len(r) >= 5 and r[3] == 'pending_wiring'))\nPY",
+          "definition": "总纲 §1.2「写了没接」（implemented=true, wired=false）：V1 断言表「证据」列= pending_wiring 撤回标记（D809；显式声明，非 grep 静态判定）",
+          "source": "V1 断言表「证据」列 = pending_wiring（D809 撤回标记）",
+          "reason": null
+        },
+        "missing": {
+          "count": null,
+          "evidence_cmd": "python3 - implemented <<'PY'\nimport glob, re, sys\nname = sys.argv[1]\nhits = []\nfor f in (sorted(glob.glob('docs/synova/product-lines/*.yaml'))\n          + sorted(glob.glob('docs/synova/product-lines/evidence/*.json'))):\n    try:\n        txt = open(f, encoding='utf-8').read()\n    except OSError:\n        continue\n    if re.search(r'(?m)^\\s*\"?%s\"?\\s*:' % name, txt):\n        hits.append(f)\nprint('%s=%s' % (name, 'SOURCE_PRESENT' if hits else 'SOURCE_ABSENT'))\nPY",
+          "definition": "总纲 §1.2「缺」（implemented=false）：判定手段 = 代码检索；本口径禁用 grep 型静态判据（事实驱动 §六 实测 3/5=60%），且「无证据」≠「无实现」（诚实规则）",
+          "source": "判定手段 = 代码检索（本口径禁用；事实驱动 §六 实测静态检测 3/5=60%）",
+          "reason": "本仓无「implemented」机器可读源（yaml 与证据记录均无；而总纲 §1.2「缺」的判定手段 = 代码检索，本口径禁用 grep 型静态判据）→ 显式 null，禁猜 0。可复现依据 = 本档可复现命令输出 SOURCE_ABSENT"
+        },
+        "other_states": {
+          "wired_broken": {
+            "count": 0,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.wired_broken']['count'];print('wired_broken=%s' % v)\"",
+            "definition": "总纲 §1.2「接了跑不通」（wired=true, live=false）的可判定代理：六态 = failed（机器验证红）或 rejected（审计员否决）——即该点被判定不成立",
+            "source": "证据记录（六态 failed + rejected）",
+            "reason": null
+          },
+          "live_unverified": {
+            "count": 1,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.live_unverified']['count'];print('live_unverified=%s' % v)\"",
+            "definition": "总纲 §1.2「能跑未验证」（live=true, testedThroughEntry=false）：六态 = pending_k3（场景/测试绿但审计员未审）——单独成态，绝不并进健康",
+            "source": "证据记录（六态 pending_k3）",
+            "reason": null
+          },
+          "stale": {
+            "count": 0,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.stale']['count'];print('stale=%s' % v)\"",
+            "definition": "六态 = stale（曾点亮但证据过期 >14 天，或证据日期后该线 modules 有代码变更）——五态之外的显式态，单列不并入任何档",
+            "source": "证据记录 + git（六态 stale）",
+            "reason": null
+          },
+          "state_unknown": {
+            "count": 4,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.state_unknown']['count'];print('state_unknown=%s' % v)\"",
+            "definition": "残余：六态 = uncommitted（无证据 → 五态归属不可判定：缺 / 写了没接 / 接了跑不通三选一，无机器可读源）；显式列出以闭合恒等式，不丢点",
+            "source": "product-lines.yaml 验收点 − 撤回集（六态 uncommitted）",
+            "reason": null
+          }
+        },
+        "identity": {
+          "expr": "healthy + written_not_wired + missing + wired_broken + live_unverified + stale + state_unknown = 验收点总数（denominator）",
+          "terms": [
+            "healthy",
+            "live_unverified",
+            "missing",
+            "stale",
+            "state_unknown",
+            "wired_broken",
+            "written_not_wired"
+          ],
+          "null_terms": [
+            "missing"
+          ],
+          "known_terms_sum": 5,
+          "holds": true,
+          "note": "null 档不参与求和（归属不可判定，禁猜 0）；state_unknown 是显式残余，故恒等式永远闭合——任何验收点都不会被静默丢弃"
+        },
+        "strict_source_absent": {
+          "field": "testedThroughEntry / live / wired / implemented",
+          "reason": "总纲 §1.2 的**严格**五态（live && testedThroughEntry）无机器可读源（e2e 不在 CI，第 0 项 P-3 未立项）。故 buckets.healthy 报的是六态 verified 口径的可判定代理，不冒充严格健康数——数字与口径同时给出，读者可自行判定可信度"
+        }
+      },
       "k3_gate": "",
       "status_counts": {
         "uncommitted": 4,
@@ -1011,6 +2063,86 @@
       "total": 5,
       "verified": 0,
       "progress_pct": 0,
+      "buckets": {
+        "schema": "discrete-health-buckets/1",
+        "authority": "docs/authority/产品完成度定义与推进总纲-20260918.md §1.2（v1，2026-09-18） + docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md §二（v1.1，2026-09-19） + 方案-项目度量-从声明驱动到事实驱动.md §四/§六（创始人授权引用）",
+        "granularity": "acceptance_point(product-lines.yaml)",
+        "denominator": 5,
+        "denominator_note": "与 `docs/synova/project/ledger.json` 的 totals.buckets 分母不同（此处 = product-lines.yaml 验收点数；账本 = V1 断言表条数）——同名档不可跨件混读，各档自带 denominator",
+        "healthy": {
+          "count": 0,
+          "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.healthy']['count'];print('healthy=%s' % v)\"",
+          "definition": "总纲 §1.2「健康」（live && testedThroughEntry）的可判定代理：验收点六态 = verified（审计员 PASS 或创始人演示核验；机器绿但未审 ≠ 此档）",
+          "source": "证据记录（六态状态机出口 verified）",
+          "reason": null
+        },
+        "written_not_wired": {
+          "count": 0,
+          "evidence_cmd": "python3 - written_not_wired <<'PY'\nimport glob, re, sys\nrows = [[c.strip() for c in l.strip().strip('|').split('|')]\n        for l in open(sorted(glob.glob('docs/synova/project/26线-V1验收标准*.md'))[-1], encoding='utf-8')\n        if re.match(r'^\\|\\s*\\d+-\\d+\\s*\\|', l)]\nprint('written_not_wired=%d' % sum(1 for r in rows if len(r) >= 5 and r[3] == 'pending_wiring'))\nPY",
+          "definition": "总纲 §1.2「写了没接」（implemented=true, wired=false）：V1 断言表「证据」列= pending_wiring 撤回标记（D809；显式声明，非 grep 静态判定）",
+          "source": "V1 断言表「证据」列 = pending_wiring（D809 撤回标记）",
+          "reason": null
+        },
+        "missing": {
+          "count": null,
+          "evidence_cmd": "python3 - implemented <<'PY'\nimport glob, re, sys\nname = sys.argv[1]\nhits = []\nfor f in (sorted(glob.glob('docs/synova/product-lines/*.yaml'))\n          + sorted(glob.glob('docs/synova/product-lines/evidence/*.json'))):\n    try:\n        txt = open(f, encoding='utf-8').read()\n    except OSError:\n        continue\n    if re.search(r'(?m)^\\s*\"?%s\"?\\s*:' % name, txt):\n        hits.append(f)\nprint('%s=%s' % (name, 'SOURCE_PRESENT' if hits else 'SOURCE_ABSENT'))\nPY",
+          "definition": "总纲 §1.2「缺」（implemented=false）：判定手段 = 代码检索；本口径禁用 grep 型静态判据（事实驱动 §六 实测 3/5=60%），且「无证据」≠「无实现」（诚实规则）",
+          "source": "判定手段 = 代码检索（本口径禁用；事实驱动 §六 实测静态检测 3/5=60%）",
+          "reason": "本仓无「implemented」机器可读源（yaml 与证据记录均无；而总纲 §1.2「缺」的判定手段 = 代码检索，本口径禁用 grep 型静态判据）→ 显式 null，禁猜 0。可复现依据 = 本档可复现命令输出 SOURCE_ABSENT"
+        },
+        "other_states": {
+          "wired_broken": {
+            "count": 0,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.wired_broken']['count'];print('wired_broken=%s' % v)\"",
+            "definition": "总纲 §1.2「接了跑不通」（wired=true, live=false）的可判定代理：六态 = failed（机器验证红）或 rejected（审计员否决）——即该点被判定不成立",
+            "source": "证据记录（六态 failed + rejected）",
+            "reason": null
+          },
+          "live_unverified": {
+            "count": 1,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.live_unverified']['count'];print('live_unverified=%s' % v)\"",
+            "definition": "总纲 §1.2「能跑未验证」（live=true, testedThroughEntry=false）：六态 = pending_k3（场景/测试绿但审计员未审）——单独成态，绝不并进健康",
+            "source": "证据记录（六态 pending_k3）",
+            "reason": null
+          },
+          "stale": {
+            "count": 0,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.stale']['count'];print('stale=%s' % v)\"",
+            "definition": "六态 = stale（曾点亮但证据过期 >14 天，或证据日期后该线 modules 有代码变更）——五态之外的显式态，单列不并入任何档",
+            "source": "证据记录 + git（六态 stale）",
+            "reason": null
+          },
+          "state_unknown": {
+            "count": 4,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.state_unknown']['count'];print('state_unknown=%s' % v)\"",
+            "definition": "残余：六态 = uncommitted（无证据 → 五态归属不可判定：缺 / 写了没接 / 接了跑不通三选一，无机器可读源）；显式列出以闭合恒等式，不丢点",
+            "source": "product-lines.yaml 验收点 − 撤回集（六态 uncommitted）",
+            "reason": null
+          }
+        },
+        "identity": {
+          "expr": "healthy + written_not_wired + missing + wired_broken + live_unverified + stale + state_unknown = 验收点总数（denominator）",
+          "terms": [
+            "healthy",
+            "live_unverified",
+            "missing",
+            "stale",
+            "state_unknown",
+            "wired_broken",
+            "written_not_wired"
+          ],
+          "null_terms": [
+            "missing"
+          ],
+          "known_terms_sum": 5,
+          "holds": true,
+          "note": "null 档不参与求和（归属不可判定，禁猜 0）；state_unknown 是显式残余，故恒等式永远闭合——任何验收点都不会被静默丢弃"
+        },
+        "strict_source_absent": {
+          "field": "testedThroughEntry / live / wired / implemented",
+          "reason": "总纲 §1.2 的**严格**五态（live && testedThroughEntry）无机器可读源（e2e 不在 CI，第 0 项 P-3 未立项）。故 buckets.healthy 报的是六态 verified 口径的可判定代理，不冒充严格健康数——数字与口径同时给出，读者可自行判定可信度"
+        }
+      },
       "k3_gate": "",
       "status_counts": {
         "uncommitted": 4,
@@ -1069,6 +2201,86 @@
       "total": 5,
       "verified": 0,
       "progress_pct": 0,
+      "buckets": {
+        "schema": "discrete-health-buckets/1",
+        "authority": "docs/authority/产品完成度定义与推进总纲-20260918.md §1.2（v1，2026-09-18） + docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md §二（v1.1，2026-09-19） + 方案-项目度量-从声明驱动到事实驱动.md §四/§六（创始人授权引用）",
+        "granularity": "acceptance_point(product-lines.yaml)",
+        "denominator": 5,
+        "denominator_note": "与 `docs/synova/project/ledger.json` 的 totals.buckets 分母不同（此处 = product-lines.yaml 验收点数；账本 = V1 断言表条数）——同名档不可跨件混读，各档自带 denominator",
+        "healthy": {
+          "count": 0,
+          "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.healthy']['count'];print('healthy=%s' % v)\"",
+          "definition": "总纲 §1.2「健康」（live && testedThroughEntry）的可判定代理：验收点六态 = verified（审计员 PASS 或创始人演示核验；机器绿但未审 ≠ 此档）",
+          "source": "证据记录（六态状态机出口 verified）",
+          "reason": null
+        },
+        "written_not_wired": {
+          "count": 0,
+          "evidence_cmd": "python3 - written_not_wired <<'PY'\nimport glob, re, sys\nrows = [[c.strip() for c in l.strip().strip('|').split('|')]\n        for l in open(sorted(glob.glob('docs/synova/project/26线-V1验收标准*.md'))[-1], encoding='utf-8')\n        if re.match(r'^\\|\\s*\\d+-\\d+\\s*\\|', l)]\nprint('written_not_wired=%d' % sum(1 for r in rows if len(r) >= 5 and r[3] == 'pending_wiring'))\nPY",
+          "definition": "总纲 §1.2「写了没接」（implemented=true, wired=false）：V1 断言表「证据」列= pending_wiring 撤回标记（D809；显式声明，非 grep 静态判定）",
+          "source": "V1 断言表「证据」列 = pending_wiring（D809 撤回标记）",
+          "reason": null
+        },
+        "missing": {
+          "count": null,
+          "evidence_cmd": "python3 - implemented <<'PY'\nimport glob, re, sys\nname = sys.argv[1]\nhits = []\nfor f in (sorted(glob.glob('docs/synova/product-lines/*.yaml'))\n          + sorted(glob.glob('docs/synova/product-lines/evidence/*.json'))):\n    try:\n        txt = open(f, encoding='utf-8').read()\n    except OSError:\n        continue\n    if re.search(r'(?m)^\\s*\"?%s\"?\\s*:' % name, txt):\n        hits.append(f)\nprint('%s=%s' % (name, 'SOURCE_PRESENT' if hits else 'SOURCE_ABSENT'))\nPY",
+          "definition": "总纲 §1.2「缺」（implemented=false）：判定手段 = 代码检索；本口径禁用 grep 型静态判据（事实驱动 §六 实测 3/5=60%），且「无证据」≠「无实现」（诚实规则）",
+          "source": "判定手段 = 代码检索（本口径禁用；事实驱动 §六 实测静态检测 3/5=60%）",
+          "reason": "本仓无「implemented」机器可读源（yaml 与证据记录均无；而总纲 §1.2「缺」的判定手段 = 代码检索，本口径禁用 grep 型静态判据）→ 显式 null，禁猜 0。可复现依据 = 本档可复现命令输出 SOURCE_ABSENT"
+        },
+        "other_states": {
+          "wired_broken": {
+            "count": 0,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.wired_broken']['count'];print('wired_broken=%s' % v)\"",
+            "definition": "总纲 §1.2「接了跑不通」（wired=true, live=false）的可判定代理：六态 = failed（机器验证红）或 rejected（审计员否决）——即该点被判定不成立",
+            "source": "证据记录（六态 failed + rejected）",
+            "reason": null
+          },
+          "live_unverified": {
+            "count": 1,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.live_unverified']['count'];print('live_unverified=%s' % v)\"",
+            "definition": "总纲 §1.2「能跑未验证」（live=true, testedThroughEntry=false）：六态 = pending_k3（场景/测试绿但审计员未审）——单独成态，绝不并进健康",
+            "source": "证据记录（六态 pending_k3）",
+            "reason": null
+          },
+          "stale": {
+            "count": 0,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.stale']['count'];print('stale=%s' % v)\"",
+            "definition": "六态 = stale（曾点亮但证据过期 >14 天，或证据日期后该线 modules 有代码变更）——五态之外的显式态，单列不并入任何档",
+            "source": "证据记录 + git（六态 stale）",
+            "reason": null
+          },
+          "state_unknown": {
+            "count": 4,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.state_unknown']['count'];print('state_unknown=%s' % v)\"",
+            "definition": "残余：六态 = uncommitted（无证据 → 五态归属不可判定：缺 / 写了没接 / 接了跑不通三选一，无机器可读源）；显式列出以闭合恒等式，不丢点",
+            "source": "product-lines.yaml 验收点 − 撤回集（六态 uncommitted）",
+            "reason": null
+          }
+        },
+        "identity": {
+          "expr": "healthy + written_not_wired + missing + wired_broken + live_unverified + stale + state_unknown = 验收点总数（denominator）",
+          "terms": [
+            "healthy",
+            "live_unverified",
+            "missing",
+            "stale",
+            "state_unknown",
+            "wired_broken",
+            "written_not_wired"
+          ],
+          "null_terms": [
+            "missing"
+          ],
+          "known_terms_sum": 5,
+          "holds": true,
+          "note": "null 档不参与求和（归属不可判定，禁猜 0）；state_unknown 是显式残余，故恒等式永远闭合——任何验收点都不会被静默丢弃"
+        },
+        "strict_source_absent": {
+          "field": "testedThroughEntry / live / wired / implemented",
+          "reason": "总纲 §1.2 的**严格**五态（live && testedThroughEntry）无机器可读源（e2e 不在 CI，第 0 项 P-3 未立项）。故 buckets.healthy 报的是六态 verified 口径的可判定代理，不冒充严格健康数——数字与口径同时给出，读者可自行判定可信度"
+        }
+      },
       "k3_gate": "",
       "status_counts": {
         "uncommitted": 4,
@@ -1127,20 +2339,100 @@
       "total": 7,
       "verified": 0,
       "progress_pct": 0,
+      "buckets": {
+        "schema": "discrete-health-buckets/1",
+        "authority": "docs/authority/产品完成度定义与推进总纲-20260918.md §1.2（v1，2026-09-18） + docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md §二（v1.1，2026-09-19） + 方案-项目度量-从声明驱动到事实驱动.md §四/§六（创始人授权引用）",
+        "granularity": "acceptance_point(product-lines.yaml)",
+        "denominator": 7,
+        "denominator_note": "与 `docs/synova/project/ledger.json` 的 totals.buckets 分母不同（此处 = product-lines.yaml 验收点数；账本 = V1 断言表条数）——同名档不可跨件混读，各档自带 denominator",
+        "healthy": {
+          "count": 0,
+          "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.healthy']['count'];print('healthy=%s' % v)\"",
+          "definition": "总纲 §1.2「健康」（live && testedThroughEntry）的可判定代理：验收点六态 = verified（审计员 PASS 或创始人演示核验；机器绿但未审 ≠ 此档）",
+          "source": "证据记录（六态状态机出口 verified）",
+          "reason": null
+        },
+        "written_not_wired": {
+          "count": 0,
+          "evidence_cmd": "python3 - written_not_wired <<'PY'\nimport glob, re, sys\nrows = [[c.strip() for c in l.strip().strip('|').split('|')]\n        for l in open(sorted(glob.glob('docs/synova/project/26线-V1验收标准*.md'))[-1], encoding='utf-8')\n        if re.match(r'^\\|\\s*\\d+-\\d+\\s*\\|', l)]\nprint('written_not_wired=%d' % sum(1 for r in rows if len(r) >= 5 and r[3] == 'pending_wiring'))\nPY",
+          "definition": "总纲 §1.2「写了没接」（implemented=true, wired=false）：V1 断言表「证据」列= pending_wiring 撤回标记（D809；显式声明，非 grep 静态判定）",
+          "source": "V1 断言表「证据」列 = pending_wiring（D809 撤回标记）",
+          "reason": null
+        },
+        "missing": {
+          "count": null,
+          "evidence_cmd": "python3 - implemented <<'PY'\nimport glob, re, sys\nname = sys.argv[1]\nhits = []\nfor f in (sorted(glob.glob('docs/synova/product-lines/*.yaml'))\n          + sorted(glob.glob('docs/synova/product-lines/evidence/*.json'))):\n    try:\n        txt = open(f, encoding='utf-8').read()\n    except OSError:\n        continue\n    if re.search(r'(?m)^\\s*\"?%s\"?\\s*:' % name, txt):\n        hits.append(f)\nprint('%s=%s' % (name, 'SOURCE_PRESENT' if hits else 'SOURCE_ABSENT'))\nPY",
+          "definition": "总纲 §1.2「缺」（implemented=false）：判定手段 = 代码检索；本口径禁用 grep 型静态判据（事实驱动 §六 实测 3/5=60%），且「无证据」≠「无实现」（诚实规则）",
+          "source": "判定手段 = 代码检索（本口径禁用；事实驱动 §六 实测静态检测 3/5=60%）",
+          "reason": "本仓无「implemented」机器可读源（yaml 与证据记录均无；而总纲 §1.2「缺」的判定手段 = 代码检索，本口径禁用 grep 型静态判据）→ 显式 null，禁猜 0。可复现依据 = 本档可复现命令输出 SOURCE_ABSENT"
+        },
+        "other_states": {
+          "wired_broken": {
+            "count": 0,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.wired_broken']['count'];print('wired_broken=%s' % v)\"",
+            "definition": "总纲 §1.2「接了跑不通」（wired=true, live=false）的可判定代理：六态 = failed（机器验证红）或 rejected（审计员否决）——即该点被判定不成立",
+            "source": "证据记录（六态 failed + rejected）",
+            "reason": null
+          },
+          "live_unverified": {
+            "count": 1,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.live_unverified']['count'];print('live_unverified=%s' % v)\"",
+            "definition": "总纲 §1.2「能跑未验证」（live=true, testedThroughEntry=false）：六态 = pending_k3（场景/测试绿但审计员未审）——单独成态，绝不并进健康",
+            "source": "证据记录（六态 pending_k3）",
+            "reason": null
+          },
+          "stale": {
+            "count": 3,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.stale']['count'];print('stale=%s' % v)\"",
+            "definition": "六态 = stale（曾点亮但证据过期 >14 天，或证据日期后该线 modules 有代码变更）——五态之外的显式态，单列不并入任何档",
+            "source": "证据记录 + git（六态 stale）",
+            "reason": null
+          },
+          "state_unknown": {
+            "count": 3,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.state_unknown']['count'];print('state_unknown=%s' % v)\"",
+            "definition": "残余：六态 = uncommitted（无证据 → 五态归属不可判定：缺 / 写了没接 / 接了跑不通三选一，无机器可读源）；显式列出以闭合恒等式，不丢点",
+            "source": "product-lines.yaml 验收点 − 撤回集（六态 uncommitted）",
+            "reason": null
+          }
+        },
+        "identity": {
+          "expr": "healthy + written_not_wired + missing + wired_broken + live_unverified + stale + state_unknown = 验收点总数（denominator）",
+          "terms": [
+            "healthy",
+            "live_unverified",
+            "missing",
+            "stale",
+            "state_unknown",
+            "wired_broken",
+            "written_not_wired"
+          ],
+          "null_terms": [
+            "missing"
+          ],
+          "known_terms_sum": 7,
+          "holds": true,
+          "note": "null 档不参与求和（归属不可判定，禁猜 0）；state_unknown 是显式残余，故恒等式永远闭合——任何验收点都不会被静默丢弃"
+        },
+        "strict_source_absent": {
+          "field": "testedThroughEntry / live / wired / implemented",
+          "reason": "总纲 §1.2 的**严格**五态（live && testedThroughEntry）无机器可读源（e2e 不在 CI，第 0 项 P-3 未立项）。故 buckets.healthy 报的是六态 verified 口径的可判定代理，不冒充严格健康数——数字与口径同时给出，读者可自行判定可信度"
+        }
+      },
       "k3_gate": "",
       "status_counts": {
         "uncommitted": 3,
         "failed": 0,
-        "pending_k3": 4,
+        "pending_k3": 1,
         "verified": 0,
         "rejected": 0,
-        "stale": 0
+        "stale": 3
       },
       "points": [
         {
           "id": "15-1",
           "desc": "专家注册表 + 文件驱动自动发现（7 位专家全注册）",
-          "status": "pending_k3",
+          "status": "stale",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
             "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
@@ -1152,7 +2444,8 @@
             "docs/synova/product-lines/evidence/test-2026-09-07.json",
             "docs/synova/product-lines/evidence/test-2026-09-12.json",
             "docs/synova/product-lines/evidence/test-2026-09-15-1.json",
-            "docs/synova/product-lines/evidence/test-2026-09-16-1.json"
+            "docs/synova/product-lines/evidence/test-2026-09-16-1.json",
+            "docs/synova/product-lines/evidence/test-2026-09-17.json"
           ],
           "note": "代码实证存在；K3 v1.1：V5 视图硬编码旧 6 专家（D282 未传播）"
         },
@@ -1166,7 +2459,7 @@
         {
           "id": "15-3",
           "desc": "工具/技能工作流接线（专家真能用工具）",
-          "status": "pending_k3",
+          "status": "stale",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
             "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
@@ -1178,14 +2471,15 @@
             "docs/synova/product-lines/evidence/test-2026-09-07.json",
             "docs/synova/product-lines/evidence/test-2026-09-12.json",
             "docs/synova/product-lines/evidence/test-2026-09-15-1.json",
-            "docs/synova/product-lines/evidence/test-2026-09-16-1.json"
+            "docs/synova/product-lines/evidence/test-2026-09-16-1.json",
+            "docs/synova/product-lines/evidence/test-2026-09-17.json"
           ],
           "note": "接线存在（代码实证）"
         },
         {
           "id": "15-4",
           "desc": "专家提示词效果验证（黄金数据集命中率）",
-          "status": "pending_k3",
+          "status": "stale",
           "evidence_files": [
             "docs/synova/product-lines/evidence/task-D396.json",
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
@@ -1198,7 +2492,8 @@
             "docs/synova/product-lines/evidence/test-2026-09-07.json",
             "docs/synova/product-lines/evidence/test-2026-09-12.json",
             "docs/synova/product-lines/evidence/test-2026-09-15-1.json",
-            "docs/synova/product-lines/evidence/test-2026-09-16-1.json"
+            "docs/synova/product-lines/evidence/test-2026-09-16-1.json",
+            "docs/synova/product-lines/evidence/test-2026-09-17.json"
           ],
           "note": "创始人 13 问第 10 问：提示词效果未验证"
         },
@@ -1236,6 +2531,86 @@
       "total": 5,
       "verified": 0,
       "progress_pct": 0,
+      "buckets": {
+        "schema": "discrete-health-buckets/1",
+        "authority": "docs/authority/产品完成度定义与推进总纲-20260918.md §1.2（v1，2026-09-18） + docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md §二（v1.1，2026-09-19） + 方案-项目度量-从声明驱动到事实驱动.md §四/§六（创始人授权引用）",
+        "granularity": "acceptance_point(product-lines.yaml)",
+        "denominator": 5,
+        "denominator_note": "与 `docs/synova/project/ledger.json` 的 totals.buckets 分母不同（此处 = product-lines.yaml 验收点数；账本 = V1 断言表条数）——同名档不可跨件混读，各档自带 denominator",
+        "healthy": {
+          "count": 0,
+          "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.healthy']['count'];print('healthy=%s' % v)\"",
+          "definition": "总纲 §1.2「健康」（live && testedThroughEntry）的可判定代理：验收点六态 = verified（审计员 PASS 或创始人演示核验；机器绿但未审 ≠ 此档）",
+          "source": "证据记录（六态状态机出口 verified）",
+          "reason": null
+        },
+        "written_not_wired": {
+          "count": 0,
+          "evidence_cmd": "python3 - written_not_wired <<'PY'\nimport glob, re, sys\nrows = [[c.strip() for c in l.strip().strip('|').split('|')]\n        for l in open(sorted(glob.glob('docs/synova/project/26线-V1验收标准*.md'))[-1], encoding='utf-8')\n        if re.match(r'^\\|\\s*\\d+-\\d+\\s*\\|', l)]\nprint('written_not_wired=%d' % sum(1 for r in rows if len(r) >= 5 and r[3] == 'pending_wiring'))\nPY",
+          "definition": "总纲 §1.2「写了没接」（implemented=true, wired=false）：V1 断言表「证据」列= pending_wiring 撤回标记（D809；显式声明，非 grep 静态判定）",
+          "source": "V1 断言表「证据」列 = pending_wiring（D809 撤回标记）",
+          "reason": null
+        },
+        "missing": {
+          "count": null,
+          "evidence_cmd": "python3 - implemented <<'PY'\nimport glob, re, sys\nname = sys.argv[1]\nhits = []\nfor f in (sorted(glob.glob('docs/synova/product-lines/*.yaml'))\n          + sorted(glob.glob('docs/synova/product-lines/evidence/*.json'))):\n    try:\n        txt = open(f, encoding='utf-8').read()\n    except OSError:\n        continue\n    if re.search(r'(?m)^\\s*\"?%s\"?\\s*:' % name, txt):\n        hits.append(f)\nprint('%s=%s' % (name, 'SOURCE_PRESENT' if hits else 'SOURCE_ABSENT'))\nPY",
+          "definition": "总纲 §1.2「缺」（implemented=false）：判定手段 = 代码检索；本口径禁用 grep 型静态判据（事实驱动 §六 实测 3/5=60%），且「无证据」≠「无实现」（诚实规则）",
+          "source": "判定手段 = 代码检索（本口径禁用；事实驱动 §六 实测静态检测 3/5=60%）",
+          "reason": "本仓无「implemented」机器可读源（yaml 与证据记录均无；而总纲 §1.2「缺」的判定手段 = 代码检索，本口径禁用 grep 型静态判据）→ 显式 null，禁猜 0。可复现依据 = 本档可复现命令输出 SOURCE_ABSENT"
+        },
+        "other_states": {
+          "wired_broken": {
+            "count": 0,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.wired_broken']['count'];print('wired_broken=%s' % v)\"",
+            "definition": "总纲 §1.2「接了跑不通」（wired=true, live=false）的可判定代理：六态 = failed（机器验证红）或 rejected（审计员否决）——即该点被判定不成立",
+            "source": "证据记录（六态 failed + rejected）",
+            "reason": null
+          },
+          "live_unverified": {
+            "count": 1,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.live_unverified']['count'];print('live_unverified=%s' % v)\"",
+            "definition": "总纲 §1.2「能跑未验证」（live=true, testedThroughEntry=false）：六态 = pending_k3（场景/测试绿但审计员未审）——单独成态，绝不并进健康",
+            "source": "证据记录（六态 pending_k3）",
+            "reason": null
+          },
+          "stale": {
+            "count": 0,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.stale']['count'];print('stale=%s' % v)\"",
+            "definition": "六态 = stale（曾点亮但证据过期 >14 天，或证据日期后该线 modules 有代码变更）——五态之外的显式态，单列不并入任何档",
+            "source": "证据记录 + git（六态 stale）",
+            "reason": null
+          },
+          "state_unknown": {
+            "count": 4,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.state_unknown']['count'];print('state_unknown=%s' % v)\"",
+            "definition": "残余：六态 = uncommitted（无证据 → 五态归属不可判定：缺 / 写了没接 / 接了跑不通三选一，无机器可读源）；显式列出以闭合恒等式，不丢点",
+            "source": "product-lines.yaml 验收点 − 撤回集（六态 uncommitted）",
+            "reason": null
+          }
+        },
+        "identity": {
+          "expr": "healthy + written_not_wired + missing + wired_broken + live_unverified + stale + state_unknown = 验收点总数（denominator）",
+          "terms": [
+            "healthy",
+            "live_unverified",
+            "missing",
+            "stale",
+            "state_unknown",
+            "wired_broken",
+            "written_not_wired"
+          ],
+          "null_terms": [
+            "missing"
+          ],
+          "known_terms_sum": 5,
+          "holds": true,
+          "note": "null 档不参与求和（归属不可判定，禁猜 0）；state_unknown 是显式残余，故恒等式永远闭合——任何验收点都不会被静默丢弃"
+        },
+        "strict_source_absent": {
+          "field": "testedThroughEntry / live / wired / implemented",
+          "reason": "总纲 §1.2 的**严格**五态（live && testedThroughEntry）无机器可读源（e2e 不在 CI，第 0 项 P-3 未立项）。故 buckets.healthy 报的是六态 verified 口径的可判定代理，不冒充严格健康数——数字与口径同时给出，读者可自行判定可信度"
+        }
+      },
       "k3_gate": "",
       "status_counts": {
         "uncommitted": 4,
@@ -1294,6 +2669,86 @@
       "total": 5,
       "verified": 0,
       "progress_pct": 0,
+      "buckets": {
+        "schema": "discrete-health-buckets/1",
+        "authority": "docs/authority/产品完成度定义与推进总纲-20260918.md §1.2（v1，2026-09-18） + docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md §二（v1.1，2026-09-19） + 方案-项目度量-从声明驱动到事实驱动.md §四/§六（创始人授权引用）",
+        "granularity": "acceptance_point(product-lines.yaml)",
+        "denominator": 5,
+        "denominator_note": "与 `docs/synova/project/ledger.json` 的 totals.buckets 分母不同（此处 = product-lines.yaml 验收点数；账本 = V1 断言表条数）——同名档不可跨件混读，各档自带 denominator",
+        "healthy": {
+          "count": 0,
+          "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.healthy']['count'];print('healthy=%s' % v)\"",
+          "definition": "总纲 §1.2「健康」（live && testedThroughEntry）的可判定代理：验收点六态 = verified（审计员 PASS 或创始人演示核验；机器绿但未审 ≠ 此档）",
+          "source": "证据记录（六态状态机出口 verified）",
+          "reason": null
+        },
+        "written_not_wired": {
+          "count": 0,
+          "evidence_cmd": "python3 - written_not_wired <<'PY'\nimport glob, re, sys\nrows = [[c.strip() for c in l.strip().strip('|').split('|')]\n        for l in open(sorted(glob.glob('docs/synova/project/26线-V1验收标准*.md'))[-1], encoding='utf-8')\n        if re.match(r'^\\|\\s*\\d+-\\d+\\s*\\|', l)]\nprint('written_not_wired=%d' % sum(1 for r in rows if len(r) >= 5 and r[3] == 'pending_wiring'))\nPY",
+          "definition": "总纲 §1.2「写了没接」（implemented=true, wired=false）：V1 断言表「证据」列= pending_wiring 撤回标记（D809；显式声明，非 grep 静态判定）",
+          "source": "V1 断言表「证据」列 = pending_wiring（D809 撤回标记）",
+          "reason": null
+        },
+        "missing": {
+          "count": null,
+          "evidence_cmd": "python3 - implemented <<'PY'\nimport glob, re, sys\nname = sys.argv[1]\nhits = []\nfor f in (sorted(glob.glob('docs/synova/product-lines/*.yaml'))\n          + sorted(glob.glob('docs/synova/product-lines/evidence/*.json'))):\n    try:\n        txt = open(f, encoding='utf-8').read()\n    except OSError:\n        continue\n    if re.search(r'(?m)^\\s*\"?%s\"?\\s*:' % name, txt):\n        hits.append(f)\nprint('%s=%s' % (name, 'SOURCE_PRESENT' if hits else 'SOURCE_ABSENT'))\nPY",
+          "definition": "总纲 §1.2「缺」（implemented=false）：判定手段 = 代码检索；本口径禁用 grep 型静态判据（事实驱动 §六 实测 3/5=60%），且「无证据」≠「无实现」（诚实规则）",
+          "source": "判定手段 = 代码检索（本口径禁用；事实驱动 §六 实测静态检测 3/5=60%）",
+          "reason": "本仓无「implemented」机器可读源（yaml 与证据记录均无；而总纲 §1.2「缺」的判定手段 = 代码检索，本口径禁用 grep 型静态判据）→ 显式 null，禁猜 0。可复现依据 = 本档可复现命令输出 SOURCE_ABSENT"
+        },
+        "other_states": {
+          "wired_broken": {
+            "count": 2,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.wired_broken']['count'];print('wired_broken=%s' % v)\"",
+            "definition": "总纲 §1.2「接了跑不通」（wired=true, live=false）的可判定代理：六态 = failed（机器验证红）或 rejected（审计员否决）——即该点被判定不成立",
+            "source": "证据记录（六态 failed + rejected）",
+            "reason": null
+          },
+          "live_unverified": {
+            "count": 1,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.live_unverified']['count'];print('live_unverified=%s' % v)\"",
+            "definition": "总纲 §1.2「能跑未验证」（live=true, testedThroughEntry=false）：六态 = pending_k3（场景/测试绿但审计员未审）——单独成态，绝不并进健康",
+            "source": "证据记录（六态 pending_k3）",
+            "reason": null
+          },
+          "stale": {
+            "count": 0,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.stale']['count'];print('stale=%s' % v)\"",
+            "definition": "六态 = stale（曾点亮但证据过期 >14 天，或证据日期后该线 modules 有代码变更）——五态之外的显式态，单列不并入任何档",
+            "source": "证据记录 + git（六态 stale）",
+            "reason": null
+          },
+          "state_unknown": {
+            "count": 2,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.state_unknown']['count'];print('state_unknown=%s' % v)\"",
+            "definition": "残余：六态 = uncommitted（无证据 → 五态归属不可判定：缺 / 写了没接 / 接了跑不通三选一，无机器可读源）；显式列出以闭合恒等式，不丢点",
+            "source": "product-lines.yaml 验收点 − 撤回集（六态 uncommitted）",
+            "reason": null
+          }
+        },
+        "identity": {
+          "expr": "healthy + written_not_wired + missing + wired_broken + live_unverified + stale + state_unknown = 验收点总数（denominator）",
+          "terms": [
+            "healthy",
+            "live_unverified",
+            "missing",
+            "stale",
+            "state_unknown",
+            "wired_broken",
+            "written_not_wired"
+          ],
+          "null_terms": [
+            "missing"
+          ],
+          "known_terms_sum": 5,
+          "holds": true,
+          "note": "null 档不参与求和（归属不可判定，禁猜 0）；state_unknown 是显式残余，故恒等式永远闭合——任何验收点都不会被静默丢弃"
+        },
+        "strict_source_absent": {
+          "field": "testedThroughEntry / live / wired / implemented",
+          "reason": "总纲 §1.2 的**严格**五态（live && testedThroughEntry）无机器可读源（e2e 不在 CI，第 0 项 P-3 未立项）。故 buckets.healthy 报的是六态 verified 口径的可判定代理，不冒充严格健康数——数字与口径同时给出，读者可自行判定可信度"
+        }
+      },
       "k3_gate": "",
       "status_counts": {
         "uncommitted": 2,
@@ -1354,14 +2809,94 @@
       "total": 6,
       "verified": 0,
       "progress_pct": 0,
+      "buckets": {
+        "schema": "discrete-health-buckets/1",
+        "authority": "docs/authority/产品完成度定义与推进总纲-20260918.md §1.2（v1，2026-09-18） + docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md §二（v1.1，2026-09-19） + 方案-项目度量-从声明驱动到事实驱动.md §四/§六（创始人授权引用）",
+        "granularity": "acceptance_point(product-lines.yaml)",
+        "denominator": 6,
+        "denominator_note": "与 `docs/synova/project/ledger.json` 的 totals.buckets 分母不同（此处 = product-lines.yaml 验收点数；账本 = V1 断言表条数）——同名档不可跨件混读，各档自带 denominator",
+        "healthy": {
+          "count": 0,
+          "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.healthy']['count'];print('healthy=%s' % v)\"",
+          "definition": "总纲 §1.2「健康」（live && testedThroughEntry）的可判定代理：验收点六态 = verified（审计员 PASS 或创始人演示核验；机器绿但未审 ≠ 此档）",
+          "source": "证据记录（六态状态机出口 verified）",
+          "reason": null
+        },
+        "written_not_wired": {
+          "count": 0,
+          "evidence_cmd": "python3 - written_not_wired <<'PY'\nimport glob, re, sys\nrows = [[c.strip() for c in l.strip().strip('|').split('|')]\n        for l in open(sorted(glob.glob('docs/synova/project/26线-V1验收标准*.md'))[-1], encoding='utf-8')\n        if re.match(r'^\\|\\s*\\d+-\\d+\\s*\\|', l)]\nprint('written_not_wired=%d' % sum(1 for r in rows if len(r) >= 5 and r[3] == 'pending_wiring'))\nPY",
+          "definition": "总纲 §1.2「写了没接」（implemented=true, wired=false）：V1 断言表「证据」列= pending_wiring 撤回标记（D809；显式声明，非 grep 静态判定）",
+          "source": "V1 断言表「证据」列 = pending_wiring（D809 撤回标记）",
+          "reason": null
+        },
+        "missing": {
+          "count": null,
+          "evidence_cmd": "python3 - implemented <<'PY'\nimport glob, re, sys\nname = sys.argv[1]\nhits = []\nfor f in (sorted(glob.glob('docs/synova/product-lines/*.yaml'))\n          + sorted(glob.glob('docs/synova/product-lines/evidence/*.json'))):\n    try:\n        txt = open(f, encoding='utf-8').read()\n    except OSError:\n        continue\n    if re.search(r'(?m)^\\s*\"?%s\"?\\s*:' % name, txt):\n        hits.append(f)\nprint('%s=%s' % (name, 'SOURCE_PRESENT' if hits else 'SOURCE_ABSENT'))\nPY",
+          "definition": "总纲 §1.2「缺」（implemented=false）：判定手段 = 代码检索；本口径禁用 grep 型静态判据（事实驱动 §六 实测 3/5=60%），且「无证据」≠「无实现」（诚实规则）",
+          "source": "判定手段 = 代码检索（本口径禁用；事实驱动 §六 实测静态检测 3/5=60%）",
+          "reason": "本仓无「implemented」机器可读源（yaml 与证据记录均无；而总纲 §1.2「缺」的判定手段 = 代码检索，本口径禁用 grep 型静态判据）→ 显式 null，禁猜 0。可复现依据 = 本档可复现命令输出 SOURCE_ABSENT"
+        },
+        "other_states": {
+          "wired_broken": {
+            "count": 0,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.wired_broken']['count'];print('wired_broken=%s' % v)\"",
+            "definition": "总纲 §1.2「接了跑不通」（wired=true, live=false）的可判定代理：六态 = failed（机器验证红）或 rejected（审计员否决）——即该点被判定不成立",
+            "source": "证据记录（六态 failed + rejected）",
+            "reason": null
+          },
+          "live_unverified": {
+            "count": 1,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.live_unverified']['count'];print('live_unverified=%s' % v)\"",
+            "definition": "总纲 §1.2「能跑未验证」（live=true, testedThroughEntry=false）：六态 = pending_k3（场景/测试绿但审计员未审）——单独成态，绝不并进健康",
+            "source": "证据记录（六态 pending_k3）",
+            "reason": null
+          },
+          "stale": {
+            "count": 3,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.stale']['count'];print('stale=%s' % v)\"",
+            "definition": "六态 = stale（曾点亮但证据过期 >14 天，或证据日期后该线 modules 有代码变更）——五态之外的显式态，单列不并入任何档",
+            "source": "证据记录 + git（六态 stale）",
+            "reason": null
+          },
+          "state_unknown": {
+            "count": 2,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.state_unknown']['count'];print('state_unknown=%s' % v)\"",
+            "definition": "残余：六态 = uncommitted（无证据 → 五态归属不可判定：缺 / 写了没接 / 接了跑不通三选一，无机器可读源）；显式列出以闭合恒等式，不丢点",
+            "source": "product-lines.yaml 验收点 − 撤回集（六态 uncommitted）",
+            "reason": null
+          }
+        },
+        "identity": {
+          "expr": "healthy + written_not_wired + missing + wired_broken + live_unverified + stale + state_unknown = 验收点总数（denominator）",
+          "terms": [
+            "healthy",
+            "live_unverified",
+            "missing",
+            "stale",
+            "state_unknown",
+            "wired_broken",
+            "written_not_wired"
+          ],
+          "null_terms": [
+            "missing"
+          ],
+          "known_terms_sum": 6,
+          "holds": true,
+          "note": "null 档不参与求和（归属不可判定，禁猜 0）；state_unknown 是显式残余，故恒等式永远闭合——任何验收点都不会被静默丢弃"
+        },
+        "strict_source_absent": {
+          "field": "testedThroughEntry / live / wired / implemented",
+          "reason": "总纲 §1.2 的**严格**五态（live && testedThroughEntry）无机器可读源（e2e 不在 CI，第 0 项 P-3 未立项）。故 buckets.healthy 报的是六态 verified 口径的可判定代理，不冒充严格健康数——数字与口径同时给出，读者可自行判定可信度"
+        }
+      },
       "k3_gate": "",
       "status_counts": {
         "uncommitted": 2,
         "failed": 0,
-        "pending_k3": 3,
+        "pending_k3": 1,
         "verified": 0,
         "rejected": 0,
-        "stale": 1
+        "stale": 3
       },
       "points": [
         {
@@ -1377,8 +2912,9 @@
         {
           "id": "18-2",
           "desc": "SessionStore + 重启恢复（重启后记忆还在）",
-          "status": "pending_k3",
+          "status": "stale",
           "evidence_files": [
+            "docs/synova/product-lines/evidence/D806-borrow-cards-20260918.json",
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
             "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
             "docs/synova/product-lines/evidence/test-2026-08-18.json",
@@ -1389,7 +2925,8 @@
             "docs/synova/product-lines/evidence/test-2026-09-07.json",
             "docs/synova/product-lines/evidence/test-2026-09-12.json",
             "docs/synova/product-lines/evidence/test-2026-09-15-1.json",
-            "docs/synova/product-lines/evidence/test-2026-09-16-1.json"
+            "docs/synova/product-lines/evidence/test-2026-09-16-1.json",
+            "docs/synova/product-lines/evidence/test-2026-09-17.json"
           ],
           "note": "代码实证存在；重启恢复测试未作为证据登记"
         },
@@ -1410,7 +2947,7 @@
         {
           "id": "18-5",
           "desc": "版本化 + superseded_by 链（事实更新可追溯）",
-          "status": "pending_k3",
+          "status": "stale",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
             "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
@@ -1422,7 +2959,8 @@
             "docs/synova/product-lines/evidence/test-2026-09-07.json",
             "docs/synova/product-lines/evidence/test-2026-09-12.json",
             "docs/synova/product-lines/evidence/test-2026-09-15-1.json",
-            "docs/synova/product-lines/evidence/test-2026-09-16-1.json"
+            "docs/synova/product-lines/evidence/test-2026-09-16-1.json",
+            "docs/synova/product-lines/evidence/test-2026-09-17.json"
           ],
           "note": "企业事实层设计存在"
         },
@@ -1444,16 +2982,96 @@
       "baseline_note": "direction-monitor 零调用——诚实 0",
       "done_definition": "企业方向出现失效信号时，24 小时内系统自动跑一次诊断，不等老板想起来",
       "total": 5,
-      "verified": 1,
-      "progress_pct": 20,
+      "verified": 0,
+      "progress_pct": 0,
+      "buckets": {
+        "schema": "discrete-health-buckets/1",
+        "authority": "docs/authority/产品完成度定义与推进总纲-20260918.md §1.2（v1，2026-09-18） + docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md §二（v1.1，2026-09-19） + 方案-项目度量-从声明驱动到事实驱动.md §四/§六（创始人授权引用）",
+        "granularity": "acceptance_point(product-lines.yaml)",
+        "denominator": 5,
+        "denominator_note": "与 `docs/synova/project/ledger.json` 的 totals.buckets 分母不同（此处 = product-lines.yaml 验收点数；账本 = V1 断言表条数）——同名档不可跨件混读，各档自带 denominator",
+        "healthy": {
+          "count": 0,
+          "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.healthy']['count'];print('healthy=%s' % v)\"",
+          "definition": "总纲 §1.2「健康」（live && testedThroughEntry）的可判定代理：验收点六态 = verified（审计员 PASS 或创始人演示核验；机器绿但未审 ≠ 此档）",
+          "source": "证据记录（六态状态机出口 verified）",
+          "reason": null
+        },
+        "written_not_wired": {
+          "count": 0,
+          "evidence_cmd": "python3 - written_not_wired <<'PY'\nimport glob, re, sys\nrows = [[c.strip() for c in l.strip().strip('|').split('|')]\n        for l in open(sorted(glob.glob('docs/synova/project/26线-V1验收标准*.md'))[-1], encoding='utf-8')\n        if re.match(r'^\\|\\s*\\d+-\\d+\\s*\\|', l)]\nprint('written_not_wired=%d' % sum(1 for r in rows if len(r) >= 5 and r[3] == 'pending_wiring'))\nPY",
+          "definition": "总纲 §1.2「写了没接」（implemented=true, wired=false）：V1 断言表「证据」列= pending_wiring 撤回标记（D809；显式声明，非 grep 静态判定）",
+          "source": "V1 断言表「证据」列 = pending_wiring（D809 撤回标记）",
+          "reason": null
+        },
+        "missing": {
+          "count": null,
+          "evidence_cmd": "python3 - implemented <<'PY'\nimport glob, re, sys\nname = sys.argv[1]\nhits = []\nfor f in (sorted(glob.glob('docs/synova/product-lines/*.yaml'))\n          + sorted(glob.glob('docs/synova/product-lines/evidence/*.json'))):\n    try:\n        txt = open(f, encoding='utf-8').read()\n    except OSError:\n        continue\n    if re.search(r'(?m)^\\s*\"?%s\"?\\s*:' % name, txt):\n        hits.append(f)\nprint('%s=%s' % (name, 'SOURCE_PRESENT' if hits else 'SOURCE_ABSENT'))\nPY",
+          "definition": "总纲 §1.2「缺」（implemented=false）：判定手段 = 代码检索；本口径禁用 grep 型静态判据（事实驱动 §六 实测 3/5=60%），且「无证据」≠「无实现」（诚实规则）",
+          "source": "判定手段 = 代码检索（本口径禁用；事实驱动 §六 实测静态检测 3/5=60%）",
+          "reason": "本仓无「implemented」机器可读源（yaml 与证据记录均无；而总纲 §1.2「缺」的判定手段 = 代码检索，本口径禁用 grep 型静态判据）→ 显式 null，禁猜 0。可复现依据 = 本档可复现命令输出 SOURCE_ABSENT"
+        },
+        "other_states": {
+          "wired_broken": {
+            "count": 1,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.wired_broken']['count'];print('wired_broken=%s' % v)\"",
+            "definition": "总纲 §1.2「接了跑不通」（wired=true, live=false）的可判定代理：六态 = failed（机器验证红）或 rejected（审计员否决）——即该点被判定不成立",
+            "source": "证据记录（六态 failed + rejected）",
+            "reason": null
+          },
+          "live_unverified": {
+            "count": 1,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.live_unverified']['count'];print('live_unverified=%s' % v)\"",
+            "definition": "总纲 §1.2「能跑未验证」（live=true, testedThroughEntry=false）：六态 = pending_k3（场景/测试绿但审计员未审）——单独成态，绝不并进健康",
+            "source": "证据记录（六态 pending_k3）",
+            "reason": null
+          },
+          "stale": {
+            "count": 1,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.stale']['count'];print('stale=%s' % v)\"",
+            "definition": "六态 = stale（曾点亮但证据过期 >14 天，或证据日期后该线 modules 有代码变更）——五态之外的显式态，单列不并入任何档",
+            "source": "证据记录 + git（六态 stale）",
+            "reason": null
+          },
+          "state_unknown": {
+            "count": 2,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.state_unknown']['count'];print('state_unknown=%s' % v)\"",
+            "definition": "残余：六态 = uncommitted（无证据 → 五态归属不可判定：缺 / 写了没接 / 接了跑不通三选一，无机器可读源）；显式列出以闭合恒等式，不丢点",
+            "source": "product-lines.yaml 验收点 − 撤回集（六态 uncommitted）",
+            "reason": null
+          }
+        },
+        "identity": {
+          "expr": "healthy + written_not_wired + missing + wired_broken + live_unverified + stale + state_unknown = 验收点总数（denominator）",
+          "terms": [
+            "healthy",
+            "live_unverified",
+            "missing",
+            "stale",
+            "state_unknown",
+            "wired_broken",
+            "written_not_wired"
+          ],
+          "null_terms": [
+            "missing"
+          ],
+          "known_terms_sum": 5,
+          "holds": true,
+          "note": "null 档不参与求和（归属不可判定，禁猜 0）；state_unknown 是显式残余，故恒等式永远闭合——任何验收点都不会被静默丢弃"
+        },
+        "strict_source_absent": {
+          "field": "testedThroughEntry / live / wired / implemented",
+          "reason": "总纲 §1.2 的**严格**五态（live && testedThroughEntry）无机器可读源（e2e 不在 CI，第 0 项 P-3 未立项）。故 buckets.healthy 报的是六态 verified 口径的可判定代理，不冒充严格健康数——数字与口径同时给出，读者可自行判定可信度"
+        }
+      },
       "k3_gate": "",
       "status_counts": {
         "uncommitted": 2,
         "failed": 0,
         "pending_k3": 1,
-        "verified": 1,
+        "verified": 0,
         "rejected": 1,
-        "stale": 0
+        "stale": 1
       },
       "points": [
         {
@@ -1468,7 +3086,7 @@
         {
           "id": "19-2",
           "desc": "方向失效信号定义（什么算失效，规则明确）",
-          "status": "verified",
+          "status": "stale",
           "evidence_files": [
             "docs/synova/product-lines/evidence/k3-2026-09-02-productlines.json",
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
@@ -1481,7 +3099,8 @@
             "docs/synova/product-lines/evidence/test-2026-09-07.json",
             "docs/synova/product-lines/evidence/test-2026-09-12.json",
             "docs/synova/product-lines/evidence/test-2026-09-15-1.json",
-            "docs/synova/product-lines/evidence/test-2026-09-16-1.json"
+            "docs/synova/product-lines/evidence/test-2026-09-16-1.json",
+            "docs/synova/product-lines/evidence/test-2026-09-17.json"
           ],
           "note": ""
         },
@@ -1519,14 +3138,94 @@
       "total": 6,
       "verified": 0,
       "progress_pct": 0,
+      "buckets": {
+        "schema": "discrete-health-buckets/1",
+        "authority": "docs/authority/产品完成度定义与推进总纲-20260918.md §1.2（v1，2026-09-18） + docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md §二（v1.1，2026-09-19） + 方案-项目度量-从声明驱动到事实驱动.md §四/§六（创始人授权引用）",
+        "granularity": "acceptance_point(product-lines.yaml)",
+        "denominator": 6,
+        "denominator_note": "与 `docs/synova/project/ledger.json` 的 totals.buckets 分母不同（此处 = product-lines.yaml 验收点数；账本 = V1 断言表条数）——同名档不可跨件混读，各档自带 denominator",
+        "healthy": {
+          "count": 0,
+          "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.healthy']['count'];print('healthy=%s' % v)\"",
+          "definition": "总纲 §1.2「健康」（live && testedThroughEntry）的可判定代理：验收点六态 = verified（审计员 PASS 或创始人演示核验；机器绿但未审 ≠ 此档）",
+          "source": "证据记录（六态状态机出口 verified）",
+          "reason": null
+        },
+        "written_not_wired": {
+          "count": 2,
+          "evidence_cmd": "python3 - written_not_wired <<'PY'\nimport glob, re, sys\nrows = [[c.strip() for c in l.strip().strip('|').split('|')]\n        for l in open(sorted(glob.glob('docs/synova/project/26线-V1验收标准*.md'))[-1], encoding='utf-8')\n        if re.match(r'^\\|\\s*\\d+-\\d+\\s*\\|', l)]\nprint('written_not_wired=%d' % sum(1 for r in rows if len(r) >= 5 and r[3] == 'pending_wiring'))\nPY",
+          "definition": "总纲 §1.2「写了没接」（implemented=true, wired=false）：V1 断言表「证据」列= pending_wiring 撤回标记（D809；显式声明，非 grep 静态判定）",
+          "source": "V1 断言表「证据」列 = pending_wiring（D809 撤回标记）",
+          "reason": null
+        },
+        "missing": {
+          "count": null,
+          "evidence_cmd": "python3 - implemented <<'PY'\nimport glob, re, sys\nname = sys.argv[1]\nhits = []\nfor f in (sorted(glob.glob('docs/synova/product-lines/*.yaml'))\n          + sorted(glob.glob('docs/synova/product-lines/evidence/*.json'))):\n    try:\n        txt = open(f, encoding='utf-8').read()\n    except OSError:\n        continue\n    if re.search(r'(?m)^\\s*\"?%s\"?\\s*:' % name, txt):\n        hits.append(f)\nprint('%s=%s' % (name, 'SOURCE_PRESENT' if hits else 'SOURCE_ABSENT'))\nPY",
+          "definition": "总纲 §1.2「缺」（implemented=false）：判定手段 = 代码检索；本口径禁用 grep 型静态判据（事实驱动 §六 实测 3/5=60%），且「无证据」≠「无实现」（诚实规则）",
+          "source": "判定手段 = 代码检索（本口径禁用；事实驱动 §六 实测静态检测 3/5=60%）",
+          "reason": "本仓无「implemented」机器可读源（yaml 与证据记录均无；而总纲 §1.2「缺」的判定手段 = 代码检索，本口径禁用 grep 型静态判据）→ 显式 null，禁猜 0。可复现依据 = 本档可复现命令输出 SOURCE_ABSENT"
+        },
+        "other_states": {
+          "wired_broken": {
+            "count": 0,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.wired_broken']['count'];print('wired_broken=%s' % v)\"",
+            "definition": "总纲 §1.2「接了跑不通」（wired=true, live=false）的可判定代理：六态 = failed（机器验证红）或 rejected（审计员否决）——即该点被判定不成立",
+            "source": "证据记录（六态 failed + rejected）",
+            "reason": null
+          },
+          "live_unverified": {
+            "count": 1,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.live_unverified']['count'];print('live_unverified=%s' % v)\"",
+            "definition": "总纲 §1.2「能跑未验证」（live=true, testedThroughEntry=false）：六态 = pending_k3（场景/测试绿但审计员未审）——单独成态，绝不并进健康",
+            "source": "证据记录（六态 pending_k3）",
+            "reason": null
+          },
+          "stale": {
+            "count": 2,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.stale']['count'];print('stale=%s' % v)\"",
+            "definition": "六态 = stale（曾点亮但证据过期 >14 天，或证据日期后该线 modules 有代码变更）——五态之外的显式态，单列不并入任何档",
+            "source": "证据记录 + git（六态 stale）",
+            "reason": null
+          },
+          "state_unknown": {
+            "count": 1,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.state_unknown']['count'];print('state_unknown=%s' % v)\"",
+            "definition": "残余：六态 = uncommitted（无证据 → 五态归属不可判定：缺 / 写了没接 / 接了跑不通三选一，无机器可读源）；显式列出以闭合恒等式，不丢点",
+            "source": "product-lines.yaml 验收点 − 撤回集（六态 uncommitted）",
+            "reason": null
+          }
+        },
+        "identity": {
+          "expr": "healthy + written_not_wired + missing + wired_broken + live_unverified + stale + state_unknown = 验收点总数（denominator）",
+          "terms": [
+            "healthy",
+            "live_unverified",
+            "missing",
+            "stale",
+            "state_unknown",
+            "wired_broken",
+            "written_not_wired"
+          ],
+          "null_terms": [
+            "missing"
+          ],
+          "known_terms_sum": 6,
+          "holds": true,
+          "note": "null 档不参与求和（归属不可判定，禁猜 0）；state_unknown 是显式残余，故恒等式永远闭合——任何验收点都不会被静默丢弃"
+        },
+        "strict_source_absent": {
+          "field": "testedThroughEntry / live / wired / implemented",
+          "reason": "总纲 §1.2 的**严格**五态（live && testedThroughEntry）无机器可读源（e2e 不在 CI，第 0 项 P-3 未立项）。故 buckets.healthy 报的是六态 verified 口径的可判定代理，不冒充严格健康数——数字与口径同时给出，读者可自行判定可信度"
+        }
+      },
       "k3_gate": "",
       "status_counts": {
-        "uncommitted": 4,
+        "uncommitted": 3,
         "failed": 0,
         "pending_k3": 1,
         "verified": 0,
         "rejected": 0,
-        "stale": 1
+        "stale": 2
       },
       "points": [
         {
@@ -1546,8 +3245,10 @@
         {
           "id": "20-3",
           "desc": "上下文窗口管理策略（长会话不爆窗、不丢重点）",
-          "status": "uncommitted",
-          "evidence_files": [],
+          "status": "stale",
+          "evidence_files": [
+            "docs/synova/product-lines/evidence/D806-borrow-cards-20260918.json"
+          ],
           "note": "创始人 13 问第 4 问：当前 = 0，要设计"
         },
         {
@@ -1562,6 +3263,7 @@
           "desc": "熔断/优雅停机/卡会话检测（异常自愈）",
           "status": "stale",
           "evidence_files": [
+            "docs/synova/product-lines/evidence/D806-borrow-cards-20260918.json",
             "docs/synova/product-lines/evidence/k3-2026-09-02-productlines.json",
             "docs/synova/product-lines/evidence/stale-reverify-D589-line20.json",
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
@@ -1574,7 +3276,8 @@
             "docs/synova/product-lines/evidence/test-2026-09-07.json",
             "docs/synova/product-lines/evidence/test-2026-09-12.json",
             "docs/synova/product-lines/evidence/test-2026-09-15-1.json",
-            "docs/synova/product-lines/evidence/test-2026-09-16-1.json"
+            "docs/synova/product-lines/evidence/test-2026-09-16-1.json",
+            "docs/synova/product-lines/evidence/test-2026-09-17.json"
           ],
           "note": "组件存在（代码实证）"
         },
@@ -1598,20 +3301,100 @@
       "total": 5,
       "verified": 0,
       "progress_pct": 0,
+      "buckets": {
+        "schema": "discrete-health-buckets/1",
+        "authority": "docs/authority/产品完成度定义与推进总纲-20260918.md §1.2（v1，2026-09-18） + docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md §二（v1.1，2026-09-19） + 方案-项目度量-从声明驱动到事实驱动.md §四/§六（创始人授权引用）",
+        "granularity": "acceptance_point(product-lines.yaml)",
+        "denominator": 5,
+        "denominator_note": "与 `docs/synova/project/ledger.json` 的 totals.buckets 分母不同（此处 = product-lines.yaml 验收点数；账本 = V1 断言表条数）——同名档不可跨件混读，各档自带 denominator",
+        "healthy": {
+          "count": 0,
+          "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.healthy']['count'];print('healthy=%s' % v)\"",
+          "definition": "总纲 §1.2「健康」（live && testedThroughEntry）的可判定代理：验收点六态 = verified（审计员 PASS 或创始人演示核验；机器绿但未审 ≠ 此档）",
+          "source": "证据记录（六态状态机出口 verified）",
+          "reason": null
+        },
+        "written_not_wired": {
+          "count": 0,
+          "evidence_cmd": "python3 - written_not_wired <<'PY'\nimport glob, re, sys\nrows = [[c.strip() for c in l.strip().strip('|').split('|')]\n        for l in open(sorted(glob.glob('docs/synova/project/26线-V1验收标准*.md'))[-1], encoding='utf-8')\n        if re.match(r'^\\|\\s*\\d+-\\d+\\s*\\|', l)]\nprint('written_not_wired=%d' % sum(1 for r in rows if len(r) >= 5 and r[3] == 'pending_wiring'))\nPY",
+          "definition": "总纲 §1.2「写了没接」（implemented=true, wired=false）：V1 断言表「证据」列= pending_wiring 撤回标记（D809；显式声明，非 grep 静态判定）",
+          "source": "V1 断言表「证据」列 = pending_wiring（D809 撤回标记）",
+          "reason": null
+        },
+        "missing": {
+          "count": null,
+          "evidence_cmd": "python3 - implemented <<'PY'\nimport glob, re, sys\nname = sys.argv[1]\nhits = []\nfor f in (sorted(glob.glob('docs/synova/product-lines/*.yaml'))\n          + sorted(glob.glob('docs/synova/product-lines/evidence/*.json'))):\n    try:\n        txt = open(f, encoding='utf-8').read()\n    except OSError:\n        continue\n    if re.search(r'(?m)^\\s*\"?%s\"?\\s*:' % name, txt):\n        hits.append(f)\nprint('%s=%s' % (name, 'SOURCE_PRESENT' if hits else 'SOURCE_ABSENT'))\nPY",
+          "definition": "总纲 §1.2「缺」（implemented=false）：判定手段 = 代码检索；本口径禁用 grep 型静态判据（事实驱动 §六 实测 3/5=60%），且「无证据」≠「无实现」（诚实规则）",
+          "source": "判定手段 = 代码检索（本口径禁用；事实驱动 §六 实测静态检测 3/5=60%）",
+          "reason": "本仓无「implemented」机器可读源（yaml 与证据记录均无；而总纲 §1.2「缺」的判定手段 = 代码检索，本口径禁用 grep 型静态判据）→ 显式 null，禁猜 0。可复现依据 = 本档可复现命令输出 SOURCE_ABSENT"
+        },
+        "other_states": {
+          "wired_broken": {
+            "count": 0,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.wired_broken']['count'];print('wired_broken=%s' % v)\"",
+            "definition": "总纲 §1.2「接了跑不通」（wired=true, live=false）的可判定代理：六态 = failed（机器验证红）或 rejected（审计员否决）——即该点被判定不成立",
+            "source": "证据记录（六态 failed + rejected）",
+            "reason": null
+          },
+          "live_unverified": {
+            "count": 1,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.live_unverified']['count'];print('live_unverified=%s' % v)\"",
+            "definition": "总纲 §1.2「能跑未验证」（live=true, testedThroughEntry=false）：六态 = pending_k3（场景/测试绿但审计员未审）——单独成态，绝不并进健康",
+            "source": "证据记录（六态 pending_k3）",
+            "reason": null
+          },
+          "stale": {
+            "count": 3,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.stale']['count'];print('stale=%s' % v)\"",
+            "definition": "六态 = stale（曾点亮但证据过期 >14 天，或证据日期后该线 modules 有代码变更）——五态之外的显式态，单列不并入任何档",
+            "source": "证据记录 + git（六态 stale）",
+            "reason": null
+          },
+          "state_unknown": {
+            "count": 1,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.state_unknown']['count'];print('state_unknown=%s' % v)\"",
+            "definition": "残余：六态 = uncommitted（无证据 → 五态归属不可判定：缺 / 写了没接 / 接了跑不通三选一，无机器可读源）；显式列出以闭合恒等式，不丢点",
+            "source": "product-lines.yaml 验收点 − 撤回集（六态 uncommitted）",
+            "reason": null
+          }
+        },
+        "identity": {
+          "expr": "healthy + written_not_wired + missing + wired_broken + live_unverified + stale + state_unknown = 验收点总数（denominator）",
+          "terms": [
+            "healthy",
+            "live_unverified",
+            "missing",
+            "stale",
+            "state_unknown",
+            "wired_broken",
+            "written_not_wired"
+          ],
+          "null_terms": [
+            "missing"
+          ],
+          "known_terms_sum": 5,
+          "holds": true,
+          "note": "null 档不参与求和（归属不可判定，禁猜 0）；state_unknown 是显式残余，故恒等式永远闭合——任何验收点都不会被静默丢弃"
+        },
+        "strict_source_absent": {
+          "field": "testedThroughEntry / live / wired / implemented",
+          "reason": "总纲 §1.2 的**严格**五态（live && testedThroughEntry）无机器可读源（e2e 不在 CI，第 0 项 P-3 未立项）。故 buckets.healthy 报的是六态 verified 口径的可判定代理，不冒充严格健康数——数字与口径同时给出，读者可自行判定可信度"
+        }
+      },
       "k3_gate": "",
       "status_counts": {
-        "uncommitted": 2,
+        "uncommitted": 1,
         "failed": 0,
-        "pending_k3": 3,
+        "pending_k3": 1,
         "verified": 0,
         "rejected": 0,
-        "stale": 0
+        "stale": 3
       },
       "points": [
         {
           "id": "21-1",
           "desc": "DeepSeek 适配器（标准 API 接入）",
-          "status": "pending_k3",
+          "status": "stale",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
             "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
@@ -1623,14 +3406,15 @@
             "docs/synova/product-lines/evidence/test-2026-09-07.json",
             "docs/synova/product-lines/evidence/test-2026-09-12.json",
             "docs/synova/product-lines/evidence/test-2026-09-15-1.json",
-            "docs/synova/product-lines/evidence/test-2026-09-16-1.json"
+            "docs/synova/product-lines/evidence/test-2026-09-16-1.json",
+            "docs/synova/product-lines/evidence/test-2026-09-17.json"
           ],
           "note": "providers/deepseek.ts 存在"
         },
         {
           "id": "21-2",
           "desc": "提示词优化策略（效果可测量）",
-          "status": "pending_k3",
+          "status": "stale",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
             "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
@@ -1642,15 +3426,18 @@
             "docs/synova/product-lines/evidence/test-2026-09-07.json",
             "docs/synova/product-lines/evidence/test-2026-09-12.json",
             "docs/synova/product-lines/evidence/test-2026-09-15-1.json",
-            "docs/synova/product-lines/evidence/test-2026-09-16-1.json"
+            "docs/synova/product-lines/evidence/test-2026-09-16-1.json",
+            "docs/synova/product-lines/evidence/test-2026-09-17.json"
           ],
           "note": "深度优化 = 0"
         },
         {
           "id": "21-3",
           "desc": "成本策略（token 预算/缓存，成本可测量）",
-          "status": "uncommitted",
-          "evidence_files": [],
+          "status": "stale",
+          "evidence_files": [
+            "docs/synova/product-lines/evidence/D806-borrow-cards-20260918.json"
+          ],
           "note": ""
         },
         {
@@ -1680,6 +3467,86 @@
       "total": 6,
       "verified": 0,
       "progress_pct": 0,
+      "buckets": {
+        "schema": "discrete-health-buckets/1",
+        "authority": "docs/authority/产品完成度定义与推进总纲-20260918.md §1.2（v1，2026-09-18） + docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md §二（v1.1，2026-09-19） + 方案-项目度量-从声明驱动到事实驱动.md §四/§六（创始人授权引用）",
+        "granularity": "acceptance_point(product-lines.yaml)",
+        "denominator": 6,
+        "denominator_note": "与 `docs/synova/project/ledger.json` 的 totals.buckets 分母不同（此处 = product-lines.yaml 验收点数；账本 = V1 断言表条数）——同名档不可跨件混读，各档自带 denominator",
+        "healthy": {
+          "count": 0,
+          "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.healthy']['count'];print('healthy=%s' % v)\"",
+          "definition": "总纲 §1.2「健康」（live && testedThroughEntry）的可判定代理：验收点六态 = verified（审计员 PASS 或创始人演示核验；机器绿但未审 ≠ 此档）",
+          "source": "证据记录（六态状态机出口 verified）",
+          "reason": null
+        },
+        "written_not_wired": {
+          "count": 1,
+          "evidence_cmd": "python3 - written_not_wired <<'PY'\nimport glob, re, sys\nrows = [[c.strip() for c in l.strip().strip('|').split('|')]\n        for l in open(sorted(glob.glob('docs/synova/project/26线-V1验收标准*.md'))[-1], encoding='utf-8')\n        if re.match(r'^\\|\\s*\\d+-\\d+\\s*\\|', l)]\nprint('written_not_wired=%d' % sum(1 for r in rows if len(r) >= 5 and r[3] == 'pending_wiring'))\nPY",
+          "definition": "总纲 §1.2「写了没接」（implemented=true, wired=false）：V1 断言表「证据」列= pending_wiring 撤回标记（D809；显式声明，非 grep 静态判定）",
+          "source": "V1 断言表「证据」列 = pending_wiring（D809 撤回标记）",
+          "reason": null
+        },
+        "missing": {
+          "count": null,
+          "evidence_cmd": "python3 - implemented <<'PY'\nimport glob, re, sys\nname = sys.argv[1]\nhits = []\nfor f in (sorted(glob.glob('docs/synova/product-lines/*.yaml'))\n          + sorted(glob.glob('docs/synova/product-lines/evidence/*.json'))):\n    try:\n        txt = open(f, encoding='utf-8').read()\n    except OSError:\n        continue\n    if re.search(r'(?m)^\\s*\"?%s\"?\\s*:' % name, txt):\n        hits.append(f)\nprint('%s=%s' % (name, 'SOURCE_PRESENT' if hits else 'SOURCE_ABSENT'))\nPY",
+          "definition": "总纲 §1.2「缺」（implemented=false）：判定手段 = 代码检索；本口径禁用 grep 型静态判据（事实驱动 §六 实测 3/5=60%），且「无证据」≠「无实现」（诚实规则）",
+          "source": "判定手段 = 代码检索（本口径禁用；事实驱动 §六 实测静态检测 3/5=60%）",
+          "reason": "本仓无「implemented」机器可读源（yaml 与证据记录均无；而总纲 §1.2「缺」的判定手段 = 代码检索，本口径禁用 grep 型静态判据）→ 显式 null，禁猜 0。可复现依据 = 本档可复现命令输出 SOURCE_ABSENT"
+        },
+        "other_states": {
+          "wired_broken": {
+            "count": 0,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.wired_broken']['count'];print('wired_broken=%s' % v)\"",
+            "definition": "总纲 §1.2「接了跑不通」（wired=true, live=false）的可判定代理：六态 = failed（机器验证红）或 rejected（审计员否决）——即该点被判定不成立",
+            "source": "证据记录（六态 failed + rejected）",
+            "reason": null
+          },
+          "live_unverified": {
+            "count": 1,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.live_unverified']['count'];print('live_unverified=%s' % v)\"",
+            "definition": "总纲 §1.2「能跑未验证」（live=true, testedThroughEntry=false）：六态 = pending_k3（场景/测试绿但审计员未审）——单独成态，绝不并进健康",
+            "source": "证据记录（六态 pending_k3）",
+            "reason": null
+          },
+          "stale": {
+            "count": 1,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.stale']['count'];print('stale=%s' % v)\"",
+            "definition": "六态 = stale（曾点亮但证据过期 >14 天，或证据日期后该线 modules 有代码变更）——五态之外的显式态，单列不并入任何档",
+            "source": "证据记录 + git（六态 stale）",
+            "reason": null
+          },
+          "state_unknown": {
+            "count": 3,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.state_unknown']['count'];print('state_unknown=%s' % v)\"",
+            "definition": "残余：六态 = uncommitted（无证据 → 五态归属不可判定：缺 / 写了没接 / 接了跑不通三选一，无机器可读源）；显式列出以闭合恒等式，不丢点",
+            "source": "product-lines.yaml 验收点 − 撤回集（六态 uncommitted）",
+            "reason": null
+          }
+        },
+        "identity": {
+          "expr": "healthy + written_not_wired + missing + wired_broken + live_unverified + stale + state_unknown = 验收点总数（denominator）",
+          "terms": [
+            "healthy",
+            "live_unverified",
+            "missing",
+            "stale",
+            "state_unknown",
+            "wired_broken",
+            "written_not_wired"
+          ],
+          "null_terms": [
+            "missing"
+          ],
+          "known_terms_sum": 6,
+          "holds": true,
+          "note": "null 档不参与求和（归属不可判定，禁猜 0）；state_unknown 是显式残余，故恒等式永远闭合——任何验收点都不会被静默丢弃"
+        },
+        "strict_source_absent": {
+          "field": "testedThroughEntry / live / wired / implemented",
+          "reason": "总纲 §1.2 的**严格**五态（live && testedThroughEntry）无机器可读源（e2e 不在 CI，第 0 项 P-3 未立项）。故 buckets.healthy 报的是六态 verified 口径的可判定代理，不冒充严格健康数——数字与口径同时给出，读者可自行判定可信度"
+        }
+      },
       "k3_gate": "",
       "status_counts": {
         "uncommitted": 4,
@@ -1695,6 +3562,7 @@
           "desc": "看门狗/熔断/健康检查（自我健康机制）",
           "status": "stale",
           "evidence_files": [
+            "docs/synova/product-lines/evidence/D806-borrow-cards-20260918.json",
             "docs/synova/product-lines/evidence/k3-2026-09-02-productlines.json",
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
             "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
@@ -1706,7 +3574,8 @@
             "docs/synova/product-lines/evidence/test-2026-09-07.json",
             "docs/synova/product-lines/evidence/test-2026-09-12.json",
             "docs/synova/product-lines/evidence/test-2026-09-15-1.json",
-            "docs/synova/product-lines/evidence/test-2026-09-16-1.json"
+            "docs/synova/product-lines/evidence/test-2026-09-16-1.json",
+            "docs/synova/product-lines/evidence/test-2026-09-17.json"
           ],
           "note": "组件存在（代码实证）"
         },
@@ -1758,6 +3627,86 @@
       "total": 6,
       "verified": 0,
       "progress_pct": 0,
+      "buckets": {
+        "schema": "discrete-health-buckets/1",
+        "authority": "docs/authority/产品完成度定义与推进总纲-20260918.md §1.2（v1，2026-09-18） + docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md §二（v1.1，2026-09-19） + 方案-项目度量-从声明驱动到事实驱动.md §四/§六（创始人授权引用）",
+        "granularity": "acceptance_point(product-lines.yaml)",
+        "denominator": 6,
+        "denominator_note": "与 `docs/synova/project/ledger.json` 的 totals.buckets 分母不同（此处 = product-lines.yaml 验收点数；账本 = V1 断言表条数）——同名档不可跨件混读，各档自带 denominator",
+        "healthy": {
+          "count": 0,
+          "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.healthy']['count'];print('healthy=%s' % v)\"",
+          "definition": "总纲 §1.2「健康」（live && testedThroughEntry）的可判定代理：验收点六态 = verified（审计员 PASS 或创始人演示核验；机器绿但未审 ≠ 此档）",
+          "source": "证据记录（六态状态机出口 verified）",
+          "reason": null
+        },
+        "written_not_wired": {
+          "count": 0,
+          "evidence_cmd": "python3 - written_not_wired <<'PY'\nimport glob, re, sys\nrows = [[c.strip() for c in l.strip().strip('|').split('|')]\n        for l in open(sorted(glob.glob('docs/synova/project/26线-V1验收标准*.md'))[-1], encoding='utf-8')\n        if re.match(r'^\\|\\s*\\d+-\\d+\\s*\\|', l)]\nprint('written_not_wired=%d' % sum(1 for r in rows if len(r) >= 5 and r[3] == 'pending_wiring'))\nPY",
+          "definition": "总纲 §1.2「写了没接」（implemented=true, wired=false）：V1 断言表「证据」列= pending_wiring 撤回标记（D809；显式声明，非 grep 静态判定）",
+          "source": "V1 断言表「证据」列 = pending_wiring（D809 撤回标记）",
+          "reason": null
+        },
+        "missing": {
+          "count": null,
+          "evidence_cmd": "python3 - implemented <<'PY'\nimport glob, re, sys\nname = sys.argv[1]\nhits = []\nfor f in (sorted(glob.glob('docs/synova/product-lines/*.yaml'))\n          + sorted(glob.glob('docs/synova/product-lines/evidence/*.json'))):\n    try:\n        txt = open(f, encoding='utf-8').read()\n    except OSError:\n        continue\n    if re.search(r'(?m)^\\s*\"?%s\"?\\s*:' % name, txt):\n        hits.append(f)\nprint('%s=%s' % (name, 'SOURCE_PRESENT' if hits else 'SOURCE_ABSENT'))\nPY",
+          "definition": "总纲 §1.2「缺」（implemented=false）：判定手段 = 代码检索；本口径禁用 grep 型静态判据（事实驱动 §六 实测 3/5=60%），且「无证据」≠「无实现」（诚实规则）",
+          "source": "判定手段 = 代码检索（本口径禁用；事实驱动 §六 实测静态检测 3/5=60%）",
+          "reason": "本仓无「implemented」机器可读源（yaml 与证据记录均无；而总纲 §1.2「缺」的判定手段 = 代码检索，本口径禁用 grep 型静态判据）→ 显式 null，禁猜 0。可复现依据 = 本档可复现命令输出 SOURCE_ABSENT"
+        },
+        "other_states": {
+          "wired_broken": {
+            "count": 0,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.wired_broken']['count'];print('wired_broken=%s' % v)\"",
+            "definition": "总纲 §1.2「接了跑不通」（wired=true, live=false）的可判定代理：六态 = failed（机器验证红）或 rejected（审计员否决）——即该点被判定不成立",
+            "source": "证据记录（六态 failed + rejected）",
+            "reason": null
+          },
+          "live_unverified": {
+            "count": 1,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.live_unverified']['count'];print('live_unverified=%s' % v)\"",
+            "definition": "总纲 §1.2「能跑未验证」（live=true, testedThroughEntry=false）：六态 = pending_k3（场景/测试绿但审计员未审）——单独成态，绝不并进健康",
+            "source": "证据记录（六态 pending_k3）",
+            "reason": null
+          },
+          "stale": {
+            "count": 0,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.stale']['count'];print('stale=%s' % v)\"",
+            "definition": "六态 = stale（曾点亮但证据过期 >14 天，或证据日期后该线 modules 有代码变更）——五态之外的显式态，单列不并入任何档",
+            "source": "证据记录 + git（六态 stale）",
+            "reason": null
+          },
+          "state_unknown": {
+            "count": 5,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.state_unknown']['count'];print('state_unknown=%s' % v)\"",
+            "definition": "残余：六态 = uncommitted（无证据 → 五态归属不可判定：缺 / 写了没接 / 接了跑不通三选一，无机器可读源）；显式列出以闭合恒等式，不丢点",
+            "source": "product-lines.yaml 验收点 − 撤回集（六态 uncommitted）",
+            "reason": null
+          }
+        },
+        "identity": {
+          "expr": "healthy + written_not_wired + missing + wired_broken + live_unverified + stale + state_unknown = 验收点总数（denominator）",
+          "terms": [
+            "healthy",
+            "live_unverified",
+            "missing",
+            "stale",
+            "state_unknown",
+            "wired_broken",
+            "written_not_wired"
+          ],
+          "null_terms": [
+            "missing"
+          ],
+          "known_terms_sum": 6,
+          "holds": true,
+          "note": "null 档不参与求和（归属不可判定，禁猜 0）；state_unknown 是显式残余，故恒等式永远闭合——任何验收点都不会被静默丢弃"
+        },
+        "strict_source_absent": {
+          "field": "testedThroughEntry / live / wired / implemented",
+          "reason": "总纲 §1.2 的**严格**五态（live && testedThroughEntry）无机器可读源（e2e 不在 CI，第 0 项 P-3 未立项）。故 buckets.healthy 报的是六态 verified 口径的可判定代理，不冒充严格健康数——数字与口径同时给出，读者可自行判定可信度"
+        }
+      },
       "k3_gate": "",
       "status_counts": {
         "uncommitted": 5,
@@ -1823,6 +3772,86 @@
       "total": 6,
       "verified": 0,
       "progress_pct": 0,
+      "buckets": {
+        "schema": "discrete-health-buckets/1",
+        "authority": "docs/authority/产品完成度定义与推进总纲-20260918.md §1.2（v1，2026-09-18） + docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md §二（v1.1，2026-09-19） + 方案-项目度量-从声明驱动到事实驱动.md §四/§六（创始人授权引用）",
+        "granularity": "acceptance_point(product-lines.yaml)",
+        "denominator": 6,
+        "denominator_note": "与 `docs/synova/project/ledger.json` 的 totals.buckets 分母不同（此处 = product-lines.yaml 验收点数；账本 = V1 断言表条数）——同名档不可跨件混读，各档自带 denominator",
+        "healthy": {
+          "count": 0,
+          "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.healthy']['count'];print('healthy=%s' % v)\"",
+          "definition": "总纲 §1.2「健康」（live && testedThroughEntry）的可判定代理：验收点六态 = verified（审计员 PASS 或创始人演示核验；机器绿但未审 ≠ 此档）",
+          "source": "证据记录（六态状态机出口 verified）",
+          "reason": null
+        },
+        "written_not_wired": {
+          "count": 0,
+          "evidence_cmd": "python3 - written_not_wired <<'PY'\nimport glob, re, sys\nrows = [[c.strip() for c in l.strip().strip('|').split('|')]\n        for l in open(sorted(glob.glob('docs/synova/project/26线-V1验收标准*.md'))[-1], encoding='utf-8')\n        if re.match(r'^\\|\\s*\\d+-\\d+\\s*\\|', l)]\nprint('written_not_wired=%d' % sum(1 for r in rows if len(r) >= 5 and r[3] == 'pending_wiring'))\nPY",
+          "definition": "总纲 §1.2「写了没接」（implemented=true, wired=false）：V1 断言表「证据」列= pending_wiring 撤回标记（D809；显式声明，非 grep 静态判定）",
+          "source": "V1 断言表「证据」列 = pending_wiring（D809 撤回标记）",
+          "reason": null
+        },
+        "missing": {
+          "count": null,
+          "evidence_cmd": "python3 - implemented <<'PY'\nimport glob, re, sys\nname = sys.argv[1]\nhits = []\nfor f in (sorted(glob.glob('docs/synova/product-lines/*.yaml'))\n          + sorted(glob.glob('docs/synova/product-lines/evidence/*.json'))):\n    try:\n        txt = open(f, encoding='utf-8').read()\n    except OSError:\n        continue\n    if re.search(r'(?m)^\\s*\"?%s\"?\\s*:' % name, txt):\n        hits.append(f)\nprint('%s=%s' % (name, 'SOURCE_PRESENT' if hits else 'SOURCE_ABSENT'))\nPY",
+          "definition": "总纲 §1.2「缺」（implemented=false）：判定手段 = 代码检索；本口径禁用 grep 型静态判据（事实驱动 §六 实测 3/5=60%），且「无证据」≠「无实现」（诚实规则）",
+          "source": "判定手段 = 代码检索（本口径禁用；事实驱动 §六 实测静态检测 3/5=60%）",
+          "reason": "本仓无「implemented」机器可读源（yaml 与证据记录均无；而总纲 §1.2「缺」的判定手段 = 代码检索，本口径禁用 grep 型静态判据）→ 显式 null，禁猜 0。可复现依据 = 本档可复现命令输出 SOURCE_ABSENT"
+        },
+        "other_states": {
+          "wired_broken": {
+            "count": 1,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.wired_broken']['count'];print('wired_broken=%s' % v)\"",
+            "definition": "总纲 §1.2「接了跑不通」（wired=true, live=false）的可判定代理：六态 = failed（机器验证红）或 rejected（审计员否决）——即该点被判定不成立",
+            "source": "证据记录（六态 failed + rejected）",
+            "reason": null
+          },
+          "live_unverified": {
+            "count": 1,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.live_unverified']['count'];print('live_unverified=%s' % v)\"",
+            "definition": "总纲 §1.2「能跑未验证」（live=true, testedThroughEntry=false）：六态 = pending_k3（场景/测试绿但审计员未审）——单独成态，绝不并进健康",
+            "source": "证据记录（六态 pending_k3）",
+            "reason": null
+          },
+          "stale": {
+            "count": 1,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.stale']['count'];print('stale=%s' % v)\"",
+            "definition": "六态 = stale（曾点亮但证据过期 >14 天，或证据日期后该线 modules 有代码变更）——五态之外的显式态，单列不并入任何档",
+            "source": "证据记录 + git（六态 stale）",
+            "reason": null
+          },
+          "state_unknown": {
+            "count": 3,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.state_unknown']['count'];print('state_unknown=%s' % v)\"",
+            "definition": "残余：六态 = uncommitted（无证据 → 五态归属不可判定：缺 / 写了没接 / 接了跑不通三选一，无机器可读源）；显式列出以闭合恒等式，不丢点",
+            "source": "product-lines.yaml 验收点 − 撤回集（六态 uncommitted）",
+            "reason": null
+          }
+        },
+        "identity": {
+          "expr": "healthy + written_not_wired + missing + wired_broken + live_unverified + stale + state_unknown = 验收点总数（denominator）",
+          "terms": [
+            "healthy",
+            "live_unverified",
+            "missing",
+            "stale",
+            "state_unknown",
+            "wired_broken",
+            "written_not_wired"
+          ],
+          "null_terms": [
+            "missing"
+          ],
+          "known_terms_sum": 6,
+          "holds": true,
+          "note": "null 档不参与求和（归属不可判定，禁猜 0）；state_unknown 是显式残余，故恒等式永远闭合——任何验收点都不会被静默丢弃"
+        },
+        "strict_source_absent": {
+          "field": "testedThroughEntry / live / wired / implemented",
+          "reason": "总纲 §1.2 的**严格**五态（live && testedThroughEntry）无机器可读源（e2e 不在 CI，第 0 项 P-3 未立项）。故 buckets.healthy 报的是六态 verified 口径的可判定代理，不冒充严格健康数——数字与口径同时给出，读者可自行判定可信度"
+        }
+      },
       "k3_gate": "",
       "status_counts": {
         "uncommitted": 3,
@@ -1871,7 +3900,8 @@
             "docs/synova/product-lines/evidence/test-2026-09-07.json",
             "docs/synova/product-lines/evidence/test-2026-09-12.json",
             "docs/synova/product-lines/evidence/test-2026-09-15-1.json",
-            "docs/synova/product-lines/evidence/test-2026-09-16-1.json"
+            "docs/synova/product-lines/evidence/test-2026-09-16-1.json",
+            "docs/synova/product-lines/evidence/test-2026-09-17.json"
           ],
           "note": "组件存在（代码实证）"
         },
@@ -1902,20 +3932,100 @@
       "total": 7,
       "verified": 0,
       "progress_pct": 0,
+      "buckets": {
+        "schema": "discrete-health-buckets/1",
+        "authority": "docs/authority/产品完成度定义与推进总纲-20260918.md §1.2（v1，2026-09-18） + docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md §二（v1.1，2026-09-19） + 方案-项目度量-从声明驱动到事实驱动.md §四/§六（创始人授权引用）",
+        "granularity": "acceptance_point(product-lines.yaml)",
+        "denominator": 7,
+        "denominator_note": "与 `docs/synova/project/ledger.json` 的 totals.buckets 分母不同（此处 = product-lines.yaml 验收点数；账本 = V1 断言表条数）——同名档不可跨件混读，各档自带 denominator",
+        "healthy": {
+          "count": 0,
+          "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.healthy']['count'];print('healthy=%s' % v)\"",
+          "definition": "总纲 §1.2「健康」（live && testedThroughEntry）的可判定代理：验收点六态 = verified（审计员 PASS 或创始人演示核验；机器绿但未审 ≠ 此档）",
+          "source": "证据记录（六态状态机出口 verified）",
+          "reason": null
+        },
+        "written_not_wired": {
+          "count": 0,
+          "evidence_cmd": "python3 - written_not_wired <<'PY'\nimport glob, re, sys\nrows = [[c.strip() for c in l.strip().strip('|').split('|')]\n        for l in open(sorted(glob.glob('docs/synova/project/26线-V1验收标准*.md'))[-1], encoding='utf-8')\n        if re.match(r'^\\|\\s*\\d+-\\d+\\s*\\|', l)]\nprint('written_not_wired=%d' % sum(1 for r in rows if len(r) >= 5 and r[3] == 'pending_wiring'))\nPY",
+          "definition": "总纲 §1.2「写了没接」（implemented=true, wired=false）：V1 断言表「证据」列= pending_wiring 撤回标记（D809；显式声明，非 grep 静态判定）",
+          "source": "V1 断言表「证据」列 = pending_wiring（D809 撤回标记）",
+          "reason": null
+        },
+        "missing": {
+          "count": null,
+          "evidence_cmd": "python3 - implemented <<'PY'\nimport glob, re, sys\nname = sys.argv[1]\nhits = []\nfor f in (sorted(glob.glob('docs/synova/product-lines/*.yaml'))\n          + sorted(glob.glob('docs/synova/product-lines/evidence/*.json'))):\n    try:\n        txt = open(f, encoding='utf-8').read()\n    except OSError:\n        continue\n    if re.search(r'(?m)^\\s*\"?%s\"?\\s*:' % name, txt):\n        hits.append(f)\nprint('%s=%s' % (name, 'SOURCE_PRESENT' if hits else 'SOURCE_ABSENT'))\nPY",
+          "definition": "总纲 §1.2「缺」（implemented=false）：判定手段 = 代码检索；本口径禁用 grep 型静态判据（事实驱动 §六 实测 3/5=60%），且「无证据」≠「无实现」（诚实规则）",
+          "source": "判定手段 = 代码检索（本口径禁用；事实驱动 §六 实测静态检测 3/5=60%）",
+          "reason": "本仓无「implemented」机器可读源（yaml 与证据记录均无；而总纲 §1.2「缺」的判定手段 = 代码检索，本口径禁用 grep 型静态判据）→ 显式 null，禁猜 0。可复现依据 = 本档可复现命令输出 SOURCE_ABSENT"
+        },
+        "other_states": {
+          "wired_broken": {
+            "count": 0,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.wired_broken']['count'];print('wired_broken=%s' % v)\"",
+            "definition": "总纲 §1.2「接了跑不通」（wired=true, live=false）的可判定代理：六态 = failed（机器验证红）或 rejected（审计员否决）——即该点被判定不成立",
+            "source": "证据记录（六态 failed + rejected）",
+            "reason": null
+          },
+          "live_unverified": {
+            "count": 2,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.live_unverified']['count'];print('live_unverified=%s' % v)\"",
+            "definition": "总纲 §1.2「能跑未验证」（live=true, testedThroughEntry=false）：六态 = pending_k3（场景/测试绿但审计员未审）——单独成态，绝不并进健康",
+            "source": "证据记录（六态 pending_k3）",
+            "reason": null
+          },
+          "stale": {
+            "count": 3,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.stale']['count'];print('stale=%s' % v)\"",
+            "definition": "六态 = stale（曾点亮但证据过期 >14 天，或证据日期后该线 modules 有代码变更）——五态之外的显式态，单列不并入任何档",
+            "source": "证据记录 + git（六态 stale）",
+            "reason": null
+          },
+          "state_unknown": {
+            "count": 2,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.state_unknown']['count'];print('state_unknown=%s' % v)\"",
+            "definition": "残余：六态 = uncommitted（无证据 → 五态归属不可判定：缺 / 写了没接 / 接了跑不通三选一，无机器可读源）；显式列出以闭合恒等式，不丢点",
+            "source": "product-lines.yaml 验收点 − 撤回集（六态 uncommitted）",
+            "reason": null
+          }
+        },
+        "identity": {
+          "expr": "healthy + written_not_wired + missing + wired_broken + live_unverified + stale + state_unknown = 验收点总数（denominator）",
+          "terms": [
+            "healthy",
+            "live_unverified",
+            "missing",
+            "stale",
+            "state_unknown",
+            "wired_broken",
+            "written_not_wired"
+          ],
+          "null_terms": [
+            "missing"
+          ],
+          "known_terms_sum": 7,
+          "holds": true,
+          "note": "null 档不参与求和（归属不可判定，禁猜 0）；state_unknown 是显式残余，故恒等式永远闭合——任何验收点都不会被静默丢弃"
+        },
+        "strict_source_absent": {
+          "field": "testedThroughEntry / live / wired / implemented",
+          "reason": "总纲 §1.2 的**严格**五态（live && testedThroughEntry）无机器可读源（e2e 不在 CI，第 0 项 P-3 未立项）。故 buckets.healthy 报的是六态 verified 口径的可判定代理，不冒充严格健康数——数字与口径同时给出，读者可自行判定可信度"
+        }
+      },
       "k3_gate": "",
       "status_counts": {
-        "uncommitted": 3,
+        "uncommitted": 2,
         "failed": 0,
-        "pending_k3": 4,
+        "pending_k3": 2,
         "verified": 0,
         "rejected": 0,
-        "stale": 0
+        "stale": 3
       },
       "points": [
         {
           "id": "25-1",
           "desc": "专家插件（新专家 = 加文件自动注册）",
-          "status": "pending_k3",
+          "status": "stale",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
             "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
@@ -1927,14 +4037,15 @@
             "docs/synova/product-lines/evidence/test-2026-09-07.json",
             "docs/synova/product-lines/evidence/test-2026-09-12.json",
             "docs/synova/product-lines/evidence/test-2026-09-15-1.json",
-            "docs/synova/product-lines/evidence/test-2026-09-16-1.json"
+            "docs/synova/product-lines/evidence/test-2026-09-16-1.json",
+            "docs/synova/product-lines/evidence/test-2026-09-17.json"
           ],
           "note": "文件驱动已有"
         },
         {
           "id": "25-2",
           "desc": "技能插件（新技能 = 加目录自动发现）",
-          "status": "pending_k3",
+          "status": "stale",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
             "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
@@ -1946,14 +4057,15 @@
             "docs/synova/product-lines/evidence/test-2026-09-07.json",
             "docs/synova/product-lines/evidence/test-2026-09-12.json",
             "docs/synova/product-lines/evidence/test-2026-09-15-1.json",
-            "docs/synova/product-lines/evidence/test-2026-09-16-1.json"
+            "docs/synova/product-lines/evidence/test-2026-09-16-1.json",
+            "docs/synova/product-lines/evidence/test-2026-09-17.json"
           ],
           "note": ""
         },
         {
           "id": "25-3",
           "desc": "哨兵插件（新哨兵 = 加文件自动加载）",
-          "status": "pending_k3",
+          "status": "stale",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
             "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
@@ -1965,7 +4077,8 @@
             "docs/synova/product-lines/evidence/test-2026-09-07.json",
             "docs/synova/product-lines/evidence/test-2026-09-12.json",
             "docs/synova/product-lines/evidence/test-2026-09-15-1.json",
-            "docs/synova/product-lines/evidence/test-2026-09-16-1.json"
+            "docs/synova/product-lines/evidence/test-2026-09-16-1.json",
+            "docs/synova/product-lines/evidence/test-2026-09-17.json"
           ],
           "note": "builtins 自动扫描存在"
         },
@@ -1986,8 +4099,10 @@
         {
           "id": "25-6",
           "desc": "运行时插件化（运行中加载，不改代码不重启）",
-          "status": "uncommitted",
-          "evidence_files": [],
+          "status": "pending_k3",
+          "evidence_files": [
+            "docs/synova/product-lines/evidence/D806-borrow-cards-20260918.json"
+          ],
           "note": "文件驱动是 1.0，运行时插件化是 2.0"
         },
         {
@@ -2010,6 +4125,86 @@
       "total": 6,
       "verified": 0,
       "progress_pct": 0,
+      "buckets": {
+        "schema": "discrete-health-buckets/1",
+        "authority": "docs/authority/产品完成度定义与推进总纲-20260918.md §1.2（v1，2026-09-18） + docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md §二（v1.1，2026-09-19） + 方案-项目度量-从声明驱动到事实驱动.md §四/§六（创始人授权引用）",
+        "granularity": "acceptance_point(product-lines.yaml)",
+        "denominator": 6,
+        "denominator_note": "与 `docs/synova/project/ledger.json` 的 totals.buckets 分母不同（此处 = product-lines.yaml 验收点数；账本 = V1 断言表条数）——同名档不可跨件混读，各档自带 denominator",
+        "healthy": {
+          "count": 0,
+          "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.healthy']['count'];print('healthy=%s' % v)\"",
+          "definition": "总纲 §1.2「健康」（live && testedThroughEntry）的可判定代理：验收点六态 = verified（审计员 PASS 或创始人演示核验；机器绿但未审 ≠ 此档）",
+          "source": "证据记录（六态状态机出口 verified）",
+          "reason": null
+        },
+        "written_not_wired": {
+          "count": 0,
+          "evidence_cmd": "python3 - written_not_wired <<'PY'\nimport glob, re, sys\nrows = [[c.strip() for c in l.strip().strip('|').split('|')]\n        for l in open(sorted(glob.glob('docs/synova/project/26线-V1验收标准*.md'))[-1], encoding='utf-8')\n        if re.match(r'^\\|\\s*\\d+-\\d+\\s*\\|', l)]\nprint('written_not_wired=%d' % sum(1 for r in rows if len(r) >= 5 and r[3] == 'pending_wiring'))\nPY",
+          "definition": "总纲 §1.2「写了没接」（implemented=true, wired=false）：V1 断言表「证据」列= pending_wiring 撤回标记（D809；显式声明，非 grep 静态判定）",
+          "source": "V1 断言表「证据」列 = pending_wiring（D809 撤回标记）",
+          "reason": null
+        },
+        "missing": {
+          "count": null,
+          "evidence_cmd": "python3 - implemented <<'PY'\nimport glob, re, sys\nname = sys.argv[1]\nhits = []\nfor f in (sorted(glob.glob('docs/synova/product-lines/*.yaml'))\n          + sorted(glob.glob('docs/synova/product-lines/evidence/*.json'))):\n    try:\n        txt = open(f, encoding='utf-8').read()\n    except OSError:\n        continue\n    if re.search(r'(?m)^\\s*\"?%s\"?\\s*:' % name, txt):\n        hits.append(f)\nprint('%s=%s' % (name, 'SOURCE_PRESENT' if hits else 'SOURCE_ABSENT'))\nPY",
+          "definition": "总纲 §1.2「缺」（implemented=false）：判定手段 = 代码检索；本口径禁用 grep 型静态判据（事实驱动 §六 实测 3/5=60%），且「无证据」≠「无实现」（诚实规则）",
+          "source": "判定手段 = 代码检索（本口径禁用；事实驱动 §六 实测静态检测 3/5=60%）",
+          "reason": "本仓无「implemented」机器可读源（yaml 与证据记录均无；而总纲 §1.2「缺」的判定手段 = 代码检索，本口径禁用 grep 型静态判据）→ 显式 null，禁猜 0。可复现依据 = 本档可复现命令输出 SOURCE_ABSENT"
+        },
+        "other_states": {
+          "wired_broken": {
+            "count": 0,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.wired_broken']['count'];print('wired_broken=%s' % v)\"",
+            "definition": "总纲 §1.2「接了跑不通」（wired=true, live=false）的可判定代理：六态 = failed（机器验证红）或 rejected（审计员否决）——即该点被判定不成立",
+            "source": "证据记录（六态 failed + rejected）",
+            "reason": null
+          },
+          "live_unverified": {
+            "count": 1,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.live_unverified']['count'];print('live_unverified=%s' % v)\"",
+            "definition": "总纲 §1.2「能跑未验证」（live=true, testedThroughEntry=false）：六态 = pending_k3（场景/测试绿但审计员未审）——单独成态，绝不并进健康",
+            "source": "证据记录（六态 pending_k3）",
+            "reason": null
+          },
+          "stale": {
+            "count": 0,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.stale']['count'];print('stale=%s' % v)\"",
+            "definition": "六态 = stale（曾点亮但证据过期 >14 天，或证据日期后该线 modules 有代码变更）——五态之外的显式态，单列不并入任何档",
+            "source": "证据记录 + git（六态 stale）",
+            "reason": null
+          },
+          "state_unknown": {
+            "count": 5,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.state_unknown']['count'];print('state_unknown=%s' % v)\"",
+            "definition": "残余：六态 = uncommitted（无证据 → 五态归属不可判定：缺 / 写了没接 / 接了跑不通三选一，无机器可读源）；显式列出以闭合恒等式，不丢点",
+            "source": "product-lines.yaml 验收点 − 撤回集（六态 uncommitted）",
+            "reason": null
+          }
+        },
+        "identity": {
+          "expr": "healthy + written_not_wired + missing + wired_broken + live_unverified + stale + state_unknown = 验收点总数（denominator）",
+          "terms": [
+            "healthy",
+            "live_unverified",
+            "missing",
+            "stale",
+            "state_unknown",
+            "wired_broken",
+            "written_not_wired"
+          ],
+          "null_terms": [
+            "missing"
+          ],
+          "known_terms_sum": 6,
+          "holds": true,
+          "note": "null 档不参与求和（归属不可判定，禁猜 0）；state_unknown 是显式残余，故恒等式永远闭合——任何验收点都不会被静默丢弃"
+        },
+        "strict_source_absent": {
+          "field": "testedThroughEntry / live / wired / implemented",
+          "reason": "总纲 §1.2 的**严格**五态（live && testedThroughEntry）无机器可读源（e2e 不在 CI，第 0 项 P-3 未立项）。故 buckets.healthy 报的是六态 verified 口径的可判定代理，不冒充严格健康数——数字与口径同时给出，读者可自行判定可信度"
+        }
+      },
       "k3_gate": "",
       "status_counts": {
         "uncommitted": 5,
@@ -2063,6 +4258,282 @@
           "note": ""
         }
       ]
+    },
+    {
+      "id": 27,
+      "name": "测量与参数标定",
+      "value": "诊断用的每个测量器都有标定过的参数，并且跨客户收敛——越用越准",
+      "weight": 1.0,
+      "baseline_pct": 0,
+      "baseline_note": "护城河所在；26 线全文 标定/transfer_function/因果 全 0 命中（研究员实测）",
+      "done_definition": "老板能在报告里看到：这条结论背后的参数是被验证过的、并且在同类企业里收敛——不是拍脑袋的阈值",
+      "total": 5,
+      "verified": 0,
+      "progress_pct": 0,
+      "buckets": {
+        "schema": "discrete-health-buckets/1",
+        "authority": "docs/authority/产品完成度定义与推进总纲-20260918.md §1.2（v1，2026-09-18） + docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md §二（v1.1，2026-09-19） + 方案-项目度量-从声明驱动到事实驱动.md §四/§六（创始人授权引用）",
+        "granularity": "acceptance_point(product-lines.yaml)",
+        "denominator": 5,
+        "denominator_note": "与 `docs/synova/project/ledger.json` 的 totals.buckets 分母不同（此处 = product-lines.yaml 验收点数；账本 = V1 断言表条数）——同名档不可跨件混读，各档自带 denominator",
+        "healthy": {
+          "count": 0,
+          "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.healthy']['count'];print('healthy=%s' % v)\"",
+          "definition": "总纲 §1.2「健康」（live && testedThroughEntry）的可判定代理：验收点六态 = verified（审计员 PASS 或创始人演示核验；机器绿但未审 ≠ 此档）",
+          "source": "证据记录（六态状态机出口 verified）",
+          "reason": null
+        },
+        "written_not_wired": {
+          "count": 0,
+          "evidence_cmd": "python3 - written_not_wired <<'PY'\nimport glob, re, sys\nrows = [[c.strip() for c in l.strip().strip('|').split('|')]\n        for l in open(sorted(glob.glob('docs/synova/project/26线-V1验收标准*.md'))[-1], encoding='utf-8')\n        if re.match(r'^\\|\\s*\\d+-\\d+\\s*\\|', l)]\nprint('written_not_wired=%d' % sum(1 for r in rows if len(r) >= 5 and r[3] == 'pending_wiring'))\nPY",
+          "definition": "总纲 §1.2「写了没接」（implemented=true, wired=false）：V1 断言表「证据」列= pending_wiring 撤回标记（D809；显式声明，非 grep 静态判定）",
+          "source": "V1 断言表「证据」列 = pending_wiring（D809 撤回标记）",
+          "reason": null
+        },
+        "missing": {
+          "count": null,
+          "evidence_cmd": "python3 - implemented <<'PY'\nimport glob, re, sys\nname = sys.argv[1]\nhits = []\nfor f in (sorted(glob.glob('docs/synova/product-lines/*.yaml'))\n          + sorted(glob.glob('docs/synova/product-lines/evidence/*.json'))):\n    try:\n        txt = open(f, encoding='utf-8').read()\n    except OSError:\n        continue\n    if re.search(r'(?m)^\\s*\"?%s\"?\\s*:' % name, txt):\n        hits.append(f)\nprint('%s=%s' % (name, 'SOURCE_PRESENT' if hits else 'SOURCE_ABSENT'))\nPY",
+          "definition": "总纲 §1.2「缺」（implemented=false）：判定手段 = 代码检索；本口径禁用 grep 型静态判据（事实驱动 §六 实测 3/5=60%），且「无证据」≠「无实现」（诚实规则）",
+          "source": "判定手段 = 代码检索（本口径禁用；事实驱动 §六 实测静态检测 3/5=60%）",
+          "reason": "本仓无「implemented」机器可读源（yaml 与证据记录均无；而总纲 §1.2「缺」的判定手段 = 代码检索，本口径禁用 grep 型静态判据）→ 显式 null，禁猜 0。可复现依据 = 本档可复现命令输出 SOURCE_ABSENT"
+        },
+        "other_states": {
+          "wired_broken": {
+            "count": 0,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.wired_broken']['count'];print('wired_broken=%s' % v)\"",
+            "definition": "总纲 §1.2「接了跑不通」（wired=true, live=false）的可判定代理：六态 = failed（机器验证红）或 rejected（审计员否决）——即该点被判定不成立",
+            "source": "证据记录（六态 failed + rejected）",
+            "reason": null
+          },
+          "live_unverified": {
+            "count": 0,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.live_unverified']['count'];print('live_unverified=%s' % v)\"",
+            "definition": "总纲 §1.2「能跑未验证」（live=true, testedThroughEntry=false）：六态 = pending_k3（场景/测试绿但审计员未审）——单独成态，绝不并进健康",
+            "source": "证据记录（六态 pending_k3）",
+            "reason": null
+          },
+          "stale": {
+            "count": 0,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.stale']['count'];print('stale=%s' % v)\"",
+            "definition": "六态 = stale（曾点亮但证据过期 >14 天，或证据日期后该线 modules 有代码变更）——五态之外的显式态，单列不并入任何档",
+            "source": "证据记录 + git（六态 stale）",
+            "reason": null
+          },
+          "state_unknown": {
+            "count": 5,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.state_unknown']['count'];print('state_unknown=%s' % v)\"",
+            "definition": "残余：六态 = uncommitted（无证据 → 五态归属不可判定：缺 / 写了没接 / 接了跑不通三选一，无机器可读源）；显式列出以闭合恒等式，不丢点",
+            "source": "product-lines.yaml 验收点 − 撤回集（六态 uncommitted）",
+            "reason": null
+          }
+        },
+        "identity": {
+          "expr": "healthy + written_not_wired + missing + wired_broken + live_unverified + stale + state_unknown = 验收点总数（denominator）",
+          "terms": [
+            "healthy",
+            "live_unverified",
+            "missing",
+            "stale",
+            "state_unknown",
+            "wired_broken",
+            "written_not_wired"
+          ],
+          "null_terms": [
+            "missing"
+          ],
+          "known_terms_sum": 5,
+          "holds": true,
+          "note": "null 档不参与求和（归属不可判定，禁猜 0）；state_unknown 是显式残余，故恒等式永远闭合——任何验收点都不会被静默丢弃"
+        },
+        "strict_source_absent": {
+          "field": "testedThroughEntry / live / wired / implemented",
+          "reason": "总纲 §1.2 的**严格**五态（live && testedThroughEntry）无机器可读源（e2e 不在 CI，第 0 项 P-3 未立项）。故 buckets.healthy 报的是六态 verified 口径的可判定代理，不冒充严格健康数——数字与口径同时给出，读者可自行判定可信度"
+        }
+      },
+      "k3_gate": "",
+      "status_counts": {
+        "uncommitted": 5,
+        "failed": 0,
+        "pending_k3": 0,
+        "verified": 0,
+        "rejected": 0,
+        "stale": 0
+      },
+      "points": [
+        {
+          "id": "27-1",
+          "desc": "指标时序真的落盘：跑一次真实哨兵 → metric_series 新增 ≥1 行且 value 非空、org_id 正确",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "P0-1 指标时序存储（DSH 全家族无时序能力 → ③自建；只借鉴写链纪律 + 原子发布协议）"
+        },
+        {
+          "id": "27-2",
+          "desc": "趋势真的接线：注入 3 期历史 → 哨兵 finding 的 payload 含 trend 且方向与注入数据一致",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "computeTemporalBaseline 现为零生产调用（D828 修）"
+        },
+        {
+          "id": "27-3",
+          "desc": "参数标定表存在且有来源：每个在生产被引用的测量器，其参数有标定值 + 标定依据 + 日期",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "依赖 27-1（没有历史测量值就无数据可标）"
+        },
+        {
+          "id": "27-4",
+          "desc": "跨客户收敛：≥2 个客户的同类测量值进入同一收敛过程，收敛结果可导出",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "护城河判据；需≥2 客户数据"
+        },
+        {
+          "id": "27-5",
+          "desc": "因果边可用：42 条因果边的 transfer_function 不再是待定，且运行时被真实计算",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "E5 报 42 边 transfer_function 全 TBD、运行时零计算"
+        }
+      ]
+    },
+    {
+      "id": 28,
+      "name": "多客户配置与租户分层",
+      "value": "同一套部署能安全地服务多家企业：配置分层、数据隔离、凭据分区、用量可分辨",
+      "weight": 1.0,
+      "baseline_pct": 0,
+      "baseline_note": "生意前提；26 线全文 多租户/多客户/客户配置 全 0 命中；customer-config/ = 0 文件（研究员实测）",
+      "done_definition": "第 2 家企业接入时不需要改代码：配置按客户分层加载、数据互不可见、凭据各自加密存放、用量可区分到客户",
+      "total": 5,
+      "verified": 0,
+      "progress_pct": 0,
+      "buckets": {
+        "schema": "discrete-health-buckets/1",
+        "authority": "docs/authority/产品完成度定义与推进总纲-20260918.md §1.2（v1，2026-09-18） + docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md §二（v1.1，2026-09-19） + 方案-项目度量-从声明驱动到事实驱动.md §四/§六（创始人授权引用）",
+        "granularity": "acceptance_point(product-lines.yaml)",
+        "denominator": 5,
+        "denominator_note": "与 `docs/synova/project/ledger.json` 的 totals.buckets 分母不同（此处 = product-lines.yaml 验收点数；账本 = V1 断言表条数）——同名档不可跨件混读，各档自带 denominator",
+        "healthy": {
+          "count": 0,
+          "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.healthy']['count'];print('healthy=%s' % v)\"",
+          "definition": "总纲 §1.2「健康」（live && testedThroughEntry）的可判定代理：验收点六态 = verified（审计员 PASS 或创始人演示核验；机器绿但未审 ≠ 此档）",
+          "source": "证据记录（六态状态机出口 verified）",
+          "reason": null
+        },
+        "written_not_wired": {
+          "count": 0,
+          "evidence_cmd": "python3 - written_not_wired <<'PY'\nimport glob, re, sys\nrows = [[c.strip() for c in l.strip().strip('|').split('|')]\n        for l in open(sorted(glob.glob('docs/synova/project/26线-V1验收标准*.md'))[-1], encoding='utf-8')\n        if re.match(r'^\\|\\s*\\d+-\\d+\\s*\\|', l)]\nprint('written_not_wired=%d' % sum(1 for r in rows if len(r) >= 5 and r[3] == 'pending_wiring'))\nPY",
+          "definition": "总纲 §1.2「写了没接」（implemented=true, wired=false）：V1 断言表「证据」列= pending_wiring 撤回标记（D809；显式声明，非 grep 静态判定）",
+          "source": "V1 断言表「证据」列 = pending_wiring（D809 撤回标记）",
+          "reason": null
+        },
+        "missing": {
+          "count": null,
+          "evidence_cmd": "python3 - implemented <<'PY'\nimport glob, re, sys\nname = sys.argv[1]\nhits = []\nfor f in (sorted(glob.glob('docs/synova/product-lines/*.yaml'))\n          + sorted(glob.glob('docs/synova/product-lines/evidence/*.json'))):\n    try:\n        txt = open(f, encoding='utf-8').read()\n    except OSError:\n        continue\n    if re.search(r'(?m)^\\s*\"?%s\"?\\s*:' % name, txt):\n        hits.append(f)\nprint('%s=%s' % (name, 'SOURCE_PRESENT' if hits else 'SOURCE_ABSENT'))\nPY",
+          "definition": "总纲 §1.2「缺」（implemented=false）：判定手段 = 代码检索；本口径禁用 grep 型静态判据（事实驱动 §六 实测 3/5=60%），且「无证据」≠「无实现」（诚实规则）",
+          "source": "判定手段 = 代码检索（本口径禁用；事实驱动 §六 实测静态检测 3/5=60%）",
+          "reason": "本仓无「implemented」机器可读源（yaml 与证据记录均无；而总纲 §1.2「缺」的判定手段 = 代码检索，本口径禁用 grep 型静态判据）→ 显式 null，禁猜 0。可复现依据 = 本档可复现命令输出 SOURCE_ABSENT"
+        },
+        "other_states": {
+          "wired_broken": {
+            "count": 0,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.wired_broken']['count'];print('wired_broken=%s' % v)\"",
+            "definition": "总纲 §1.2「接了跑不通」（wired=true, live=false）的可判定代理：六态 = failed（机器验证红）或 rejected（审计员否决）——即该点被判定不成立",
+            "source": "证据记录（六态 failed + rejected）",
+            "reason": null
+          },
+          "live_unverified": {
+            "count": 0,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.live_unverified']['count'];print('live_unverified=%s' % v)\"",
+            "definition": "总纲 §1.2「能跑未验证」（live=true, testedThroughEntry=false）：六态 = pending_k3（场景/测试绿但审计员未审）——单独成态，绝不并进健康",
+            "source": "证据记录（六态 pending_k3）",
+            "reason": null
+          },
+          "stale": {
+            "count": 0,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.stale']['count'];print('stale=%s' % v)\"",
+            "definition": "六态 = stale（曾点亮但证据过期 >14 天，或证据日期后该线 modules 有代码变更）——五态之外的显式态，单列不并入任何档",
+            "source": "证据记录 + git（六态 stale）",
+            "reason": null
+          },
+          "state_unknown": {
+            "count": 5,
+            "evidence_cmd": "python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));v=d['buckets']['lines[].buckets.other_states.state_unknown']['count'];print('state_unknown=%s' % v)\"",
+            "definition": "残余：六态 = uncommitted（无证据 → 五态归属不可判定：缺 / 写了没接 / 接了跑不通三选一，无机器可读源）；显式列出以闭合恒等式，不丢点",
+            "source": "product-lines.yaml 验收点 − 撤回集（六态 uncommitted）",
+            "reason": null
+          }
+        },
+        "identity": {
+          "expr": "healthy + written_not_wired + missing + wired_broken + live_unverified + stale + state_unknown = 验收点总数（denominator）",
+          "terms": [
+            "healthy",
+            "live_unverified",
+            "missing",
+            "stale",
+            "state_unknown",
+            "wired_broken",
+            "written_not_wired"
+          ],
+          "null_terms": [
+            "missing"
+          ],
+          "known_terms_sum": 5,
+          "holds": true,
+          "note": "null 档不参与求和（归属不可判定，禁猜 0）；state_unknown 是显式残余，故恒等式永远闭合——任何验收点都不会被静默丢弃"
+        },
+        "strict_source_absent": {
+          "field": "testedThroughEntry / live / wired / implemented",
+          "reason": "总纲 §1.2 的**严格**五态（live && testedThroughEntry）无机器可读源（e2e 不在 CI，第 0 项 P-3 未立项）。故 buckets.healthy 报的是六态 verified 口径的可判定代理，不冒充严格健康数——数字与口径同时给出，读者可自行判定可信度"
+        }
+      },
+      "k3_gate": "",
+      "status_counts": {
+        "uncommitted": 5,
+        "failed": 0,
+        "pending_k3": 0,
+        "verified": 0,
+        "rejected": 0,
+        "stale": 0
+      },
+      "points": [
+        {
+          "id": "28-1",
+          "desc": "客户配置包可加载并生效：为 org-A 放一份配置 → 不重启，该 org 的请求按新配置行为",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "config-layers.ts 已有四层叠加 + provenance（范式复用 DSH settings 语义）"
+        },
+        {
+          "id": "28-2",
+          "desc": "数据隔离：以 org-A 身份查 org-B 的数据（搜索/报告/指标）→ 返回空，且不泄漏『存在但无权』",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "含 search() 缺 org_id 过滤（D826，锚点=第 2 个客户接入前）+ 指标/报告面"
+        },
+        {
+          "id": "28-3",
+          "desc": "凭据分区：两 org 各存一份凭据 → 各自出站只带自己的；GET 不回显任何明文/末 4 位",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "现生产路由走内存 Map + 明文 + 末 4 位回显（CTO 已核 server.ts:394 确实挂载）"
+        },
+        {
+          "id": "28-4",
+          "desc": "用量可分辨：按客户/时段统计 token 用量并可导出",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "依赖会话统计两处零接线修好（D827）"
+        },
+        {
+          "id": "28-5",
+          "desc": "第 2 个客户接入演练：从零接入一家新企业，全流程不改代码（配置/隔离/凭据/报告署名）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "端到端演练；依赖 28-1..28-4 全绿"
+        }
+      ]
     }
   ],
   "decisions": [
@@ -2114,6 +4585,9 @@
   "degraded": {
     "sources": [
       "证据记录损坏: D524-verify-20260825-2121.json (缺 record_type/date/verdicts 字段)",
+      "证据记录损坏: D817-capture-20260918.json (缺 record_type/date/verdicts 字段)",
+      "证据记录损坏: D819-capture-20260919.json (缺 record_type/date/verdicts 字段)",
+      "证据记录损坏: k3-line10-2026-09-18.json (schema != 1)",
       "task-D394.json: 存量自动兑换证据降级 k3→task_redeem（假 k3 冒充修正，CT-53）",
       "task-D396.json: 存量自动兑换证据降级 k3→task_redeem（假 k3 冒充修正，CT-53）",
       "task-D517.json: 存量自动兑换证据降级 k3→task_redeem（假 k3 冒充修正，CT-53）",

@@ -1,0 +1,84 @@
+---
+状态: implemented
+日期: 2026-09-20
+决策: 度量口径从「总完成度百分比」改为「离散三档 + 每档一条可复现命令」；无判定源的档显式 null，禁猜 0
+理由: 百分比把「有证据」「能跑未验证」「写了没接」压成一个数，掩盖了 9 次假绿的真实位置；且总纲 §1.2 已明令「离散计数，不是百分比」。可复现性是可证伪的前提（事实驱动 §四），所以每个数字必须带一条能自己跑一遍的命令。
+---
+
+# D850 · 度量口径：取消总完成度百分比 → 离散三档 + evidenceCmd
+
+> 任务: D850（小队 D850「编码 A」，工作树 `.synova-wt-d850`，分支 `team/d850-discrete-health`）
+> 状态说明：决策已落地（D850 = impl_done，口径变更已进代码），故本 Note 在 `implemented/`；
+> K3 独立审计为后续步骤（本卡自验结论标「可提请独立审计」），若审计推翻则按四态规则迁移到 `rejected/`。
+> 权威（引用全名 + 版本）：
+> - `docs/authority/产品完成度定义与推进总纲-20260918.md` §1.2（v1，2026-09-18）—— 五态定义 +
+>   「共同报告方式：`N 个健康 / M 个写了没接 / K 个缺` —— **离散计数，不是百分比**」
+> - `docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md` §二（v1.1，2026-09-19）—— 五态的**判定手段**
+> - `/Users/wane/山河研究院/99-综合/方案-项目度量-从声明驱动到事实驱动.md` §四（「每个数字必须带一条可复现的命令。不能复现的数字，不上看板」）+ §六（L3 静态检测实测 3/5 = 60%，只能粗筛不能当判定源）
+> - 创始人签字：`docs/synova/coordination/创始人裁定表-§6五项-20260920.md`（D850 = 离散健康计数）
+
+## 一、被删除的字段全名（可从本 Note 追溯）
+
+本次口径变更**删除了顶层百分数字段**，其原名（已从三个脚本与三份派生件中移除，故不写在那些文件里）：
+
+| 原名 | 位置 | 处置 |
+|---|---|---|
+| `product_progress_pct` | `scripts/product-lines/calc-progress.py` 顶层输出 | **删除**（破坏性变更；win 域消费方见下方遗留） |
+| `delivery_pct` | `scripts/project/gen-project-board.py` `totals` | **删除** |
+| `verify_pct` | `scripts/project/gen-project-board.py` `totals` | **删除** |
+
+> 说明：创始人签字的形式判据（在 6 份脚本/派生件上 grep 上述三个字段名 + 「产品总进度」+「总完成度」
+> 必须**零命中**）要求这些字符串不得留在那些文件里，因此它们的全名只记在本 Note（本 Note 不在该 grep 范围）。
+> 这是**追溯信息的移位**，不是信息丢失。
+
+## 二、决策参考系（D333 四步）
+
+1. **第一性原理** —— 一个数字可信 ⟺ 由真实证据源判定 + 带一条可复现命令。→ 有源的档出数，无源的档出 `null`，**不用 0 冒充**。
+2. **Anthropic 工程基线** —— fail-closed + 机器可验契约 + 不静默降级。→ 无法判定必须 `count: null` + `reason`（先例：`ledger.pr_queue=null + skipped_sources`、`timeline.actual.merged=null`）。
+3. **本仓实证（开源实证的等价物）** —— 事实驱动 §六：作者手握全部 8 个断线实例、连改三版判据，静态检测准确率仍只有 **3/5 = 60%**。→ 本卡**不引入任何 grep 型判定源**。
+4. **收敛检查** —— ①②③ 同向：三档只用**已有机器可读信号**，无信号即 null。收敛 → 采纳。
+
+## 三、三档 = 五态的报告折叠（互斥且完备）
+
+| 档 | 对应五态 | 本次的判定源 | 结果 |
+|---|---|---|---|
+| `healthy` | 健康（live && testedThroughEntry） | 断言已点亮 **且** 另有 `record_type=k3` 的独立 PASS 裁决（gen-project-board）/ 六态 `verified`（calc-progress） | **出数** |
+| `written_not_wired` | 写了没接（implemented && !wired） | V1 断言表「证据」列 = `pending_wiring`（D809 撤回标记；**显式声明**，非 grep） | **出数** |
+| `missing` | 缺（!implemented） | 判定手段 = 代码检索 → 本口径禁用 grep 型静态判据，且「无匹配证据」≠「无实现」 | **null + 原因** |
+| `other_states.wired_broken` | 接了跑不通 | 判定手段 = 冒烟启动 | **null + 原因**（ledger 口径）/ failed+rejected（六态口径） |
+| `other_states.live_unverified` | 能跑未验证 | 机器绿但无独立核验 | **出数，且绝不并进 healthy**（创始人红线） |
+| `other_states.state_unknown` | （残余） | 未点亮且非撤回 | **显式列出** → 恒等式闭合，不丢点 |
+
+**恒等式**：`healthy + written_not_wired + missing + wired_broken + live_unverified (+ stale) + state_unknown = 分母`，
+null 档不参与求和但**显式登记在 `identity.null_terms`** —— 所以「不丢点」是物理可检的（组⑩ 断言）。
+
+**两个分母，不得混读**：`ledger.json` = V1 断言表条数（128）；`product-progress.json` = product-lines.yaml 验收点数（174）。
+两处同名档各自带 `denominator` + `denominator_note`，面板也明示。
+
+## 四、证据可复现性（evidence_cmd 的形态）
+
+- **源侧复算**（ledger 的 healthy / written_not_wired / live_unverified / state_unknown）：`python3 - <field> <<'PY' …`
+  直接读 V1 断言表 + 两处证据目录重算，**不读 ledger.json**（读回自己的输出不构成证据）。
+  与派生器逐档对账一致（组⑩ 断言，实测 16 / 3 / 11 / 98 vs 派生值 16 / 3 / 11 / 98）。
+- **重跑抽取**（product-progress 的多数档）：`calc-progress.py --out /tmp/…` 后抽该档 —— 即「从权威输入重新派生」。
+- **判定源存在性探针**（null 档）：`python3 - implemented <<'PY' …` 输出 `SOURCE_ABSENT` —— 这是 null 的**可复现依据**，
+  而不是把 null 静默成 0。
+
+## 五、同时修正/发现
+
+1. **面板线数 28 → 29 追平**：`total_lines` 原为 `len(lines)`（28），未计 `v2_lines: ["federated-evolution"]`（定义在 yaml 顶层、不在 `lines` 列表内）。
+   现为 `len(lines) + len(v2_lines)` = 29，并输出 `lines_v1` / `lines_v2` 使 29 可拆解核验。
+2. **CT-67 修复**（`tests/project/gen-project-board.test.sh` 组⑥）：原写死 live 数值（`backlog_points=36`/`v1_passed=22`/`lines=26`）→ 改为**只断言不变量与跨源自洽**
+   （撤回行数↔`pending_k3`、撤回点↔账本 status、`backlog_points`↔独立解析的 yaml 点数、断言数↔`v1_total`、三档恒等式、无百分比字段）。具体数值留在密封夹具组。
+3. **组⑤ 一条反条件断言修正**：原 `[ A = B ] || ok "generated_at 可随运行变化"` —— 相同才计数、
+   与文案相反，且同秒运行会让总数在 116/117 之间漂移。改为无条件计数 + 事实陈述（现稳定 117）。
+4. **「写了没接」接到看板上**：D809 撤回标记此前只在 `ledger.json` 可见，**创始人面板看不见**。
+   calc-progress 新增单点读取（只取「证据」列的 `pending_wiring`，不复制任何交付度判定逻辑），
+   撤回点优先于六态（撤回是显式声明，比「无证据」更具体），并从 `state_unknown` 中扣除以避免双计。
+
+## 六、派生物与门禁的冲突（登记，不绕过）
+
+`product-progress.json` / `product-progress.html` 是 **G12d（D458）单点生成物**：session 提交即硬阻断
+（`.github/workflows/product-progress.yml` 在 push 到 main 后调 `refresh-all.sh` 重生成并推 `auto/product-progress`）。
+故本卡**本地由脚本重生成并验证，但不把它们纳入提交**（提交会硬阻断，且 `--no-verify` 是本项目红线）。
+→ 合并后由 CI 重生成；CTO 需用 PAT 从 `auto/product-progress` 开 PR 合并（D786 通道设计 b）。

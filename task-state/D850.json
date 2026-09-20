@@ -1,0 +1,22 @@
+{
+  "task_id": "D850",
+  "title": "度量口径改造：取消整体完成度百分数 → 离散三档 + evidenceCmd（小队 D850 编码 A）",
+  "status": "impl_done",
+  "risk": "high",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "branch": "team/d850-discrete-health",
+  "worktree": ".synova-wt-d850",
+  "base": "origin/main dae40d96",
+  "spec": "task-1（小队 D850 任务卡，canonical）",
+  "impl": "scripts/project/gen-project-board.py + scripts/product-lines/calc-progress.py + scripts/product-lines/gen-progress-page.py + tests/project/gen-project-board.test.sh + 3 派生件重生成",
+  "audit": null,
+  "fix_task_id": null,
+  "authority": [
+    "docs/authority/产品完成度定义与推进总纲-20260918.md §1.2",
+    "docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md §二",
+    "/Users/wane/山河研究院/99-综合/方案-项目度量-从声明驱动到事实驱动.md §四/§六"
+  ],
+  "updated_at": "2026-09-20T22:10:00+08:00",
+  "updated_by": "coding"
+}

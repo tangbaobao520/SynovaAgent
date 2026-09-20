@@ -1,8 +1,8 @@
 {
   "schema": "project-ledger/1",
   "generated_by": "gen-project-board.py",
-  "generated_at": "2026-09-20T20:39:21+08:00",
-  "git_head": "2417ef64487d079b18bd48b0d27850ca12bf5f6c",
+  "generated_at": "2026-09-20T22:31:29+08:00",
+  "git_head": "7e4e169d277bb4581db10be7fdccf2d5cd2a77c6",
   "sources": {
     "yaml": "docs/synova/product-lines/product-lines.yaml",
     "v1_dod": "docs/synova/project/26线-V1验收标准-v0.2-20260917.md",
@@ -23,8 +23,78 @@
     "v1_passed": 27,
     "v1_verified": 16,
     "pending_k3": 3,
-    "delivery_pct": 21.1,
-    "verify_pct": 59.3,
+    "buckets": {
+      "schema": "discrete-health-buckets/1",
+      "authority": "docs/authority/产品完成度定义与推进总纲-20260918.md §1.2（v1，2026-09-18） + docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md §二（v1.1，2026-09-19） + 方案-项目度量-从声明驱动到事实驱动.md §四/§六（创始人授权引用）",
+      "granularity": "acceptance_point",
+      "healthy": {
+        "count": 16,
+        "evidence_cmd": "python3 - healthy <<'PY'\nimport glob, json, re, sys\nrows = [[c.strip() for c in l.strip().strip('|').split('|')]\n        for l in open(sorted(glob.glob('docs/synova/project/26线-V1验收标准*.md'))[-1], encoding='utf-8')\n        if re.match(r'^\\|\\s*\\d+-\\d+\\s*\\|', l)]\nkinds = {r[0]: r[3] for r in rows if len(r) >= 5}\nverdicts = {}\nfor d in ('docs/synova/product-lines/evidence', 'scripts/golden-scenarios/evidence'):\n    for f in sorted(glob.glob(d + '/*.json')):\n        try:\n            rec = json.load(open(f, encoding='utf-8'))\n        except (OSError, ValueError):\n            continue\n        if not isinstance(rec, dict):\n            continue\n        for v in rec.get('verdicts') or []:\n            if isinstance(v, dict) and str(v.get('verdict', '')).lower() == 'pass' and v.get('acceptance_point'):\n                verdicts.setdefault(str(v['acceptance_point']), set()).add(rec.get('record_type'))\nlit = set(i for i, k in kinds.items() if k != 'pending_wiring' and k in verdicts.get(i, set()))\ncounts = {}\ncounts['healthy'] = sum(1 for i in lit if 'k3' in verdicts.get(i, set()))\ncounts['written_not_wired'] = sum(1 for k in kinds.values() if k == 'pending_wiring')\ncounts['live_unverified'] = sum(1 for i in lit if 'k3' not in verdicts.get(i, set()))\ncounts['v1_total'] = len(kinds)\ncounts['state_unknown'] = (counts['v1_total'] - counts['healthy']\n                           - counts['written_not_wired'] - counts['live_unverified'])\nprint('%s=%s' % (sys.argv[1], counts[sys.argv[1]]))\nPY",
+        "definition": "总纲 §1.2「健康」（live && testedThroughEntry）的可判定代理：断言已点亮，且另有 record_type=k3 的独立 PASS 裁决（K3 独立复核，禁自我审计）",
+        "source": "V1 断言表（声明类型）+ 两处证据目录（record_type=k3 的 PASS 裁决）",
+        "reason": null
+      },
+      "written_not_wired": {
+        "count": 3,
+        "evidence_cmd": "python3 - written_not_wired <<'PY'\nimport glob, json, re, sys\nrows = [[c.strip() for c in l.strip().strip('|').split('|')]\n        for l in open(sorted(glob.glob('docs/synova/project/26线-V1验收标准*.md'))[-1], encoding='utf-8')\n        if re.match(r'^\\|\\s*\\d+-\\d+\\s*\\|', l)]\nkinds = {r[0]: r[3] for r in rows if len(r) >= 5}\nverdicts = {}\nfor d in ('docs/synova/product-lines/evidence', 'scripts/golden-scenarios/evidence'):\n    for f in sorted(glob.glob(d + '/*.json')):\n        try:\n            rec = json.load(open(f, encoding='utf-8'))\n        except (OSError, ValueError):\n            continue\n        if not isinstance(rec, dict):\n            continue\n        for v in rec.get('verdicts') or []:\n            if isinstance(v, dict) and str(v.get('verdict', '')).lower() == 'pass' and v.get('acceptance_point'):\n                verdicts.setdefault(str(v['acceptance_point']), set()).add(rec.get('record_type'))\nlit = set(i for i, k in kinds.items() if k != 'pending_wiring' and k in verdicts.get(i, set()))\ncounts = {}\ncounts['healthy'] = sum(1 for i in lit if 'k3' in verdicts.get(i, set()))\ncounts['written_not_wired'] = sum(1 for k in kinds.values() if k == 'pending_wiring')\ncounts['live_unverified'] = sum(1 for i in lit if 'k3' not in verdicts.get(i, set()))\ncounts['v1_total'] = len(kinds)\ncounts['state_unknown'] = (counts['v1_total'] - counts['healthy']\n                           - counts['written_not_wired'] - counts['live_unverified'])\nprint('%s=%s' % (sys.argv[1], counts[sys.argv[1]]))\nPY",
+        "definition": "总纲 §1.2「写了没接」（implemented=true, wired=false）：V1 断言表「证据」列= pending_wiring 撤回标记（D809；显式声明，非 grep 静态判定）",
+        "source": "V1 断言表「证据」列 = pending_wiring（D809 撤回标记）",
+        "reason": null
+      },
+      "missing": {
+        "count": null,
+        "evidence_cmd": "python3 - implemented <<'PY'\nimport glob, re, sys\nname = sys.argv[1]\nhits = []\nfor f in (sorted(glob.glob('docs/synova/product-lines/*.yaml'))\n          + sorted(glob.glob('docs/synova/product-lines/evidence/*.json'))):\n    try:\n        txt = open(f, encoding='utf-8').read()\n    except OSError:\n        continue\n    if re.search(r'(?m)^\\s*\"?%s\"?\\s*:' % name, txt):\n        hits.append(f)\nprint('%s=%s' % (name, 'SOURCE_PRESENT' if hits else 'SOURCE_ABSENT'))\nPY",
+        "definition": "总纲 §1.2「缺」（implemented=false）：判定手段 = 代码检索；本口径禁用 grep 型静态判据（事实驱动 §六 实测 3/5=60%），且「无匹配证据」≠「无实现」（诚实规则）",
+        "source": "判定手段 = 代码检索（本口径禁用；事实驱动 §六 实测静态检测 3/5=60%）",
+        "reason": "无机器可读判定源：总纲 §1.2 判定手段 = 代码检索（缺（implemented=false）），本仓无承载该判定的字段（yaml 与证据记录均无；可复现依据 = 本档 evidence_cmd 输出 SOURCE_ABSENT）"
+      },
+      "other_states": {
+        "live_unverified": {
+          "count": 11,
+          "evidence_cmd": "python3 - live_unverified <<'PY'\nimport glob, json, re, sys\nrows = [[c.strip() for c in l.strip().strip('|').split('|')]\n        for l in open(sorted(glob.glob('docs/synova/project/26线-V1验收标准*.md'))[-1], encoding='utf-8')\n        if re.match(r'^\\|\\s*\\d+-\\d+\\s*\\|', l)]\nkinds = {r[0]: r[3] for r in rows if len(r) >= 5}\nverdicts = {}\nfor d in ('docs/synova/product-lines/evidence', 'scripts/golden-scenarios/evidence'):\n    for f in sorted(glob.glob(d + '/*.json')):\n        try:\n            rec = json.load(open(f, encoding='utf-8'))\n        except (OSError, ValueError):\n            continue\n        if not isinstance(rec, dict):\n            continue\n        for v in rec.get('verdicts') or []:\n            if isinstance(v, dict) and str(v.get('verdict', '')).lower() == 'pass' and v.get('acceptance_point'):\n                verdicts.setdefault(str(v['acceptance_point']), set()).add(rec.get('record_type'))\nlit = set(i for i, k in kinds.items() if k != 'pending_wiring' and k in verdicts.get(i, set()))\ncounts = {}\ncounts['healthy'] = sum(1 for i in lit if 'k3' in verdicts.get(i, set()))\ncounts['written_not_wired'] = sum(1 for k in kinds.values() if k == 'pending_wiring')\ncounts['live_unverified'] = sum(1 for i in lit if 'k3' not in verdicts.get(i, set()))\ncounts['v1_total'] = len(kinds)\ncounts['state_unknown'] = (counts['v1_total'] - counts['healthy']\n                           - counts['written_not_wired'] - counts['live_unverified'])\nprint('%s=%s' % (sys.argv[1], counts[sys.argv[1]]))\nPY",
+          "definition": "总纲 §1.2「能跑未验证」（live=true, testedThroughEntry=false）：断言已点亮但无独立 k3 复核——**单独成态，绝不并进健康**",
+          "source": "V1 断言表 + 证据目录（点亮但无 k3 独立 PASS）",
+          "reason": null
+        },
+        "wired_broken": {
+          "count": null,
+          "evidence_cmd": "python3 - wired <<'PY'\nimport glob, re, sys\nname = sys.argv[1]\nhits = []\nfor f in (sorted(glob.glob('docs/synova/product-lines/*.yaml'))\n          + sorted(glob.glob('docs/synova/product-lines/evidence/*.json'))):\n    try:\n        txt = open(f, encoding='utf-8').read()\n    except OSError:\n        continue\n    if re.search(r'(?m)^\\s*\"?%s\"?\\s*:' % name, txt):\n        hits.append(f)\nprint('%s=%s' % (name, 'SOURCE_PRESENT' if hits else 'SOURCE_ABSENT'))\nPY",
+          "definition": "总纲 §1.2「接了跑不通」（wired=true, live=false）：判定手段 = 冒烟启动",
+          "source": "判定手段 = 冒烟启动（本仓无该判定的机器可读源）",
+          "reason": "无机器可读判定源：总纲 §1.2 判定手段 = 冒烟启动（接了跑不通（wired=true, live=false）），本仓无承载该判定的字段（yaml 与证据记录均无；可复现依据 = 本档 evidence_cmd 输出 SOURCE_ABSENT）"
+        },
+        "state_unknown": {
+          "count": 98,
+          "evidence_cmd": "python3 - state_unknown <<'PY'\nimport glob, json, re, sys\nrows = [[c.strip() for c in l.strip().strip('|').split('|')]\n        for l in open(sorted(glob.glob('docs/synova/project/26线-V1验收标准*.md'))[-1], encoding='utf-8')\n        if re.match(r'^\\|\\s*\\d+-\\d+\\s*\\|', l)]\nkinds = {r[0]: r[3] for r in rows if len(r) >= 5}\nverdicts = {}\nfor d in ('docs/synova/product-lines/evidence', 'scripts/golden-scenarios/evidence'):\n    for f in sorted(glob.glob(d + '/*.json')):\n        try:\n            rec = json.load(open(f, encoding='utf-8'))\n        except (OSError, ValueError):\n            continue\n        if not isinstance(rec, dict):\n            continue\n        for v in rec.get('verdicts') or []:\n            if isinstance(v, dict) and str(v.get('verdict', '')).lower() == 'pass' and v.get('acceptance_point'):\n                verdicts.setdefault(str(v['acceptance_point']), set()).add(rec.get('record_type'))\nlit = set(i for i, k in kinds.items() if k != 'pending_wiring' and k in verdicts.get(i, set()))\ncounts = {}\ncounts['healthy'] = sum(1 for i in lit if 'k3' in verdicts.get(i, set()))\ncounts['written_not_wired'] = sum(1 for k in kinds.values() if k == 'pending_wiring')\ncounts['live_unverified'] = sum(1 for i in lit if 'k3' not in verdicts.get(i, set()))\ncounts['v1_total'] = len(kinds)\ncounts['state_unknown'] = (counts['v1_total'] - counts['healthy']\n                           - counts['written_not_wired'] - counts['live_unverified'])\nprint('%s=%s' % (sys.argv[1], counts[sys.argv[1]]))\nPY",
+          "definition": "残余：断言既未点亮、也非撤回标记 → 其五态归属不可判定（缺 / 写了没接 / 接了跑不通 三选一，无机器可读源）；显式列出以闭合恒等式",
+          "source": "V1 断言表 + 证据目录（既未点亮、也非撤回标记）",
+          "reason": null
+        }
+      },
+      "identity": {
+        "expr": "healthy + written_not_wired + missing + wired_broken + live_unverified + state_unknown = v1_total",
+        "terms": [
+          "healthy",
+          "live_unverified",
+          "missing",
+          "state_unknown",
+          "wired_broken",
+          "written_not_wired"
+        ],
+        "null_terms": [
+          "missing",
+          "wired_broken"
+        ],
+        "denominator": 128,
+        "known_terms_sum": 128,
+        "holds": true,
+        "note": "null 档不参与求和（其归属不可判定，禁猜 0）；state_unknown 是显式残余，故恒等式永远闭合——任何点都不会被静默丢弃"
+      },
+      "strict_source_absent": {
+        "field": "testedThroughEntry / live / wired / implemented",
+        "reason": "总纲 §1.2 的**严格**五态（live && testedThroughEntry）无机器可读源：e2e 不在 CI（第 0 项 P-3 未立项）。故 buckets.healthy 报的是「独立核验通过」口径的可判定代理，不冒充严格健康数——数字与口径同时给出，读者可自行判定可信度"
+      }
+    },
     "freshness": {
       "green": 20,
       "yellow": 1,
@@ -5780,6 +5850,39 @@
     {
       "id": "D848",
       "title": "账本漂移门禁：证据/状态变更合并后必须重算 ledger 派生器（K3 D815 P1 归因）",
+      "status": "claimed",
+      "owner": "mac-coding",
+      "domain": "mac",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 0,
+      "updated_at": "2026-09-20"
+    },
+    {
+      "id": "D850",
+      "title": "度量口径改造：取消整体完成度百分数 → 离散三档 + evidenceCmd（小队 D850 编码 A）",
+      "status": "impl_done",
+      "owner": "mac-coding",
+      "domain": "mac",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 0,
+      "updated_at": "2026-09-20"
+    },
+    {
+      "id": "D853",
+      "title": "批十四条件闭环（『有条件通过』=未通过，创始人 2026-09-20 裁决）",
+      "status": "claimed",
+      "owner": "mac-coding",
+      "domain": "mac",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 0,
+      "updated_at": "2026-09-20"
+    },
+    {
+      "id": "D854",
+      "title": "D811 条件闭环 + CT-70 立卡（tests/project 在 CI 上是绿色假象）",
       "status": "claimed",
       "owner": "mac-coding",
       "domain": "mac",
