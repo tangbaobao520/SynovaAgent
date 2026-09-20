@@ -266,7 +266,7 @@ lines:
         desc: "spill 双阈值可配置且生效：内存保留上限 8,000 字符、落盘阈值 32,000 字符，两值均来自配置读取（非硬编码）；非法配置 fail-closed 报错而非静默降级；落盘失败时保留原内容且打 degraded 信号"
         evidence: ["test:spill-policy", "scenario:GS-02"]
         status: uncommitted
-        note: "② 决定②（创始人裁定表-§6五项-20260920.md §6-5 保守起步档）。M1：超长输出属 DSH 已有能力 → 须写成『接入/配置/约束 DSH 的 spill 能力并验证』：语义位 = @deepseek-ai/dsh-spill-policy **v0.1.6-alpha.2** 的 maxInlineBytes（apply(ctx,config) lib/index.js:102-103；schema lib/types/index.js:53），后端 = dsh-spill（ctx.spillStore 抽象缝）+ dsh-spill-local（saveText :556 → 路径 locator :564）。**配置读取位置** = 该插件注册处读 config.maxInlineBytes（我方两阈值以此为读取点）。**越界行为对齐 DSH 实测**：非整数或负数 → throw（:104-105）；未配置 → no-op 不注册（:106）；无 session owner／无 spillStore backend／saveText 失败／替换后超 cap → ctx.logger.warn 且保留 inline（:107-150，不得静默丢）。fail_when：阈值硬编码不可配／非法值被静默接受／落盘失败后内容丢失或静默截断。⚠️ 口径差（交创始人确认）：DSH 为**单阈值且单位 UTF-8 字节**，我方为**双阈值且单位字符**；8,000–32,000 之间档位的语义原裁定未定义，须实现方在 SPEC 显式声明，不得自行推定。"
+        note: "② 决定②（创始人裁定表-§6五项-20260920.md §6-5 保守起步档）。M1：超长输出属 DSH 已有能力 → 须写成『接入/配置/约束 DSH 的 spill 能力并验证』：语义位 = @deepseek-ai/dsh-spill-policy **v0.1.6-alpha.2** 的 maxInlineBytes（apply(ctx,config) lib/index.js:102-103；schema lib/types/index.js:53），后端 = dsh-spill（ctx.spillStore 抽象缝）+ dsh-spill-local（saveText :556 → 路径 locator :564）。**配置读取位置** = 该插件注册处读 config.maxInlineBytes（我方两阈值以此为读取点）。**越界行为对齐 DSH 实测**：非整数或负数 → throw（:104-105）；未配置 → no-op 不注册（:106）；无 session owner／无 spillStore backend／saveText 失败／替换后超 cap → ctx.logger.warn 且保留 inline（:107-150，不得静默丢）。fail_when：阈值硬编码不可配／非法值被静默接受／落盘失败后内容丢失或静默截断。**依赖**：DSH 侧需先接入 dsh-spill（ctx.spillStore 抽象缝）+ dsh-spill-local 后端；跨线口径（阈值单一来源）登记于 preconditions.yaml CLC-2。⚠️ 口径差（交创始人确认）：DSH 为**单阈值且单位 UTF-8 字节**，我方为**双阈值且单位字符**；8,000–32,000 之间档位的语义原裁定未定义，须实现方在 SPEC 显式声明，不得自行推定。"
 
   # ────────────────────────── 05 本体层收敛 ──────────────────────────
   - id: 5
@@ -1167,7 +1167,7 @@ lines:
         desc: "live 类设置改完不重启即生效：展示类/阈值类/文案类按 live 分类声明，改值后下一次读取即返回新值，且全部在跑的消费者观察到同一新值（无部分消费者滞留旧值）"
         evidence: ["test:settings-applies-live", "founder-demo:改配置免重启演示"]
         status: uncommitted
-        note: "④ 决定④ 上句（展示·阈值·文案 = live）。M1：设置运行时修改属 DSH 已有能力 → 须写成『接入/配置/约束 DSH 的 settings applies 分类并验证』：@deepseek-ai/dsh-settings **v0.1.6-alpha.2** SettingsApplies = live | restart（lib/types/index.d.ts:21），注册时 applies 缺省即 live（lib/index.js:288）。fail_when：声明 live 的项改完仍需重启才生效／改完生效但半生效（部分消费者用旧值）／实为 restart 却声明 live（消费者被误导）。"
+        note: "④ 决定④ 上句（展示·阈值·文案 = live）。M1：设置运行时修改属 DSH 已有能力 → 须写成『接入/配置/约束 DSH 的 settings applies 分类并验证』：@deepseek-ai/dsh-settings **v0.1.6-alpha.2** SettingsApplies = live | restart（lib/types/index.d.ts:21），注册时 applies 缺省即 live（lib/index.js:288）。fail_when：声明 live 的项改完仍需重启才生效／改完生效但半生效（部分消费者用旧值）／实为 restart 却声明 live（消费者被误导）。**依赖**：25-6 运行时插件化（提供配置读取与消费者观察点）；与 25-9 共用同一 applies 分类机制，两者须同批声明。"
       - id: "25-9"
         desc: "restart 类设置改完在重启前不得半生效：连接类/插件类/数据源类/鉴权类按 restart 分类声明，重启前旧连接以旧值继续且行为可预期，重启后新值生效"
         evidence: ["test:settings-applies-restart"]
