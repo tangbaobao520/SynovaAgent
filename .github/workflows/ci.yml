@@ -272,6 +272,33 @@ jobs:
               FAIL=1
             fi
           done
+          # ── D854 / CT-70：tests/project/** 接入本 job（此前零 CI 接线）──
+          # 开工核行（D854）：本 job 原为显式清单，只覆盖 tests/control-tower + tests/doc-system；
+          #   `grep -c "tests/project" .github/workflows/ci.yml` = 0 → D795 gen-project-board 与
+          #   D811 pr-queue-scan（46 条断言）只靠人/K3 手动跑，PR 全绿 ≠ 跑过它们
+          #   （M3「机制建成未接线」的测试层形态，台账 CT-70）。
+          # 手法：**纯新增**一段 glob 调用，不改写/不重排上面既有清单（D854 派单 §A-2 硬约束）。
+          #   当前覆盖（canary 对账用）：tests/project/gen-project-board.test.sh、
+          #   tests/project/pr-queue-scan.test.sh；此后该目录新增 *.test.sh 自动纳入（glob 语义）。
+          # fail-closed：glob 零命中（目录被删/改名）→ 显式报红，不静默跳过（铁律 11 / M1）。
+          PROJECT_TESTS=(tests/project/*.test.sh)
+          if [ ! -e "${PROJECT_TESTS[0]}" ]; then
+            echo "::error title=tests/project::glob 零命中——目录缺失或改名（fail-closed，不静默跳过）"
+            FAIL=1
+          else
+            for t in "${PROJECT_TESTS[@]}"; do
+              echo "── $t"
+              if ! bash "$t" > /tmp/ct-out-project.log 2>&1; then
+                echo "FAIL: $t"
+                # D563/D564 教训（诊断黑洞）：内层失败明细必须进日志——::error 注解有长度上限
+                #   （450 字符），只放 tail-8 会丢失 ❌ 行（D854 首轮实测：Windows 腿红 → 看不出失败断言）。
+                cat /tmp/ct-out-project.log
+                MSG=$(tail -8 /tmp/ct-out-project.log | tr '\n' '|' | tr -d '%' | cut -c1-450)
+                echo "::error title=$t::$MSG"
+                FAIL=1
+              fi
+            done
+          fi
           # D526: canary 密封清单漂移告警（::warning 可见，不阻断——防误伤；
           #   存量漂移由 K3/人工月度清理，全量密封化是 K3 P2-4 单独立项）
           bash scripts/control-tower/check-canary-drift.sh || true

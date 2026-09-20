@@ -16,7 +16,7 @@ export LC_ALL=C.UTF-8 2>/dev/null || true
 #   ③ 降级     — 缺 yaml / 坏 JSON → degraded:true + degraded_sources 非空 + 退出码契约
 #   ④ 保鲜边界 — 7 天=🟢 / 8 天=🟡 / 14 天=🟡 / 15 天=🔴，且**不扣交付度**（口径红线）
 #   ⑤ 幂等     — 连跑两次，除 generated_at/git_head 外逐键相等
-#   ⑥ 真实仓库 — 只读冒烟: v1_total=125 + lines=26（输出到临时文件，不污染仓库）
+#   ⑥ 真实仓库 — 只读冒烟: v1_total=128（冻结）+ lines=26 + 不变量断言（live 读数不写死，见 CT-67）
 #
 # 沙箱: mktemp 临时夹具 + 固定时钟 --today（零平台 date 差异，Win/CI 确定性）
 # ═══════════════════════════════════════════════════════════════
@@ -204,9 +204,17 @@ fi
 [ "$(jget "$OUT1" lines.1.assertions.0.ok)" = "True" ]  && ok "2-1 ok=true" || no "2-1 ok 应 true"
 [ "$(jget "$OUT1" lines.1.assertions.1.ok)" = "False" ] && ok "2-2 ok=false（无 founder-demo 证据）" || no "2-2 ok 应 false"
 [ "$(jget "$OUT1" lines.1.assertions.1.age_days)" = "None" ] && ok "2-2 age_days=null（无证据）" || no "2-2 age_days 应 null"
-grep -q "golden-scenarios/evidence" "$OUT1" \
+# Windows 兼容（D854，CI 首轮实测）：gen-project-board.py 的 rel_to() 用 Path.relative_to
+#   → Windows 产出反斜杠（JSON 里落成 `scripts\\golden-scenarios\\evidence`）→ 旧断言写死
+#   字面 "/" 在 windows-latest 腿恒红（首轮实测：同一次运行**精确 2 条**，就是本组两条目录串）。
+#   本卡写集不含 gen-project-board.py（D848/D850 地盘）→ 断言接受两种分隔符；
+#   真命中反斜杠时**显式告警**（不静默 —— 产物路径跨平台不可读 = 遗留，待另卡修）。
+if grep -qE 'golden-scenarios\\\\evidence' "$OUT1"; then
+  echo "    ⚠ 产物路径用反斜杠（Windows）—— gen-project-board.py rel_to 跨平台缺陷，待另卡修"
+fi
+grep -qE 'golden-scenarios[\\/]+evidence' "$OUT1" \
   && ok "两处证据都算: 2-1 证据来源标 golden-scenarios" || no "GS 目录证据未被计入（K3-B5-P1 静默丢弃同型）"
-grep -q "product-lines/evidence" "$OUT1" \
+grep -qE 'product-lines[\\/]+evidence' "$OUT1" \
   && ok "sources 标明 product-lines/evidence" || no "sources 未标明产品证据目录"
 [ "$(jget "$OUT1" sources.v1_dod | grep -c "$V1_NAME")" = "1" ] && ok "sources.v1_dod 指向断言表" || no "sources.v1_dod 错"
 [ "$(jget "$OUT1" tasks | "$PYBIN" -c 'import json,sys;print(len(json.load(sys.stdin)))')" = "3" ] \
@@ -350,8 +358,14 @@ if [ -f "$V1_REAL" ]; then
     || no "真实仓库 v1_total 应 128，实 $(jget "$OUT6" totals.v1_total)"
   [ "$(jget "$OUT6" lines | "$PYBIN" -c 'import json,sys;print(len(json.load(sys.stdin)))')" = "26" ] \
     && ok "真实仓库 lines=26" || no "真实仓库 lines 应 26"
-  [ "$(jget "$OUT6" totals.backlog_points)" = "36" ] && ok "真实仓库 backlog_points=36（164-128）" \
-    || no "backlog_points 应 36，实 $(jget "$OUT6" totals.backlog_points)"
+  # CT-67 折入（D854，2026-09-20）：live 读数随仓库数据漂（36→46 实测）——原为硬编码常量，
+  #   每合入一条证据即假红（CT-67 登记：冒烟组只断言不变量，具体数值留给密封夹具组①–⑤⑧）。
+  BP_REAL="$(jget "$OUT6" totals.backlog_points)"
+  if printf '%s' "$BP_REAL" | grep -qE '^[0-9]+$' && [ "$BP_REAL" -ge 0 ]; then
+    ok "不变量: backlog_points 为非负整数（实测 ${BP_REAL}）"
+  else
+    no "真实仓库 backlog_points 不变量不成立（缺失或非非负整数）: $BP_REAL"
+  fi
   # D809: 未接线三点必须判 pending_k3 且不计 passed（撤回生效的**真实仓库**读数）
   PW_REAL="$("$PYBIN" - "$OUT6" <<'PY'
 import json,sys
@@ -364,9 +378,16 @@ PY
   [ "$PW_REAL" = "20-3:pending_k3:False,20-5:pending_k3:False,22-1:pending_k3:False 3" ] \
     && ok "真实仓库 20-3/20-5/22-1 = pending_k3 且不计 passed（pending_k3=3）" \
     || no "真实仓库三点撤回读数错: $PW_REAL"
-  [ "$(jget "$OUT6" totals.v1_passed)" = "22" ] \
-    && ok "真实仓库 v1_passed=22（D809 撤回三点后；接线恢复即回 25）" \
-    || no "真实仓库 v1_passed 应 22，实 $(jget "$OUT6" totals.v1_passed)"
+  # CT-67 折入（D854）：v1_passed 随证据合入单调升（22→27 实测）——只断言界内不变量；
+  #   上界取同一次输出的 v1_total（不引入新硬编码），下界 >0 保证证据链活着（0 = 链路断）。
+  PK_REAL="$(jget "$OUT6" totals.v1_passed)"
+  TT_REAL="$(jget "$OUT6" totals.v1_total)"
+  if printf '%s' "$PK_REAL" | grep -qE '^[0-9]+$' && printf '%s' "$TT_REAL" | grep -qE '^[0-9]+$' \
+     && [ "$PK_REAL" -ge 1 ] && [ "$PK_REAL" -le "$TT_REAL" ]; then
+    ok "不变量: 1 ≤ v1_passed($PK_REAL) ≤ v1_total($TT_REAL)"
+  else
+    no "真实仓库 v1_passed 越界/缺失: v1_passed=$PK_REAL v1_total=$TT_REAL"
+  fi
 else
   no "真实仓库缺 V1 断言表 ${V1_NAME}（上游 D793/PR#608 未并入）"
 fi

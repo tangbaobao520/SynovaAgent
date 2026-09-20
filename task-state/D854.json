@@ -3,21 +3,38 @@
   "title": "D811 条件闭环 + CT-70 立卡（tests/project 在 CI 上是绿色假象）",
   "status": "claimed",
   "risk": "high",
-  "spec": "D811 CTO 验收退回态：(1) 报告写 pr-queue.json 在 docs/synova/coordination/，实测在 docs/synova/project/；(2) ledger 快照 queue_length=46 陈旧（现 40）→ 与 D848 同族；(3) 团队自曝 CT-70：tests/project/** 在 ci.yml 命中 0 → 46 条断言不在 CI 跑，必须立卡修复。",
+  "spec": "D811 CTO 验收退回态：(1) 报告写 pr-queue.json 在 docs/synova/coordination/，实测在 docs/synova/project/；(2) ledger 快照 queue_length=46 陈旧（现 40）→ 与 D848 同族；(3) 团队自曝 CT-70：tests/project/** 在 ci.yml 命中 0 → 46 条断言不在 CI 跑，必须立卡修复。【2026-09-20 补】第 (3) 项由派单件 docs/synova/coordination/派单-CT70与D850-D852小队-20260920.md §A 派给单 session 执行（写集 = tests/project/** + ci.yml + task-state/D854.json）。",
   "write_set": [
     ".github/workflows/ci.yml",
     "docs/synova/coordination/队列收口-D811-20260920.md",
     "tests/project/",
+    ".claude/task-briefs/2026-09-20-D854-项目测试接线.md",
     "task-state/D854.json"
   ],
-  "impl": null,
+  "impl": {
+    "scope": "CT-70 部分（派单 §A）；本卡的 D811 报告路径 / 快照交叉登记项不在该派单写集内，仍待处理",
+    "pr": 682,
+    "branch": "fix/d854-ct70-project-tests-ci",
+    "commit": "6a406246",
+    "evidence": [
+      "ci.yml（control-tower-tests job）追加 tests/project/*.test.sh glob 段：27 行新增 / 0 删除，既有显式清单零改动未重排（git diff --numstat 可核）；命中行 275-297（glob 在 284，fail-closed 在 286）",
+      "glob 零命中 fail-closed：目录被删/改名 → ::error + FAIL=1（不静默跳过，M1 / 铁律 11）",
+      "CT-67 折入（同域 tests/project）：gen-project-board.test.sh 组⑥ 两条 live 常量（backlog_points=36 / v1_passed=22）→ 不变量断言（非负整数 / 1 ≤ v1_passed ≤ v1_total）；实测现读数 46 / 27",
+      "本地自验：bash tests/project/gen-project-board.test.sh → PASS=94 FAIL=0；bash tests/project/pr-queue-scan.test.sh → PASS=46 FAIL=0",
+      "SYNO_CI=1 SYNO_DIFF_BASE=origin/main bash scripts/pre-commit-check.sh → 全部 13 组通过",
+      "【红证】run 35516548497 / job 106093359089 Control Tower Gate Tests (ubuntu-latest) → failure，日志 `FAIL: tests/project/gen-project-board.test.sh` + `PASS=94 FAIL=1`（注入 b7cda35e 的一条必然失败断言；第二支测试仍继续执行）",
+      "【绿证】run 35517647353 → success（12/12 job）；job 106096175429 (ubuntu) 与 106096175469 (windows) 日志均出现 `── tests/project/gen-project-board.test.sh` / `── tests/project/pr-queue-scan.test.sh`",
+      "【接线首轮暴露并修复】windows 腿精确 2 条失败（产物路径分隔符：gen-project-board.py rel_to 反斜杠）→ 断言改 [\\\\/]+（语义不变）+ 反斜杠显式告警；gen-project-board.py 属 D848/D850 写集，本卡不碰 → 遗留登记",
+      "【诊断改进】新增段失败分支补 cat /tmp/ct-out-project.log（D563/D564 诊断黑洞同型：::error 注解 450 字符上限丢 ❌ 行）"
+    ]
+  },
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-09-20",
   "updated_by": "synova-cto",
   "domain": "mac",
   "owner": "mac-coding",
-  "executor": "mac-coding",
+  "executor": "synova-cto",
   "milestone": "M0 项目管理基建",
   "depends_on": [],
   "blocked": null,
@@ -28,6 +45,6 @@
     "快照陈旧交由 D848 覆盖，本卡只做交叉登记",
     "CT-67/68/69 各自有卡或明确挂起理由"
   ],
-  "next": "① 逐条闭环 ② CTO 复验 ③ K3 抽审",
-  "note": "团队自曝 CT-70 记功；但『有条件通过』不得放行，故立卡闭环。"
+  "next": "① CT-70 部分：PR → CI 红/绿两次原始输出取证 → 交回三件 → 提请 K3 独立审计 ② D811 报告路径项：由卡 owner（mac-coding）或另立卡处理 ③ CT-68/69 挂起理由：两者均在 scripts/control-tower/** 域（D846–D848 地盘），不在本派单写集",
+  "note": "【编号/写集提示】D854 在 main 上先行立卡（owner=mac-coding，覆盖 D811 条件闭环 + CT-70 立卡），派单件 §A 又把 D854 作为 CT-70 执行卡的编号与写集 → 本 session 按『更新既有卡』处理（未覆盖卡内 D811 条件项），仅记 executor=synova-cto。CT-67 折入理由：不动 gen-project-board.test.sh 则 glob 接线后 CI 永红，『还原全绿』判据不可达；D850/D848 尚未开分支（实测 origin 无同名分支），落地时从 main 继承本修复。"
 }
