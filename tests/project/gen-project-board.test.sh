@@ -490,6 +490,56 @@ OUT8B="$TMPD/pending-reverse.json"; run_sut "$F8" "$OUT8B" >/dev/null 2>&1
 [ "$(jget "$OUT8B" lines.0.assertions.0.status)" = "passed" ] \
   && ok "反向: 1-1 status=passed" || no "反向 1-1 status 应 passed，实 $(jget "$OUT8B" lines.0.assertions.0.status)"
 
+# ═══ 组 ⑨ D811 未合 PR 队列旁路段（pr_queue）═══
+# 口径: 队列指标是**旁路诊断物** —— ① 挂进账本供看板渲染，但**不参与**交付度分子分母
+#       ② 快照缺失/损坏 → pr_queue=null + skipped_sources 登记，**不计 degraded**（不淹没真降级）
+#       ③ 超限只出告警（stdout），**不改退出码**（DSH 决策镜头原则⑤：诊断不污染主路径）
+echo "⑨ D811 pr_queue 旁路段（挂链 / 缺失不降级 / 超限只告警）"
+F9="$TMPD/pq"; mkdir -p "$F9/task-state" "$F9/docs/synova/product-lines/evidence" \
+  "$F9/docs/synova/project" "$F9/scripts/golden-scenarios/evidence"
+cp "$F1/docs/synova/project/$V1_NAME" "$F9/docs/synova/project/$V1_NAME"
+cp "$F1/docs/synova/product-lines/product-lines.yaml" "$F9/docs/synova/product-lines/product-lines.yaml"
+cp "$F1/docs/synova/product-lines/evidence/"*.json "$F9/docs/synova/product-lines/evidence/" 2>/dev/null || true
+# 无快照 → null + skipped，不计 degraded
+OUT9A="$TMPD/pq-missing.json"; run_sut "$F9" "$OUT9A" >/dev/null 2>&1
+[ "$(jget "$OUT9A" pr_queue)" = "None" ] && ok "无快照 → pr_queue=null（不臆造 0）" \
+  || no "pr_queue 应 null，实 $(jget "$OUT9A" pr_queue)"
+[ "$(jget "$OUT9A" degraded)" = "False" ] && ok "缺旁路快照**不计** degraded（不淹没真降级）" \
+  || no "旁路缺失误判 degraded"
+"$PYBIN" -c "import json,sys;d=json.load(open(sys.argv[1],encoding='utf-8'));sys.exit(0 if any('pr_queue' in s for s in d['skipped_sources']) else 1)" "$OUT9A" \
+  && ok "缺快照显式进 skipped_sources（不静默）" || no "skipped_sources 未登记 pr_queue"
+# 坏快照 → null + skipped
+printf '{ not json' > "$F9/docs/synova/project/pr-queue.json"
+OUT9B="$TMPD/pq-corrupt.json"; run_sut "$F9" "$OUT9B" >/dev/null 2>&1
+[ "$(jget "$OUT9B" pr_queue)" = "None" ] && ok "坏快照 → pr_queue=null" || no "坏快照应置空"
+[ "$(jget "$OUT9B" degraded)" = "False" ] && ok "坏旁路快照仍不计 degraded" || no "坏旁路快照误判 degraded"
+# 超限夹具（13 > 12）→ 指标挂上 + stdout 告警 + 退出码 0
+"$PYBIN" - "$F9/docs/synova/project/pr-queue.json" <<'PY'
+import json,sys
+recs=[{"number":900+i,"title":"夹具 %d"%i,"age_days":10+i,"behind":i*20,
+       "closeable":i<3,"close_reasons":["CI_RED_LONG"] if i<3 else []} for i in range(13)]
+json.dump({"schema":"pr-queue-snapshot/1","generated_at":"2026-09-20T00:00:00+08:00",
+           "limit":12,"degraded":False,"degraded_sources":[],"records":recs,
+           "metrics":{"queue_length":13,"limit":12,"over_limit":True,
+                      "oldest":{"number":900,"age_days":10},
+                      "behind_distribution":{"0":1,"1-5":0,"6-20":0,"21-100":0,"100+":12,"unknown":0},
+                      "behind_unknown":0,"ci_distribution":{"success":13,"failure":0,"pending":0,"none":0,"unknown":0},
+                      "closeable_count":3,"orphan_count":0,"owner_conflicts":2,"by_reason":{"CI_RED_LONG":3}},
+           "warning":"⚠️ 未合 PR 队列超限：13 > 12 —— 先退役再开新 PR（夹具）"},
+          open(sys.argv[1],"w",encoding="utf-8"),ensure_ascii=False,indent=1)
+PY
+OUT9C="$TMPD/pq-over.json"; run_sut "$F9" "$OUT9C" > "$TMPD/pq-out.txt" 2>/dev/null; RC=$?  # swallow-ok: 本组只验 stdout 告警文案，派生器 stderr 的 degraded 日志已在组③单独断言
+[ "$RC" = "0" ] && ok "超限时派生器退出码仍 0（只告警不阻断主路径）" || no "超限不应改退出码，实 $RC"
+[ "$(jget "$OUT9C" pr_queue.queue_length)" = "13" ] && ok "队列长度挂进账本" || no "queue_length 未挂链"
+[ "$(jget "$OUT9C" pr_queue.oldest.age_days)" = "10" ] && ok "最老 PR 年龄挂进账本" || no "oldest 未挂链"
+[ "$(jget "$OUT9C" pr_queue.behind_distribution.100+)" = "12" ] && ok "behind 分布挂进账本" || no "behind 分布未挂链"
+[ "$(jget "$OUT9C" pr_queue.closeable_count)" = "3" ] && ok "可关计数挂进账本" || no "closeable_count 未挂链"
+[ "$(jget "$OUT9C" pr_queue.over_limit)" = "True" ] && ok "超限标记挂进账本" || no "over_limit 未挂链"
+grep -q "先退役再开新 PR" "$TMPD/pq-out.txt" && ok "超限告警出现在派生器 stdout" || no "stdout 未见告警"
+# 旁路不参与交付度：同一夹具下 v1_passed 与无快照时一致
+[ "$(jget "$OUT9C" totals.v1_passed)" = "$(jget "$OUT9A" totals.v1_passed)" ] \
+  && ok "旁路段不改交付度分子（13 条超限 PR 不影响 v1_passed）" || no "旁路段污染了交付度"
+
 echo
 echo "PASS=$PASS FAIL=$FAIL"
 [ "$FAIL" = "0" ] || exit 1
