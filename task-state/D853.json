@@ -1,0 +1,35 @@
+{
+  "task_id": "D853",
+  "title": "批十四条件闭环（『有条件通过』=未通过，创始人 2026-09-20 裁决）",
+  "status": "claimed",
+  "risk": "high",
+  "spec": "批十四 CTO 验收退回态，条件逐条闭环：(1) M6 交回三件+自验结论未提交进分支；(2) PR #665 实测 51 文件/+5927-161 ≠ 汇报 30 文件/+3407-130；(3) K3 抽审提请（5 卡 + FTS5 折入项单列）；(4) D827/D828 重新定义后另派；(5) 台账追加；(6) 机制回灌：派单模板加『卡面前提实测』+『指令须过执行方复核』。",
+  "write_set": [
+    "docs/synova/coordination/批十四-收尾三件-20260920.md",
+    "docs/synova/coordination/批十四-自验结论-20260920.md",
+    "docs/synova/coordination/",
+    "task-state/D853.json"
+  ],
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-20",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": "mac-coding",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [],
+  "blocked": null,
+  "target": "2026-W38",
+  "acceptance_points": [
+    "M6 两件在仓库内可读（git 追踪，给路径与行数）",
+    "PR #665 描述按实测 51 文件重写或拆至预算内",
+    "K3 抽审已开卡并回填 verdict（未出结论前不得转『通过』）",
+    "D827/D828 已重新定义或明确挂起并写明理由",
+    "台账 8+2+7 项已登记",
+    "派单模板 §〇-e 卡面前提实测 + 执行方复核条款已落 main"
+  ],
+  "next": "① 逐条闭环 ② CTO 复验 ③ K3 抽审",
+  "note": "退回态来源：CTO 物理复核（3 处不一致 + M6 缺失 + 升级①②）。"
+}
