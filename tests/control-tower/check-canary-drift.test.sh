@@ -25,7 +25,14 @@ export LC_ALL=C.UTF-8 2>/dev/null || true
 #                      不计漂移、不误报假覆盖、exit 0（旧 sed 口径会把它判成漂移）
 #   H3 C2 行尾注释 glob 不产生覆盖 — 注释里 `# 覆盖 tests/project/*.test.sh` 但代码段只覆盖 aa
 #                      → 清单 1 项（非 2）；bb 同时进漂移（S3）+ 假覆盖（S2）→ exit 1
-#   H4 降级 awk 不可用（受限 PATH）— 显式 ⚠ 提示（铁律 11 不静默）+ 旧切分仍可跑出同一判定
+#   H4 降级 fail-closed — 受限 PATH（无 awk）→ `::error title=canary-exec` + 显式人读文案 + exit 2
+#                          （三态；同一夹具不再由 exit 1 退化为 0 —— fail-open 闭合）
+#   R1 注释起点对齐真实 shell 词边界 — `echo hi;#tests/op/op1.test.sh`：真实 shell 里 `;#` 后是注释
+#                      → 清单 1 项（该路径不产生覆盖）→ op1 进 DECLARED 未覆盖 → 假覆盖 exit 1
+#   R2 词边界不得过度扩大（对照片）— `x=y#z …` / `echo \# …` / `y="${z#p}" …` 三类仍算代码
+#                      → 清单 3 项、零漂移、假覆盖 0、exit 0（真实 shell 佐证 cmd 会被执行）
+#   R3 双引号内 `\"` 转义 — `echo "a\" #tests/esc/e1.test.sh" …` → 引号不提前闭合、路径不被截断
+#                      → 清单 1 项、不误报假覆盖、exit 0（V2 口径此处误红 exit 1）
 # 沙箱: SYNO_TESTS_DIR/SYNO_CI_YML/GITHUB_STEP_SUMMARY 注入临时目录；H4 另用受限 PATH
 # 口径: 期望值一律从物理事实推导（禁止把"注释声明条数"当清单数——那正是假绿口径）
 # ═════════════════════════════════════════════════════════════════
@@ -217,7 +224,7 @@ else
   no "H3 bb 未进假覆盖"
 fi
 
-# ── H4: awk 不可用 → 显式 ⚠ 降级（受限 PATH，铁律 11 不静默）──
+# ── H4: awk 不可用 → fail-closed exit 2（三态；受限 PATH，铁律 11 不静默）──
 NB="$TMPD/noawk"; mkdir -p "$NB"
 for b in grep sed find sort cut head tr dirname; do
   [ -e "$NB/$b" ] || ln -s "$(command -v "$b")" "$NB/$b"
@@ -228,19 +235,79 @@ else
   # 注意: PATH 受限后连 bash 都要用绝对路径调用（赋值先于命令查找生效）
   OK_H4=1
   OUT4A=$(PATH="$NB" SYNO_TESTS_DIR="$TMPD/h3/tests" SYNO_CI_YML="$H3Y" "$BASH_BIN" "$DRIFT" 2>&1); rc4a=$?
-  echo "$OUT4A" | grep -q "awk 不可用" && ok "H4 awk 不可用 → 显式 ⚠ 降级（不静默）" || { no "H4 缺降级提示"; OK_H4=0; }
-  # 降级口径 = 旧切分（行尾声明不进 DECLARED）→ H3 夹具在降级下应为 exit 0（C2 不生效），
-  #   与 awk 正常时的 exit 1 形成对照：降级是**可见**的，不是静默换语义
-  if [ "$rc4a" -eq 0 ] && ! echo "$OUT4A" | grep -q "canary-fake-coverage"; then
-    ok "H4 降级口径 = 旧语义（H3 型夹具 exit 0，C2 不生效——与 awk 正常时的 exit 1 对照）"
-  else
-    no "H4 降级口径异常: rc=$rc4a"; OK_H4=0
-  fi
-  echo "$OUT4A" | grep -q "⚠ 漂移" && ok "H4 降级口径仍报漂移（S3 不退化）" || { no "H4 降级口径漂移丢失"; OK_H4=0; }
-  OUT4B=$(PATH="$NB" SYNO_TESTS_DIR="$TMPD/glob/tests" SYNO_CI_YML="$GYML" "$BASH_BIN" "$DRIFT" 2>&1); rc4b=$?
-  [ "$rc4b" -eq 0 ] && ok "H4 降级口径下 F6 型（glob 命中）仍 exit 0" || { no "H4 F6 型 rc=$rc4b"; OK_H4=0; }
-  [ "$OK_H4" -eq 1 ] && ok "H4 降级路径整体可用（非静默、判定不退化）"
+  [ "$rc4a" -eq 2 ] && ok "H4 awk 不可用 → exit 2（三态 fail-closed，既非 0 也非 1）" || { no "H4 应 exit 2, 实际 $rc4a"; OK_H4=0; }
+  echo "$OUT4A" | grep -q "::error title=canary-exec" && ok "H4 ::error title=canary-exec 注解输出" || { no "H4 缺 ::error title=canary-exec"; OK_H4=0; }
+  echo "$OUT4A" | grep -q "awk 不可用" && ok "H4 显式人读文案（不静默）" || { no "H4 缺人读文案"; OK_H4=0; }
+  echo "$OUT4A" | grep -q "canary-fake-coverage" && no "H4 降级路径误报假覆盖（应走执行失败通道）" || ok "H4 降级走执行失败通道（非假覆盖通道）"
+  # 反面对照: 同一 H3 夹具在 awk 正常时是 exit 1（假覆盖）——降级后必须变 2 而不是变 0（T4 抓到的 fail-open）
+  [ "$OK_H4" -eq 1 ] && ok "H4 降级 fail-closed（同一夹具不再由 exit 1 退化为 0）"
 fi
+
+# ═════════════════════════════════════════════════════════════════
+# R1-R2 (D858-V3): 注释起点对齐真实 shell 词边界（R1）+ 不得过度扩大（R2 对照片）
+# ═════════════════════════════════════════════════════════════════
+
+# ── R1: `;#` 之后是注释（真实 shell 语义）→ 其路径进 DECLARED 不覆盖 → 假覆盖 exit 1 ──
+R1D="$TMPD/r1"; mkdir -p "$R1D/tests/op"
+printf '#!/bin/bash\nexit 0\n' > "$R1D/tests/op/ok.test.sh"
+printf '#!/bin/bash\nexit 0\n' > "$R1D/tests/op/op1.test.sh"
+cat > "$R1D/ci.yml" <<'YML'
+run: |
+  run-tests tests/op/ok.test.sh
+  echo hi;#tests/op/op1.test.sh
+  # 覆盖 tests/op/ok.test.sh
+YML
+# 真实 shell 佐证（规则来自 shell 词法，不是本脚本的私设）
+R1REAL=$(bash -c 'echo hi;#echo NOPE' 2>&1)
+[ "$R1REAL" = "hi" ] && ok "R1 真实 shell 佐证: \`;#\` 之后是注释（bash -c 'echo hi;#echo NOPE' 只输出 hi）" || no "R1 真实 shell 佐证失败: [$R1REAL]"
+OUTR1=$(SYNO_TESTS_DIR="$R1D/tests" SYNO_CI_YML="$R1D/ci.yml" bash "$DRIFT" 2>&1); rcr1=$?
+[ "$rcr1" -eq 1 ] && ok "R1 \`;#\` 路径未被当覆盖 → exit 1（假覆盖 fail-closed）" || no "R1 应 exit 1, 实际 $rcr1"
+echo "$OUTR1" | grep -q "canary 清单: 1 项" \
+  && ok "R1 清单项数 = 代码段 1 项（\`;#\` 后的路径不产生覆盖）" \
+  || no "R1 清单项数异常: $(echo "$OUTR1" | grep 'canary 清单' | head -1)"
+echo "$OUTR1" | grep -q "::error title=canary-fake-coverage" && echo "$OUTR1" | grep -q "tests/op/op1.test.sh" \
+  && ok "R1 点名 op1（注释声明未被物理覆盖）" || no "R1 未点名 op1"
+echo "$OUTR1" | grep -q "tests/op/ok.test.sh" && no "R1 合法声明（ok 已物理覆盖）被误报" || ok "R1 整行注释里的合法声明不误报"
+
+# ── R2 对照片: 真实 shell 词边界不得过度扩大（`x=y#z` / `\#` / `${x#p}` 三类仍是代码）──
+R2D="$TMPD/r2"; mkdir -p "$R2D/tests/word" "$R2D/tests/hash" "$R2D/tests/brace"
+printf '#!/bin/bash\nexit 0\n' > "$R2D/tests/word/op2.test.sh"
+printf '#!/bin/bash\nexit 0\n' > "$R2D/tests/hash/h.test.sh"
+printf '#!/bin/bash\nexit 0\n' > "$R2D/tests/brace/b.test.sh"
+cat > "$R2D/ci.yml" <<'YML'
+run: |
+  x=y#z tests/word/op2.test.sh
+  echo \# tests/hash/h.test.sh
+  y="${z#p}" tests/brace/b.test.sh
+YML
+R2REAL=$(bash -c 'x=y#z echo EXECUTED' 2>&1)
+[ "$R2REAL" = "EXECUTED" ] && ok "R2 真实 shell 佐证: \`x=y#z cmd\` 执行 cmd（# 在词中→字面量）" || no "R2 真实 shell 佐证失败: [$R2REAL]"
+OUTR2=$(SYNO_TESTS_DIR="$R2D/tests" SYNO_CI_YML="$R2D/ci.yml" bash "$DRIFT" 2>&1); rcr2=$?
+[ "$rcr2" -eq 0 ] && ok "R2 三类形态均未被当注释 → exit 0" || no "R2 应 exit 0, 实际 $rcr2"
+echo "$OUTR2" | grep -q "canary 清单: 3 项" \
+  && ok "R2 清单 3 项（x=y#z / \\# / \${x#p} 三类全计入覆盖）" \
+  || no "R2 清单项数异常: $(echo "$OUTR2" | grep 'canary 清单' | head -1)"
+for _p in op2 h b; do
+  echo "$OUTR2" | grep -q "/${_p}\.test\.sh" && no "R2 ${_p}.test.sh 被误当注释（进了漂移/假覆盖）" || ok "R2 ${_p}.test.sh 未被误当注释"
+done
+echo "$OUTR2" | grep -q "canary-fake-coverage" && no "R2 误报假覆盖" || ok "R2 假覆盖 0"
+
+# ═════════════════════════════════════════════════════════════════
+# R3 (D858-V3): 双引号内 `\"` 转义 → 引号不提前闭合 → 不误红
+# ═════════════════════════════════════════════════════════════════
+R3D="$TMPD/r3"; mkdir -p "$R3D/tests/esc"
+printf '#!/bin/bash\nexit 0\n' > "$R3D/tests/esc/e1.test.sh"
+cat > "$R3D/ci.yml" <<'YML'
+run: |
+  echo "a\" #tests/esc/e1.test.sh" >/dev/null && bash tests/esc/e1.test.sh
+YML
+OUTR3=$(SYNO_TESTS_DIR="$R3D/tests" SYNO_CI_YML="$R3D/ci.yml" bash "$DRIFT" 2>&1); rcr3=$?
+[ "$rcr3" -eq 0 ] && ok "R3 双引号内 \\\" 转义 → 不误红 exit 0" || no "R3 应 exit 0, 实际 $rcr3"
+echo "$OUTR3" | grep -q "canary 清单: 1 项" \
+  && ok "R3 e1 计入清单（路径未被注释截断）" \
+  || no "R3 清单项数异常: $(echo "$OUTR3" | grep 'canary 清单' | head -1)"
+echo "$OUTR3" | grep -q "canary-fake-coverage" && no "R3 误报假覆盖" || ok "R3 不误报假覆盖"
+echo "$OUTR3" | grep -q "tests/esc/e1.test.sh" && no "R3 e1 出现在漂移/假覆盖清单" || ok "R3 e1 未进漂移清单"
 
 echo ""
 echo "结果: $PASS 通过, $FAIL 失败"

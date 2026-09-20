@@ -17,6 +17,11 @@
 #   D858-V2（T2 自验 C1/C2 闭环）:
 #     C1 引号感知切分——不再用 `sed 's/#.*$//'`（会把引号内 `#` 之后的真实路径删掉 → 误红）。
 #     C2 行尾注释段进 DECLARED——行尾注释里的声明不再是无信号的纯文本通道。
+#   D858-V3（T4 复验 R1/R3 + 降级三态）:
+#     R1 注释起点前导字符集扩为真实 shell 词边界（行首/空白/`;`/`|`/`&`/`(`/`)`）——
+#        `echo hi;#tests/op/op1.test.sh` 在真实 shell 里 `;#` 之后是注释，不得算覆盖。
+#     R3 双引号内 `\` 转义跳过下一字符——消除 `\"` 提前闭合导致的注释误判与误红。
+#     降级 fail-closed——awk 缺失时不再退回旧口径（同一夹具会由 exit 1 变 0），改 exit 2。
 #
 # 契约 (铁律 47):
 #   @input  — 无参；注入缝: SYNO_TESTS_DIR（测试目录，默认 tests/）、
@@ -25,12 +30,14 @@
 #   @output — (a) 漂移清单（仓库有、可执行覆盖未含的 .test.sh）
 #             (b) 幽灵清单项（覆盖集合含、文件不存在）
 #             (c) 假覆盖清单（注释声明未被物理覆盖）— D858/L4-1
-#             (d) ::warning（漂移/幽灵）/ ::error（假覆盖）注解
+#             (d) ::warning（漂移/幽灵）/ ::error（假覆盖）/ ::error title=canary-exec（执行失败）
 #             (e) GITHUB_STEP_SUMMARY markdown 摘要 — D858/P2
-#   @exit   — 0 = 无假覆盖（漂移/幽灵仅告警——存量漂移不阻断）；1 = 假覆盖（fail-closed）
+#   @exit   — 0 = 无假覆盖（漂移/幽灵仅告警——存量漂移不阻断）
+#             1 = 假覆盖（注释声明未被物理覆盖，fail-closed）
+#             2 = 检查本身无法可信执行（awk 缺失，fail-closed；与 ctrl-tower-change 三态一致）
 #   @degraded — ci.yml/测试目录缺失 → 显式提示跳过 + exit 0（铁律 11 显式，非静默）
-#               awk 不可用 → 显式 ⚠ + 退回引号无关旧切分（C1/C2 在该路径不生效）
-#   @deps   — bash + POSIX 工具（awk/grep/sed/find/sort/cut/head/tr/dirname）；零新依赖
+#               awk 缺失 → 显式 ⚠ + `::error title=canary-exec` + exit 2（不回退旧切分）
+#   @deps   — bash + POSIX 工具（awk/grep/find/sort/cut/head/tr/dirname）；零新依赖
 # 覆盖语义规范 S1-S6: .claude/task-briefs/2026-09-21-D858-canary-glob-coverage.md
 # 范围: tests/ 下全部 *.test.*（.sh/.ts/.py）与 canary 可执行覆盖集合对账。
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -56,22 +63,43 @@ fi
 #   注入缝下同样成立——前缀取 dirname(TESTS_DIR) 而非 git ROOT）
 _BASE="$(dirname "${TESTS_DIR%/}")"
 
-# ── S1 唯一覆盖来源: 每行切出的**代码段**（D858-V2 C1/C2）──
+# ── S1 唯一覆盖来源: 每行切出的**代码段**（D858-V2 C1/C2，D858-V3 R1/R3）──
 #   逐字符引号跟踪（POSIX awk；macOS BSD awk 与 Git Bash awk 均可用）把每行切成两段：
 #     代码段（引号外 + 引号内一律算代码）→ 覆盖来源（S1）
 #     整行注释 / 行尾注释段            → DECLARED（S2；不产生覆盖，S1c）
-#   `#` 仅在**引号外**且位于行首或前置空白时才算注释起点（`x=y#z` 不是注释）。
-#   单引号用 sprintf("%c", 39) 生成——不依赖 awk 的八进制转义（gawk/mawk/BSD awk 一致）。
+#   注释起点（R1，对齐真实 shell 词法）: `#` 在**引号外**且前一字符属于
+#     行首 | 空白 | `;` | `|` | `&` | `(` | `)`   —— 这些是真实 shell 的操作符/词边界
+#     （实测 `bash -c 'echo hi;#echo NOPE'` 只输出 hi → `;#` 后是注释，路径从未执行）。
+#   不算注释起点（对照片，不得过度扩大）: `x=y#z cmd`（真实 shell 执行 cmd）、`${x#p}`、
+#     `\#`（反斜杠转义 → 字面 #）。
+#   双引号内 `\` 为转义（R3）: 跳过下一字符、不参与引号闭合判定——否则 `\"` 提前闭合
+#     引号、其后 ` #` 被误判注释起点 → 截断真实可执行路径 → 误红。
+#   单引号/反斜杠用 sprintf("%c", 39/92) 生成——不依赖 awk 转义字面量（gawk/mawk/BSD awk 一致）。
 #   C1: 旧 `sed -E 's/#.*$//'` 无引号感知——引号内 `#` 之后的真实路径被一并删掉 → 假覆盖误红。
 #   C2: 旧口径只收整行注释——行尾注释里的声明既不覆盖也不报红（纯文本通道残留）。
 _SPLIT_AWK='
-{ line = $0; n = length(line); code = ""; cmt = ""; q = ""; i = 1; sq = sprintf("%c", 39)
+BEGIN { sq = sprintf("%c", 39); bs = sprintf("%c", 92); tab = sprintf("%c", 9) }
+{ line = $0; n = length(line); code = ""; cmt = ""; q = ""; i = 1
   while (i <= n) {
     c = substr(line, i, 1)
-    if (q != "") { code = code c; if (c == q) q = ""; i++; continue }
+    if (q != "") {
+      if (q == "\"" && c == bs) {          # R3: 双引号内转义 → 连下一字符一起算代码
+        code = code c
+        if (i < n) { code = code substr(line, i+1, 1); i += 2 } else { i++ }
+        continue
+      }
+      code = code c
+      if (c == q) q = ""
+      i++
+      continue
+    }
     if (c == "\"" || c == sq) { q = c; code = code c; i++; continue }
-    if (c == "#" && (i == 1 || substr(line, i-1, 1) == " " || substr(line, i-1, 1) == "\t")) {
-      cmt = substr(line, i); break
+    if (c == "#") {
+      if (i == 1) { cmt = substr(line, i); break }
+      p = substr(line, i-1, 1)             # R1: 真实 shell 词边界（不含反斜杠 → `\#` 是转义）
+      if (p == " " || p == tab || p == ";" || p == "|" || p == "&" || p == "(" || p == ")") {
+        cmt = substr(line, i); break
+      }
     }
     code = code c; i++
   }
@@ -83,11 +111,11 @@ if [ -n "$_AWK_BIN" ]; then
   EXEC_LINES="$(printf '%s\n' "$_SPLIT" | grep '^E' | cut -c2-)"
   DECL_LINES="$(printf '%s\n' "$_SPLIT" | grep '^D' | cut -c2-)"
 else
-  # awk 不可用 → 显式降级（铁律 11：不静默）。退回旧口径：行尾注释整体丢弃
-  #   → C1（引号内 #）/ C2（行尾声明）在本路径不生效；该降级有测试覆盖（H4）
-  echo -e "${YELLOW}⚠ awk 不可用: 注释切分降级为引号无关的旧口径（行尾注释不参与声明校验，D858-V2 C1/C2 不生效）${RESET}"
-  EXEC_LINES="$(grep -vE '^[[:space:]]*#' "$CI_YML" | sed -E 's/#.*$//')"
-  DECL_LINES="$(grep -E '^[[:space:]]*#' "$CI_YML")"
+  # awk 缺失 → 覆盖判定无法可信执行 → fail-closed（三态: 2 = 执行失败/降级）
+  #   不再退回旧 sed 口径（那会把 R1/C1/C2 的已知缺陷重新放回生产线，且同一夹具由 1 变 0）
+  echo -e "${YELLOW}⚠ awk 不可用: 覆盖判定无法可信执行（注释切分不可用）—— fail-closed${RESET}"
+  echo "::error title=canary-exec::awk 不可用——canary 覆盖判定无法可信执行（fail-closed，exit 2）"
+  exit 2
 fi
 # 令牌: tests/ 相对路径，以 .test.sh 结尾，字面或含 glob 元字符（* 在 ERE 字符类内为字面量）
 _TOKEN_RE='tests/[A-Za-z0-9_/*.-]+\.test\.sh'
