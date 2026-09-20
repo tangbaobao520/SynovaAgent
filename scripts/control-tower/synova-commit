@@ -612,9 +612,17 @@ if [[ -f "$STAGING_GUARD" ]]; then
         # rc≠0: block 用 exit 1 + JSON（正常阻断）vs 崩溃（非 JSON）→ 区分显式降级
         GUARD_STATUS=$(echo "$GUARD_OUT" | "$PYBIN" -c "import json,sys; print(json.load(sys.stdin).get('status','degraded'))" 2>/dev/null || echo "degraded")
         if [[ "$GUARD_STATUS" != "block" ]]; then
-          echo -e "${YELLOW}⚠ staging-guard 执行异常 (rc=$GUARD_RC) — 降级放行，请检查其日志${NC}"
-          echo "$GUARD_OUT" | head -3
+          # D853 (CTO 授权): 旧行为 = 异常降级放行（fail-open）——把 "guard 不可用" 翻译成 "放行"，
+          #   与 staging_guard._fail_closed() 治的是同一族病（链断/异常 ≠ 没有认领）。
+          #   认领维度是**保护**维度 → 异常即 fail-closed：阻断 + 点名原因与原始输出（铁律 11/24/31），
+          #   绝不静默放行。口径与 staging_guard._fail_closed() 一致。
+          echo -e "${RED}❌ D853: staging-guard 执行异常 (rc=$GUARD_RC) — 认领判定不可用 → fail-closed 阻断${NC}"
+          echo -e "${YELLOW}   （旧行为是降级放行；异常不等于没有认领，故不再放行）${NC}"
+          echo "$GUARD_OUT" | head -5
           echo ""
+          echo -e "${RED}  可执行出路: 修好 guard 后重跑；或按实情移出暂存文件: git restore --staged <file>${NC}"
+          echo ""
+          exit 1
         fi
       else
         GUARD_STATUS=$(echo "$GUARD_OUT" | "$PYBIN" -c "import json,sys; print(json.load(sys.stdin).get('status','degraded'))" 2>/dev/null || echo "degraded")

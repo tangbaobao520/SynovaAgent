@@ -139,6 +139,23 @@ git commit → synova-commit → staging_guard.py --session-id <D#> --staged <fi
 # 退出码（claim_release CLI，不变）: 0 成功 | 1 业务否定 | 2 契约不满足
 ```
 
+## 第四轮（CTO 授权扩写集 2，2026-09-20）：调用点 fail-closed
+- **授权**：`scripts/control-tower/synova-commit` 进写集（CTO 显式授权 + 已登记偏离），边界 = **只改**
+  "guard 异常/rc≠0 时如何处置"那一段，口径与 `staging_guard._fail_closed()` 一致，不重构其它逻辑。
+- **改什么**：`:601-611` 旧行为「rc≠0 且 status≠block → `⚠ 降级放行，请检查其日志`」= **fail-open**
+  （把"guard 不可用"翻译成"放行"）→ 改为 **fail-closed**：`❌ D853: staging-guard 执行异常 (rc=…) —
+  认领判定不可用 → fail-closed 阻断` + 打印原始输出前 5 行 + `exit 1`。与 guard 内部 `_fail_closed()` 同哲学：
+  认领维度是保护维度，异常 ≠ 没有认领。
+- **为什么这不是"顺手重构"**：它与本卡三条根因同族（链断/异常被翻译成放行）——diagnose 出的
+  `DIAG-FAIL ② 应拦, 实际 exit=0`（双平台）正是这条路径的候选；且该 fail-open 有**独立可证**的洞（见 ⑨）。
+- **夹具升级（强度↑，不是放宽）**：
+  · ④ 旧断言只 grep 源码文案「降级放行，请检查其日志」（钉住旧行为）→ 升级为 grep「异常显式命名」+
+    「fail-closed 阻断」（旧实现上该断言**红**，见判别性证据）
+  · ⑨ **行为面新增**：沙箱注入 guard 不可用（语法错误 → 编译期失败）→ 断言 `exit 1` + 异常点名
+    （**旧实现 rc=0** = 判别性成立）
+  · ② 前置断言：registry 必须真的登记上 other-sess（旧写法 `>/dev/null 2>&1` 把准备步骤失败也吞了 →
+    会把"准备失败"误诊成"门禁不拦"）
+
 ## 威胁模型（本卡闭合的锁面：谁能改环境 → 谁就能改"事实"）
 | 环境向量 | 基线行为（实测/静态） | 本卡处置 | 残余 |
 |---|---|---|---|
@@ -147,6 +164,8 @@ git commit → synova-commit → staging_guard.py --session-id <D#> --staged <fi
 | `GIT_WORK_TREE`/`GIT_DIR` 指外部仓（resolver） | ROOT 变外部仓 → 候选池空 → guard **pass**，被守护仓零痕迹 | 剥 `GIT_*` 后再 `rev-parse`/`branch` | 无 |
 | `PATH` 里塞假 `git` | 假 git 可回吐任意事实（此处用 `ls-files`/`rev-parse`） | 解析绝对路径 + 试运行校验 `--version` 形如 `git version N.` | 能让假 git 输出合法 version 串的本地进程仍可骗过（无外部信任锚）→ 已登记；本地进程本就等同任意代码执行 |
 | `PYTHONIOENCODING`/控制台 cp1252 | stderr 中文被 backslashreplace 吃 → 断言恒红 | stdout+stderr 双 reconfigure UTF-8 | 无 |
+| **guard 异常/崩溃（调用点）** | `synova-commit` 旧行为「降级放行」→ 该拦的放行 | 调用点 **fail-closed**（异常 → 阻断 + 点名；授权偏离，见第四轮） | 若 guard 真坏，提交被阻断（**有意的** fail-closed；出路文案给出"移出暂存文件/修好 guard"） |
+| guard **内部**链断（bash/python/git 不可用） | `claimed` 空 → 跳过认领判定 | `_fail_closed()`：block + degraded + 点名（第二轮） | 无 |
 
 ## 第二轮追加（CTO 授权，2026-09-20）：CI 诊断 + 链断 fail-closed
 1. **ubuntu 回归定位**（`synova-commit.test.sh` pass=16 fail=1，本地不可复现：CI 环境变量、detached HEAD、
@@ -188,6 +207,6 @@ git commit → synova-commit → staging_guard.py --session-id <D#> --staged <fi
 |---|---|
 | .claude/task-briefs/2026-09-20-D853-Windows认领制fail-open根治.md | task |
 | memory/notes/implemented/2026-09-20-D853-windows-claim-gate-failopen.md | task |
-| tests/control-tower/staging_guard.test.sh | task |
+| scripts/control-tower/synova-commit | task |
 | tests/control-tower/synova-commit.test.sh | task |
 

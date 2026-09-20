@@ -86,6 +86,19 @@
   在 rc≠0 非 block 时降级放行 = fail-open，需 CTO 授权扩写集）；若"放了"，则修 registry 状态一致性；
   若"跳了"，则修暂存区前置。三者修法完全不同，故先取证据。
 
+## 第四轮（2026-09-20，CTO 授权扩写集 2）：调用点 fail-closed
+
+- `synova-commit` 的 guard 段旧行为：`rc≠0` 且 `status≠block` → `⚠ 降级放行，请检查其日志` = **fail-open**
+  （"guard 不可用"被翻译成"放行"）。改为 `❌ … fail-closed 阻断` + 打印原始输出 + `exit 1`，
+  与 `staging_guard._fail_closed()` 同口径（认领维度 = 保护维度）。
+- **独立可证的洞**（不依赖 CI 注解）：夹具 ⑨ 在沙箱里把 guard 弄成不可用（语法错误 → 编译期失败），
+  旧实现 `rc=0`（放行）、新实现 `rc=1`（阻断 + 点名）→ 判别性成立。
+- 夹具 ④ 从"grep 旧文案（降级放行）"升级为"grep 异常命名 + fail-closed"（旧实现上红）；
+  ② 增加"registry 登记成功"前置断言（旧写法把准备步骤失败 `>/dev/null 2>&1` 吞掉 → 误诊为"门禁不拦"）。
+- 边界：**只改** guard 异常处置那一段；synova-commit 其余逻辑（D839 交付、K3 已审）未动。
+- 仍未动（超授权）：`synova-commit` 里"python 不可用 → GUARD_STATUS=degraded → 跳过"那条分支
+  （同样是放行语义）→ 若下一轮注解显示 ② 走的是这条，再请授权。
+
 ## 残余（显式登记，未静默放过）
 
 - 假 git 若同时①输出合法 `git version N.`②不在临时目录③不在被判定的仓库内，仍可能被采信

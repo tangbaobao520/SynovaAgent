@@ -35,7 +35,10 @@ grep -q 'STAGING_GUARD="\$PROJECT_ROOT/scripts/control-tower/staging_guard.py"' 
   && grep -q -- '--session-id "$SESSION_ID" --staged' "$SC" \
   && ok "① staging_guard 接线存在（D311 段）" || bad "① staging_guard 接线缺失"
 grep -q "暂存区隔离 (D311 M1b)" "$SC" && ok "① 阻断点名文案存在" || bad "① 阻断文案缺失"
-grep -q "降级放行，请检查其日志" "$SC" && ok "④ guard 崩溃显式降级提示（非静默）" || bad "④ 降级静默"
+# D853: ④ 语义升级（旧契约「文案含降级放行」= 异常放行，已被 CTO 授权的 fail-closed 取代）
+#   断言强度↑：既查"异常被显式命名"，也查"fail-closed 阻断"；行为面由 ⑨ 实测（不是只查文案）
+grep -q "staging-guard 执行异常" "$SC" && grep -q "fail-closed 阻断" "$SC" \
+  && ok "④ guard 异常路径显式命名 + fail-closed（D853 升级，旧为降级放行）" || bad "④ 异常路径未显式/fail-closed"
 
 # ── 沙箱: 复制 scripts（REPO_ROOT=沙箱 → registry/guard/bypass.log 全落沙箱内）──
 # 注意: staging_guard 从脚本位置解析 registry（不吃 SYNO_CT_DIR）——隔离靠整目录复制而非 env
@@ -52,6 +55,14 @@ STUB="$TMPD/stub-precommit.sh"; printf '#!/bin/bash\nexit 0\n' > "$STUB"; chmod 
 # 他人 session 登记写集 x.md
 python3 "$SB/scripts/control-tower/session_registry.py" register --session-id other-sess --brief "" --task-id D999 >/dev/null 2>&1
 python3 "$SB/scripts/control-tower/session_registry.py" write-set --session-id other-sess --add x.md >/dev/null 2>&1
+# D853: ② 前置断言 —— registry 必须**真的**登记上（旧写法 `>/dev/null 2>&1` 把准备步骤的失败也吞了，
+#   于是"准备失败"会以"② 没拦"的形式出现，把两类不同根因混成一个症状）。这条只做"前置可见"，不放宽 ②。
+D2_PRE=$(cd "$SB" && python3 scripts/control-tower/session_registry.py claimants x.md 2>&1 | head -1)
+if echo "$D2_PRE" | grep -q "other-sess"; then
+  ok "② 前置: registry 登记 other-sess→x.md 成功"
+else
+  bad "② 前置: registry 未登记上（claimants=$D2_PRE）"
+fi
 
 # ② 行为(拦): 他人写集文件 → exit 1 + 点名
 echo "foreign" > "$SB/x.md"
@@ -170,6 +181,22 @@ IDX8B=$(git -C "$SB7" diff --cached --name-only HEAD 2>/dev/null | tr '\n' ' ')
 echo "$OUT8" | grep -q "提交树与暂存声明不一致" && ok "⑧ 点名不一致" || bad "⑧ 无错配文案"
 [ "$H8" = "$H8B" ] && ok "⑧ 假阻断防止: 提交已撤销（HEAD 未前移）" || bad "⑧ 提交仍留在历史"
 [ "$IDX8" = "$IDX8B" ] && ok "⑧ 暂存区已还原（暂存态未丢）" || bad "⑧ 索引未还原: '$IDX8' → '$IDX8B'"
+
+# ⑨ D853（行为面）: guard 异常 → **fail-closed**（旧行为 = 降级放行 → 该用例在旧实现上 exit 0）
+SBC="$TMPD/crash"; mkdir -p "$SBC/.claude" "$SBC/.codex/control-tower"
+cp -R "$HERE/../../scripts" "$SBC/scripts"
+# 注入"guard 不可用"：语法错误（编译期即失败 → 任何执行路径都到不了 main；比 append raise 可靠）
+printf '\nthis is not valid python((\n' >> "$SBC/scripts/control-tower/staging_guard.py"
+git -C "$SBC" init -q
+git -C "$SBC" config user.email "test@test.local"; git -C "$SBC" config user.name "test"
+touch "$SBC/.claude/bypass.log"
+echo "crash" > "$SBC/z.md"; git -C "$SBC" -c user.name=t -c user.email=t@t add z.md
+OUTC=$(cd "$SBC" && SYNO_PRE_COMMIT="$STUB" bash "$SBC/scripts/control-tower/synova-commit" \
+        --task-id T9 --agent test --message "test: guard crash probe" 2>&1); rcc=$?
+[ "$rcc" -eq 1 ] && ok "⑨ guard 异常 → exit 1（fail-closed；旧实现为降级放行 exit 0）" \
+  || bad "⑨ guard 异常未阻断 rc=$rcc"
+printf '%s' "$OUTC" | grep -q "staging-guard 执行异常" \
+  && ok "⑨ 异常显式点名（非静默）" || bad "⑨ 异常未点名"
 
 echo "pass=$PASS fail=$FAIL"
 if [ "$FAIL" -ne 0 ]; then
