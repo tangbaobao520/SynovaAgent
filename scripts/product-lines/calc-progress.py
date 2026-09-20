@@ -105,8 +105,34 @@ BUCKETS_AUTHORITY = (
 # D809 撤回标记（不是证据类型，是「点亮已撤回、等接线」的显式声明）——三档中「写了没接」的唯一源
 WITHDRAWAL_KIND = "pending_wiring"
 V1_DOD_GLOB = "docs/synova/project/26线-V1验收标准*.md"
-# 本器派生物（evidence_cmd 复现取值的位置；仓库相对路径，跨平台）
+# 本器派生物（仓库相对路径，跨平台）
 BUCKETS_ARTIFACT = "docs/synova/product-lines/product-progress.json"
+# 件级一次源侧重算的落点（evidence_cmd 的比对基准；缺失即 fail-closed 报错）
+BUCKETS_TMP = "/tmp/ro-pp.json"
+
+# ⓓ-1/ⓓ-4 命令语义（**件内 schema 级说明**，不只写在 docstring）：
+#   词义不可互顶 —— 「每个数字那条命令」只能是**源侧重算**；读回派生物另有其名，且明文声明它不承担可证伪职责。
+CMD_SEMANTICS = {
+    "evidence_cmd": ("**源侧重算**（本档「那条命令」）：从权威输入（product-lines.yaml / 证据记录 / "
+                     "V1 断言表 / git 事实）重算该档同一个值，并与已提交派生件该档比对；"
+                     "对不上 → 断言失败并打印档路径；缺中间件 → fail-closed 报错。"
+                     "禁止读回已提交派生物充当本字段（读回自己的输出不构成证据）。"),
+    "artifact_selfcheck_cmd": ("**派生物侧自查**（毫秒级）：读回**已提交**派生物该档取值，核对"
+                               "「看板显示的数字 == 提交件里的数字」。**不承担可证伪职责**"
+                               "（源侧错它也错）→ **不占用**「每个数字那条命令」的位置。"),
+    "regenerate_cmd": ("**件级一次源侧重算** → %s（--today 固定为产出该件那天，便于与提交件逐档比对；"
+                       "要看今天的新鲜读数请省略 --today）。evidence_cmd 依赖此件，必须先跑。" % BUCKETS_TMP),
+    "source_probe_cmd": "只服务 null 档：复现「为什么没有数字」（判定源缺席 = SOURCE_ABSENT）。",
+    "independent_check_cmd": ("不读管线的**独立判据**；kind ∈ equality（独立复现同一数字）/ "
+                              "reconciliation（两源对账，**不一致即报警**，需人工裁决）/ "
+                              "bound（必要条件上界：看板值不得超过证据面覆盖点）。"),
+    "reproducibility_strength": {
+        "本件": ("源侧重算 + 逐档与提交件比对（fail-closed）；重算一次实测 1.5–12.7s（随机器负载），"
+                 "故按「一次重算 + 203 次比对」摊薄。"),
+        "与账本件的差异": ("ledger.json 各档 evidence_cmd 直接读源、单档毫秒级、无需中间件；"
+                           "本件因六态状态机（TTL + git 失效检测）无法内联表达，故走中间件比对。"),
+    },
+}
 
 # 「写了没接」档的 evidence_cmd = **独立源侧扫描**（不重跑本器、不读派生物）
 _WITHDRAWN_CMD = """python3 - written_not_wired <<'PY'
@@ -134,8 +160,59 @@ print('%s=%s' % (name, 'SOURCE_PRESENT' if hits else 'SOURCE_ABSENT'))
 PY"""
 
 
+def _seg_suffix(segments):
+    return "".join("[%s]" % repr(s) for s in tuple(segments) + ("count",))
+
+
+def _path_label(segments, line_id=None):
+    base = "buckets" if line_id is None else "lines[id=%s].buckets" % line_id
+    return base + "." + ".".join(segments) + ".count"
+
+
+def regenerate_cmd(today_str):
+    """件级一次源侧重算命令（--today 固定为产出该件那天，保证与提交件可逐档比对）。"""
+    return ("python3 scripts/product-lines/calc-progress.py --out %s --today %s"
+            % (BUCKETS_TMP, today_str or "<产出该件的日期 YYYY-MM-DD>"))
+
+
+def source_recompute_cmd(field, segments, line_id=None):
+    """evidence_cmd = **源侧重算该档 + 与已提交派生件逐档比对**（ⓓ-2 指定形态）。
+
+    @input  — field:str（档名）；segments:tuple[str,...]（逐段路径，含 'buckets'）
+              line_id:int|str|None（非 None = 线级：按线 id 定位）
+    @output — str，形态:
+              `python3 -c "…assert fresh[<path>] == committed[<path>], '<path> mismatch'"`，
+              通过时打印 `<field>=<值>`；不通过时打印 **档路径 + 两值** 并以非零退出。
+    @contract — 三条硬约束（ⓓ-1/ⓓ-2）:
+                ① 重算自**权威输入**（经 regenerate_cmd 产出的 %s），**不读回提交件充当证据**；
+                ② `%s` **缺失 → fail-closed 报错**，绝不静默回退读提交件；
+                ③ 比对失败必须**打印档路径**（否则只看输出不知哪一档错）。
+    """ % (BUCKETS_TMP, BUCKETS_TMP)
+    seg = _seg_suffix(segments)
+    if line_id is None:
+        af, ac = "f" + seg, "k" + seg
+    else:
+        af = "next(l for l in f['lines'] if str(l['id']) == %s)" % repr(str(line_id)) + seg
+        ac = "next(l for l in k['lines'] if str(l['id']) == %s)" % repr(str(line_id)) + seg
+    label = _path_label(segments, line_id)
+    py = (
+        "import json,os,sys;"
+        "p='" + BUCKETS_TMP + "';c='" + BUCKETS_ARTIFACT + "';"
+        "sys.exit('FAIL-CLOSED: 缺 ' + p + ' —— 先跑 regenerate_cmd 源侧重算；不得读回提交件') "
+        "if not os.path.exists(p) else None;"
+        "f=json.load(open(p,encoding='utf-8'));k=json.load(open(c,encoding='utf-8'));"
+        "a=" + af + ";b=" + ac + ";"
+        "sys.exit('MISMATCH " + label + ": fresh=' + repr(a) + ' committed=' + repr(b) + "
+        "' —— 源侧与提交件不一致，请重生成派生件') if a != b else None;"
+        "print('" + field + "=' + str(a))"
+    )
+    return 'python3 -c "' + py + '"'
+
+
 def artifact_drill_cmd(field, segments, line_id=None):
-    """三档 evidence_cmd = 从**本器产出的派生物**复现该档取值的命令（每档必有）。
+    """artifact_selfcheck_cmd = 从**已提交派生物**复现该档取值的命令（毫秒级自查，每档必有）。
+
+    ⓓ-1 改名说明：本命令**不是**「每个数字那条命令」（那是 `evidence_cmd` = 源侧重算）；
 
     @input  — field:str（档名；命令输出 `<field>=<值>`，null 打印 `None`）
               segments:tuple[str,...]（**逐段**下钻路径，从顶层对象起算；
@@ -163,10 +240,55 @@ def artifact_drill_cmd(field, segments, line_id=None):
             "print('%s=' + str(v))\"" % (BUCKETS_ARTIFACT, expr, field))
 
 
-# 全件源侧重生成命令（一次派生，供 buckets.regenerate_cmd）
-REGENERATE_CMD = ("python3 scripts/product-lines/calc-progress.py --out "
-                  "docs/synova/product-lines/product-progress.json")
 
+# ⓓ-3 线级独立判据（线级恰是创始人第一眼看的粒度，原为零独立判据）：
+#   ① written_not_wired = **两源对账**（V1 断言表该线撤回行 vs 提交件该线值）——
+#      **不一致即报警**（非零退出 + 打印两源数值 + 明说「需人工裁决，不是自动判错」），不是「必须相等」；
+#   ② healthy = **必要条件上界**（看板 healthy 不得超过该线点集的证据面 k3 PASS 覆盖点数）——
+#      独立直接读 yaml + 证据记录，不经管线。
+_LINE_RECONCILE_TMPL = """python3 - {line_id} <<'PY'
+import glob, json, re, sys
+lid = sys.argv[1]
+rows = [[c.strip() for c in l.strip().strip('|').split('|')]
+        for l in open(sorted(glob.glob('docs/synova/project/26线-V1验收标准*.md'))[-1], encoding='utf-8')
+        if re.match(r'^\\|\\s*\\d+-\\d+\\s*\\|', l)]
+src_a = sum(1 for r in rows if len(r) >= 5 and r[3] == 'pending_wiring' and r[0].startswith(lid + '-'))
+d = json.load(open('docs/synova/product-lines/product-progress.json', encoding='utf-8'))
+b = next(l for l in d['lines'] if str(l['id']) == lid)['buckets']['written_not_wired']['count']
+print('written_not_wired=%s' % ('None' if b is None else b))
+if src_a != b:
+    sys.exit('两源不一致(线 %s): V1断言表撤回行=%s vs 提交件=%s —— 需人工裁决，不是自动判错' % (lid, src_a, b))
+print('RECONCILE=agree (V1断言表撤回行=%s)' % src_a)
+PY"""
+
+_LINE_HEALTHY_BOUND_TMPL = """python3 - {line_id} <<'PY'
+import glob, importlib.util, json, sys
+lid = sys.argv[1]
+spec = importlib.util.spec_from_file_location('ply', 'scripts/product-lines/productline_yaml.py')
+m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+y = m.load_file('docs/synova/product-lines/product-lines.yaml')
+line = next(l for l in y['lines'] if str(l['id']) == lid)
+ids = set(p['id'] for p in (line.get('acceptance_points') or []))
+covered = set()
+for d in ('docs/synova/product-lines/evidence', 'scripts/golden-scenarios/evidence'):
+    for f in sorted(glob.glob(d + '/*.json')):
+        try:
+            rec = json.load(open(f, encoding='utf-8'))
+        except (OSError, ValueError):
+            continue
+        if not isinstance(rec, dict):
+            continue
+        for v in rec.get('verdicts') or []:
+            if (isinstance(v, dict) and str(v.get('verdict', '')).lower() == 'pass'
+                    and v.get('acceptance_point') in ids):
+                covered.add(v['acceptance_point'])
+pp = json.load(open('docs/synova/product-lines/product-progress.json', encoding='utf-8'))
+h = next(l for l in pp['lines'] if str(l['id']) == lid)['buckets']['healthy']['count']
+print('healthy=%s' % ('None' if h is None else h))
+if h is not None and h > len(covered):
+    sys.exit('BOUND VIOLATION 线 %s: 看板 healthy=%s > 证据面 k3 PASS 覆盖点=%s' % (lid, h, len(covered)))
+print('BOUND=ok (healthy <= 证据面 k3 PASS 覆盖点=%s)' % len(covered))
+PY"""
 
 _MISSING_REASON = ("本仓无「implemented」机器可读源（yaml 与证据记录均无；而总纲 §1.2「缺」的"
                    "判定手段 = 代码检索，本口径禁用 grep 型静态判据）→ 显式 null，禁猜 0。"
@@ -190,7 +312,8 @@ _BUCKET_DEFS = {
 }
 
 
-def build_buckets(status_counts, withdrawn_count, withdrawn_known, denominator, line_id=None):
+def build_buckets(status_counts, withdrawn_count, withdrawn_known, denominator,
+                  line_id=None, today_str=None):
     """D850: 六态状态机 → **离散三档**（+ 显式其它态），每档带可复现命令；无法判定者 null + 原因。
 
     @input  — status_counts:dict[str,int]（六态计数，SIX_STATES 全键）
@@ -231,7 +354,8 @@ def build_buckets(status_counts, withdrawn_count, withdrawn_known, denominator, 
         n_unknown = uncommitted - withdrawn_count
         w_reason = None
 
-    def entry(count, definition, source, segments, reason=None, independent=None, probe=None):
+    def entry(count, definition, source, segments, reason=None, independent=None,
+              probe=None, ind_kind=None):
         """一档 = 值 + 口径 + **可复现命令**（V-1: 逐段下钻 + 线 id 定位）。
 
         @input  — segments:tuple[str,...] 从顶层起的**逐段**路径（含 'buckets'）
@@ -241,8 +365,13 @@ def build_buckets(status_counts, withdrawn_count, withdrawn_known, denominator, 
         """
         return {
             "count": count,
-            "evidence_cmd": artifact_drill_cmd(segments[-1], segments, line_id),
+            # 「每个数字那条命令」= 源侧重算 + 与提交件比对（ⓓ-1/ⓓ-2）
+            "evidence_cmd": source_recompute_cmd(segments[-1], segments, line_id),
+            "cmd_kind": "source_recompute",
+            # 毫秒级读回自查（**不**承担可证伪职责，不得占用上面那条的位置）
+            "artifact_selfcheck_cmd": artifact_drill_cmd(segments[-1], segments, line_id),
             "independent_check_cmd": independent,
+            "independent_check_kind": ind_kind,
             "source_probe_cmd": probe,
             "definition": definition,
             "source": source,
@@ -255,24 +384,36 @@ def build_buckets(status_counts, withdrawn_count, withdrawn_known, denominator, 
     # 独立复现（numeric）只给**顶层 written_not_wired**：线级的独立扫描需按线过滤 V1 表行，
     # 与「线点集 ∩ 撤回集」的口径可能因 yaml/V1 表不同步而分歧 → 不给（宁缺勿造）。
     # 「判定源存在性探针」只给 missing（显式 null 的那一档）——它复现的是「为什么没有数字」。
-    ind_withdrawn = _WITHDRAWN_CMD if line_id is None else None
+    # 顶层: written_not_wired = 独立 equality（V1 表全表扫描，直接复现同一数字）
+    # 线级: written_not_wired = reconciliation（两源对账）；healthy = bound（必要条件上界）
+    if line_id is None:
+        ind_withdrawn, ind_withdrawn_kind = _WITHDRAWN_CMD, "equality"
+        ind_healthy, ind_healthy_kind = None, None
+    else:
+        ind_withdrawn = _LINE_RECONCILE_TMPL.replace("{line_id}", str(line_id))
+        ind_withdrawn_kind = "reconciliation"
+        ind_healthy = _LINE_HEALTHY_BOUND_TMPL.replace("{line_id}", str(line_id))
+        ind_healthy_kind = "bound"
     probe_missing = _MISSING_PROBE_CMD if line_id is None else None
     buckets = {
         "schema": BUCKETS_SCHEMA,
         "authority": BUCKETS_AUTHORITY,
         "granularity": "acceptance_point(product-lines.yaml)",
         "denominator": denominator,
-        "regenerate_cmd": REGENERATE_CMD,
+        "regenerate_cmd": regenerate_cmd(today_str),
+        "cmd_semantics": CMD_SEMANTICS,
         "denominator_note": ("与 `docs/synova/project/ledger.json` 的 totals.buckets 分母不同"
                              "（此处 = product-lines.yaml 验收点数；账本 = V1 断言表条数）——"
                              "同名档不可跨件混读，各档自带 denominator"),
         "healthy": entry(
             verified, _BUCKET_DEFS["healthy"],
-            "证据记录（六态状态机出口 verified）", seg("healthy")),
+            "证据记录（六态状态机出口 verified）", seg("healthy"),
+            independent=ind_healthy, ind_kind=ind_healthy_kind),
         "written_not_wired": entry(
             n_written, _BUCKET_DEFS["written_not_wired"],
             "V1 断言表「证据」列 = pending_wiring（D809 撤回标记）",
-            seg("written_not_wired"), reason=w_reason, independent=ind_withdrawn),
+            seg("written_not_wired"), reason=w_reason,
+            independent=ind_withdrawn, ind_kind=ind_withdrawn_kind),
         "missing": entry(
             None, _BUCKET_DEFS["missing"],
             "判定手段 = 代码检索（本口径禁用；事实驱动 §六 实测静态检测 3/5=60%）",
@@ -541,11 +682,13 @@ def status_for_point(point, verdicts_by_point, line_modules, git_cmd, today, pro
     return "uncommitted"
 
 
-def compute(yaml_path, evidence_dir, override_path, git_cmd, out_path, v1_dod_path=None):
+def compute(yaml_path, evidence_dir, override_path, git_cmd, out_path, v1_dod_path=None,
+            today=None):
     spec = load_yaml(yaml_path)
     records, degraded_sources = load_evidence_records(evidence_dir)
     problems = []
-    today = datetime.now()
+    # 注入缝（同 gen-project-board.py 的 --today）：固定日期 → 输出确定（测试可重复 / 可与提交件比对）
+    today = today or datetime.now()
 
     # D850: 撤回标记源（D809）——只读一处字段，用于三档中的「写了没接」档。
     # 缺失/不可读 → withdrawn_known=False → 该档与残余显式 null（**禁猜 0**）+ degraded 登记。
@@ -639,7 +782,8 @@ def compute(yaml_path, evidence_dir, override_path, git_cmd, out_path, v1_dod_pa
             "progress_pct": progress,
             # V-1 修复：线级 evidence_cmd 必须按**线 id** 定位（原用 `lines[]` 占位 → 全不可跑）
             "buckets": build_buckets(counts, line_withdrawn, withdrawn_known, total,
-                                     line_id=line["id"]),
+                                     line_id=line["id"],
+                                     today_str=today.strftime("%Y-%m-%d")),
             "k3_gate": k3_gate,
             "status_counts": counts,
             "points": points_out,
@@ -653,7 +797,8 @@ def compute(yaml_path, evidence_dir, override_path, git_cmd, out_path, v1_dod_pa
     line_point_ids = {p["id"] for l in lines_out for p in l["points"]}
     withdrawn_total = (len(line_point_ids & withdrawn_points) if withdrawn_known else 0)
     points_total = sum(l["total"] for l in lines_out)
-    top_buckets = build_buckets(status_totals, withdrawn_total, withdrawn_known, points_total)
+    top_buckets = build_buckets(status_totals, withdrawn_total, withdrawn_known, points_total,
+                                today_str=today.strftime("%Y-%m-%d"))
 
     # 面板线数（D850 追平）: yaml `lines` 条数 + `v2_lines` 条数（v2 线定义在同文件顶层，
     # 不在 lines 列表内，故必须显式计入——否则面板停在 28 而总纲口径是 29）
@@ -713,12 +858,15 @@ def main():
     # D850: 撤回标记源（D809）——只读「证据」列，供三档中的「写了没接」档
     ap.add_argument("--v1-dod", default=None,
                     help="V1 断言表（默认 glob %s；缺失 → 该档 null + degraded）" % V1_DOD_GLOB)
+    # D850 ⓓ-5: 日期注入缝 —— 与 gen-project-board.py 的 --today 同语义（测试确定性 / 与提交件可比对）
+    ap.add_argument("--today", default=None, help="覆盖\"今天\" YYYY-MM-DD（默认系统日期）")
     args = ap.parse_args()
 
     try:
         result = compute(Path(args.yaml), Path(args.evidence_dir), Path(args.override),
                          args.git_cmd, Path(args.out),
-                         Path(args.v1_dod) if args.v1_dod else None)
+                         Path(args.v1_dod) if args.v1_dod else None,
+                         today=(datetime.strptime(args.today, "%Y-%m-%d") if args.today else None))
     except productline_yaml.YamlSubsetError as e:
         log.error("YAML 解析失败: %s (retryable=%s) → exit 2（fail-closed，绝不静默）",
                   e, e.retryable)

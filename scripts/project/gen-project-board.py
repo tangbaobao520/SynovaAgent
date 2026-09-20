@@ -204,6 +204,25 @@ _DEF_STATE_UNKNOWN = ("残余：断言既未点亮、也非撤回标记 → 其�
                       "（缺 / 写了没接 / 接了跑不通 三选一，无机器可读源）；显式列出以闭合恒等式")
 
 
+# ⓓ-4 命令语义（件内 schema 级说明，不只写在 docstring）：与 product-progress 件并列披露，
+# 「复现强度不同」不得沉默偏离。
+LEDGER_CMD_SEMANTICS = {
+    "evidence_cmd": ("**源侧重算**（本档「那条命令」）：直接读权威输入（V1 断言表「证据」列 + 两处"
+                     "证据目录的 record_type/verdict）重算该档同一个值，**不读 ledger.json**"
+                     "（读回自己的输出不构成证据）。单档毫秒级，无需中间件。"),
+    "artifact_selfcheck_cmd": ("本件**不提供**：ledger.json 各档 evidence_cmd 已是源侧重算，"
+                               "不需要「读回派生物」的自查形态（宁缺勿造）。"),
+    "regenerate_cmd": "**件级一次源侧重生成** → docs/synova/project/ledger.json。",
+    "source_probe_cmd": "只服务 null 档：复现「为什么没有数字」（判定源缺席 = SOURCE_ABSENT）。",
+    "independent_check_cmd": ("本件**不单列**：evidence_cmd 本身即不读派生件的独立判据"
+                              "（同一形态承担两职，不是省略）。"),
+    "reproducibility_strength": {
+        "本件": "源侧重算、单档毫秒级、无中间件；与 product-progress 件的比对形态不同（那边因六态"
+                "状态机无法内联表达，走「一次重算 + 逐档比对」）。",
+    },
+}
+
+
 def _reason_no_source(what, how):
     """不可判定档的显式原因（**禁猜 0**：null 必须带可核原因）。"""
     return ("无机器可读判定源：总纲 §1.2 判定手段 = %s（%s），本仓无承载该判定的字段"
@@ -638,6 +657,7 @@ def build_buckets(v1_total, v1_passed, v1_verified, v1_pending_k3):
         "granularity": "acceptance_point",
         "regenerate_cmd": ("python3 scripts/project/gen-project-board.py --out "
                            "docs/synova/project/ledger.json"),
+        "cmd_semantics": LEDGER_CMD_SEMANTICS,
         "denominator": v1_total,
         "denominator_note": ("与 `docs/synova/product-lines/product-progress.json` 的顶层 buckets "
                              "分母不同（此处 = V1 断言表条数；该件 = product-lines.yaml 验收点数）——"

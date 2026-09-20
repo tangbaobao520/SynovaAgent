@@ -170,14 +170,21 @@ def render_buckets(buckets):
                       "<pre class='bkt-cmd'>%s</pre>" % html.escape(probe)) if probe else ""
         why_html = ("<div class='bkt-why'>为什么「无法判定」：%s</div>"
                     % html.escape(scrub(why))) if why else ""
+        self_cmd = e.get("artifact_selfcheck_cmd")
+        self_html = ("<div class='bkt-why'>快速自查（读<u>已提交</u>文件，毫秒级；"
+                     "<b>不承担可证伪职责</b>）：</div><pre class='bkt-cmd'>%s</pre>"
+                     % html.escape(self_cmd)) if self_cmd else ""
         rows.append(
             "<div class='bkt'>"
             "<div class='bkt-head'><b style='color:%s'>%s</b> "
             "<span class='bkt-cnt'>%s</span></div>"
             "<div class='bkt-def'>%s</div>%s%s"
-            "<pre class='bkt-cmd'>%s</pre>"
+            "<div class='bkt-why'>复现该数字（<b>源侧重算</b>并与提交件逐档比对；"
+            "需先跑下方「整件重生成命令」）：</div>"
+            "<pre class='bkt-cmd'>%s</pre>%s"
             "</div>" % (color, label, html.escape(fmt_bucket_count(e)),
-                        html.escape(scrub(e.get("definition") or "")), why_html, probe_html, cmd))
+                        html.escape(scrub(e.get("definition") or "")), why_html, probe_html,
+                        cmd, self_html))
     other = buckets.get("other_states") or {}
     others = []
     for key, label in OTHER_STATE_UI:
@@ -189,6 +196,15 @@ def render_buckets(buckets):
     denom = buckets.get("denominator")
     note = buckets.get("denominator_note") or ""
     regen = buckets.get("regenerate_cmd") or ""
+    sem = buckets.get("cmd_semantics") or {}
+    sem_html = ""
+    if sem:
+        strength = sem.get("reproducibility_strength") or {}
+        strength_txt = "；".join("%s：%s" % (k, v) for k, v in strength.items())
+        sem_html = ("<div class='bkt-sum'><b>命令语义（词义不可互顶）：</b>"
+                    "① <b>源侧重算</b> = 每个数字那条命令；② <b>读回自查</b> = 毫秒级核对，"
+                    "<b>不承担可证伪职责</b>；③ <b>判定源探针</b> = 只服务「无法判定」的档。"
+                    "复现强度：%s</div>" % html.escape(scrub(strength_txt)))
     regen_html = ("<div class='bkt-sum'>整件重生成命令（源侧一次派生，上面每档的数字都由它产出）："
                   "<pre class='bkt-cmd'>%s</pre></div>" % html.escape(regen)) if regen else ""
     return (
@@ -198,7 +214,7 @@ def render_buckets(buckets):
         "</div>" % ("".join(rows), "　·　".join(others),
                     html.escape(str(denom)),
                     "成立" if ident.get("holds") else "**未成立——数据源异常，请勿采信**",
-                    html.escape(scrub(note)), regen_html))
+                    html.escape(scrub(note)), regen_html + sem_html))
 
 
 def render_line_card(line, todos_by_line):
