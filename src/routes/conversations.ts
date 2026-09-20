@@ -246,19 +246,27 @@ async function handleConversationMessage(req: Request, res: Response, pathSessio
     adapter.sendFrame({ type: 'open', sessionId, phase: conv.getPhase() });
 
     // ⑧ 持久化时序 ①：用户消息引擎处理前落库（崩溃安全；双写自动进事件流）
-    store.addMessage(sessionId, 'user', message);
+    // D822: 承接本次写的结果——本轮的降级判定按"是否发生过失败"，不再只看最后一次写
+    const userWrite = store.addMessage(sessionId, 'user', message);
 
     // ⑨ 引擎流式轮次（onToken → adapter token 帧；断线后 adapter 自动停写，轮次自然 settle）
     const result = await conv.processMessageStream(message, (token) => adapter.appendToken(token));
 
     // ⑩ 持久化时序 ③④⑤（断线也执行——完整回复落库，重连不丢）
-    store.addMessage(sessionId, 'assistant', result.reply);
+    const assistantWrite = store.addMessage(sessionId, 'assistant', result.reply);
     store.updateSession(sessionId, { phase: conv.getPhase() });
     store.saveState(sessionId, conv.serialize());
 
     // 铁律 31：双写降级显式传播（流内 error 帧，不静默、不中断服务）
-    if (store.lastDegraded) {
-      log.error({ sessionId }, 'store 双写降级（lastDegraded）— 流内 error 帧 STORE_DEGRADED');
+    // D822 修复：判定口径 = 「**本轮是否发生过失败**」（两次写的结果逐条判），而不是
+    // 「最后一次写是否失败」——后者会被同一轮的后一次成功抹掉（缺陷：失败信号自遮蔽）。
+    // 范式：`@deepseek-ai/dsh-session-stats/lib/index.js:11,129` 事件流逐条累计落账。
+    const failedWrites = [userWrite, assistantWrite].filter(w => !w.ok);
+    if (failedWrites.length > 0 || store.lastDegraded) {
+      log.error(
+        { sessionId, failedWrites: failedWrites.length, appendFailureCount: store.appendFailureCount },
+        'store 双写降级（本轮发生过写失败）— 流内 error 帧 STORE_DEGRADED',
+      );
       adapter.sendFrame({ type: 'error', code: 'STORE_DEGRADED', message: '会话落库降级——本轮回复可能未完整持久化', degraded: true });
     }
 

@@ -143,13 +143,25 @@ describe('D500 session event log — appendEvent + deriveMessages', () => {
     expect(store.getEvents(sessionId).length).toBeGreaterThan(0);
   });
 
-  it('降级信号非粘滞: appendEvent 失败后成功写入 → lastDegraded 重置为 false（复核修复）', () => {
-    // 模拟 appendEvent 失败（drop 表 → INSERT 失败 → lastDegraded=true）
-    const db = (store as unknown as { db: Database.Database }).db;
+  it('D822 改写: appendEvent 失败 → 成功，**失败事实不被后续成功抹掉**（原用例固化的是缺陷行为）', () => {
+    // 原用例（D500 复核修复版）断言「失败→成功 ⇒ lastDegraded=false」就把缺陷固化了：
+    // 它只保护了"lastDegraded 不粘滞"这一个副作用，却把真正要保护的事实（**这一轮发生过失败**）
+    // 当成可丢弃状态。D822 起本用例保护正确行为：返回值逐条为真 + 累计计数只增 + 本轮聚合判定为真。
+    // 本用例自带 db 句柄（不再从 store 内部掏 private db —— 铁律 38：避免 as unknown as 逃逸）。
+    const db = new Database(':memory:');
+    const store2 = new SessionStore(db);
+    const sessionId2 = store2.createSession('org-d822').id;
+    const failuresBefore = store2.appendFailureCount;
+
+    // ① 失败：drop 表 → INSERT 抛错（真实 SQLite 错误，非 mock）
     db.exec('DROP TABLE session_events');
-    store.addMessage(sessionId, 'user', 'fail-write');
-    expect(store.lastDegraded).toBe(true);
-    // 重建表 → 后续成功写入应重置 lastDegraded（不粘滞）
+    const failed = store2.addMessage(sessionId2, 'user', 'fail-write');
+    expect(failed.ok, 'addMessage 必须透传失败结果（不再吞成 void）').toBe(false);
+    if (!failed.ok) expect(failed.degraded).toBe(true);
+    expect(store2.lastDegraded, '最近一次写 = 失败').toBe(true);
+    expect(store2.appendFailureCount, '失败必须累计入账（不被后续成功覆盖）').toBe(failuresBefore + 1);
+
+    // ② 成功：重建表 → 下一条写成功
     db.exec(`CREATE TABLE IF NOT EXISTS session_events (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       session_id TEXT NOT NULL REFERENCES agent_sessions(id) ON DELETE CASCADE,
@@ -160,9 +172,16 @@ describe('D500 session event log — appendEvent + deriveMessages', () => {
       UNIQUE(session_id, seq)
     );`);
     db.exec('CREATE INDEX IF NOT EXISTS idx_session_events_sess ON session_events(session_id, seq);');
-    store.addMessage(sessionId, 'user', 'recover-write');
-    expect(store.lastDegraded).toBe(false);
-    expect(store.getEvents(sessionId).length).toBeGreaterThan(0);
+    const recovered = store2.addMessage(sessionId2, 'user', 'recover-write');
+    expect(recovered.ok, '第二次写成功 → 透传 ok').toBe(true);
+    expect(store2.lastDegraded, 'lastDegraded 仍是"最近一次写的结果"（逐条断言语义，session-manager.ts:86 依赖）').toBe(false);
+
+    // ③ 关键断言：失败事实**没有**因为后一次成功而消失
+    const roundResults: Array<{ ok: boolean }> = [failed, recovered];
+    expect(roundResults.some(w => !w.ok), '本轮聚合判定（路由层据此发 STORE_DEGRADED 帧）必须仍为真').toBe(true);
+    expect(store2.appendFailureCount, '累计计数只增不减（D822 的物理探针面）').toBe(failuresBefore + 1);
+    expect(store2.appendFailureCount, '不得被重置为 0').toBeGreaterThan(0);
+    db.close();
   });
 
   it('appendEvent 显式 eventType 支持（tool_result 等，扩展性）', () => {

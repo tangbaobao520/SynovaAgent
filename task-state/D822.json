@@ -1,9 +1,9 @@
 {
   "task_id": "D822",
   "title": "T-D5 降级信号自遮蔽（写失败被同轮后一次成功抹掉，且测试固化了缺陷）",
-  "status": "claimed",
+  "status": "impl_done",
   "risk": "medium",
-  "spec": "派单即规格：docs/synova/coordination/批十二-计划与派单-20260918.md（含 CTO 实测位置与验收标准）",
+  "spec": ".claude/task-briefs/2026-09-20-D822-degraded-signal-not-masked.md（批十四小队 A 规格：契约/DSH 范式/写集冲突清单/反向验收；上游卡面见原派单 §A/D822）",
   "write_set": [
     "src/store/session-store.ts",
     "src/routes/conversations.ts",
@@ -13,13 +13,29 @@
     ".claude/task-briefs/2026-09-18-D822-.md",
     "memory/notes/proposed/2026-09-18-D822-.md"
   ],
-  "impl": null,
+  "impl": {
+    "commit": "D822 主体 = 本卡提交（git log --grep degraded-signal）；同批前置 98c24872(FTS)/8e89f357(D820 主体)",
+    "by": "coder-a(批十四小队)",
+    "at": "2026-09-20",
+    "files": [
+      "src/store/session-store.ts",
+      "src/routes/conversations.ts",
+      "tests/store/session-event-log.test.ts",
+      "tests/store/degraded-signal-not-masked.test.ts",
+      ".claude/task-briefs/2026-09-20-D822-degraded-signal-not-masked.md",
+      "memory/notes/implemented/2026-09-20-D822-degraded-signal-not-masked.md"
+    ],
+    "change": "addMessage 由 void 改为透传 AppendEventResult；新增只读累计计数 appendFailureCount（appendEvent 失败 +1，永不复位）；路由判定改为「本轮是否发生过失败」；lastDegraded 保留「最近一次写」逐条语义（session-manager.ts:86 依赖）",
+    "evidence": "tests/store/degraded-signal-not-masked.test.ts 3 用例（穿 POST /api/conversations 真实入口，按 payload 角色选择性注入）+ tests/store/session-event-log.test.ts 改写用例 → Tests 20 passed (20)",
+    "reverse_acceptance": "抽路由判定 → 仅用例 1 红（1 failed | 19 passed）；抽累计计数 → 改写用例红（1 failed | 19 passed）；两次还原 → 20 passed",
+    "regression_gate": "只读回归门 54 passed（conversations ⑭ / session-manager / D820 cascade / FTS）"
+  },
   "audit": null,
   "fix_task_id": null,
-  "updated_at": "2026-09-18",
-  "updated_by": "synova-cto",
+  "updated_at": "2026-09-20",
+  "updated_by": "coder-a(批十四小队)",
   "domain": "win",
-  "owner": "mac-coding",
+  "owner": "coder-a(批十四小队)",
   "milestone": "M1 产品可用",
   "depends_on": [],
   "blocked": null,
@@ -30,9 +46,12 @@
     "addMessage 透传已有的 AppendEventResult（返回值已编码失败），路由层据此判定",
     "验收按 docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md（禁 grep 命中；三问自查逐条作答；报告含命令+原始输出+五态定位）"
   ],
-  "next": "见派单文档 §A 对应小节",
-  "note": "CTO 实测位置：src/store/session-store.ts:377-383（addMessage 成功即重置 lastDegraded）；src/routes/conversations.ts:249/255/260（第 2 次写成功后才检查）→ 写失败信号被同轮后一次成功写入抹掉，STORE_DEGRADED 帧不会发。判据 C。工作量 1–3 天（性价比最高档）。",
+  "next": "交付队长 → 队内自验（重点核 appendFailureCount JSDoc 落点 + 改写用例断言 + 反向验收两次输出）→ K3 独立审计后置",
+  "note": "CTO 实测位置：src/store/session-store.ts:377-383（addMessage 成功即重置 lastDegraded）；src/routes/conversations.ts:249/255/260（第 2 次写成功后才检查）→ 写失败信号被同轮后一次成功写入抹掉，STORE_DEGRADED 帧不会发。判据 C。工作量 1–3 天（性价比最高档）。 【批十四小队 A 实测补充】注入手法：原拟 WHEN NEW.seq=1 不成立（seq 由 SELECT MAX(seq)+1 算，ABORT 后 MAX 仍 0 → 触发器持续命中，两条写全失败），改为按 payload 角色选择性注入（json_extract(NEW.payload_json,$.role)=user）后「一失败一成功」成立。appendFailureCount 的消费者已落三条（本卡两处测试 + D831 断言③物理探针面），非死代码。",
   "executor": "mac-coding",
   "delegation": "Mac 代行 win（D773 规约；创始人 2026-09-18 重申『涉及 win 线的一并先给 Mac 执行』）",
-  "acceptance_level": "代码级可验（Mac 必须验）；若涉及 Windows 实机行为 → 挂账，Win 回归后补验，禁止声称"
+  "acceptance_level": "代码级可验（Mac 必须验）；若涉及 Windows 实机行为 → 挂账，Win 回归后补验，禁止声称",
+  "team": "批十四小队",
+  "worktree": ".synova-wt-team14",
+  "branch": "team/win-batch14"
 }

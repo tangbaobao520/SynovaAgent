@@ -182,8 +182,34 @@ export class SessionStore {
   /**
    * D500: 降级信号传播（铁律 31）——appendEvent 双写失败时置 true，
    * 调用方（SessionManager model-visible⟺logged 断言）检查。
+   *
+   * D822 语义澄清：本字段 = **最近一次** appendEvent 的结果（成功即复位 false），
+   * 故它是**逐条**断言语义（`session-manager.ts:86` 每写一条 msg 就断言一次），
+   * **不能**用来回答"这一轮有没有失败过"——同一轮"失败→成功"会把失败事实抹掉
+   * （D822 缺陷：路由层据此判定 ⇒ STORE_DEGRADED 帧漏发）。
+   * 需要"本轮发生过失败"的调用方请用 `addMessage` 的返回值逐条判定，
+   * 或读累计计数 `appendFailureCount`。
    */
   lastDegraded = false;
+
+  /**
+   * D822: appendEvent 双写失败**累计**计数（本实例生命周期内只增不减）。
+   *
+   * 为什么需要它（范式来源：`@deepseek-ai/dsh-session-stats/lib/index.js:11,103,129`——
+   * 事件流逐条累计落账，`steps: state.steps + 1` / `llmMs: state.llmMs + ...`，
+   * **每个事件独立入账、不被后续事件覆盖**；其 step/end 放在 `finally` 里，
+   * 所以 completed/failed/cancelled/max-tokens 四种结束都留一条）：
+   * 本项目原实现用一个**会被后续成功重置的瞬时布尔**（`lastDegraded`）承载降级事实，
+   * 一旦"同一轮内先失败后成功"，失败事实即消失——这正是 D822 的缺陷本体。
+   * 修法是把失败**累加**下来，而不是**覆盖**掉。
+   *
+   * 消费者（防死代码，铁律 37）:
+   *   ① 本卡两处测试真断言它：`tests/store/degraded-signal-not-masked.test.ts`、
+   *      `tests/store/session-event-log.test.ts`（"失败不因后续成功消失"用例）；
+   *   ② **D831（P-2 不变量机制）断言③「降级信号不被后续成功写入抹掉」的物理探针面**
+   *      （`task-state/D831.json` 验收点 6 原文；队长 2026-09-20 批 Q-B 条件）。
+   */
+  appendFailureCount = 0;
 
   constructor(db: Database.Database) {
     this.db = db;
@@ -424,19 +450,27 @@ export class SessionStore {
 
   /**
    * D500: 消息写入（双写——agent_messages 兼容 + session_events 事件流下沉）。
-   * 契约:
+   * 契约（铁律 47 — 契约优先；D822 修订输出面）:
    *   @input  — sessionId, role, content
-   *   @output — void（事件双写失败 → lastDegraded=true，铁律 31 降级信号传播）
+   *   @output — **AppendEventResult（透传 appendEvent 结果）**：
+   *             `{ ok: true, seq }` = 双写都成功；`{ ok: false, degraded: true, error }` = 事件流写入失败
+   *             （兼容表 agent_messages 可能已写成功 → 这正是 model-visible⟺logged 断裂）。
+   *             **调用方必须按本次返回值判定本轮是否降级**，不得只看 `lastDegraded`
+   *             （后者是"最近一次写"的瞬时标志，同一轮"失败→成功"会把失败抹掉 —— D822 缺陷）。
+   *   @degraded — 写入失败：log.error + lastDegraded=true（逐条语义）+ appendFailureCount += 1（累计，只增不减）
    *   双写下沉决策（2026-08-22）: 8 处直连生产调用方（cli/im-inbound/graceful-shutdown/
    *     stuck-session-detector/restart-recovery）经本方法写入，自动获得事件流，
-   *     无需逐个修改调用方。
+   *     无需逐个修改调用方。返回类型由 void 改为结果对象对既有调用方**向后兼容**
+   *     （TS 下 `(...) => void` 窄接口接受有返回值的实现，故各 SessionStoreLike 无需改）。
    */
-  addMessage(sessionId: string, role: MessageRow['role'], content: string): void {
+  addMessage(sessionId: string, role: MessageRow['role'], content: string): AppendEventResult {
     this.db.prepare('INSERT INTO agent_messages (session_id, role, content) VALUES (?,?,?)')
       .run(sessionId, role, content);
     // D500: 事件流双写（append-only，model-visible⟺logged 根基）
     // 2026-08-22 复核修正: 事件写入成功时重置 lastDegraded——降级信号反映"本次"结果，
-    // 非历史粘滞（原实现一次失败后永久 true，transient 故障恢复后误报持续）
+    // 非历史粘滞（原实现一次失败后永久 true，transient 故障恢复后误报持续）。
+    // D822: 该"复位"只限 lastDegraded（逐条断言语义）；失败事实本身由 appendFailureCount 累计承载，
+    //        调用方按返回值逐条判定本轮是否发生失败。
     const res = this.appendEvent(sessionId, 'message', { role, content });
     if (!res.ok) {
       log.error({ sessionId, role, error: res.error }, 'appendEvent 双写失败 — model-visible⟺logged 断裂');
@@ -446,6 +480,7 @@ export class SessionStore {
     }
     this.db.prepare('UPDATE agent_sessions SET updated_at=? WHERE id=?')
       .run(new Date().toISOString(), sessionId);
+    return res;
   }
 
   /**
@@ -454,6 +489,7 @@ export class SessionStore {
    *   @input  — sessionId, eventType, payload（payload 序列化为 JSON 存 payload_json）
    *   @output — { ok: true, seq } | { ok: false, degraded: true, error }（写入失败显式降级，铁律 24/31）
    *   @error  — UNIQUE(session_id, seq) 冲突 → log.error + degraded（并发防线，seq 不重放）
+   *   @degraded — 失败同时 `appendFailureCount += 1`（D822：失败**累加**入账，不被后续成功覆盖）
    *   崩溃恢复: 续写基于 SELECT MAX(seq)（持久化 lastSeq），禁止内存 seq 回退（2026-08-22 缺陷②防线）
    *   seq 单调: 基于持久化 MAX(seq)+1，无内存计数器（缺陷①防线）
    */
@@ -470,6 +506,7 @@ export class SessionStore {
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       log.error({ sessionId, eventType, error: msg }, 'appendEvent 写入失败 — degraded');
+      this.appendFailureCount += 1; // D822: 累计入账（只增不减）——见字段 JSDoc
       return { ok: false, degraded: true, error: msg };
     }
   }
