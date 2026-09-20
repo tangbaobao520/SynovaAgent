@@ -1,0 +1,31 @@
+{
+  "task_id": "D840",
+  "title": "派单模板加『为什么派它/做完推动什么』必填节 + 并行车道图（创始人 2026-09-20 要求）",
+  "status": "impl_done",
+  "risk": "low",
+  "spec": "创始人：『你安排时要和我讲清楚，为什么安排这个任务，做完对项目整体有什么推动』→ 固化进模板（缺节=不具备开工条件）+ 出并行车道图（4 车道，写集两两不相交）",
+  "write_set": [
+    "docs/synova/coordination/模板-小队派单-20260919.md",
+    "docs/synova/coordination/并行车道-20260920.md",
+    "task-state/D840.json"
+  ],
+  "impl": "模板 §〇-b（创始人原话 + 五项必填 + 缺节=不具备开工条件）；并行车道图含 4 车道 why/impact/串行约束 + 必须串行清单 + 铁律",
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-20",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "owner": "synova-cto",
+  "executor": "synova-cto",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [],
+  "blocked": null,
+  "target": "2026-W38",
+  "acceptance_points": [
+    "模板含 §〇-b 且五项必填（为什么是它/推动什么/不做会怎样/可并行性判定/车道）",
+    "并行车道图列出 4 条可并行车道 + 每条的 why 与 impact + 串行约束清单",
+    "缺该节的派单被明文判为『不具备开工条件』"
+  ],
+  "next": "等待创始人选择要转发的车道",
+  "note": "CTO 自办件（非编码任务），受 K3 审计。"
+}

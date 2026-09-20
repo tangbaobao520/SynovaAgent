@@ -1,0 +1,11 @@
+{
+  "task_id": "D788",
+  "title": "预算门禁口径修正：只计审查面（治理/审计产物不计入计数与域判定）——解锁审计批次落地",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-16",
+  "updated_by": "alloc-task-id"
+}
