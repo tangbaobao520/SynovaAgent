@@ -205,6 +205,11 @@ lines:
         evidence: ["k3:报告体系复核"]
         status: uncommitted
         note: ""
+      - id: "3-9"
+        desc: "时间窗口径可判定：报告标注数据时点与时间窗，日粒度为主 + 周/月聚合视图；同一区间的周/月聚合值必须等于其覆盖日粒度值的一致合成（可复算），聚合不得另立独立口径"
+        evidence: ["scenario:GS-08", "test:time-window-aggregation"]
+        status: uncommitted
+        note: "③ 决定③（创始人裁定表-§6五项-20260920.md §6-5）。**依赖：D828 趋势接线引用本口径**（裁定表 §6-5 ③ 原文）——本点是 D828 的前置口径，D828 实现不得另立时间窗。fail_when：只支持日／不支持周月视图／聚合值与覆盖日值求和不一致（同区间两处口径打架）／报告未标注数据时点。M1：时点与时区语义可对齐 @deepseek-ai/dsh-time-context（**v0.1.6-alpha.2**，config.timeZone / config.refreshIntervalMs，lib/index.js:161-162）——复用语义，不抄界面（M5）。"
 
   # ────────────────────────── 04 数据接入 ──────────────────────────
   - id: 4
@@ -257,6 +262,11 @@ lines:
         evidence: ["k3:数据接入复核"]
         status: uncommitted
         note: ""
+      - id: "4-9"
+        desc: "spill 双阈值可配置且生效：内存保留上限 8,000 字符、落盘阈值 32,000 字符，两值均来自配置读取（非硬编码）；非法配置 fail-closed 报错而非静默降级；落盘失败时保留原内容且打 degraded 信号"
+        evidence: ["test:spill-policy", "scenario:GS-02"]
+        status: uncommitted
+        note: "② 决定②（创始人裁定表-§6五项-20260920.md §6-5 保守起步档）。M1：超长输出属 DSH 已有能力 → 须写成『接入/配置/约束 DSH 的 spill 能力并验证』：语义位 = @deepseek-ai/dsh-spill-policy **v0.1.6-alpha.2** 的 maxInlineBytes（apply(ctx,config) lib/index.js:102-103；schema lib/types/index.js:53），后端 = dsh-spill（ctx.spillStore 抽象缝）+ dsh-spill-local（saveText :556 → 路径 locator :564）。**配置读取位置** = 该插件注册处读 config.maxInlineBytes（我方两阈值以此为读取点）。**越界行为对齐 DSH 实测**：非整数或负数 → throw（:104-105）；未配置 → no-op 不注册（:106）；无 session owner／无 spillStore backend／saveText 失败／替换后超 cap → ctx.logger.warn 且保留 inline（:107-150，不得静默丢）。fail_when：阈值硬编码不可配／非法值被静默接受／落盘失败后内容丢失或静默截断。**依赖**：DSH 侧需先接入 dsh-spill（ctx.spillStore 抽象缝）+ dsh-spill-local 后端；跨线口径（阈值单一来源）登记于 preconditions.yaml CLC-2。⚠️ 口径差（交创始人确认）：DSH 为**单阈值且单位 UTF-8 字节**，我方为**双阈值且单位字符**；8,000–32,000 之间档位的语义原裁定未定义，须实现方在 SPEC 显式声明，不得自行推定。"
 
   # ────────────────────────── 05 本体层收敛 ──────────────────────────
   - id: 5
@@ -440,6 +450,16 @@ lines:
         evidence: ["scenario:GS-05"]
         status: uncommitted
         note: "创始人 2026-09-12 裁 D-1 改写（原『5 分钟 vs 30 分钟』时间窗框架作废；5 分钟降级为抖动合并器）。实现缺口：runner.ts:1321 通知决策仅查 sentinelId+last_sent_ms，不读工单状态（TicketStatus 已在 runner.ts:178，机制有而未接线＝M3）。监测契约文件/升级规则/首次沟通请求待建。"
+      - id: "8-7"
+        desc: "出站 webhook 投递：客户配置 URL+密钥后，阈值触发产生的告警事件真实到达客户系统（客户侧收到 HTTP 请求、鉴权校验通过、body 携带可定位到 finding/工单的稳定 id）"
+        evidence: ["scenario:GS-05", "test:webhook-outbound"]
+        status: uncommitted
+        note: "① 决定① 出站为主（创始人裁定表-§6五项-20260920.md §6-5）。M1：DSH 的 webhook 是纯入站（@deepseek-ai/dsh-webhook **v0.1.6-alpha.2** dispatch(delivery) lib/index.js:245、createWebhookSession :90，全谱无出站投递 API；版本锚点见 D852-派单回执-20260920.md §D）→ 本点无 DSH 重叠能力，M1 不适用（自建）。fail_when：配置后事件不投递／投递无鉴权／重试耗尽后静默丢弃（须 log + degraded，铁律 24+31）／同一次告警重复投递（受 8-3 去重键约束）。依赖：8-3 去重键稳定 + 线 4 数据源凭据存储。"
+      - id: "8-8"
+        desc: "入站仅扩展点：核心告警链路（阈值→工单→推送）零依赖入站缝——入站缝默认关闭时 GS-05 全链仍通过，且任何外部触发在任何开关状态下都不得创建或修改 sentinel_tickets、不得改写 8-3 去重键"
+        evidence: ["scenario:GS-05", "test:webhook-inbound-boundary"]
+        status: uncommitted
+        note: "① 决定① 入站仅扩展点（外部触发不进核心）。fail_when：关闭入站缝后核心链路失败（＝核心反向依赖了扩展点）／外部触发创建或修改工单／外部触发导致去重键变化。判据是行为与不变量，禁以 grep 命中作为通过依据（总纲 §5 + 撤回清单 #3）。M1：入站方向若复用 DSH dsh-webhook（v0.1.6-alpha.2）的投递处理，须写成『接入/配置 DSH 的该能力并验证』；本点只约定边界，不约定实现。"
 
   # ────────────────────────── 09 客户循环 ──────────────────────────
   - id: 9
@@ -1143,6 +1163,16 @@ lines:
         evidence: ["k3:插件化复核"]
         status: uncommitted
         note: ""
+      - id: "25-8"
+        desc: "live 类设置改完不重启即生效：展示类/阈值类/文案类按 live 分类声明，改值后下一次读取即返回新值，且全部在跑的消费者观察到同一新值（无部分消费者滞留旧值）"
+        evidence: ["test:settings-applies-live", "founder-demo:改配置免重启演示"]
+        status: uncommitted
+        note: "④ 决定④ 上句（展示·阈值·文案 = live）。M1：设置运行时修改属 DSH 已有能力 → 须写成『接入/配置/约束 DSH 的 settings applies 分类并验证』：@deepseek-ai/dsh-settings **v0.1.6-alpha.2** SettingsApplies = live | restart（lib/types/index.d.ts:21），注册时 applies 缺省即 live（lib/index.js:288）。fail_when：声明 live 的项改完仍需重启才生效／改完生效但半生效（部分消费者用旧值）／实为 restart 却声明 live（消费者被误导）。**依赖**：25-6 运行时插件化（提供配置读取与消费者观察点）；与 25-9 共用同一 applies 分类机制，两者须同批声明。"
+      - id: "25-9"
+        desc: "restart 类设置改完在重启前不得半生效：连接类/插件类/数据源类/鉴权类按 restart 分类声明，重启前旧连接以旧值继续且行为可预期，重启后新值生效"
+        evidence: ["test:settings-applies-restart"]
+        status: uncommitted
+        note: "④ 决定④ 下句（连接·插件·数据源·鉴权 = restart）。M1 同 25-8（dsh-settings **v0.1.6-alpha.2** applies: restart）。fail_when：restart 类改动在重启前被部分应用（半生效——正是决定④ 要避免的状态）／声明 restart 但重启后仍未生效／四类中任一类缺 applies 分类声明。依赖：25-6 运行时插件化边界（本点约束其生效时机）。"
 
   # ────────────────────────── 26 MCP 集成 ──────────────────────────
   - id: 26
