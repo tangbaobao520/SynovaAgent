@@ -1,0 +1,35 @@
+{
+  "task_id": "D841",
+  "title": "K3 独立审计：D839 认领门禁变更（完成即释放/批量释放/持久化）——门禁变更属审计面",
+  "status": "claimed",
+  "risk": "high",
+  "spec": "D839 改的是认领门禁自身（staging_guard/resolve-commit-brief/synova-commit）→ 属审计面，合并前须独立结论。派单：docs/synova/coordination/K3审计派单-20260920.md §①",
+  "write_set": [
+    "docs/synova/audit-reports/2026-09-20-K3-D839.md",
+    "task-state/D841.json"
+  ],
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-20",
+  "updated_by": "synova-cto",
+  "domain": "k3",
+  "owner": "k3",
+  "executor": "k3",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [],
+  "blocked": null,
+  "target": "2026-W38",
+  "acceptance_points": [
+    "必查①释放语义可被伪造（能否自证 impl_done 解锁他人文件）→ 给攻击路径或不可行的证据",
+    "必查②fail-closed：拿不到已完成证据仍必须 block（复跑场景 D + 自造 2 反向用例）",
+    "必查③release-stale 不得释放进行中任务（独立复现『全量口径 16→24 且含 claimed』这一结论真假）",
+    "必查④并发保护未放松（场景 B + 变体）",
+    "必查⑤源头剔除 brief 的 6 个消费者逐个核副作用（尤其 G12/commit-msg/staging_guard）",
+    "必查⑥释放台账：删掉 released 记录是否重新被拦（持久化真伪）+ 并发写冲突",
+    "必查⑦夹具有效性：搬到 origin/main 是否真报红；有无宽松断言",
+    "交回：报告路径 + P0/P1/P2 计数 + 每条一行摘要 + 未覆盖面清单；不接受开发者转述当证据"
+  ],
+  "next": "① 读分支 fix/d839-claim-release（HEAD 3a0b05dc）与 PR #657 ② 独立环境复跑两个夹具 ③ 自造反向用例 ④ 必查 7 条 ⑤ 出报告 + 回填本卡 audit 段",
+  "note": "上轮欠账同时派：D836 / D830 / D815（见 docs/synova/coordination/K3审计派单-20260920.md）。K3 永不入队、不受理开发者自述。"
+}
