@@ -133,3 +133,16 @@ SynovaAgent 是一个驻扎企业的 AI 诊断系统。诊断是手段，增长�
 - [ ] 禁百分比 grep 零命中（创始人签字要求的唯一形式判据）
 - [ ] `bash scripts/pre-commit-check.sh` 自过（禁 `--no-verify`）
 #CRITERIA: A
+
+## 写集豁免
+
+> 本段由**小队队长（CTO 收口件）**追加：D850/M6 要求队长交齐「最终 diff / 自验结论 / 遗留清单」并逐张收口归属，这些收口件不在编码 A 的编码写集内，但属**同一派单**（`docs/synova/coordination/派单-CT70与D850-D852小队-20260920.md` §B「交回三件」）的交付物。逐条理由如下（`merge_writeset_gate.py` D708 声明级豁免机制）。
+
+- docs/synova/coordination/收口-D850-D852小队-20260920.md — 三件交付之三（遗留清单＋归属逐张收口＋三态判定），队长件，非编码 A 写集
+- docs/synova/coordination/D850-D852-改动清单-20260920.md — 三件交付之一（最终 diff），队长件
+- docs/synova/coordination/D850-D852-自验记录-20260920.md — 三件交付之二（独立自验员三轮结论），队长件
+- docs/synova/coordination/AUDIT-FINDINGS-LEDGER.md — 台账登记（红线「发现即登记」：CT-71…CT-77；只追加行，不改既有条目）
+- task-state/D852.json — D852 完成即释放：claimed → impl_done（同一收口动作）
+- memory/notes/implemented/2026-09-20-D852-product-decisions-6-points.md — D852 决策 Note 迁入 implemented（与 task-state 成对，防 `check-notes-lifecycle.sh` 僵尸阻断）
+- memory/notes/proposed/2026-09-20-D852-product-decisions-6-points.md — 同上（迁出侧，rename 的一半）
+- .claude/task-briefs/2026-09-20-D850-D852-小队收口.md — 队长收口件的 task brief 本体（pre-commit G6 消费）
