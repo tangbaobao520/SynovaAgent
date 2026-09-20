@@ -1,0 +1,52 @@
+{
+  "task_id": "D849",
+  "title": "Windows 兼容 FIX：staging_guard.test.sh 12 断言红（#657 必需检查 windows-latest 红 → 卡死 slice A）",
+  "status": "claimed",
+  "risk": "medium",
+  "owner": "mac-coding",
+  "milestone": "M0 项目管理基建",
+  "spec": {
+    "path": ".claude/task-briefs/2026-09-20-D849-win-compat-staging-guard.md",
+    "commit": "PENDING",
+    "by": "cto",
+    "at": "2026-09-20",
+    "note": "卡源=队长派单 task-5（CI 实证驱动，无独立 dev doc）；验收口径见本文件 acceptance_points"
+  },
+  "impl": {
+    "branch": "gate/d839-win-b",
+    "worktree": ".synova-wt-gates-b",
+    "by": "coding-b",
+    "write_set": [
+      "tests/control-tower/staging_guard.test.sh — D849 Windows 兼容 FIX：① python→bash 子链 PATH 自包含（windows-compat 模式1/D316）② 沙箱路径双命名空间（cygpath -m）+ 底座断言 ③ mk_state 提交卡（D846 新语义前置）④ 未定义 set_state → mk_state（K3 P2-2）⑤ shasum → 可移植 sha256 + 围栏非假绿 ⑥ /tmp/d839-res.err → 沙箱内私有 ⑦ 认领链前置断言 + 失败时 DIAG 末行（CI 注解 tail -8 唯一通道）",
+      "task-state/D849.json — 卡务登记",
+      ".claude/task-briefs/2026-09-20-D849-win-compat-staging-guard.md — 6 核心字段 brief",
+      "memory/notes/proposed/2026-09-20-d849-win-compat-staging-guard.md — 决策沉淀（Windows 双命名空间/假绿围栏/静默底座三类教训）"
+    ],
+    "not_in_write_set": [
+      "scripts/control-tower/staging_guard.py（被测实现，零改动）",
+      "scripts/workflow/resolve-commit-brief.sh（零改动）",
+      "scripts/control-tower/claim_release.py（编码 A 的 D846 写集，本卡只读）",
+      "tests/control-tower/claim_release.test.sh（编码 A 写集）"
+    ]
+  },
+  "acceptance_points": [
+    "① macOS 本分支（#657 旧语义）: bash tests/control-tower/staging_guard.test.sh → 场景 A–G 全 PASS、FAIL=0",
+    "② 交叉验（D846 新语义）: 以编码 A 的 claim_release.py（task-state 只认 git show HEAD:）替换后 → 场景 A–G 全 PASS、FAIL=0",
+    "③ CI `Control Tower Gate Tests (windows-latest)` 绿",
+    "④ CI `Control Tower Gate Tests (ubuntu-latest)` 绿",
+    "⑤ 断言只增不减：31 → 33（新增 2 条认领链前置断言）；无跳过/无放宽",
+    "⑥ 每条修复给 现象→根因→改法→file:line",
+    "⑦ synova-commit 提交并自带 push；无 --no-verify / git stash / force push"
+  ],
+  "evidence": {
+    "CI_windows_red": "PR #657 head aca42e30 → check-run 106074339112 `Control Tower Gate Tests (windows-latest)` failure；注解原文: 场景B/C/D/G FAIL、PASS=19 FAIL=12",
+    "CI_ubuntu_green": "同 head check-run 106074339252 `Control Tower Gate Tests (ubuntu-latest)` success",
+    "mac_before": "改前: PASS=31 FAIL=0（本分支 #657 旧语义）",
+    "mac_after": "改后: PASS=33 FAIL=0",
+    "mac_A_semantics": "植入 A 版 claim_release.py 后: PASS=33 FAIL=0",
+    "windows": "未验（本地无 Windows）→ 走 CI ::error 注解循环"
+  },
+  "fix_task_id": null,
+  "updated_at": "2026-09-20T00:00:00+08:00",
+  "updated_by": "coding-b"
+}

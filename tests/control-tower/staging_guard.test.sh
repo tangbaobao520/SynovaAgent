@@ -20,7 +20,50 @@
 # 隔离: mktemp -d 临时 git repo + 复制真实脚本（staging_guard / resolver / claim_release /
 #   session_registry / brief_parser / declare-write-set）→ 零真实仓库写入、零网络。
 # ═══════════════════════════════════════════════════════════════════════════════
+#
+# ── D849 Windows 兼容 FIX（CI 实证: Control Tower Gate Tests (windows-latest) 12 红）──
+#   现象: windows-latest 场景 B/C/D/G FAIL、PASS=19 FAIL=12；ubuntu/macOS 同文件全绿。
+#   根因族（见各改动处注释的 file:line）:
+#     ① python→bash 子链依赖不自包含（staging_guard.py:153 裸 ["bash", ...]）→
+#        resolver:31 `git rev-parse --show-toplevel || pwd` 落 MSYS 专有路径 →
+#        resolver 内嵌 native python 的 open()/os.listdir 读不到沙箱 → 认领判定静默 fail-open；
+#     ② 夹具底座（git init/add/commit、沙箱路径命名空间）全静默、无断言 → 链路瞎了会报成
+#        "认领不拦"（假绿），且 CI 注解只带 tail -8，Windows 侧无从定位 → 加前置断言 + DIAG；
+#     ③ Windows Git Bash 无 shasum → 场景 F 围栏 "空 == 空" 恒绿（假绿围栏）→ 换可移植哈希
+#        并让围栏在无哈希工具时判红；
+#     ④ 场景 G 调未定义函数 set_state（K3 D841 P2-2）→ 准备步骤静默失效 → 改 mk_state；
+#     ⑤ 写死 /tmp/d839-res.err 的跨运行共享路径 → 改沙箱内私有文件。
+#   未验证项: Windows 侧无法本地复跑，最终验收 = CI 双平台绿（见 task-state/D849.json）。
 set -uo pipefail
+
+# ── D849 ①(windows-compat 模式 1/D316): python→bash 子链的依赖必须自包含 ──
+# staging_guard.py:153 用裸 `subprocess.run(["bash", ...])` 启 resolve-commit-brief.sh ——
+# 子进程只继承本夹具的环境。MSYS↔native 的 PATH 往返在 Windows 上会让 Git 工具链条目在
+# 子链里不可达 → resolver 的 `git rev-parse --show-toplevel`（resolve-commit-brief.sh:31）
+# 落 `pwd` 回退 → ROOT 变成 MSYS 专有路径（/tmp/...）：bash 能 glob 它，而 resolver 内嵌的
+# **native Windows python**（open('/tmp/x') → C:\tmp\x）读不到 → 沙箱 brief 全丢 →
+# 认领判定静默 fail-open。显式把 git/python/bash 所在目录并入 PATH（POSIX 形，MSYS 自动转 native）。
+for _d in "$(dirname "$(command -v git 2>/dev/null || echo /usr/bin/git)")" \
+          "$(dirname "$(command -v python3 2>/dev/null || echo /usr/bin/python3)")" \
+          "$(dirname "$(command -v bash 2>/dev/null || echo /usr/bin/bash)")"; do
+  [ -d "$_d" ] || continue
+  case ":$PATH:" in *":$_d:"*) ;; *) PATH="$_d:$PATH" ;; esac
+done
+export PATH
+
+# ── D849 ②: 跨平台 sha256（Windows Git Bash **无 shasum**——CI 注解实测
+#    `shasum: command not found`；旧写法两边都取空串 → 围栏断言 "空 == 空" 恒绿 = 假绿围栏）──
+# 顺序: sha256sum（coreutils，双平台都有）→ shasum（macOS）→ python hashlib。
+# 三者皆无 → 输出空，由场景 F 判红（绝不静默放行）。
+_sha256() {
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum "$1" | cut -d' ' -f1 | tr -d '\r\n'
+  elif command -v shasum >/dev/null 2>&1; then
+    shasum -a 256 "$1" | cut -d' ' -f1 | tr -d '\r\n'
+  elif command -v python3 >/dev/null 2>&1; then
+    python3 -c "import hashlib,sys;print(hashlib.sha256(open(sys.argv[1],'rb').read()).hexdigest())" "$1" 2>/dev/null | tr -d '\r\n'
+  fi
+}
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
@@ -31,9 +74,10 @@ REPO_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 TODAY=$(date +%Y-%m-%d)
 # 沙箱围栏基准: 记录真实仓库释放台账的指纹（存在也要比对内容——测试期间不得改动它）
 REAL_LEDGER="$REPO_DIR/task-state/claim-releases.json"
-if [ -f "$REAL_LEDGER" ]; then REAL_LEDGER_SIG=$(shasum -a 256 "$REAL_LEDGER" | cut -d' ' -f1); else REAL_LEDGER_SIG="ABSENT"; fi
+if [ -f "$REAL_LEDGER" ]; then REAL_LEDGER_SIG=$(_sha256 "$REAL_LEDGER"); else REAL_LEDGER_SIG="ABSENT"; fi
 
 PASS=0; FAIL=0
+DIAG=""; PROBE=""; RES_OUT=""
 pass() { PASS=$((PASS + 1)); echo "  ✅ $1"; }
 fail() { FAIL=$((FAIL + 1)); echo "  ❌ $1" >&2; }
 assert_eq() { if [ "$1" = "$2" ]; then pass "$3 (=$1)"; else fail "$3 — 实际 $1 期望 $2"; fi; }
@@ -41,10 +85,21 @@ assert_contains() { if echo "$1" | grep -qF -- "$2"; then pass "$3"; else fail "
 assert_not_contains() { if echo "$1" | grep -qF -- "$2"; then fail "$3 — 不应包含: $2"; else pass "$3"; fi; }
 scen_start() { SCEN_BASE=$FAIL; }
 scen_end() { if [ "$FAIL" -eq "$SCEN_BASE" ]; then eval "$1=PASS"; else eval "$1=FAIL"; fi; }
+# D849: 精简链路证据（CI 注解只带 tail -8 → 失败时把它压成末尾行，Windows 侧唯一定位手段）
+_status_of() { printf '%s' "$1" | grep -oE '"status": "[a-z]+"' | head -1 | sed 's/.*"\([a-z]*\)"$/\1/'; }
+diag() { DIAG="${DIAG}$1=ec$2/${3:-?} "; }
 
 # ── 沙箱: 真实脚本 + 最小仓库结构 ──
-SB=$(mktemp -d); trap 'rm -rf "$SB"' EXIT
-git -C "$SB" init -q
+# D849: 沙箱路径必须**双命名空间同实体**。mktemp 给的是 MSYS 专有形（/tmp/...），
+#   native Windows python 把它读成 C:\tmp\...（不存在）→ 链上任何把路径交给 native 进程的
+#   代码（resolver 的 pwd 回退、内嵌 python 的 open()/os.listdir）都静默读不到沙箱。
+#   cygpath -m 给 mixed 形（C:/...）：bash 可 cd/glob、native python 可 open = 同一实体。
+SB_RAW=$(mktemp -d)
+SB="$(cygpath -m "$SB_RAW" 2>/dev/null || echo "$SB_RAW")"  # POSIX 无 cygpath → 原样（/tmp 本就是 native）
+trap 'rm -rf "$SB_RAW" "$SB"' EXIT
+# D849: 底座必须**断言存在**（旧写法 git init/add/commit 全静默 → Windows 上底座没建成时
+#   夹具照样往下跑，把"链路瞎了"报成"认领不拦"）。
+git -C "$SB" init -q || { echo "❌ 夹具前置失败: git init 沙箱失败（$SB）" >&2; exit 2; }
 git -C "$SB" config user.email t@t.local
 git -C "$SB" config user.name t
 mkdir -p "$SB/.claude/task-briefs" "$SB/task-state" "$SB/scripts/control-tower" "$SB/scripts/workflow" "$SB/docs"
@@ -65,8 +120,13 @@ cp "$REPO_DIR/scripts/workflow/resolve-commit-brief.sh" "$SB/scripts/workflow/re
 GUARD="$SB/scripts/control-tower/staging_guard.py"
 CLAIM="$SB/scripts/control-tower/claim_release.py"
 printf 'x\n' > "$SB/docs/x.md"
-git -C "$SB" add -A >/dev/null 2>&1
-git -C "$SB" commit -qm "init" >/dev/null 2>&1
+# D849: 底座断言（旧写法三行全 `>/dev/null 2>&1` 静默）
+if ! git -C "$SB" add -A >/dev/null 2>&1 || ! git -C "$SB" commit -qm "init" >/dev/null 2>&1; then
+  echo "❌ 夹具前置失败: 沙箱 git 底座不可用（git add/commit 失败）: $SB" >&2; exit 2
+fi
+if [ -z "$(git -C "$SB" rev-parse --show-toplevel 2>/dev/null)" ]; then
+  echo "❌ 夹具前置失败: git rev-parse --show-toplevel 在沙箱不可用: $SB" >&2; exit 2
+fi
 
 mk_brief() { # <D#> <slug> <path-in-q2>
   cat > "$SB/.claude/task-briefs/${TODAY}-${1}-${2}.md" <<EOF
@@ -94,9 +154,65 @@ EOF
 mk_state() { # <D#> <status|NONE>
   if [ "$2" = "NONE" ]; then rm -f "$SB/task-state/$1.json"; return; fi
   printf '{"task_id":"%s","title":"夹具","status":"%s"}\n' "$1" "$2" > "$SB/task-state/$1.json"
+  # D846/D849: 释放判定（claim_release.py 证据源 2）只认 **已提交**（git show HEAD:）的卡——
+  # 只写工作树 = 未提交的卡不作为释放证据（这正是 D846 要消灭的"无痕伪造"面）。
+  # 故夹具必须提交卡，否则场景 A 在新语义下红。NONE 分支（场景 D）只删工作树文件：
+  # HEAD 里仍是上一次提交的 status，语义与"拿不到已完成证据 → 不释放"一致，不受影响。
+  git -C "$SB" add "task-state/$1.json" >/dev/null 2>&1 || true
+  git -C "$SB" commit -qm "state $1=$2" >/dev/null 2>&1 || true
 }
 run_guard() { # <session-id> → OUT / EC
   OUT=$(cd "$SB" && python3 "$GUARD" --session-id "$1" --staged docs/x.md 2>&1); EC=$?
+}
+
+# ── D849 ③ 前置断言: 认领链必须**看得见沙箱** ──
+# 忠实复刻 staging_guard.py:153-156 的调用链：native python → 裸 ["bash", ...] →
+# resolve-commit-brief.sh（不传 cwd，继承沙箱 CWD；脚本路径用 os.path.join = Windows 反斜杠形）。
+# 这里红 = 路径命名空间/依赖链断裂；此时下面所有"应拦"的判定都会 fail-open 假绿，
+# 所以必须显式红 + 带证据，绝不允许静默通过（这正是 Windows 12 红此前无法定位的原因）。
+_probe_chain() {
+  (cd "$SB" && python3 - "$SB" <<'PYEOF' 2>&1
+import os, subprocess, sys
+sb = sys.argv[1]
+script = os.path.join(sb, "scripts", "workflow", "resolve-commit-brief.sh")
+
+
+def run(argv):
+    try:
+        return subprocess.run(argv, capture_output=True, text=True, encoding="utf-8",
+                              errors="replace", timeout=30)
+    except Exception as exc:  # noqa: BLE001 — 探测目的就是暴露异常
+        sys.stderr.write("PROBE_EXC=%s: %s\n" % (type(exc).__name__, exc))
+        return None
+
+
+def form(s):
+    """路径命名空间形态: posix(/…) / win(C:…) / 缺（FAIL/NONE）。"""
+    if not s or s in ("FAIL", "NONE"):
+        return s or "?"
+    if s.startswith("/"):
+        return "posix"
+    return "win" if len(s) > 1 and s[1] == ":" else "rel"
+
+
+p = run(["bash", script, "--session", "D902", "docs/x.md"])
+print("PROBE_RC=%s" % ("EXC" if p is None else p.returncode))
+print("PROBE_OUT=%s" % ("" if p is None else os.path.basename(p.stdout.strip())))
+# 子链事实（同一 spawn 路径: native python → bash）：path 命名空间 + git/python 可达性
+e = run(["bash", "-c",
+         'echo "pwd=$PWD"; echo "top=$(git rev-parse --show-toplevel 2>/dev/null || echo FAIL)";'
+         ' echo "git=$(command -v git || echo NONE)"; echo "py=$(command -v python3 || echo NONE)"'])
+facts = {}
+if e is not None:
+    for line in e.stdout.splitlines():
+        k, _, v = line.partition("=")
+        facts[k.strip()] = v.strip()
+print("PROBE_ENV pwd=%s top=%s git=%s py=%s" % (
+    form(facts.get("pwd", "")), form(facts.get("top", "")),
+    os.path.basename(facts.get("git", "NONE") or "NONE"),
+    os.path.basename(facts.get("py", "NONE") or "NONE")))
+PYEOF
+  )
 }
 
 scen_start
@@ -106,7 +222,11 @@ mk_brief D901 a "docs/x.md"
 mk_brief D902 b "docs/x.md"
 mk_state D901 impl_done
 mk_state D902 claimed
+PROBE=$(_probe_chain)
+assert_contains "$PROBE" "PROBE_RC=0" "前置 认领链可达（native python→bash→resolver，exit 0）"
+assert_contains "$PROBE" "D902-b.md" "前置 认领链解析出沙箱 brief（路径命名空间同实体；否则下面全是假绿）"
 run_guard D902
+diag A "$EC" "$(_status_of "$OUT")"
 assert_eq "$EC" "0" "场景A exit 0（不再硬阻断）"
 assert_contains "$OUT" '"status": "warn"' "场景A status=warn（降级为警告）"
 assert_contains "$OUT" "D901" "场景A 释放理由点名被释放的任务 D901"
@@ -114,8 +234,10 @@ assert_contains "$OUT" "impl_done" "场景A 释放依据=task-state 状态 impl_
 assert_not_contains "$OUT" '"status": "block"' "场景A 不得 block"
 # 源头修复直测（resolver 有 6 个生产消费者：G12 范围 / commit-msg / verifiable-done /
 # plan-integrity / brief-vs-code / staging_guard —— 任一拿到已完成任务的 brief 都按错任务校验）
-RES_OUT=$(cd "$SB" && bash "$SB/scripts/workflow/resolve-commit-brief.sh" --session D902 "docs/x.md" 2>/tmp/d839-res.err)
-RES_ERR=$(cat /tmp/d839-res.err 2>/dev/null || true)
+# D849 ②: 证据文件落沙箱（旧写法写死 /tmp/d839-res.err = 跨运行/跨机器共享路径）
+RES_ERR_FILE="$SB/.res-probe.err"
+RES_OUT=$(cd "$SB" && bash "$SB/scripts/workflow/resolve-commit-brief.sh" --session D902 "docs/x.md" 2>"$RES_ERR_FILE")
+RES_ERR=$(cat "$RES_ERR_FILE" 2>/dev/null || true)
 assert_contains "$RES_OUT" "D902-b.md" "场景A resolver 源头已剔除已释放 brief → 返回本 session 的 brief"
 assert_not_contains "$RES_OUT" "D901-a.md" "场景A resolver 不再返回已完成任务的 brief"
 assert_contains "$RES_ERR" "SYNO-RELEASED-CLAIM" "场景A resolver 公告被剔除的已释放认领（供门禁降 warn）"
@@ -126,6 +248,7 @@ scen_start
 echo "── 场景 B（反向）: 任务 A 仍在进行(claimed) → 仍必须 block ──"
 mk_state D901 claimed
 run_guard D902
+diag B "$EC" "$(_status_of "$OUT")"
 assert_eq "$EC" "1" "场景B exit 1（硬阻断保持）"
 assert_contains "$OUT" '"status": "block"' "场景B status=block（并发保护未放松）"
 assert_contains "$OUT" "claim_release.py release" "场景B block 文案含可执行释放命令"
@@ -135,6 +258,7 @@ scen_start
 echo "── 场景 D（降级 fail-closed）: 任务 A 无 task-state 卡 → 不释放，仍 block ──"
 mk_state D901 NONE
 run_guard D902
+diag D "$EC" "$(_status_of "$OUT")"
 assert_eq "$EC" "1" "场景D exit 1（拿不到已完成证据 → 不放行）"
 assert_contains "$OUT" '"status": "block"' "场景D status=block（fail-closed）"
 
@@ -156,6 +280,7 @@ else
      --brief "$SB/.claude/task-briefs/${TODAY}-D901-a.md" --staged) >/dev/null 2>&1
   assert_contains "$(cat "$SB/.claude/task-briefs/${TODAY}-D901-a.md")" "| docs/x.md |" "场景C declare-write-set 重跑确实用 ASCII 重生成机器块"
   run_guard D902
+  diag C "$EC" "$(_status_of "$OUT")"
   assert_eq "$EC" "0" "场景C 重跑后 exit 0（认领不复活）"
   assert_not_contains "$OUT" '"status": "block"' "场景C 释放持久化 → status 漂移也不复活"
 fi
@@ -182,8 +307,11 @@ scen_start
 echo "── 场景 G（降级 · 铁律 11）: 释放判定不可用 → 可见 + fail-closed（不误放行）──"
 if [ -f "$CLAIM" ]; then
   mv "$CLAIM" "$CLAIM.off"
-  set_state D901 impl_done
+  # D849 ④: 旧写法 `set_state` 在本文件**未定义**（只存在于 claim_release.test.sh）——
+  #   无 set -e + 无断言 → 这步静默无效（K3 D841 P2-2 点名 :185）。改用本文件已有的 mk_state。
+  mk_state D901 impl_done
   run_guard D902
+  diag G "$EC" "$(_status_of "$OUT")"
   assert_eq "$EC" "1" "场景G 释放维度不可用 → 仍 block（fail-closed，绝不误放行）"
   assert_contains "$OUT" '"degraded": true' "场景G 降级信号显式传播到结果（不静默）"
   assert_contains "$OUT" 'claim_release' "场景G 降级原因点名缺失模块"
@@ -197,8 +325,12 @@ scen_end SCEN_G
 
 echo "── 场景 F（沙箱围栏）: 测试不得写真实仓库 ──"
 scen_start
-if [ -f "$REAL_LEDGER" ]; then REAL_LEDGER_NOW=$(shasum -a 256 "$REAL_LEDGER" | cut -d' ' -f1); else REAL_LEDGER_NOW="ABSENT"; fi
-if [ "$REAL_LEDGER_SIG" = "$REAL_LEDGER_NOW" ]; then
+# D849 ②: 旧写法用 shasum（Windows Git Bash 无）→ 两边都取空串 → "空 == 空" 恒绿 = 假绿围栏。
+#   现在: 可移植哈希 + 哈希不可得时**判红**（围栏失效必须是可见的红，绝不静默放行）。
+if [ -f "$REAL_LEDGER" ]; then REAL_LEDGER_NOW=$(_sha256 "$REAL_LEDGER"); else REAL_LEDGER_NOW="ABSENT"; fi
+if [ -z "$REAL_LEDGER_NOW" ]; then
+  fail "场景F 无可用哈希工具（sha256sum/shasum/python3 全缺）→ 围栏无法判定（禁假绿）"
+elif [ "$REAL_LEDGER_SIG" = "$REAL_LEDGER_NOW" ]; then
   pass "场景F 真实仓库释放台账指纹未变（${REAL_LEDGER_NOW}）"
 else
   fail "场景F 测试越界改写了真实仓库释放台账（$REAL_LEDGER_SIG → ${REAL_LEDGER_NOW}）"
@@ -217,4 +349,11 @@ echo "  场景F(沙箱围栏)   : $SCEN_F"
 echo "  场景G(降级可见)   : $SCEN_G"
 echo "  PASS=$PASS FAIL=$FAIL"
 [ "$FAIL" -eq 0 ] && echo "FAIL=0" || echo "FAIL=$FAIL"
+if [ "$FAIL" -ne 0 ]; then
+  # D849: CI 只把 tail -8 注入 ::error 注解（.github/workflows/ci.yml:272）——Windows 侧无法本地
+  #   复跑，故失败时把"链路证据"压进**末尾**行（放在 FAIL= 之后，避免被 cut -c1-450 截掉）：
+  #   场景=各场景 exit/status，链=子链事实（path 命名空间 + git/python 可达性 + resolver 输出）。
+  echo "DIAG 场景 $(printf '%s' "$DIAG" | cut -c1-150)"
+  echo "DIAG 链 $(printf '%s' "$PROBE" | tr '\n' ' ' | cut -c1-140)"
+fi
 exit $([ "$FAIL" -eq 0 ] && echo 0 || echo 1)
