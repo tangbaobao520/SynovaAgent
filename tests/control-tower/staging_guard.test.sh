@@ -178,6 +178,23 @@ else
 fi
 
 scen_end SCEN_E
+scen_start
+echo "── 场景 G（降级 · 铁律 11）: 释放判定不可用 → 可见 + fail-closed（不误放行）──"
+if [ -f "$CLAIM" ]; then
+  mv "$CLAIM" "$CLAIM.off"
+  set_state D901 impl_done
+  run_guard D902
+  assert_eq "$EC" "1" "场景G 释放维度不可用 → 仍 block（fail-closed，绝不误放行）"
+  assert_contains "$OUT" '"degraded": true' "场景G 降级信号显式传播到结果（不静默）"
+  assert_contains "$OUT" 'claim_release' "场景G 降级原因点名缺失模块"
+  RES_ERR2=$(cd "$SB" && bash "$SB/scripts/workflow/resolve-commit-brief.sh" --session D902 "docs/x.md" 2>&1 >/dev/null || true)
+  assert_contains "$RES_ERR2" "SYNO-CLAIM-RELEASE-DEGRADED" "场景G resolver 也发显式降级公告"
+  mv "$CLAIM.off" "$CLAIM"
+else
+  fail "场景G claim_release.py 不存在（未实现）"
+fi
+scen_end SCEN_G
+
 echo "── 场景 F（沙箱围栏）: 测试不得写真实仓库 ──"
 scen_start
 if [ -f "$REAL_LEDGER" ]; then REAL_LEDGER_NOW=$(shasum -a 256 "$REAL_LEDGER" | cut -d' ' -f1); else REAL_LEDGER_NOW="ABSENT"; fi
@@ -197,6 +214,7 @@ echo "  场景C(持久化)     : $SCEN_C"
 echo "  场景D(降级不放行) : $SCEN_D"
 echo "  场景E(批量)       : $SCEN_E"
 echo "  场景F(沙箱围栏)   : $SCEN_F"
+echo "  场景G(降级可见)   : $SCEN_G"
 echo "  PASS=$PASS FAIL=$FAIL"
 [ "$FAIL" -eq 0 ] && echo "FAIL=0" || echo "FAIL=$FAIL"
 exit $([ "$FAIL" -eq 0 ] && echo 0 || echo 1)

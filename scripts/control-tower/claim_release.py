@@ -52,6 +52,12 @@ LEDGER_VERSION = 1
 # 格式: SYNO-RELEASED-CLAIM\t<brief stem>\t<D#>\t<basis>\t<detail>
 RELEASED_MARK = "SYNO-RELEASED-CLAIM"
 
+# 释放判定**不可用**时的显式降级公告（铁律 11 静默降级禁止）。
+# 语义: 判定模块缺失 / 抛异常 → 一律按「未释放」处理（fail-closed，退回修复前的行为，
+# 绝不误放行）；但必须让算子看见「释放维度已失效」，否则会再次陷入 D839 的死锁而无信号。
+# 格式: SYNO-CLAIM-RELEASE-DEGRADED\t<brief stem>\t<原因>
+DEGRADED_MARK = "SYNO-CLAIM-RELEASE-DEGRADED"
+
 # 完成即释放的自动判据（卡片口径，2026-09-20 CTO 派单）
 RELEASED_STATUSES = ("impl_done", "audited")
 

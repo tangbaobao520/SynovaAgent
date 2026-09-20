@@ -223,22 +223,34 @@ anchored_weak = set(x.strip() for x in '''$ANCHORED_WEAK_FILES'''.split('\n') if
 #   本 resolver 有 6 个生产消费者（G12 范围 / commit-msg / verifiable-done / plan-integrity /
 #   brief-vs-code / staging_guard），任一拿到「已完成任务的 brief」都会按错任务校验。
 # 降级: 判定模块缺失或抛异常 → 一律视为未释放（fail-closed，行为与修复前一致，零回归）。
+_REL_DEG = ''
 try:
-    from claim_release import is_released as _is_released, RELEASED_MARK as _REL_MARK
-except ImportError:
+    from claim_release import (is_released as _is_released, RELEASED_MARK as _REL_MARK,
+                               DEGRADED_MARK as _DEG_MARK)
+except ImportError as _imp_exc:
     _is_released = None
     _REL_MARK = 'SYNO-RELEASED-CLAIM'
+    _DEG_MARK = 'SYNO-CLAIM-RELEASE-DEGRADED'
+    _REL_DEG = 'claim_release 模块不可用: ' + str(_imp_exc)[:80]
+# 公告延到下面（仅在**确有暂存文件要裁决认领**时发一次）——无暂存文件时释放维度与
+# 本次解析无关，发公告只会污染 stdout 合并型消费方（如 tests 的 2>&1 捕获）。
+
+def _deg(brief, why):
+    # 铁律 11: 释放维度不可用时显式公告，绝不静默（仍按未释放 -> fail-closed 不误放行）
+    sys.stderr.write(_DEG_MARK + '\t' + os.path.basename(brief) + '\t' + why + '\n')
+
 
 def _release_of(brief):
     # → (released, task_id, basis, detail)；不可用/异常 → (False, '', '', '')
     if _is_released is None:
-        return (False, '', '', '')
+        return (False, '', '', '')  # 模块不可用已在上方一次性公告（不逐 brief 刷屏）
     m = re.search(r'D\d+', os.path.basename(brief))
     if not m:
         return (False, '', '', '')
     try:
         v = _is_released(r'$ROOT', m.group(0))
-    except Exception:
+    except Exception as exc:
+        _deg(brief, type(exc).__name__ + ':' + str(exc)[:80])
         return (False, '', '', '')
     if not v.get('released'):
         return (False, '', '', '')
@@ -251,6 +263,10 @@ def _announce_if_released(brief):
         sys.stderr.write(_REL_MARK + '\t' + os.path.basename(brief) + '\t' + r[1]
                          + '\t' + r[2] + '\t' + r[3] + '\n')
     return r[0]
+
+if staged and _REL_DEG:
+    # 每次运行只公告一次；按 brief 逐条发会把 stderr 淹没，且下游 2>&1 合并会污染 stdout
+    sys.stderr.write(_DEG_MARK + '\t' + '<module>' + '\t' + _REL_DEG + '\n')
 
 claims = []
 for b in briefs:
@@ -284,7 +300,7 @@ if cur:
 " 2>"$_PYERR" || true)
 # D839: python 段 stderr 里只有两类东西 —— 错误（保持静默，沿用原语义）与
 # 「已释放认领」公告。公告必须**转回 shell stderr** 才能到门禁手里（staging_guard 靠它降 warn）。
-grep '^SYNO-RELEASED-CLAIM' "$_PYERR" >&2 2>/dev/null || true
+grep -E '^SYNO-RELEASED-CLAIM|^SYNO-CLAIM-RELEASE-DEGRADED' "$_PYERR" >&2 2>/dev/null || true
 rm -f "$_PYERR" 2>/dev/null || true
 fi
 

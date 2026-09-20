@@ -1572,3 +1572,15 @@ Binary file .claude/bypass.log matches
 2026-09-20T13:54:11+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=532b7d6036e327f23bf776a3e11b83ef3a66f38d
 2026-09-20T14:09:33+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=57c1474e89c08c63cf87de18e6f6f8772c9cde16
 2026-09-20T14:38:43+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=58bfd49023f638f54188f0075f34b7e3fd7b1000
+2026-09-20T14:41:53+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
+2026-09-20T14:41:53+08:00 | COMMITTED | pre-commit DEGRADED-PASS | TASK_ID=D331-test | AGENT=test | HASH=541744006dac492b43ac627b6395d8372acc5d4e
+2026-09-20T14:41:54+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
+2026-09-20T14:41:54+08:00 | COMMITTED | pre-commit DEGRADED-PASS | TASK_ID=D331-test | AGENT=test | HASH=aac6c160075ee7f802cb5d4a1db02336ddbab7d5
+2026-09-20T14:41:55+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
+2026-09-20T14:41:55+08:00 | COMMITTED | pre-commit DEGRADED-PASS | TASK_ID=D331-test | AGENT=test | HASH=ab4580f77bd2c1bed3fcd99afc1aee59e48e258f
+2026-09-20T14:43:13+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
+2026-09-20T14:43:13+08:00 | COMMITTED | pre-commit DEGRADED-PASS | TASK_ID=D331-test | AGENT=test | HASH=bbc1b3306e4c27a6597eed7a68edd85e59651fd4
+2026-09-20T14:43:14+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
+2026-09-20T14:43:14+08:00 | COMMITTED | pre-commit DEGRADED-PASS | TASK_ID=D331-test | AGENT=test | HASH=125f9c11514ba0dafafbb6b38068c5f945d65749
+2026-09-20T14:43:15+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
+2026-09-20T14:43:15+08:00 | COMMITTED | pre-commit DEGRADED-PASS | TASK_ID=D331-test | AGENT=test | HASH=066fe25fcd5e8f662e0df62a1c245ac9dc7fef93

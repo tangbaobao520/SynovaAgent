@@ -49,10 +49,11 @@ from session_registry import (  # noqa: E402
 # D839: 释放语义单一事实源（"完成即释放"判定 / 批量扫描 / 释放台账）。
 # 缺失 → 释放维度整体降级为"不释放"（fail-closed，行为与修复前一致，零回归）。
 try:
-    from claim_release import RELEASED_MARK, is_released as _claim_is_released
+    from claim_release import DEGRADED_MARK, RELEASED_MARK, is_released as _claim_is_released
 except ImportError:  # pragma: no cover — 旧检出/被裁剪的树
     _claim_is_released = None
     RELEASED_MARK = "SYNO-RELEASED-CLAIM"
+    DEGRADED_MARK = "SYNO-CLAIM-RELEASE-DEGRADED"
 
 
 def parse_released_claims(stderr_text: str) -> List[dict]:
@@ -70,6 +71,23 @@ def parse_released_claims(stderr_text: str) -> List[dict]:
             continue
         out.append({"brief": parts[1], "task_id": parts[2], "basis": parts[3],
                     "detail": parts[4] if len(parts) > 4 else ""})
+    return out
+
+
+def parse_degraded_claims(stderr_text: str) -> List[dict]:
+    """解析 resolver stderr 的**释放维度降级**公告（铁律 11：降级必须可见，绝不静默）。
+
+    契约: 输入 = 任意文本；输出 = [{brief, why}]。语义 = 释放判定不可用，已退回「不释放」
+    （fail-closed，绝不误放行）。容错: 非本前缀行 / 字段不足行忽略。
+    """
+    out: List[dict] = []
+    for line in (stderr_text or "").splitlines():
+        if not line.startswith(DEGRADED_MARK):
+            continue
+        parts = line.split("\t")
+        if len(parts) < 3:
+            continue
+        out.append({"brief": parts[1], "why": parts[2]})
     return out
 
 
@@ -139,6 +157,18 @@ def check_staging(
         claimed = _proc.stdout.strip().splitlines()
         # D839 ①: resolver 已把"已释放"的 brief 剔出候选池 —— 剔除理由在 stderr，取回来降 warn 用
         released_claims = parse_released_claims(_proc.stderr)
+        degraded_claims = parse_degraded_claims(_proc.stderr)
+        if degraded_claims:
+            # 铁律 11/31: 释放维度不可用 → 显式记录 + 传播（不阻断，但绝不静默）
+            log_degraded(reg.degraded_log, "staging-guard",
+                         "claim-release degraded: " + "; ".join(
+                             f"{c['brief']}({c['why']})" for c in degraded_claims))
+            result["degraded"] = True
+            _prev = result.get("degraded_reason", "")
+            result["degraded_reason"] = (_prev + " | " if _prev else "") + \
+                "释放判定不可用（按未释放 fail-closed）: " + "; ".join(
+                    f"{c['brief']}({c['why']})" for c in degraded_claims)
+            result["claim_release_degraded"] = degraded_claims
         if claimed:
             brief = claimed[0]
             # 防假阳性: 仅当 brief 真实认领 ≥1 个暂存文件才比较 D#（Q2 include 命中）
