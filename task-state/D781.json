@@ -1,0 +1,11 @@
+{
+  "task_id": "D781",
+  "title": "K3 权威文档一致性专项审计（2026-09-14）登记：FAIL / 35 条（9 P0）",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-15",
+  "updated_by": "alloc-task-id"
+}
