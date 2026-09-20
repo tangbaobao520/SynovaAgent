@@ -1,33 +1,56 @@
 {
   "task_id": "D829",
-  "title": "packages/evolution 接线（2,503 行零生产引用；线 17 第一条验收点）",
-  "status": "claimed",
+  "title": "packages/evolution 接线（线 17-1 feedback-collector 有真实消费方）",
+  "status": "impl_done",
   "risk": "high",
-  "spec": "派单即规格：docs/synova/coordination/批十三-断线补卡与固化-20260918.md",
+  "spec": ".claude/task-briefs/2026-09-20-D829-feedback-collector-evolution-wiring.md（批十四小队 C 规格：Q0/Q1/Q2/Q3 + 写集机器块 + 写集冲突清单 + 接线点确认；队长 2026-09-20 三件全批）｜上游：docs/synova/coordination/批十三-断线补卡与固化-20260918.md §一 D829",
   "write_set": [
-    "task-state/D829.json"
+    "packages/evolution/src/feedback-collector.ts",
+    "packages/evolution/src/index.ts",
+    "src/routes/ga-calibration.ts",
+    "tests/evolution/feedback-collector.test.ts",
+    "tests/routes/ga-calibration.test.ts",
+    "tests/routes/evolution-rule-version.test.ts",
+    "task-state/D829.json",
+    ".claude/task-briefs/2026-09-20-D829-feedback-collector-evolution-wiring.md",
+    "memory/notes/implemented/2026-09-20-D829-feedback-collector-consumer.md",
+    "docs/synova/product-lines/evidence/D829-evidence-20260920.md"
   ],
-  "impl": null,
+  "impl": {
+    "sha": null,
+    "files": [
+      "packages/evolution/src/feedback-collector.ts（+nextFeedbackId 唯一化 :48-50；+collectGaCalibrationFeedback :141-176，含 GA_CALIBRATION_DECISION 映射）",
+      "packages/evolution/src/index.ts（+:48-50 类型导出、+:58 函数导出）",
+      "src/routes/ga-calibration.ts（+:53 isCalibrationAction 守卫；+:142 校验窄化；+:232-268 L0 收集块；+:269-272 响应字段；+:526-587 GET evolution-feedback 只读出口）",
+      "tests/evolution/feedback-collector.test.ts（+7 用例：映射/边界/降级/id 唯一性回归）",
+      "tests/routes/ga-calibration.test.ts（+7 用例 D829-1..7；+SYNO_FACTS_ROOT 落盘隔离；+memoryRowsByTag helper）",
+      "tests/routes/evolution-rule-version.test.ts（新建：验收点③ 真实 approve 路由 → evolution_snapshot 版本记录）"
+    ],
+    "commit": null
+  },
   "audit": null,
   "fix_task_id": null,
-  "updated_at": "2026-09-18",
-  "updated_by": "synova-cto",
+  "updated_at": "2026-09-20",
+  "updated_by": "coder-c(批十四小队)",
   "domain": "win",
-  "owner": "mac-coding",
+  "owner": "coder-c(批十四小队)",
+  "team": "批十四小队",
+  "worktree": ".synova-wt-team14",
+  "branch": "team/win-batch14",
   "milestone": "M1 产品可用",
   "depends_on": [],
   "blocked": null,
   "target": "2026-W38",
   "acceptance_points": [
-    "feedback-collector 被真实调用：一条真实反馈（GA 评审/客户反馈）→ 断言进了 evolution 的收集器且可查",
-    "grep 'from \\'@synova/evolution\\'' 在 src/（排除测试）命中 ≥1 个生产调用点，且该调用点在真实业务路径上（给出文件:行 + 为什么会被触发）",
-    "规则版本管理（rule-version-manager）可观测：一次规则更新留下版本记录",
-    "在接通并有一次真实验证之前，**不得对外宣称『越用越准』/『进化能力』**（项目红线）",
-    "验收按 docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md（禁 grep 命中当完成；三问自查；命令+原始输出）"
+    "feedback-collector 被真实调用：一条真实反馈（GA 评审/客户反馈）→ 断言进了 evolution 的收集器且可查 —— ✅ tests/routes/ga-calibration.test.ts D829-1/2（穿真实路由 handler；getFeedbackByOrg/getFeedbackByAction 可查 + AgentMemoryStore 持久化行）",
+    "grep 'from \\'@synova/evolution\\'' 在 src/（排除测试）命中 ≥1 个生产调用点，且该调用点在真实业务路径上（给出文件:行 + 为什么会被触发）—— ✅ 生产调用点 packages/evolution 动态 import：src/routes/ga-calibration.ts:244-245（GA 纠错三动作 201 必经）；另实证既有调用点 src/routes/chat.ts:70-71（未持久化 + 空吞，登记遗留）",
+    "规则版本管理（rule-version-manager）可观测：一次规则更新留下版本记录 —— ✅ tests/routes/evolution-rule-version.test.ts（真实 approve 路由 → tags[evolution_snapshot] 行 + RuleVersionManager.listSnapshots 可见 + 灰度阈值落地）",
+    "在接通并有一次真实验证之前，**不得对外宣称『越用越准』/『进化能力』**（项目红线）—— ✅ 本卡交付只陈述物理事实（端点/命令/结果）；「变准」需线 17-4 另行验证",
+    "验收按 docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md（禁 grep 命中当完成；三问自查；命令+原始输出）—— ✅ 见 docs/synova/product-lines/evidence/D829-evidence-20260920.md（三问逐条 + 命令原始输出 + 反向验收两次输出）"
   ],
-  "next": "见派单文档对应小节；开工第一步重新核行号（会漂移）",
-  "note": "CTO 已核：packages/evolution/src/ 9 文件 / 2,503 行；src/ 下 from '@synova/evolution' 生产引用 = 0；线 17（进化闭环）第一条验收点写的就是 feedback-collector 被真实调用。**注意别混淆**：src/agent/synova-agent.ts:28 引的是 src/growth/feedback-collector（另一个同名实现）。判据 B（对客户的核心承诺）。",
-  "executor": "mac-coding",
+  "next": "队长收口 → 提请 K3 独立审计（验收点 17-5 k3_only）；遗留三张另开卡（chat.ts 空吞 / collectAllFeedback 零参 / 三路反馈无入口）",
+  "note": "缺口修正（实测，两处比派单件更准）：① collectFeedback 并非零调用——src/routes/chat.ts:70-71 已在生产路径调用（但未传 memoryStore → persisted=false + :76 .catch(()=>{}) 空吞）；② 真缺口 = 读取/消费侧零生产读者（getFeedbackByOrg/getFeedbackByAction 在 src/ 零调用）+ 下游 OrgAdapter（org-adapter.ts:199-204,275-280 读 enterprise_fact+tags[user_correction]）恒空转。附带修复：collectFeedback id 同毫秒相撞 → key=correction_<id> UPSERT 静默覆盖（探针实测 5 连写 distinct=1）→ nextFeedbackId 追加随机后缀。接线点维持队长冻结值 src/routes/ga-calibration.ts。",
+  "executor": "coder-c(批十四小队)",
   "delegation": "Mac 代行 win（D773 规约；创始人 2026-09-18 重申『涉及 win 线的一并先给 Mac 执行』）",
-  "acceptance_level": "代码级可验（Mac 必须验）；若涉及 Windows 实机行为 → 挂账，Win 回归后补验，禁止声称"
+  "acceptance_level": "代码级可验（Mac 已验：55 用例穿真实入口 + 反向验收 4 次原始输出 + tsc 本卡文件零 error）；若涉及 Windows 实机行为 → 挂账，Win 回归后补验，禁止声称"
 }

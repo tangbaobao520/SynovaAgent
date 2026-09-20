@@ -6,6 +6,7 @@
  *   ② GET  /api/ga/calibration         — 校准列表（latest 链头 / ?includeChain=1 全链，append-only + supersedes 版本链）
  *   ③ POST /api/ga/calibration/signals — 手动信号注入（蓝图 §3.3.1 五要素 → 哨兵事件流，§6.2）
  *   ④ GET  /api/ga/calibration/stats   — 反馈效用仪表（贡献计数 + 回流计数；"采纳率"诚实降级为回流计数，§8.2）
+ *   ⑤ GET  /api/ga/calibration/evolution-feedback — L0 进化收集器只读出口（D829 · 线 17-1）
  *
  * 单源与边界（防膨胀红线）:
  *   - 存储单源 AgentMemoryStore（type='ga_calibration'/'manual_signal'，append-only 不可覆盖——
@@ -45,6 +46,13 @@ const REFLUX_DECISION: Partial<Record<(typeof CALIBRATION_ACTIONS)[number], Feed
   rewrite_logic: 'modify',
   demote_signal: 'ineffective',
 };
+
+type CalibrationAction = (typeof CALIBRATION_ACTIONS)[number];
+
+/** 校准动作值域守卫（窄化 unknown → CalibrationAction；铁律 38: 零 as any） */
+function isCalibrationAction(v: unknown): v is CalibrationAction {
+  return typeof v === 'string' && (CALIBRATION_ACTIONS as readonly string[]).includes(v);
+}
 
 /** 校准条目 value 结构（spec §6.1） */
 interface CalibrationValue {
@@ -131,7 +139,7 @@ router.post('/api/ga/calibration', async (req: Request, res: Response) => {
     if (!isNonEmptyString(targetId)) {
       return res.status(400).json({ ok: false, code: 'VALIDATION_ERROR', message: 'targetId 必填' });
     }
-    if (!isNonEmptyString(action) || !(CALIBRATION_ACTIONS as readonly string[]).includes(action)) {
+    if (!isCalibrationAction(action)) {
       return res.status(400).json({ ok: false, code: 'VALIDATION_ERROR', message: `action 必须是: ${CALIBRATION_ACTIONS.join(', ')}` });
     }
 
@@ -203,7 +211,7 @@ router.post('/api/ga/calibration', async (req: Request, res: Response) => {
     // 回流双写（spec §7.1）: feedback_log 单源（getFeedbackCollector 活单例 — 非 ga-collaboration 死链）。
     // add_context 不写 feedback_log（背景卡是上下文增强，非纠错信号）。
     let refluxDegraded = false;
-    const decision = REFLUX_DECISION[action as (typeof CALIBRATION_ACTIONS)[number]];
+    const decision = REFLUX_DECISION[action];
     if (decision) {
       const rec = getFeedbackCollector().collectFeedback({
         enterpriseId: auth.orgId,
@@ -221,8 +229,47 @@ router.post('/api/ga/calibration', async (req: Request, res: Response) => {
       }
     }
 
+    // ═══ L0 进化收集（D829 · 线 17-1）: GA 纠错 → @synova/evolution 收集器 ═══
+    // 与上面的 feedback_log 回流是两条不同消费链（非双写冗余）:
+    //   feedback_log = 回流计数/聚合单源（④ stats 端点读）；L0 收集器 = 进化学习输入，
+    //   落 AgentMemoryStore(type='enterprise_fact', tags=['user_correction', <decision>, <sentinelId>])
+    //   —— 正是 OrgAdapter.processCorrections/adjustThresholds 与 collectAllFeedback 的消费形状。
+    // 触发面: action ∈ {mark_error, rewrite_logic, demote_signal} 的 201 成功路径必经（REFLUX_DECISION 非空即进入）；
+    // add_context 不收集（§7.1 背景卡非纠错信号）。
+    // 降级: 收集失败/未持久化 → 校准仍 201 + evolutionDegraded:true + log.warn（铁律 24/31，禁静默空吞）。
+    let evolutionDegraded = false;
+    let evolutionCollected: string | undefined;
+    if (decision) {
+      try {
+        const { collectGaCalibrationFeedback } = await import('@synova/evolution');
+        const l0 = await collectGaCalibrationFeedback({
+          orgId: auth.orgId,
+          targetId,
+          action,
+          sentinelId: isNonEmptyString(body.sentinelId) ? body.sentinelId : undefined,
+          modifiedSuggestion: isNonEmptyString(body.rewrittenVersion) ? body.rewrittenVersion
+            : (isNonEmptyString(body.correctedContent) ? body.correctedContent : undefined),
+          reason: buildRefluxReason(action, body),
+          userId: auth.userId,
+        }, store);
+        evolutionDegraded = l0.degraded;
+        if (l0.record) evolutionCollected = l0.record.id;
+        if (evolutionDegraded) {
+          log.warn({ calibrationId: entry.id, collected: l0.collected, reason: l0.reason }, 'L0 进化收集降级 — 校准已存，纠错未落 L0（铁律 31 传播）');
+        }
+      } catch (err: unknown) {
+        evolutionDegraded = true;
+        log.warn({ err, calibrationId: entry.id }, 'L0 进化收集异常 — 校准已存（铁律 24/31）');
+      }
+    }
+
     log.info({ calibrationId: entry.id, action, targetType, targetId, gaId: auth.userId }, 'GA 校准已提交');
-    return res.status(201).json({ ok: true, calibrationId: entry.id, supersedes, ...(refluxDegraded ? { refluxDegraded: true } : {}) });
+    return res.status(201).json({
+      ok: true, calibrationId: entry.id, supersedes,
+      ...(refluxDegraded ? { refluxDegraded: true } : {}),
+      ...(evolutionCollected ? { evolutionCollected } : {}),
+      ...(evolutionDegraded ? { evolutionDegraded: true } : {}),
+    });
   } catch (err: unknown) {
     return internalError(res, err, 'POST /api/ga/calibration');
   }
@@ -473,6 +520,69 @@ router.get('/api/ga/calibration/stats', async (req: Request, res: Response) => {
     });
   } catch (err: unknown) {
     return internalError(res, err, 'GET /api/ga/calibration/stats');
+  }
+});
+
+// ═══ ⑤ GET /api/ga/calibration/evolution-feedback — L0 收集器只读出口（D829 · 线 17-1） ═══
+
+/**
+ * GA 纠错在 L0 进化层的可查出口（「老板说『你判错了』」是否真被系统收下）。
+ *
+ * 数据源（两个都是真实 reader，不是「函数被调用了」）:
+ *   A) 收集器记录 — getFeedbackByOrg(orgId)（+ targetId 时经 getFeedbackByAction 过滤）
+ *   B) 持久化行 — AgentMemoryStore(type='enterprise_fact', tags=['user_correction'])，跨重启可查，
+ *      与 OrgAdapter.adjustThresholds / collectAllFeedback 消费同一形状（单源）
+ * 隔离（D338 fail-closed）: getFeedbackByAction 无 org 参数 → 其结果与 getFeedbackByOrg 求交，
+ *   禁止跨 org 泄漏；持久化行按 orgId 过滤。
+ * 降级: 持久化行读取失败 → log.warn + degraded:true（铁律 24/31）；单行 JSON 解析失败 → log.debug 跳过（不静默）。
+ */
+router.get('/api/ga/calibration/evolution-feedback', async (req: Request, res: Response) => {
+  try {
+    if (!requireGa(req, res)) return;
+    const auth = extractAuthFromRequest(req)!;
+    const targetId = readQuery(req, 'targetId');
+    const limit = Math.min(parseIntSafe(readQuery(req, 'limit'), 50), 200);
+
+    const { getFeedbackByOrg, getFeedbackByAction } = await import('@synova/evolution');
+    const orgScoped = getFeedbackByOrg(auth.orgId);
+    const collected = (targetId
+      ? getFeedbackByAction(targetId).filter((r) => orgScoped.some((o) => o.id === r.id))
+      : orgScoped).slice(0, limit);
+
+    interface PersistedRow {
+      id: string; key: string; actionId?: string; decision?: string; sentinelId?: string; timestamp?: string;
+    }
+    let persisted: PersistedRow[] = [];
+    let degraded = false;
+    try {
+      const store = await getStore();
+      persisted = store.list({ orgId: auth.orgId, type: 'enterprise_fact', tags: ['user_correction'], limit: 200 })
+        .map((e): PersistedRow | null => {
+          try {
+            const v = JSON.parse(e.value) as { actionId?: string; decision?: string; sentinelId?: string; timestamp?: string };
+            return { id: e.id, key: e.key, actionId: v.actionId, decision: v.decision, sentinelId: v.sentinelId, timestamp: v.timestamp };
+          } catch {
+            log.debug({ entry: e.id }, '解析 L0 纠错持久化行失败 — 跳过（不静默）');
+            return null;
+          }
+        })
+        .filter((row): row is PersistedRow => row !== null);
+    } catch (err: unknown) {
+      degraded = true;
+      log.warn({ err }, 'L0 纠错持久化行读取失败 — 仅返回收集器记录（铁律 24/31）');
+    }
+
+    return res.json({
+      ok: true,
+      orgId: auth.orgId,
+      collected,
+      collectedTotal: orgScoped.length,
+      persisted: persisted.slice(0, limit),
+      persistedTotal: persisted.length,
+      ...(degraded ? { degraded: true } : {}),
+    });
+  } catch (err: unknown) {
+    return internalError(res, err, 'GET /api/ga/calibration/evolution-feedback');
   }
 });
 

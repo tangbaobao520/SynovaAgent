@@ -23,10 +23,16 @@ import { getFeedbackCollector, FeedbackCollector } from '../../src/growth/feedba
 
 // ═══ hoisted 状态（vi.mock 工厂闭包引用） ═══
 
-const state = vi.hoisted(() => ({
-  db: null as Database | null,
-  throwStore: false,
-}));
+const state = vi.hoisted(() => {
+  // D829: enterprise_fact 双写落盘隔离——企业事实文件根指向系统临时目录，
+  // 避免测试把 .codex/enterprise/facts/** 写进工作树（M1 工作树洁净）。
+  const tmpBase = process.env.TMPDIR || process.env.TEMP || '/tmp';
+  process.env.SYNO_FACTS_ROOT = `${tmpBase.replace(/\/$/, '')}/synova-d829-facts-${process.pid}`;
+  return {
+    db: null as Database | null,
+    throwStore: false,
+  };
+});
 
 const logs = vi.hoisted(() => ({
   errors: [] as unknown[][],
@@ -136,6 +142,12 @@ async function memoryEntriesByTag(tag: string): Promise<Array<{ id: string; valu
   const store = getStore(state.db as Database);
   const entries = store.list({ orgId: GA_AUTH.orgId, tags: [tag], limit: 200 });
   return entries.map((e) => ({ id: e.id, value: e.value, type: e.type as string }));
+}
+
+/** D829: 全量行（含 key/tags）——持久化形状断言需要 tags 与 key，上面的 helper 只回 3 字段 */
+async function memoryRowsByTag(orgId: string, tag: string) {
+  const { getAgentMemoryStore: getStore } = await import('../../src/l4/agent-memory-store');
+  return getStore(state.db as Database).list({ orgId, tags: [tag], limit: 200 });
 }
 
 // ═══ Setup ═══
@@ -611,5 +623,130 @@ describe('DS4 用例⑦ — d551_target_type 迁移（SQLite 无法 ALTER CHECK 
     } finally {
       oldDb.close();
     }
+  });
+});
+
+// ═══ D829（线 17-1）: GA 纠错 → @synova/evolution 收集器有真实消费方 ═══
+//
+// 穿真实路由 handler（不 mock 管线、不加测试专用开关）：
+//   生产者 POST /api/ga/calibration → L0 collectGaCalibrationFeedback(store) → AgentMemoryStore
+//   读者   GET  /api/ga/calibration/evolution-feedback（org 隔离 fail-closed）
+
+describe('D829 — GA 纠错落 L0 收集器 + 可查（线 17-1）', () => {
+  it('D829-1 mark_error 201 → 进 evolution 收集器且可查（getFeedbackByOrg / getFeedbackByAction）', async () => {
+    const out = await callRoute('post', '/api/ga/calibration', {
+      auth: GA_AUTH,
+      body: {
+        targetType: 'diagnosis_conclusion', targetId: 'diag-l0-1', action: 'mark_error',
+        errorType: '事实错误', correctedContent: '毛利率口径应为扣非毛利率', sentinelId: 'sentinel-l0-margin',
+      },
+    });
+    expect(out.status).toBe(201);
+    expect(out.body.ok).toBe(true);
+    expect(typeof out.body.evolutionCollected).toBe('string');
+    expect(out.body.evolutionDegraded).toBeUndefined();
+
+    // 收集器可查（真实 reader，非「函数被调用了」）
+    const { getFeedbackByOrg, getFeedbackByAction } = await import('@synova/evolution');
+    const collectedId = out.body.evolutionCollected as string;
+    const byOrg = getFeedbackByOrg(GA_AUTH.orgId).filter((r) => r.actionId === 'diag-l0-1');
+    expect(byOrg.length).toBeGreaterThanOrEqual(1);
+    expect(byOrg[0].decision).toBe('reject');
+    expect(byOrg[0].sentinelId).toBe('sentinel-l0-margin');
+    expect(byOrg.some((r) => r.id === collectedId)).toBe(true);
+    const byAction = getFeedbackByAction('diag-l0-1');
+    expect(byAction.some((r) => r.id === collectedId)).toBe(true);
+  });
+
+  it('D829-2 持久化形状正确（enterprise_fact + tags[user_correction,reject,sentinelId]）', async () => {
+    const rows = await memoryRowsByTag(GA_AUTH.orgId, 'user_correction');
+    const mine = rows.filter((r) => (JSON.parse(r.value) as { actionId?: string }).actionId === 'diag-l0-1');
+    expect(mine.length).toBeGreaterThanOrEqual(1);
+    expect(mine[0].type).toBe('enterprise_fact');
+    expect(mine[0].key.startsWith('correction_')).toBe(true);
+    expect(mine[0].tags).toContain('user_correction');
+    expect(mine[0].tags).toContain('reject');
+    expect(mine[0].tags).toContain('sentinel-l0-margin');
+    const val = JSON.parse(mine[0].value) as { orgId?: string; decision?: string; sentinelId?: string };
+    expect(val.orgId).toBe(GA_AUTH.orgId);
+    expect(val.decision).toBe('reject');
+    expect(val.sentinelId).toBe('sentinel-l0-margin');
+  });
+
+  it('D829-3 下游真实消费：同 sentinelId 3 条纠错 → OrgAdapter.adjustThresholds 返回阈值调整', async () => {
+    const sentinelId = 'sentinel-l0-consume';
+    for (const targetId of ['finding-l0-a', 'finding-l0-b', 'finding-l0-c']) {
+      const out = await callRoute('post', '/api/ga/calibration', {
+        auth: GA_AUTH,
+        body: { targetType: 'signal_relevance', targetId, action: 'demote_signal', sentinelId },
+      });
+      expect(out.status).toBe(201);
+      expect(out.body.evolutionCollected).toBeTruthy();
+    }
+    const { OrgAdapter } = await import('@synova/evolution');
+    const { getAgentMemoryStore: getStore } = await import('../../src/l4/agent-memory-store');
+    const adapter = new OrgAdapter({ memoryStore: getStore(state.db as Database) });
+    const adjusted = await adapter.adjustThresholds(GA_AUTH.orgId);
+    const hit = adjusted.find((a) => a.sentinelId === sentinelId);
+    expect(hit).toBeDefined();
+    expect(hit!.old).toBeGreaterThan(hit!.new);
+  });
+
+  it('D829-4 org 隔离 fail-closed：org-A 的读取出口不返回 org-B 的反馈', async () => {
+    const other = { sub: 'ga-user-2', role: 'ga', orgId: 'org-d829-other' };
+    const posted = await callRoute('post', '/api/ga/calibration', {
+      auth: other,
+      body: { targetType: 'diagnosis_conclusion', targetId: 'diag-other-1', action: 'mark_error', errorType: '事实错误', correctedContent: 'x' },
+    });
+    expect(posted.status).toBe(201);
+
+    const mineOut = await callRoute('get', '/api/ga/calibration/evolution-feedback', { auth: GA_AUTH });
+    expect(mineOut.status).toBe(200);
+    const mineCollected = mineOut.body.collected as Array<Record<string, unknown>>;
+    expect(mineCollected.some((r) => r.actionId === 'diag-other-1')).toBe(false);
+    const minePersisted = mineOut.body.persisted as Array<Record<string, unknown>>;
+    expect(minePersisted.some((r) => r.actionId === 'diag-other-1')).toBe(false);
+
+    const otherOut = await callRoute('get', '/api/ga/calibration/evolution-feedback', { auth: other });
+    const otherCollected = otherOut.body.collected as Array<Record<string, unknown>>;
+    expect(otherCollected.some((r) => r.actionId === 'diag-other-1')).toBe(true);
+  });
+
+  it('D829-5 降级诚实：L0 持久化失败 → 校准仍 201 + evolutionDegraded:true + log.warn', async () => {
+    db.exec(`CREATE TRIGGER IF NOT EXISTS d829_block_correction BEFORE INSERT ON agent_memory
+      WHEN NEW.key LIKE 'correction_%' BEGIN SELECT RAISE(ABORT, 'D829 注入故障'); END`);
+    try {
+      const warnsBefore = logs.warns.length;
+      const out = await callRoute('post', '/api/ga/calibration', {
+        auth: GA_AUTH,
+        body: { targetType: 'diagnosis_conclusion', targetId: 'diag-l0-degraded', action: 'mark_error', errorType: '事实错误', correctedContent: 'x' },
+      });
+      expect(out.status).toBe(201);
+      expect(out.body.ok).toBe(true);
+      expect(out.body.evolutionDegraded).toBe(true);
+      expect(logs.warns.length).toBeGreaterThan(warnsBefore);
+      // 收集本身成功（内存记录在），仅持久化失败
+      expect(typeof out.body.evolutionCollected).toBe('string');
+    } finally {
+      db.exec('DROP TRIGGER IF EXISTS d829_block_correction');
+    }
+  });
+
+  it('D829-6 add_context 不落 L0（对齐 spec §7.1：背景卡非纠错信号）', async () => {
+    const out = await callRoute('post', '/api/ga/calibration', {
+      auth: GA_AUTH,
+      body: { targetType: 'diagnosis_conclusion', targetId: 'diag-l0-ctx', action: 'add_context', contextCard: '该客户 Q3 完成架构调整' },
+    });
+    expect(out.status).toBe(201);
+    expect(out.body.evolutionCollected).toBeUndefined();
+    expect(out.body.evolutionDegraded).toBeUndefined();
+    const { getFeedbackByAction } = await import('@synova/evolution');
+    expect(getFeedbackByAction('diag-l0-ctx')).toHaveLength(0);
+  });
+
+  it('D829-7 evolution-feedback 认证三态（无 auth → 401）', async () => {
+    const out = await callRoute('get', '/api/ga/calibration/evolution-feedback', { auth: null });
+    expect(out.status).toBe(401);
+    expect(out.body.code).toBe('UNAUTHORIZED');
   });
 });

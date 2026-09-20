@@ -45,12 +45,17 @@ export { DEFAULT_EVOLUTION_CONFIG } from './evolution-types';
 export type {
   FeedbackInput,
   FeedbackRecord,
+  GaCalibrationAction,
+  GaCalibrationFeedbackInput,
+  GaCalibrationCollectResult,
 } from './feedback-collector';
 
 export {
   collectFeedback,
   getFeedbackByAction,
   getFeedbackByOrg,
+  // D829: GA 校准 → L0 收集（L1 路由薄调用；decision 映射语义留 L0）
+  collectGaCalibrationFeedback,
 } from './feedback-collector';
 
 // org-adapter 导出
