@@ -8,7 +8,10 @@
     "scripts/control-tower/staging_guard.py",
     "scripts/control-tower/session_registry.py",
     "tests/control-tower/staging-guard-release.test.sh",
-    "task-state/D839.json"
+    "task-state/D839.json",
+    "docs/synova/coordination/逐条转发清单-20260919.md",
+    "docs/synova/coordination/小队模式-固化件-v1-20260919.md",
+    "docs/synova/coordination/小队派单-D839-认领制根治-20260919.md"
   ],
   "impl": null,
   "audit": null,
@@ -23,12 +26,13 @@
   "blocked": null,
   "target": "2026-W38",
   "acceptance_points": [
-    "释放规则：当认领 brief 对应任务的 task-state 状态 ∈ {impl_done, audited}（或该任务已 merge 且 session 记录已归档）→ 该 brief 不再阻塞其他 session（门禁降为 warn 并打印释放理由）",
-    "门禁提示升级：block 消息必须给出**可执行路径**（『如何申请释放』的命令），而不是只让人『去协调』",
-    "夹具：造一个「已完成任务 A 的 brief 声明文件 X + 新任务 B 改 X」场景 → 当前应 block（先红）；修复后应 warn+放行（后绿）",
-    "不放松真实并发保护：任务 A 仍在进行（task-state=claimed/in_progress）时，B 改 X 仍必须 block（反向验收）",
+    "完成即释放：认领 brief 对应任务状态 ∈ {impl_done, audited}（或 session 已归档）→ 不再阻塞其他 session（降 warn + 打印释放理由）",
+    "block 文案必须带**可执行释放命令**（不再只写『去协调』）",
+    "**批量扫描 + 批量释放**：一条命令列出全部失效认领（2026-09-19 实测本仓 16 份；product-lines.yaml 被 3 份认领：D711/D803/D371）并支持一次清掉",
+    "**释放持久化**：释放状态记在 task-state / session-registry，`declare-write-set.sh` 重跑**不得复活**认领（D806 一次性改文本法的脆弱点必须封死）",
+    "夹具三场景（完成态放行 / 进行中仍拦 / 重生成不复活）各给『先红后绿』两次原始输出",
     "改 scripts/control-tower/** 前加载 ctrl-tower-change 技能；K3 抽审（门禁变更属审计面）"
   ],
-  "next": "① 加载 ctrl-tower-change ② 读 staging_guard.py 的 brief 解析与 ownership 判定 ③ 加「已完成任务释放」规则 + block 文案带 release 命令 ④ 一对夹具（先红后绿）+ 反向验收（进行中仍拦）⑤ 汇报",
-  "note": "实测阻塞：创始人 2026-09-19 批准登记两条新线 → CTO 改 product-lines.yaml → 被 2026-09-18 的 D806 brief（台账修复，**该任务已完成并合入**）判为 foreign file 阻断。gc 已归档 D806 session 记录，但**解析器只看 brief 文件内容**，故归档无效 → 任何被历史 brief 提及的文件对后续所有任务永久锁死。这是 D296/D329 认领制的真实缺陷，不是本次任务的操作问题。"
+  "next": "① 创始人转发 ② 编码 session 加载 ctrl-tower-change ③ 读 staging_guard.py 的 brief 解析与 ownership 判定 ④ 四处必改（完成即释放/block 文案带命令/批量扫描/持久化）⑤ 三场景夹具先红后绿 ⑥ 交回三件",
+  "note": "实测阻塞：创始人 2026-09-19 批准登记两条新线 → CTO 改 product-lines.yaml → 被 2026-09-18 的 D806 brief（台账修复，**该任务已完成并合入**）判为 foreign file 阻断。gc 已归档 D806 session 记录，但**解析器只看 brief 文件内容**，故归档无效 → 任何被历史 brief 提及的文件对后续所有任务永久锁死。这是 D296/D329 认领制的真实缺陷，不是本次任务的操作问题。\n\n【2026-09-19 CTO 扩范围（实测证据）】全仓扫描 brief：**16 份**仍认领 docs/synova/product-lines/ 与 docs/synova/project/ 两个路径族；其中 product-lines.yaml 被 **3 份**认领（2026-09-12-D711-… / 2026-09-17-D803-capital-cycle.md / D371-product-progress-phase1.md）。D806 那次按创始人裁定做『改文本释放』（PR #653 已合入，解锁 product-lines.yaml / ledger.json / V1 标准 / preconditions.yaml），但：① 只解一份；② declare-write-set.sh 重跑会用 ASCII 重生成机器块 → 认领复活。故本卡增②③④三处硬要求，并提级到转发清单 ③（高于 D837）。"
 }
