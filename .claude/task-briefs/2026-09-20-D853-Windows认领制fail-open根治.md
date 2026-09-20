@@ -190,6 +190,17 @@ git commit → synova-commit → staging_guard.py --session-id <D#> --staged <fi
    显式绝对路径（native python 解析裸 `bash` 走 **Windows PATH** → 命中 **WSL 桩**，MSYS 形 PATH 前置对它无效）；
    夹具自己三处 `bash ...` 调用统一 `"$BASH_BIN"`；PROBE 行加 `BASH=<basename>`（字段前置，活过 DIAG2 截断）。
 
+## 第五轮（2026-09-20）：F12 同款取证通道铺到剩余两夹具
+CI 实测（`ddd283ac`）：**ubuntu success**；windows 只剩 `claim_release.test.sh` 与 `staging_guard.test.sh`。
+- `staging_guard.test.sh`：`PASS=36 FAIL=2`，`DIAG2 PROBE_RC=0 PY=python3:0 BASH=bash OUT=…D902-b.md`
+  → **链已通**（不是生产 fail-open），FAIL=2 落在场景期望/准备面。DIAG1 显示 A/C 的 exit/status **恰是它们期望的**
+  （A=ec0/warn、C=ec0/warn），故最可能是 H 的两条断言 → 但**不按推测改期望**：本轮把 `DIAG-FAIL <断言名>`
+  压进 tail-8，并新增 `DIAG-H`（在 shim PATH 下直跑 resolver 的 rc / 是否发标记 / 输出）→ 一轮即可点名。
+- `claim_release.test.sh`：失败断言被尾部 ✅ 挤出注解可见区（**F12 实证**）→ 照 `synova-commit.test.sh`
+  同款加 `DIAG-FAIL` + `DIAG-ENV`（py/bash/git）进 tail-8。
+- 两处均为**取证通道**，零语义变更、零断言放宽；自检：注入失败 → `DIAG-FAIL …` 如期出现；正常态输出零变化
+  （staging_guard 38/0、claim_release 33/0）。
+
 ## 架构层: 基础设施
 控制塔门禁层（`scripts/workflow/**` + `scripts/control-tower/**` + `tests/control-tower/**`），不进 L1-L5，不 import `src/**`。
 
@@ -207,7 +218,6 @@ git commit → synova-commit → staging_guard.py --session-id <D#> --staged <fi
 | 文件 | 类型 |
 |---|---|
 | .claude/task-briefs/2026-09-20-D853-Windows认领制fail-open根治.md | task |
-| memory/notes/implemented/2026-09-20-D853-windows-claim-gate-failopen.md | task |
-| scripts/control-tower/synova-commit | task |
-| tests/control-tower/synova-commit.test.sh | task |
+| tests/control-tower/claim_release.test.sh | task |
+| tests/control-tower/staging_guard.test.sh | task |
 
