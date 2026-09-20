@@ -1,7 +1,7 @@
 {
   "task_id": "D849",
   "title": "Windows 兼容 FIX：staging_guard.test.sh 12 断言红（#657 必需检查 windows-latest 红 → 卡死 slice A）",
-  "status": "claimed",
+  "status": "impl_done",
   "risk": "medium",
   "owner": "mac-coding",
   "milestone": "M0 项目管理基建",
@@ -50,5 +50,7 @@
   },
   "fix_task_id": null,
   "updated_at": "2026-09-20T00:00:00+08:00",
-  "updated_by": "coding-b"
+  "updated_by": "coding-b",
+  "next": "CI 双平台转绿由 D853 承接（staging_guard.py:153-154 bash 选择 + :172-173 fail-closed）",
+  "note": " ｜ M6 收口：本卡代码已在 #657 枝（治理件被移出以满足 PR 预算 12），Windows 转绿未达成 → 已转 D853。"
 }
