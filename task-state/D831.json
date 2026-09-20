@@ -5,6 +5,10 @@
   "risk": "high",
   "spec": "派单即规格：docs/synova/coordination/批十三-断线补卡与固化-20260918.md",
   "write_set": [
+    "src/invariants/companions/*.invariant.ts",
+    "src/sentinel/sentinel-events.ts",
+    "src/deploy/bootstrap.ts",
+    "tests/sentinel/invariants.test.ts",
     "task-state/D831.json"
   ],
   "impl": null,
@@ -27,10 +31,11 @@
     "原子回滚：故意让第 3 条伴生 install 抛错 → 断言进程启动失败且不残留部分监听器",
     "异步纪律：伴生 install 不得返回 Promise（类型上限制为 void）",
     "首批 3 条断言：① 工具 schema 真的发出去了 ② tool 消息与 assistant tool_calls 配对 ③ 降级信号不被后续成功写入抹掉",
-    "验收按 docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md（禁 grep；三问自查；命令+原始输出）"
+    "验收按 docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md（禁 grep；三问自查；命令+原始输出）",
+    "第 8 条（研究院总纲 §9.4 洞察）：**显式声明「这条不变量不检查什么」**——比\"检查什么\"更重要（源自 dsh-credentials/lib/invariant.js:13-19）"
   ],
   "next": "见派单文档对应小节；开工第一步重新核行号（会漂移）",
-  "note": "CTO 已核：src/sentinel/sentinel-events.ts:9-13 有三条命名的 I1/I2/I3，但全是注释与错误码，无运行期断言/注册表/归属/fail-closed；check-architecture.sh 是静态门禁，看不见运行期接线。DSH 参照 dsh-invariants（lib/index.js 123 行，净逻辑约 40 行）→ ①范式复用。**硬依赖 D819**（否则断言在生产中一次都不会被触发）。判据 C。",
+  "note": "CTO 已核：src/sentinel/sentinel-events.ts:9-13 有三条命名的 I1/I2/I3，但全是注释与错误码，无运行期断言/注册表/归属/fail-closed；check-architecture.sh 是静态门禁，看不见运行期接线。DSH 参照 dsh-invariants（lib/index.js 123 行，净逻辑约 40 行）→ ①范式复用。**硬依赖 D819**（否则断言在生产中一次都不会被触发）。判据 C。\n\n【2026-09-20 补登记】write_set 逐文件补齐；验收点补第 8 条（显式声明不检查什么）。落地形状采研究院总纲 §9.4：每域一个伴生文件，首批 3 条 ≈200 行。",
   "executor": "mac-coding",
   "delegation": "Mac 代行 win（D773 规约；创始人 2026-09-18 重申『涉及 win 线的一并先给 Mac 执行』）",
   "acceptance_level": "代码级可验（Mac 必须验）；若涉及 Windows 实机行为 → 挂账，Win 回归后补验，禁止声称"

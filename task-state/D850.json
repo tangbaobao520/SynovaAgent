@@ -1,0 +1,34 @@
+{
+  "task_id": "D850",
+  "title": "度量口径改造：取消总完成度百分比 → 离散健康计数（N 健康/M 写了没接/K 缺）+ evidenceCmd（创始人 2026-09-20 裁定）",
+  "status": "claimed",
+  "risk": "high",
+  "spec": "创始人 2026-09-20 裁定：同意取消总百分比、改离散健康计数（依据：docs/authority/研究院材料权威级别与引用纪律-20260920.md §六；度量方案 §三/§九/§10.2-1）。",
+  "write_set": [
+    "docs/synova/project/",
+    "scripts/project/gen-project-board.py",
+    "docs/synova/product-lines/product-progress.json",
+    "task-state/D850.json"
+  ],
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-20",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": "mac-coding",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [],
+  "blocked": null,
+  "target": "2026-W38",
+  "acceptance_points": [
+    "面板/派生器不再输出总完成度百分比（grep 证明）",
+    "输出离散计数三档：N 健康 / M 写了没接 / K 缺，且每个数字带 evidenceCmd（可复现命令）",
+    "面板 total_lines 从 26 追平到 29（26 + v2 federated-evolution + 2 新增）",
+    "禁把 L3（grep 型静态检测，实测 3/5=60%）当验收依据——门禁/看板注释写明",
+    "26 线角色改为意图层（文档口径同步）"
+  ],
+  "next": "① 读权威件 §六 与度量方案 ② 改派生器 ③ 面板重生成 ④ 交回三件",
+  "note": "先修瓶颈不新加机制：改的是派生输出，不是新增主路径门禁。"
+}

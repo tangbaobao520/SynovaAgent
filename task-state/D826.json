@@ -5,6 +5,9 @@
   "risk": "high",
   "spec": "派单即规格：docs/synova/coordination/批十三-断线补卡与固化-20260918.md",
   "write_set": [
+    "src/routes/search.ts",
+    "src/store/search-index.ts",
+    "tests/store/tenant-isolation.test.ts",
     "task-state/D826.json"
   ],
   "impl": null,
@@ -26,7 +29,7 @@
     "验收按 docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md（禁 grep；三问自查；命令+原始输出）"
   ],
   "next": "见派单文档对应小节；开工第一步重新核行号（会漂移）",
-  "note": "CTO 已核：session-store.ts:534 两条 SQL 均无 WHERE s.org_id（SELECT 了 org_id 却不用于过滤）；agent_messages 表无 org_id 列；路由 sessions.ts:55-68 已接线但未注入 org 上下文。判据 D（当前仅 1 租户，实际风险 0；第 2 个客户上线起为 P0）→ 定级 P1 且有截止锚点。",
+  "note": "CTO 已核：session-store.ts:534 两条 SQL 均无 WHERE s.org_id（SELECT 了 org_id 却不用于过滤）；agent_messages 表无 org_id 列；路由 sessions.ts:55-68 已接线但未注入 org 上下文。判据 D（当前仅 1 租户，实际风险 0；第 2 个客户上线起为 P0）→ 定级 P1 且有截止锚点。\n\n【2026-09-20 补登记（M2 自违约修复 + 旧信息漏洞）】原 write_set 只写了自身卡 → 已补逐文件声明。",
   "executor": "mac-coding",
   "delegation": "Mac 代行 win（D773 规约；创始人 2026-09-18 重申『涉及 win 线的一并先给 Mac 执行』）",
   "acceptance_level": "代码级可验（Mac 必须验）；若涉及 Windows 实机行为 → 挂账，Win 回归后补验，禁止声称"
