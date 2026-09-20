@@ -14,11 +14,16 @@
              --yaml           product-lines.yaml；默认 <root>/docs/synova/product-lines/product-lines.yaml
              --evidence-dirs  证据目录（可多次）；默认 产品证据 + golden-scenarios 证据**两处都算**
              --task-state-dir 任务卡目录；默认 <root>/task-state
+             --pr-queue       D811 未合 PR 队列快照；默认 <root>/docs/synova/project/pr-queue.json
              --strict         降级时退出码非零（默认 0）
              --compact        单行 JSON（默认缩进 2）
 @output  — <out> 处的 JSON 文件，schema "project-ledger/1"：
              schema / generated_by / generated_at / git_head / sources / degraded /
-             degraded_sources / skipped_sources / totals / lines / tasks / blocked / timeline
+             degraded_sources / skipped_sources / totals / pr_queue / lines / tasks / blocked / timeline
+             pr_queue（D811 旁路段）= 未合 PR 队列机械指标 + 超限告警 + 可关清单号码；
+                                    快照缺失/损坏 → null + skipped_sources 登记（**不计 degraded**：
+                                    旁路诊断物，不参与交付度分子分母；缺失不静默也不淹没真降级）。
+                                    主提交路径**不读它、不跑它**——本器未被 pre-commit/pre-push 调用。
            标准输出: 一行摘要；诊断信息走 stderr（logging）
 @exit    — 0  正常
              0  降级（默认）—— 文件**仍完整写出**，降级在带内（degraded:true），
@@ -431,6 +436,55 @@ def git_first_commit(root, modules):
 
 # ── 派生主逻辑 ────────────────────────────────────────────────────────────
 
+def load_pr_queue(path):
+    """D811: 读未合 PR 队列快照（pr-queue-scan.py 产出）→ 账本旁路段。
+
+    @return (pr_queue:dict|None, status:str)
+             status ∈ "ok" / "missing" / "corrupt"
+    @contract — 只做**瘦身投影**（指标 + 超限告警 + 可关清单号码），不把 46 条原始记录
+                搬进账本（账本是渲染源，不是数据堆场）。
+                快照缺失/损坏 → pr_queue=null + 显式进 skipped_sources，**不计 degraded**：
+                它是**旁路诊断物**，不参与交付度分母/分子，缺了不会让任何数字偏小——
+                若算 degraded，真实仓库会因"没跑过扫描"永久红灯（告警疲劳，铁律：不静默也不淹没）。
+                字段缺失一律 None，**禁止静默填 0**。
+    """
+    p = Path(path)
+    if not p.is_file():
+        return None, "missing"
+    try:
+        raw = json.loads(p.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        LOG.warning("pr-queue 快照解析失败（旁路指标置空，不静默）: %s (%s)", p, exc)
+        return None, "corrupt"
+    m = raw.get("metrics") or {}
+    if raw.get("schema") != "pr-queue-snapshot/1" or not isinstance(m, dict):
+        LOG.warning("pr-queue 快照 schema 非法: %r（旁路指标置空）", raw.get("schema"))
+        return None, "corrupt"
+    closeable = [
+        {"number": r.get("number"), "age_days": r.get("age_days"),
+         "behind": r.get("behind"), "reasons": r.get("close_reasons") or []}
+        for r in (raw.get("records") or []) if r.get("closeable")
+    ]
+    return {
+        "source": rel_to(p, Path(path).parent.parent.parent),
+        "generated_at": raw.get("generated_at"),
+        "limit": raw.get("limit"),
+        "queue_length": m.get("queue_length"),
+        "over_limit": m.get("over_limit"),
+        "oldest": m.get("oldest"),
+        "behind_distribution": m.get("behind_distribution"),
+        "behind_unknown": m.get("behind_unknown"),
+        "ci_distribution": m.get("ci_distribution"),
+        "closeable_count": m.get("closeable_count"),
+        "closeable": closeable,
+        "orphan_count": m.get("orphan_count"),
+        "owner_conflicts": m.get("owner_conflicts"),
+        "by_reason": m.get("by_reason"),
+        "warning": raw.get("warning"),
+        "scanner_degraded": bool(raw.get("degraded")),
+    }, "ok"
+
+
 def build_ledger(args):
     """组装账本 dict。@return (ledger:dict, degraded:bool)"""
     root = Path(args.repo_root).resolve()
@@ -469,6 +523,13 @@ def build_ledger(args):
     records, ev_degraded, ev_skipped = load_evidence(ev_dirs)
     degraded_sources.extend(ev_degraded)
     ev_index = index_evidence(records)
+
+    # ④-b D811: 未合 PR 队列旁路指标（读扫描器快照；缺/坏 → skipped_sources，不计 degraded）
+    pq_path = Path(args.pr_queue) if args.pr_queue else root / "docs/synova/project/pr-queue.json"
+    pr_queue, pq_status = load_pr_queue(pq_path)
+    if pq_status != "ok":
+        ev_skipped.append("pr_queue 快照%s: %s（旁路指标置空，不影响交付度）"
+                          % ("缺失" if pq_status == "missing" else "损坏", rel_to(pq_path, root)))
 
     # ⑤ git 溯源（非数据输入 → 不降级，但显式告警）
     head_sha, head_err = git_head_sha(root)
@@ -599,6 +660,7 @@ def build_ledger(args):
         "degraded_sources": degraded_sources,
         "skipped_sources": ev_skipped,
         "totals": totals,
+        "pr_queue": pr_queue,
         "lines": out_lines,
         "tasks": tasks,
         "blocked": blocked,
@@ -616,6 +678,7 @@ def main(argv=None):
     parser.add_argument("--v1-dod")
     parser.add_argument("--yaml")
     parser.add_argument("--task-state-dir")
+    parser.add_argument("--pr-queue")
     parser.add_argument("--evidence-dirs", nargs="*")
     parser.add_argument("--strict", action="store_true")
     parser.add_argument("--compact", action="store_true")
@@ -654,6 +717,13 @@ def main(argv=None):
                  t["freshness"], t["blocked_count"], ledger["degraded"]))
         for reason in ledger["degraded_sources"]:
             print("  ⚠ degraded: %s" % reason, file=sys.stderr)
+        # D811: 队列超限是**告警不是阻断**（DSH 决策镜头原则⑤：诊断旁路，不拦主路径）
+        pq = ledger.get("pr_queue")
+        if pq and pq.get("warning"):
+            print(pq["warning"])
+        elif pq and pq.get("over_limit"):
+            print("⚠️ 未合 PR 队列超限：%s > %s —— 先退役再开新 PR"
+                  % (pq.get("queue_length"), pq.get("limit")))
 
     if degraded and args.strict:
         return 1
