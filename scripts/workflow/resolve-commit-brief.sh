@@ -14,6 +14,12 @@ export LC_ALL=C.UTF-8 2>/dev/null || true
 #   2. 否则 → 今日 brief 中认领暂存文件数最多的 (其他 session 的文件由自己的 brief 认领)
 #   3. 无任何认领 → current-brief (当日); 无 → 今日最新
 #
+# D839 完成即释放: 步骤 1/2 的候选池**剔除已释放的 brief**（所属任务 task-state status ∈
+#   {impl_done, audited} / 显式释放台账 / session 已归档）。被剔除者向 stderr 发一行
+#   `SYNO-RELEASED-CLAIM\t<brief>\t<D#>\t<basis>\t<detail>`，供门禁降 warn 并打印释放理由。
+#   判定源 = scripts/control-tower/claim_release.py（单一事实源）；判定不可用 → 不剔除（fail-closed）。
+#   无暂存文件时（CI 干净检出）行为与修复前完全一致。
+#
 # 用法: bash resolve-commit-brief.sh "<暂存文件列表 (换行分隔)>"
 #       bash resolve-commit-brief.sh --session <sid> "<暂存文件列表>"  (D329: session 专属 current-brief 优先)
 # 输出: brief 绝对路径; 无可用 brief → exit 1
@@ -23,12 +29,40 @@ export LC_ALL=C.UTF-8 2>/dev/null || true
 set +e
 
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+# D853-①（仓库事实不可被调用者环境换掉）: hook 上下文会导出 GIT_DIR/GIT_WORK_TREE/GIT_INDEX_FILE
+#   （ct-test-gate.sh:48-54 已记该坑）；实测 `GIT_WORK_TREE=<外部仓>` 会让上面这行把 ROOT 变成
+#   外部仓 → 候选池空 → staging_guard.py:172-173「claimed 为空则跳过认领判定」→ **静默 fail-open**。
+# D853-②（工具可用性 = 存在 **且** 可运行）: `command -v git` 只探存在性 —— PATH 上放一个假/坏 git
+#   即可让"事实"由攻击者提供。故候选逐个**试运行**校验（`--version` 形如 `git version N.`）。
+_git_clean() { env -u GIT_DIR -u GIT_WORK_TREE -u GIT_INDEX_FILE -u GIT_OBJECT_DIRECTORY \
+                   -u GIT_COMMON_DIR -u GIT_ALTERNATE_OBJECT_DIRECTORIES -u GIT_NAMESPACE "$@"; }
+GITBIN=""
+for _g in "$(command -v git 2>/dev/null || true)" /usr/bin/git /usr/local/bin/git \
+          "/c/Program Files/Git/cmd/git.exe"; do
+  [ -n "$_g" ] && [ -x "$_g" ] || continue
+  if _git_clean "$_g" --version 2>/dev/null | grep -qE '^git version [0-9]'; then GITBIN="$_g"; break; fi
+done
+# D853: 链断必须让**下游**（staging_guard）能 fail-closed —— 只写人读告警不够（下游不解析它）。
+#   契约: SYNO-RESOLVER-DEGRADED\t<原因>（与 staging_guard.py 的 RESOLVER_DEGRADED_MARK 同字面量，
+#   改一处必改两处；staging_guard.test.sh 有"链断 → block"夹具守着）。
+[ -n "$GITBIN" ] || printf 'SYNO-RESOLVER-DEGRADED\tgit 不可用或未通过试运行校验\n' >&2
+ROOT="$([ -n "$GITBIN" ] && _git_clean "$GITBIN" rev-parse --show-toplevel 2>/dev/null || pwd)"
+# D853-③（喂目标运行时的路径必须是它的命名空间 —— 两层都堵）: Windows 上上面这行给 MSYS 形（/d/a/...）。
+#   MSYS 只在 **argv 层**做转换，不转换：① 内嵌在 python -c 字符串里的路径（native python `os.listdir`
+#   读不到 → 候选池空 → 末尾 exit 1 零输出）② **本脚本 stdout 输出的 brief 路径**（下游 staging_guard
+#   是 native python，`Path(brief).read_text()` 读不到 → genuine=False → 跳过认领判定）。
+#   两层都是静默 fail-open。故**统一成混合形**（cygpath -m → C:/...）：MSYS bash 可 cd/glob、
+#   native python 可 open/readdir = 同一实体（D849 夹具同口径，仓内已验证）。POSIX 无 cygpath → 原值。
+_ro_raw="$ROOT"
+ROOT="$(cygpath -m "$_ro_raw" 2>/dev/null || echo "$_ro_raw")"
+ROOT_W="$ROOT"   # 兼容既有 python 注入点（两者同义；保留双名以最小化 diff）
 # D317: brief_parser 是 resolver 的兄弟组件（同仓库）——不能用 $ROOT 定位，
 # 测试隔离（临时 repo）或 ROOT 与脚本异仓库时 $ROOT 下没有解析器。
 RESOLVER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PARSER="$RESOLVER_DIR/../control-tower/brief_parser.py"
-# Windows python 不认 MSYS 路径（/d/...）→ cygpath 转 C:/...（sys.path 注入用）
-PARSER_DIR_W="$(cygpath -w "$RESOLVER_DIR/../control-tower" 2>/dev/null || echo "$RESOLVER_DIR/../control-tower")"
+# Windows python 不认 MSYS 路径（/d/...）→ cygpath -m 转 C:/...（sys.path 注入用；POSIX 原值）
+PARSER_DIR_W="$(cygpath -m "$RESOLVER_DIR/../control-tower" 2>/dev/null || echo "$RESOLVER_DIR/../control-tower")"
+
 TODAY=$(date +%Y-%m-%d)
 STAGED="${1:-}"
 
@@ -42,11 +76,14 @@ if [ "${1:-}" = "--session" ]; then
 fi
 
 # D317: PYBIN 跨平台 — Windows 部分机器无 python3.exe（仅 python / py -3）。
-# 本机实测 python3 可用（WindowsApps shim），但防御性回退防精简 Git/CI runner。
+# D853: 探测必须**试运行**（仓内既有正确口径: verify-parallel.sh:70-77 / dev-doc-gatekeeper.sh:191-197）。
+#   只探存在性 = 选中"存在但跑不动"的 WindowsApps 占位 shim → 下面 5 处 "$PYBIN" -c 全失败
+#   → RESULT 空 → 末尾 exit 1 零输出 → staging_guard 按"无认领"放行 = **静默 fail-open**（本卡主根因，实测复现）。
 PYBIN=""
 for _c in python3 python py; do
-  if command -v "$_c" >/dev/null 2>&1; then PYBIN="$_c"; break; fi
+  if command -v "$_c" >/dev/null 2>&1 && "$_c" -c "import sys" >/dev/null 2>&1; then PYBIN="$_c"; break; fi
 done
+[ -n "$PYBIN" ] || printf 'SYNO-RESOLVER-DEGRADED\tpython3/python/py 试运行均不可用\n' >&2
 
 # ── current-brief (当日有效) ──
 CUR=""
@@ -76,7 +113,7 @@ fi
 # 降级: 提不到锚点 → 行为与修复前完全一致（纯日期窗口，零回归）。
 ANCHOR_STRONG_RAW=""
 ANCHOR_WEAK_RAW=""
-BR_CUR="$(git -C "$ROOT" branch --show-current 2>/dev/null || true)"
+BR_CUR="$([ -n "$GITBIN" ] && _git_clean "$GITBIN" -C "$ROOT" branch --show-current 2>/dev/null || true)"
 [ -n "$BR_CUR" ] && ANCHOR_STRONG_RAW="$BR_CUR"
 ANCHOR_STRONG_RAW="$ANCHOR_STRONG_RAW $(printf '%s\n' "$STAGED" | grep -oE 'task-state/D[0-9]+\.json' || true)"
 if [ -f "$CUR_SRC" ]; then
@@ -160,9 +197,10 @@ if [ -z "$PYBIN" ]; then
   # D317: python 不可用 → 无法认领 → 直接走最终回退（回退同样无 python 时 exit 1 fail-open）
   RESULT=""
 else
+_PYERR="$(mktemp 2>/dev/null || echo "${TMPDIR:-/tmp}/.synova-resolver-err.$$")"
 RESULT=$("$PYBIN" -c "
-import re, sys
-sys.path.insert(0, r'$ROOT/scripts/control-tower')
+import os, re, sys
+sys.path.insert(0, r'$ROOT_W/scripts/control-tower')
 try:
     from brief_parser import parse_q2, match_path
 except ImportError:
@@ -208,6 +246,59 @@ cur = '''$CUR'''
 anchored_strong = set(x.strip() for x in '''$ANCHORED_STRONG_FILES'''.split('\n') if x.strip())
 anchored_weak = set(x.strip() for x in '''$ANCHORED_WEAK_FILES'''.split('\n') if x.strip())
 
+# ── D839: 完成即释放 —— 已释放的 brief 不参与候选 ──
+# 根因: 候选池只看 brief 里 Q2 的字面路径，不看该 brief 所属任务是否已完成 → 历史 brief
+#   提及过的文件对后续所有任务永久锁死（D838 被已完成并合入的 D806 brief 阻断）。
+# 释放证据 = task-state status ∈ {impl_done, audited} / 显式释放台账 / session 已归档
+#   （单一事实源 = scripts/control-tower/claim_release.py）。改在源头而非各下游补救——
+#   本 resolver 有 6 个生产消费者（G12 范围 / commit-msg / verifiable-done / plan-integrity /
+#   brief-vs-code / staging_guard），任一拿到「已完成任务的 brief」都会按错任务校验。
+# 降级: 判定模块缺失或抛异常 → 一律视为未释放（fail-closed，行为与修复前一致，零回归）。
+_REL_DEG = ''
+try:
+    from claim_release import (is_released as _is_released, RELEASED_MARK as _REL_MARK,
+                               DEGRADED_MARK as _DEG_MARK)
+except ImportError as _imp_exc:
+    _is_released = None
+    _REL_MARK = 'SYNO-RELEASED-CLAIM'
+    _DEG_MARK = 'SYNO-CLAIM-RELEASE-DEGRADED'
+    _REL_DEG = 'claim_release 模块不可用: ' + str(_imp_exc)[:80]
+# 公告延到下面（仅在**确有暂存文件要裁决认领**时发一次）——无暂存文件时释放维度与
+# 本次解析无关，发公告只会污染 stdout 合并型消费方（如 tests 的 2>&1 捕获）。
+
+def _deg(brief, why):
+    # 铁律 11: 释放维度不可用时显式公告，绝不静默（仍按未释放 -> fail-closed 不误放行）
+    sys.stderr.write(_DEG_MARK + '\t' + os.path.basename(brief) + '\t' + why + '\n')
+
+
+def _release_of(brief):
+    # → (released, task_id, basis, detail)；不可用/异常 → (False, '', '', '')
+    if _is_released is None:
+        return (False, '', '', '')  # 模块不可用已在上方一次性公告（不逐 brief 刷屏）
+    m = re.search(r'D\d+', os.path.basename(brief))
+    if not m:
+        return (False, '', '', '')
+    try:
+        v = _is_released(r'$ROOT_W', m.group(0))
+    except Exception as exc:
+        _deg(brief, type(exc).__name__ + ':' + str(exc)[:80])
+        return (False, '', '', '')
+    if not v.get('released'):
+        return (False, '', '', '')
+    return (True, m.group(0), v.get('basis', ''), v.get('detail', ''))
+
+def _announce_if_released(brief):
+    # 已释放 → 向 stderr 公告（供门禁降 warn + 打印释放理由），并返回 True 让调用方剔出候选
+    r = _release_of(brief)
+    if r[0]:
+        sys.stderr.write(_REL_MARK + '\t' + os.path.basename(brief) + '\t' + r[1]
+                         + '\t' + r[2] + '\t' + r[3] + '\n')
+    return r[0]
+
+if staged and _REL_DEG:
+    # 每次运行只公告一次；按 brief 逐条发会把 stderr 淹没，且下游 2>&1 合并会污染 stdout
+    sys.stderr.write(_DEG_MARK + '\t' + '<module>' + '\t' + _REL_DEG + '\n')
+
 claims = []
 for b in briefs:
     try:
@@ -216,6 +307,8 @@ for b in briefs:
         continue
     scope = parse_q2(text)['include']
     n = sum(1 for sf in staged for p in scope if match_path(sf, p))
+    if n > 0 and _announce_if_released(b):
+        n = 0  # D839: 已释放 → 不再参与认领裁决
     claims.append((n, b))
 
 # 1. current-brief 认领 ≥1 → 用它
@@ -235,7 +328,11 @@ if best > 0:
 if cur:
     print(cur)
     sys.exit(0)
-" 2>/dev/null || true)
+" 2>"$_PYERR" || true)
+# D839: python 段 stderr 里只有两类东西 —— 错误（保持静默，沿用原语义）与
+# 「已释放认领」公告。公告必须**转回 shell stderr** 才能到门禁手里（staging_guard 靠它降 warn）。
+grep -E '^SYNO-RELEASED-CLAIM|^SYNO-CLAIM-RELEASE-DEGRADED' "$_PYERR" >&2 2>/dev/null || true
+rm -f "$_PYERR" 2>/dev/null || true
 fi
 
 if [ -n "$RESULT" ] && [ -f "$RESULT" ]; then
@@ -287,7 +384,7 @@ sys.path.insert(0, r'$PARSER_DIR_W')
 from brief_parser import parse_criteria
 
 briefs = []
-for f in os.listdir(r'$ROOT/.claude/task-briefs/'):
+for f in os.listdir(r'$ROOT_W/.claude/task-briefs/'):
     if not f.endswith('.md'):
         continue
     m = re.match(r'(\d{4}-\d{2}-\d{2})', f)
@@ -296,11 +393,11 @@ for f in os.listdir(r'$ROOT/.claude/task-briefs/'):
 briefs.sort(key=lambda x: x[0], reverse=True)
 for _d, _f in briefs:
     try:
-        text = open(os.path.join(r'$ROOT/.claude/task-briefs/', _f), encoding='utf-8', errors='replace').read()
+        text = open(os.path.join(r'$ROOT_W/.claude/task-briefs/', _f), encoding='utf-8', errors='replace').read()
     except OSError:
         continue
     if parse_criteria(text):
-        print(os.path.join(r'$ROOT/.claude/task-briefs/', _f))
+        print(os.path.join(r'$ROOT_W/.claude/task-briefs/', _f))
         sys.exit(0)
 sys.exit(1)
 " 2>/dev/null || true)

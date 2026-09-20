@@ -1,7 +1,7 @@
 {
   "task_id": "D839",
   "title": "认领制缺陷：已完成 session 的 brief 不释放声明 → 后续任务被永久锁死（D296/D329 门禁）",
-  "status": "claimed",
+  "status": "impl_done",
   "risk": "high",
   "spec": "实测证据：D838 登记 product-lines.yaml 被 D806 brief 阻断（staging_guard.py 输出 status=block，owner_session=2026-09-18-D806-台账修复-DSH复用可见，reason=认领 brief D# 与本 session 任务不一致）",
   "write_set": [
@@ -13,11 +13,26 @@
     "docs/synova/coordination/小队模式-固化件-v1-20260919.md",
     "docs/synova/coordination/小队派单-D839-认领制根治-20260919.md"
   ],
-  "impl": null,
+  "impl": {
+    "commit": null,
+    "by": "deepseek-harness",
+    "at": "2026-09-20",
+    "branch": "fix/d839-claim-release",
+    "files": [
+      "scripts/control-tower/claim_release.py",
+      "scripts/control-tower/staging_guard.py",
+      "scripts/control-tower/synova-commit",
+      "scripts/workflow/resolve-commit-brief.sh",
+      "tests/control-tower/staging-guard-release.test.sh",
+      "task-state/claim-releases.json",
+      "memory/notes/proposed/2026-09-20-d839-claim-release.md"
+    ],
+    "note": "四处必改全落地：① 完成即释放（task-state status∈{impl_done,audited}/台账/session归档 → resolver 源头剔除 + staging_guard 降 warn 打印释放理由）；② block 文案带可执行释放命令；③ 批量扫描/释放命令（本仓两族实测 16 份全清）；④ 释放持久化到 task-state/claim-releases.json（declare-write-set 重跑不复活）。夹具六场景 27 断言全绿（先红 FAIL=11 → 后绿 FAIL=0）。纳入 2 个自测期发现：内嵌 python 注释禁写 ASCII 双引号（会截断 bash 双引号串）、is_released 需接受 str repo（否则源头过滤被静默吞掉）。"
+  },
   "audit": null,
   "fix_task_id": null,
-  "updated_at": "2026-09-19",
-  "updated_by": "synova-cto",
+  "updated_at": "2026-09-20",
+  "updated_by": "deepseek-harness",
   "domain": "mac",
   "owner": "mac-coding",
   "executor": "mac-coding",

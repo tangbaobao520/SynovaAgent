@@ -23,8 +23,11 @@ unset GIT_DIR GIT_WORK_TREE
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SC="$HERE/../../scripts/control-tower/synova-commit"
 PASS=0; FAIL=0
+FAILLOG=""
 ok()  { echo "  ✅ $1"; PASS=$((PASS+1)); }
-bad() { echo "  ❌ $1"; FAIL=$((FAIL+1)); }
+# D853: 失败断言名必须活到 CI 注解——注解只带 `tail -8`（ci.yml canary），而 ❌ 行在 ⑥⑦⑧ 之前
+#   就被后续 ✅ 挤出去了（32cc6a02 实测：ubuntu 红但注解里看不到是哪条）。故失败时在**末尾**重放。
+bad() { echo "  ❌ $1"; FAIL=$((FAIL+1)); FAILLOG="${FAILLOG}${1} ; "; }
 TMPD="$(mktemp -d)"; trap 'rm -rf "$TMPD"' EXIT
 
 # ① 接线: staging_guard 段存在（D508 后并行隔离的实际承载者）
@@ -156,4 +159,9 @@ echo "$OUT8" | grep -q "提交树与暂存声明不一致" && ok "⑧ 点名不�
 [ "$IDX8" = "$IDX8B" ] && ok "⑧ 暂存区已还原（暂存态未丢）" || bad "⑧ 索引未还原: '$IDX8' → '$IDX8B'"
 
 echo "pass=$PASS fail=$FAIL"
+if [ "$FAIL" -ne 0 ]; then
+  # D853: 末尾两行 = CI 注解可见区（tail -8）。①失败断言名 ②关键环境事实（供判"链/工具/路径"哪层坏）
+  echo "DIAG-FAIL $(printf '%s' "$FAILLOG" | tr '\n' ' ' | cut -c1-150)"
+  echo "DIAG-ENV bash=$(command -v bash 2>/dev/null || echo NONE) py=$(command -v python3 2>/dev/null || echo NONE) git=$(command -v git 2>/dev/null || echo NONE) rc2=${rc2:-?} rc=${rc:-?}"
+fi
 [ "$FAIL" -eq 0 ]
