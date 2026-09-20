@@ -1,0 +1,33 @@
+{
+  "task_id": "D851",
+  "title": "第 0 项正式立项（创始人 2026-09-20 签署）：CI 跑生产入口级对话＝所有接线类验收的前提裁判",
+  "status": "claimed",
+  "risk": "high",
+  "spec": "创始人 2026-09-20 签署 §6-4「立项」。D817 已 impl_done（CI 跑生产入口级对话），但此前无正式地位；本卡把第 0 项升为**基座**：所有接线类验收以其为统一裁判。",
+  "write_set": [
+    "docs/synova/coordination/",
+    "scripts/project/gen-project-board.py",
+    ".github/workflows/ci.yml",
+    "task-state/D851.json"
+  ],
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-20",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": "mac-coding",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [],
+  "blocked": null,
+  "target": "2026-W38",
+  "acceptance_points": [
+    "第 0 项成为 CI 常驻（不是一次性用例）：给命令与 CI 运行证据",
+    "接线类任务/卡在验收时**必须引用第 0 项结果**（派单模板 §一 增加该行）",
+    "面板/台账把「第 0 项状态」单列显示（离散，不参与百分比）",
+    "不新增主路径门禁：复用既有 CI job"
+  ],
+  "next": "① 重新核行号 ② 先红后绿 ③ 交回三件",
+  "note": "创始人签：立项。依据 总纲 §6-4「它决定『完成』的定义」。"
+}

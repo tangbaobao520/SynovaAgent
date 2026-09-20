@@ -1,0 +1,34 @@
+{
+  "task_id": "D852",
+  "title": "§6-5 四项产品决定落地（创始人 2026-09-20 签署）：webhook 出站为主 / spill 8k+32k / 日粒度+周月聚合 / live-restart 清单",
+  "status": "claimed",
+  "risk": "high",
+  "spec": "四项产品决定已签，需落入验收点与配置默认值（**不新增线，只加验收点**）：线 8 webhook、线 4 spill、线 3 时间窗、线 25 live/restart。",
+  "write_set": [
+    "docs/synova/product-lines/product-lines.yaml",
+    "docs/synova/product-lines/preconditions.yaml",
+    "docs/synova/coordination/",
+    "task-state/D852.json"
+  ],
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-20",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": "mac-coding",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [],
+  "blocked": null,
+  "target": "2026-W38",
+  "acceptance_points": [
+    "线 8：webhook 验收点写为**出站为主**（客户给 URL/密钥，我们推）+ 入站仅扩展点（外部触发不进核心）",
+    "线 4：spill 两个 cap 默认值写入配置（内存 8,000 / 落盘 32,000 字符）且可配置",
+    "线 3：时间窗验收点=日粒度为主 + 周/月聚合视图；D828 趋势接线引用该口径",
+    "线 25：live/restart 清单成文（展示·阈值·文案=live；连接·插件·数据源·鉴权=restart）并各加 1 条验收点",
+    "不新增线；v1_total 分母变化需在 D838 变更单里说明"
+  ],
+  "next": "① 重新核行号 ② 先红后绿 ③ 交回三件",
+  "note": "四项裁定已签，落地即解锁线 3/4/8/25 验收点与 D828 时间窗口径。"
+}
