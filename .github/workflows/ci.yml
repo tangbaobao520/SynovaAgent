@@ -290,6 +290,9 @@ jobs:
               echo "── $t"
               if ! bash "$t" > /tmp/ct-out-project.log 2>&1; then
                 echo "FAIL: $t"
+                # D563/D564 教训（诊断黑洞）：内层失败明细必须进日志——::error 注解有长度上限
+                #   （450 字符），只放 tail-8 会丢失 ❌ 行（D854 首轮实测：Windows 腿红 → 看不出失败断言）。
+                cat /tmp/ct-out-project.log
                 MSG=$(tail -8 /tmp/ct-out-project.log | tr '\n' '|' | tr -d '%' | cut -c1-450)
                 echo "::error title=$t::$MSG"
                 FAIL=1

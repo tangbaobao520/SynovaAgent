@@ -350,9 +350,6 @@ if [ -f "$V1_REAL" ]; then
     || no "真实仓库 v1_total 应 128，实 $(jget "$OUT6" totals.v1_total)"
   [ "$(jget "$OUT6" lines | "$PYBIN" -c 'import json,sys;print(len(json.load(sys.stdin)))')" = "26" ] \
     && ok "真实仓库 lines=26" || no "真实仓库 lines 应 26"
-  # ⚠ D854 红证专用临时注入（仅本提交存在，下一提交即还原；严禁进入 main）
-  [ "INJECTED-RED" = "expected-green" ] && ok "注入断言不应通过" \
-    || no "D854 注入红证：故意失败的断言（下一提交还原）"
   # CT-67 折入（D854，2026-09-20）：live 读数随仓库数据漂（36→46 实测）——原为硬编码常量，
   #   每合入一条证据即假红（CT-67 登记：冒烟组只断言不变量，具体数值留给密封夹具组①–⑤⑧）。
   BP_REAL="$(jget "$OUT6" totals.backlog_points)"
