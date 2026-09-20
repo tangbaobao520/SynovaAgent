@@ -24,6 +24,22 @@
 | ⑤ | 场景 F 围栏在 Windows 恒绿（假绿） | `shasum` 缺失 → 前后指纹都取到空串 → "空 == 空" | 可移植哈希（`sha256sum`→`shasum`→`python3 hashlib`）+ 哈希不可得时**判红** | 夹具旧 `:34`/`:200`；CI 注解 `shasum: command not found` |
 | ⑥ | Windows 侧无法定位 | CI 只把 `tail -8` 注入 `::error` 注解 | 失败时把链路证据（各场景 exit/status + 子链 path 命名空间/git/python 可达性 + resolver 输出）压进**末尾** DIAG 行 | `.github/workflows/ci.yml:272` |
 | ⑦ | 场景 A 在 D846 新语义下会红 | 释放判定改读**已提交**卡（`git show HEAD:`），而夹具 `mk_state` 只写工作树 | `mk_state` 写卡后 `git add` + `commit`（NONE 分支不变） | 编码 A D846 实测；`claim_release.py` 证据源 2 |
+| ⑧ | `claim_release.test.sh` 组 14 围栏在 Windows 上 5 断言红 | 同一根因：`shasum` 在 Windows Git Bash 不存在（`shasum: command not found`）→ 指纹取值报错 | 新增 `sha256_of()`（`shasum`→`sha256sum`→`python3 hashlib`），`:41`/`:139` 改用；**只做可移植化，不改判定语义** | CI 注解原文；本仓既有 `sha256sum` 用法 `tests/control-tower/clone-shadow-commit.test.sh:134` |
+
+## 归属与协作（本轮真实摩擦，已登记）
+
+- 队长把 `claim_release.test.sh` 的 `shasum` 一半并入本卡：理由是 **D849 的目标 = "#657 的 Windows 必需检查转绿"**，
+  该文件的红在同一 job（同一必需检查）内，不修则 #657 仍红 → 目标未达成；原「该文件归编码 A（D846）」的
+  约束作废（A 的重写版会覆盖此最小改，合并冲突由 A 解决）。
+- **发现的机制冲突（建议另开卡）**：CTO 工作树实测，同一文件被两条门禁给出**互斥归属**——
+  声明 `--task-id D849` → D328 报「暂存文件归属 D839」；声明 `--task-id D839` → D311 报「属于 session D849」。
+  根因方向：`resolve-commit-brief.sh` 的候选池在「brief 已被释放（D839 status=impl_done）」时把该 brief
+  从认领计数里剔成 0，却又在**强锚点回退**（`:312-338`）里按 `*-D<id>-*.md` 把它选回来 → 计数口径与回退口径不一致。
+  已由队长登记，本卡不动该实现。
+- **同轮发现的夹具缺陷（另一条，未在本卡修）**：brief 的 Q2 路径行若用反引号包裹（`` - `path` ``），
+  `brief_parser.parse_q2` 不剥反引号 → 认领计数恒 0 → resolver 会改选他人 brief → D328 误报归属。
+  本卡实测踩到（D849 brief 初版带反引号 → 解析出的 include 是 `` `tests/...` ``，`match_path` 不匹配）。
+  建议：`parse_q2` 对齐 `parse_write_set` 的 `.strip("`")`，或在 hook 层对 Q2 行做反引号剥离。
 
 ## 边界与后续
 

@@ -18,6 +18,7 @@
     "by": "coding-b",
     "write_set": [
       "tests/control-tower/staging_guard.test.sh — D849 Windows 兼容 FIX：① python→bash 子链 PATH 自包含（windows-compat 模式1/D316）② 沙箱路径双命名空间（cygpath -m）+ 底座断言 ③ mk_state 提交卡（D846 新语义前置）④ 未定义 set_state → mk_state（K3 P2-2）⑤ shasum → 可移植 sha256 + 围栏非假绿 ⑥ /tmp/d839-res.err → 沙箱内私有 ⑦ 认领链前置断言 + 失败时 DIAG 末行（CI 注解 tail -8 唯一通道）",
+      "tests/control-tower/claim_release.test.sh — Windows 可移植化（只改哈希工具，不改判定语义）：新增 sha256_of()（shasum→sha256sum→python3 hashlib），:41/:139 两处围栏指纹改用它。归属理由（队长 2026-09-20 裁决）：D849 目标=#657 的 Windows 必需检查转绿，该文件的 shasum 红在此目标内；原「归编码 A」约束作废（A 重写版覆盖此最小改，合并冲突由 A 解决）",
       "task-state/D849.json — 卡务登记",
       ".claude/task-briefs/2026-09-20-D849-win-compat-staging-guard.md — 6 核心字段 brief",
       "memory/notes/proposed/2026-09-20-d849-win-compat-staging-guard.md — 决策沉淀（Windows 双命名空间/假绿围栏/静默底座三类教训）"
@@ -30,13 +31,14 @@
     ]
   },
   "acceptance_points": [
-    "① macOS 本分支（#657 旧语义）: bash tests/control-tower/staging_guard.test.sh → 场景 A–G 全 PASS、FAIL=0",
-    "② 交叉验（D846 新语义）: 以编码 A 的 claim_release.py（task-state 只认 git show HEAD:）替换后 → 场景 A–G 全 PASS、FAIL=0",
+    "① macOS 本分支（#657 旧语义）: bash tests/control-tower/staging_guard.test.sh → 场景 A–G 全 PASS、FAIL=0（实测 PASS=33 FAIL=0）",
+    "② 交叉验（D846 新语义）: 以编码 A 的 claim_release.py（task-state 只认 git show HEAD:）替换后 → 场景 A–G 全 PASS、FAIL=0（实测 PASS=33 FAIL=0）",
     "③ CI `Control Tower Gate Tests (windows-latest)` 绿",
     "④ CI `Control Tower Gate Tests (ubuntu-latest)` 绿",
-    "⑤ 断言只增不减：31 → 33（新增 2 条认领链前置断言）；无跳过/无放宽",
-    "⑥ 每条修复给 现象→根因→改法→file:line",
-    "⑦ synova-commit 提交并自带 push；无 --no-verify / git stash / force push"
+    "⑤ claim_release.test.sh 本地复跑 PASS=27 FAIL=0（Windows 侧 shasum 红由可移植化闭合，等 CI 验）",
+    "⑥ 断言只增不减：staging_guard 31 → 33（新增 2 条认领链前置断言）；claim_release 27 不变；无跳过/无放宽",
+    "⑦ 每条修复给 现象→根因→改法→file:line",
+    "⑧ synova-commit 提交并自带 push；无 --no-verify / git stash / force push"
   ],
   "evidence": {
     "CI_windows_red": "PR #657 head aca42e30 → check-run 106074339112 `Control Tower Gate Tests (windows-latest)` failure；注解原文: 场景B/C/D/G FAIL、PASS=19 FAIL=12",

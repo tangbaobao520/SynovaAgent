@@ -36,9 +36,17 @@ assert_not_contains() { if echo "$1" | grep -qF -- "$2"; then fail "$3 — 不�
 
 if [ ! -f "$SRC" ]; then echo "❌ 缺 scripts/control-tower/claim_release.py（未实现）" >&2; exit 2; fi
 
+# 跨平台 sha256（D849：Windows Git Bash 无 shasum → 原 5 断言红。只做可移植化，不改判定语义）
+sha256_of() {
+  if command -v shasum >/dev/null 2>&1; then shasum -a 256 "$1" | cut -d' ' -f1
+  elif command -v sha256sum >/dev/null 2>&1; then sha256sum "$1" | cut -d' ' -f1
+  else python3 -c 'import hashlib,sys;print(hashlib.sha256(open(sys.argv[1],"rb").read()).hexdigest())' "$1"
+  fi
+}
+
 # 围栏基准: 真实仓库释放台账指纹（测试期间不得改动它）
 REAL_LEDGER="$REPO_DIR/task-state/claim-releases.json"
-if [ -f "$REAL_LEDGER" ]; then SIG_BEFORE=$(shasum -a 256 "$REAL_LEDGER" | cut -d' ' -f1); else SIG_BEFORE="ABSENT"; fi
+if [ -f "$REAL_LEDGER" ]; then SIG_BEFORE=$(sha256_of "$REAL_LEDGER"); else SIG_BEFORE="ABSENT"; fi
 
 SB=$(mktemp -d); trap 'rm -rf "$SB"' EXIT
 git -C "$SB" init -q; git -C "$SB" config user.email t@t.local; git -C "$SB" config user.name t
@@ -136,7 +144,7 @@ assert_eq "$EC" "2" "⑬ 仓库根不可识别 → exit 2（契约不满足，�
 assert_contains "$O" "契约不满足" "⑬ 显式报契约不满足（不静默）"
 
 echo "── 组 14: 围栏（不得写真实仓库）──"
-if [ -f "$REAL_LEDGER" ]; then SIG_AFTER=$(shasum -a 256 "$REAL_LEDGER" | cut -d' ' -f1); else SIG_AFTER="ABSENT"; fi
+if [ -f "$REAL_LEDGER" ]; then SIG_AFTER=$(sha256_of "$REAL_LEDGER"); else SIG_AFTER="ABSENT"; fi
 assert_eq "$SIG_AFTER" "$SIG_BEFORE" "⑭ 真实仓库释放台账指纹未变"
 for p in task-state/D901.json task-state/D906.json; do
   [ -e "$REPO_DIR/$p" ] && fail "⑭ 越界写入真实仓库 $p" || pass "⑭ 真实仓库无 $p"

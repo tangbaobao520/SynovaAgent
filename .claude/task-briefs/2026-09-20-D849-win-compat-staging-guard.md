@@ -38,6 +38,14 @@
 > 带反引号的路径认领计数恒为 0（本轮实测：resolver 因此改选 D839 的 brief → D328 拦提交）。
 做什么：
 - tests/control-tower/staging_guard.test.sh — 7 处修复（见 Done 标准逐条）
+- tests/control-tower/claim_release.test.sh — **Windows 可移植化（只做可移植化，不改判定语义）**：
+  `shasum -a 256`（Windows Git Bash 无 shasum → 组 14 围栏 5 断言红）→ 新增 `sha256_of()`
+  （`shasum` → `sha256sum` → `python3 hashlib`），`:41` / `:139` 两处调用点改用它。
+  **归属理由（队长 2026-09-20 裁决）**：D849 的目标是"#657 的 Windows 必需检查转绿"，
+  该文件的 `shasum` 红就在这个目标内（同一 job、同一 PR 必需检查）；原「本文件归编码 A（D846）」的
+  约束**作废**——A 的重写版会覆盖此最小改，合并冲突由 A 解决（已通知 A）。
+  背景证据：CTO 工作树实测两条门禁对该文件给出**互斥归属**（声明 D849 → D328 报归属 D839；
+  声明 D839 → D311 报属 session D849），CTO 无法提交 → 交本任务连贯 session 处理（另开卡登记）。
 - task-state/D849.json — 卡务登记
 - .claude/task-briefs/2026-09-20-D849-win-compat-staging-guard.md — 本 brief
 - memory/notes/proposed/2026-09-20-d849-win-compat-staging-guard.md — 决策沉淀
@@ -45,9 +53,9 @@
 不做什么（含文件路径）：
 - 不改 `scripts/control-tower/staging_guard.py`（被测实现；改了 = 自审自改）
 - 不改 `scripts/workflow/resolve-commit-brief.sh`、`scripts/control-tower/brief_parser.py`
-- 不改 `tests/control-tower/claim_release.test.sh`（编码 A 的 D846 写集，双写必冲突）
+- 不改 `tests/control-tower/claim_release.test.sh` 的**判定语义**（只做 sha256 可移植化；A 的重写版为准）
 - 不改 `.github/workflows/ci.yml`（slice B/D848 写集）
-- 不碰 `scripts/audit/**`、不写审计标准、不碰主工作区与其他 worktree
+- 不碰 `scripts/audit/**`、不写审计标准、不碰主工作区与其他 worktree（含 `gate/claim-release-a`）
 
 ## Q3: 验收 — 入口 → 交互 → 结果
 入口：`bash tests/control-tower/staging_guard.test.sh`（本地）与 CI job
