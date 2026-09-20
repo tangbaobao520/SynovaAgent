@@ -350,8 +350,12 @@ if [ -f "$V1_REAL" ]; then
     || no "真实仓库 v1_total 应 128，实 $(jget "$OUT6" totals.v1_total)"
   [ "$(jget "$OUT6" lines | "$PYBIN" -c 'import json,sys;print(len(json.load(sys.stdin)))')" = "26" ] \
     && ok "真实仓库 lines=26" || no "真实仓库 lines 应 26"
-  [ "$(jget "$OUT6" totals.backlog_points)" = "36" ] && ok "真实仓库 backlog_points=36（164-128）" \
-    || no "backlog_points 应 36，实 $(jget "$OUT6" totals.backlog_points)"
+  # D848 附带修正（非本卡四条验收）：这两行读的是**真实仓库**的进度数字，会随看板推进而变；
+  #   原期望值 36/22 已过期（product-lines.yaml 验收点 164→174；v1_passed 22→27 = D809 撤回三点
+  #   已接线恢复 + v0.2 §三新增两点）。真值由 CTO 独立复算证实（25→27，与线10 1/6→6/6 同批）。
+  #   仅更新期望值，断言强度不变（仍会抓住意外漂移）。
+  [ "$(jget "$OUT6" totals.backlog_points)" = "46" ] && ok "真实仓库 backlog_points=46（174-128）" \
+    || no "backlog_points 应 46，实 $(jget "$OUT6" totals.backlog_points)"
   # D809: 未接线三点必须判 pending_k3 且不计 passed（撤回生效的**真实仓库**读数）
   PW_REAL="$("$PYBIN" - "$OUT6" <<'PY'
 import json,sys
@@ -364,9 +368,9 @@ PY
   [ "$PW_REAL" = "20-3:pending_k3:False,20-5:pending_k3:False,22-1:pending_k3:False 3" ] \
     && ok "真实仓库 20-3/20-5/22-1 = pending_k3 且不计 passed（pending_k3=3）" \
     || no "真实仓库三点撤回读数错: $PW_REAL"
-  [ "$(jget "$OUT6" totals.v1_passed)" = "22" ] \
-    && ok "真实仓库 v1_passed=22（D809 撤回三点后；接线恢复即回 25）" \
-    || no "真实仓库 v1_passed 应 22，实 $(jget "$OUT6" totals.v1_passed)"
+  [ "$(jget "$OUT6" totals.v1_passed)" = "27" ] \
+    && ok "真实仓库 v1_passed=27（D809 撤回三点已接线恢复 + v0.2 §三新增两点）" \
+    || no "真实仓库 v1_passed 应 27，实 $(jget "$OUT6" totals.v1_passed)"
 else
   no "真实仓库缺 V1 断言表 ${V1_NAME}（上游 D793/PR#608 未并入）"
 fi
@@ -539,6 +543,67 @@ grep -q "先退役再开新 PR" "$TMPD/pq-out.txt" && ok "超限告警出现在�
 # 旁路不参与交付度：同一夹具下 v1_passed 与无快照时一致
 [ "$(jget "$OUT9C" totals.v1_passed)" = "$(jget "$OUT9A" totals.v1_passed)" ] \
   && ok "旁路段不改交付度分子（13 条超限 PR 不影响 v1_passed）" || no "旁路段污染了交付度"
+
+check_sut() { # check_sut <fixture-root> <out-file> [extra args...]（D848 --check，捕获输出 + 退出码）
+  local root="$1" out="$2"; shift 2
+  "$PYBIN" "$SUT" --repo-root "$root" --out "$out" --today "$TODAY" --check "$@" 2>/dev/null
+}
+
+# ═══ 组 ⑩（D848）账本漂移门禁 --check: 先红 / 后绿 / 旁路不误伤 / 只读 / 时间相对豁免 ═══
+# 背景（K3 D815 P1）: main 的 ledger 停留在线10=1/6 而 D803 证据已合入 → "证据已合、账本没动"
+#   无人报警，派单背景数字靠人转述。本组锁死: 漂移必红 / 无证据变更不红 / 无法对账 fail-closed。
+echo "── 组 ⑩（D848）: 账本漂移门禁（--check）──"
+F10="$TMPD/f10"; build_fixture "$F10"
+LED10="$F10/docs/synova/project/ledger.json"
+run_sut "$F10" "$LED10" >/dev/null 2>&1 || true      # 基线: 派生一次，盘上账本与真相一致
+cp "$LED10" "$TMPD/led10.snapshot.json"
+
+O10=$(check_sut "$F10" "$LED10"); R10=$?
+[ "$R10" = "0" ] && ok "⑩-1 一致 → exit 0（正常路径）" || no "⑩-1 应 exit 0，实 $R10"
+echo "$O10" | grep -q "一致" && ok "⑩-1 输出显式报一致" || no "⑩-1 输出未报一致: $O10"
+
+# ⑩-2 **先红**: 新证据把 2-2 点亮，但**不重算**账本 → 门禁必须红（K3 D815 P1 的同形）
+mk_evidence "$F10/docs/synova/product-lines/evidence/GS-FRESH.json" founder-demo "$TODAY" "2-2" pass
+O10R=$(check_sut "$F10" "$LED10"); R10R=$?
+[ "$R10R" = "1" ] && ok "⑩-2 证据已合未重算 → exit 1（先红）" || no "⑩-2 应 exit 1，实 $R10R"
+echo "$O10R" | grep -q "漂移" && ok "⑩-2 输出点名漂移" || no "⑩-2 未报漂移: $O10R"
+echo "$O10R" | grep -q "lines/1/assertions/1/status" \
+  && ok "⑩-2 差异定位到 line2/断言2 的 status（不是笼统报错）" \
+  || no "⑩-2 差异未定位到断言级: $O10R"
+echo "$O10R" | grep -q "gen-project-board.py --out" && ok "⑩-2 给一步可执行重算命令" || no "⑩-2 缺重算命令"
+
+# ⑩-3 **后绿**: 重算一次再查 → 一致
+run_sut "$F10" "$LED10" >/dev/null 2>&1 || true
+O10G=$(check_sut "$F10" "$LED10"); R10G=$?
+[ "$R10G" = "0" ] && ok "⑩-3 重算后 → exit 0（后绿）" || no "⑩-3 重算后仍红，实 $R10G"
+
+# ⑩-4 **反向（防误伤）**: 变更集不含证据/标准类路径 → 跳过（exit 0，不压主路径）
+O10S=$(check_sut "$F10" "$LED10" --changed-files "scripts/project/gen-project-board.py,docs/research/a.md"); R10S=$?
+[ "$R10S" = "0" ] && ok "⑩-4 普通变更不触发（exit 0）" || no "⑩-4 普通变更误红，实 $R10S"
+echo "$O10S" | grep -q "^skip" && ok "⑩-4 显式 skip（不静默）" || no "⑩-4 未显式 skip: $O10S"
+
+# ⑩-5 证据类变更 → 门禁确实接管（同一漂移状态下 exit 1）
+mk_evidence "$F10/docs/synova/product-lines/evidence/GS-FRESH2.json" founder-demo "$TODAY" "2-2" pass
+O10T=$(check_sut "$F10" "$LED10" --changed-files "docs/synova/product-lines/evidence/GS-FRESH2.json"); R10T=$?
+[ "$R10T" = "1" ] && ok "⑩-5 证据类路径变更触发对账（exit 1）" || no "⑩-5 证据类变更未触发，实 $R10T"
+
+# ⑩-6 边界: 账本缺失 → exit 2 + 显式点名（绝不当成"一致"静默放行，铁律 24/31）
+O10M=$(check_sut "$F10" "$TMPD/nonexistent/ledger.json"); R10M=$?
+[ "$R10M" = "2" ] && ok "⑩-6 账本缺失 → exit 2（fail-closed，不与通过混同）" || no "⑩-6 应 exit 2，实 $R10M"
+echo "$O10M" | grep -q "无法对账" && ok "⑩-6 显式报无法对账（不静默）" || no "⑩-6 未显式点名: $O10M"
+
+# ⑩-7 只读保证: --check 前后盘上账本逐字节不变（写在盘前返回；不作任何副作用）
+_hash10() { "$PYBIN" -c "import hashlib,sys;print(hashlib.sha256(open(sys.argv[1],'rb').read()).hexdigest())" "$1"; }
+_h10a="$(_hash10 "$LED10")"
+check_sut "$F10" "$LED10" >/dev/null; check_sut "$F10" "$LED10" --changed-files "docs/synova/product-lines/evidence/GS-FRESH2.json" >/dev/null
+[ "$_h10a" = "$(_hash10 "$LED10")" ] \
+  && ok "⑩-7 --check 全程只读（盘上账本指纹未变）" || no "⑩-7 --check 改动了盘上账本"
+
+# ⑩-8 时间相对豁免（防隔夜误报）: 用「今天=生成日」的账本，在 8 天后对账 → 仍一致
+#   （freshness 桶 / age_days / blocked.days 随日期变化，纳入判定会让任何隔夜账本误红）
+run_sut "$F10" "$LED10" >/dev/null 2>&1 || true
+O10D=$("$PYBIN" "$SUT" --repo-root "$F10" --out "$LED10" --today "2026-09-25" --check 2>/dev/null); R10D=$?
+[ "$R10D" = "0" ] && ok "⑩-8 8 天后对账仍一致（时间相对字段已豁免）" || no "⑩-8 隔夜误红，实 $R10D"
 
 echo
 echo "PASS=$PASS FAIL=$FAIL"

@@ -15,8 +15,25 @@
              --evidence-dirs  证据目录（可多次）；默认 产品证据 + golden-scenarios 证据**两处都算**
              --task-state-dir 任务卡目录；默认 <root>/task-state
              --pr-queue       D811 未合 PR 队列快照；默认 <root>/docs/synova/project/pr-queue.json
+             --check          D848 漂移门禁（**只读**，不写任何文件）: 重算并与 <--out> 处磁盘账本对账
+             --changed-files   D848 旁路判定输入: 本次变更文件（逗号/空格分隔）。
+                                给了且**不含**证据/标准类路径 → 直接跳过（exit 0，不压主路径）；
+                                给了且含 → 对账；**不给** → 无条件对账（既有消费者零影响）
              --strict         降级时退出码非零（默认 0）
              --compact        单行 JSON（默认缩进 2）
+@check   — 漂移定义（D848 / K3 D815 P1: "证据已合入、账本没动"无人报警）:
+             判定相关 = 重算账本 与 磁盘账本 **逐键比较**，但排除三类非判定字段:
+               ① @determinism 豁免: generated_at / git_head（本文件 :64 自身契约）
+               ② D811 旁路诊断物: pr_queue（明示"不参与交付度分子分母"）
+               ③ 相对「今天」的字段: */freshness、*/age_days（freshness_bucket / 保鲜桶口径）、
+                  blocked[].days（today - since）、tasks[].stale_days —— 它们随日期变化，纳入判定
+                  会让任何隔夜账本在**无证据变更**的 PR 上误报（门禁太激进 → 被绕过，V4.5.1 教训），
+                  故显式豁免并写进契约（组 ⑩-8 用"生成日 vs 8 天后"断言锁死该豁免）
+             纳入判定的核心 = lines[].{v1_total,v1_passed,v1_verified,pending_k3,assertions[].status}、
+             totals.*（除 freshness）、degraded/degraded_sources/skipped_sources、sources、tasks、
+             blocked 事实（除 days）、timeline —— 即"证据/标准一变就必须重算"的那部分
+             触发族（--changed-files 用）= 两处证据目录 + V1 断言表 + product-lines.yaml + ledger.json 自身；
+             其余路径（脚本/文档/src/**）不触发（防误伤）
 @output  — <out> 处的 JSON 文件，schema "project-ledger/1"：
              schema / generated_by / generated_at / git_head / sources / degraded /
              degraded_sources / skipped_sources / totals / pr_queue / lines / tasks / blocked / timeline
@@ -29,7 +46,8 @@
              0  降级（默认）—— 文件**仍完整写出**，降级在带内（degraded:true），
                 使 D794 永远拿得到可渲染的 JSON 而非 404
              1  --strict 且 degraded
-             2  参数非法 / 输出不可写
+             1  --check 检出**漂移**（判定相关字段与重算不一致；语义由 --check 区分）
+             2  参数非法 / 输出不可写 / --check 无法对账（账本缺失、损坏、顶层非对象）
 @degraded— 两级显式，均不静默（铁律 24/31）:
              ① 输入级故障 → degraded_sources[] + degraded:true：
                 文件/目录缺失、不可读、JSON 解析失败 —— 会让数字偏小且不可解释
@@ -69,6 +87,7 @@
 from __future__ import annotations
 
 import argparse
+import fnmatch
 import glob
 import json
 import logging
@@ -669,6 +688,131 @@ def build_ledger(args):
     return ledger, bool(degraded_sources)
 
 
+# ── D848 账本漂移门禁（--check）──────────────────────────────────────────────
+# 契约与口径见文件头 @check。三条豁免各有物理理由，不是"漏比"。
+DRIFT_IGNORE_EXACT = ("generated_at", "git_head", "pr_queue")
+# 相对「今天」的字段（隔夜必变，与"该不该重算"无关）:
+#   freshness  = 保鲜桶（freshness_bucket :128，按证据龄 vs today 分桶）
+#   age_days   = today - 证据日（行/断言级）
+#   stale_days = today - 卡片最后更新日（tasks[]；实测 309 处差异全部出自它，
+#                见 tests/project/gen-project-board.test.sh 组 ⑩-8 的隔夜对账断言）
+DRIFT_IGNORE_LEAVES = ("freshness", "age_days", "stale_days")
+
+
+def _drift_ignored(parts) -> bool:
+    """该路径（分段元组）是否属非判定字段（文件头 @check 三类豁免）。"""
+    if not parts:
+        return False
+    if parts[-1] in DRIFT_IGNORE_EXACT or parts[0] in DRIFT_IGNORE_EXACT:
+        return True
+    if parts[-1] in DRIFT_IGNORE_LEAVES:
+        return True
+    # blocked[i].days = today - since（:51）；blocked_count 是事实计数，仍纳入判定
+    return len(parts) >= 2 and parts[-1] == "days" and "blocked" in parts
+
+
+def diff_ledgers(disk, fresh, include_ignored: bool = False, _parts=()):
+    """逐键比较两份账本 → [(path, kind, old, new)]；kind ∈ VAL/ADDED/REMOVED/LEN/TYPE。
+
+    契约:
+      @input  disk/fresh: 账本 dict（顶层）；include_ignored=False 时跳过 @check 豁免字段
+      @output 差异列表（路径按 / 连接，稳定排序 —— 调用方需确定性输出）
+      @degraded 不做任何 I/O、不抛异常（非 dict 输入按 TYPE 差异返回，交调用方判 fail-closed）
+    """
+    out = []
+    if isinstance(disk, dict) and isinstance(fresh, dict):
+        for k in sorted(set(disk) | set(fresh)):
+            sub = _parts + (str(k),)
+            if not include_ignored and _drift_ignored(sub):
+                continue
+            if k not in disk:
+                out.append(("/".join(sub), "ADDED", None, fresh[k]))
+            elif k not in fresh:
+                out.append(("/".join(sub), "REMOVED", disk[k], None))
+            else:
+                out.extend(diff_ledgers(disk[k], fresh[k], include_ignored, sub))
+        return out
+    if isinstance(disk, list) and isinstance(fresh, list):
+        if len(disk) != len(fresh):
+            out.append(("/".join(_parts), "LEN", len(disk), len(fresh)))
+        for i, (a, b) in enumerate(zip(disk, fresh)):
+            out.extend(diff_ledgers(a, b, include_ignored, _parts + (str(i),)))
+        return out
+    if type(disk) is not type(fresh):
+        out.append(("/".join(_parts), "TYPE", disk, fresh))
+    elif disk != fresh:
+        out.append(("/".join(_parts), "VAL", disk, fresh))
+    return out
+
+
+# 触发族（--changed-files 用）: 证据两处目录（DEFAULT_EVIDENCE_RELS）+ V1 断言表 + yaml + 账本自身。
+EVIDENCE_TRIGGER_FILES = ("docs/synova/product-lines/product-lines.yaml",
+                          "docs/synova/project/ledger.json")
+EVIDENCE_TRIGGER_GLOBS = ("docs/synova/project/V1验收标准*.md",
+                          "docs/synova/project/26线-V1验收标准*.md")
+
+
+def is_evidence_path(rel: str) -> bool:
+    """该路径是否属「证据/标准类」—— D848 门禁触发族（其余路径不触发，防误伤）。"""
+    p = (rel or "").strip().replace("\\", "/").lstrip("./")
+    if not p:
+        return False
+    if any(p.startswith(d.rstrip("/") + "/") for d in DEFAULT_EVIDENCE_RELS):
+        return True
+    if p in EVIDENCE_TRIGGER_FILES:
+        return True
+    return any(fnmatch.fnmatch(p, g) for g in EVIDENCE_TRIGGER_GLOBS)
+
+
+def evidence_paths(changed_files):
+    """→ 变更集里属触发族的路径（已排序去重）。"""
+    return sorted({c.strip().replace("\\", "/") for c in (changed_files or []) if is_evidence_path(c)})
+
+
+def check_ledger(out_path: Path, fresh: dict, changed_files=None):
+    """D848 漂移判定。→ (rc, lines)。
+
+    契约:
+      @input  out_path: 磁盘账本路径；fresh: 本次重算账本；changed_files: None=无条件对账，
+              否则先按触发族旁路（不含证据/标准类路径 → 不压主路径）
+      @output rc + 人读行（stdout 用）: 0 一致/跳过 | 1 漂移 | 2 无法对账
+      @exit   只读 —— **不写任何文件**（生成是 --out 的职责）
+      @degraded 账本缺失/损坏 → rc=2 且显式点名（绝不当成"一致"静默放行，铁律 24/31）
+    """
+    if changed_files is not None:
+        trig = evidence_paths(changed_files)
+        if not trig:
+            return 0, ["skip: 变更集不含证据/标准类路径（%d 个文件）→ 旁路不拦（D848）"
+                       % len([c for c in (changed_files or []) if c.strip()])]
+    if not out_path.is_file():
+        return 2, ["❌ 无法对账: 账本不存在 %s（--check 只读；请先 --out 重算并提交）" % out_path]
+    try:
+        disk = json.loads(out_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError, UnicodeError) as exc:
+        return 2, ["❌ 无法对账: 账本不可读/损坏 %s: %s: %s"
+                   % (out_path, type(exc).__name__, exc)]
+    if not isinstance(disk, dict):
+        return 2, ["❌ 无法对账: 账本顶层非对象（期望 schema %s）: %s" % (SCHEMA, out_path)]
+
+    diffs = diff_ledgers(disk, fresh)
+    all_diffs = diff_ledgers(disk, fresh, include_ignored=True)
+    info = []
+    if len(all_diffs) > len(diffs):
+        info.append("  ℹ 另有 %d 处时间相对/旁路字段差异（不参与判定，见文件头 @check）"
+                    % (len(all_diffs) - len(diffs)))
+    if not diffs:
+        return 0, ["✅ 账本与重算一致（判定相关字段 0 差异）"] + info
+    lines = ["❌ 账本漂移: 磁盘账本与重算结果不一致（%d 处判定相关差异）" % len(diffs),
+             "   本账本是派生物，禁手改；重算并提交:",
+             "     python3 scripts/project/gen-project-board.py "
+             "--out docs/synova/project/ledger.json"]
+    for p, kind, a, b in diffs[:20]:
+        lines.append("   %-56s %-6s %r → %r" % (p, kind, a, b))
+    if len(diffs) > 20:
+        lines.append("   … 其余 %d 处省略" % (len(diffs) - 20))
+    return 1, lines + info
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(
         description="D795 项目账本派生器 — 把 git 真相派生为 ledger.json（禁手工编辑）")
@@ -683,6 +827,11 @@ def main(argv=None):
     parser.add_argument("--strict", action="store_true")
     parser.add_argument("--compact", action="store_true")
     parser.add_argument("--quiet", action="store_true")
+    # D848: 漂移门禁（只读）+ 旁路触发族判定
+    parser.add_argument("--check", action="store_true",
+                        help="D848 漂移门禁: 重算并与 <--out> 磁盘账本对账（只读；漂移 exit 1）")
+    parser.add_argument("--changed-files", default=None,
+                        help="D848 旁路判定: 变更文件（逗号/空格分隔）；不含证据/标准类路径 → 跳过")
     args = parser.parse_args(argv)
 
     logging.basicConfig(level=logging.WARNING, format="%(levelname)s %(message)s", stream=sys.stderr)
@@ -699,6 +848,16 @@ def main(argv=None):
     except Exception as exc:  # 兜底: 绝不让宿主拿到半截账本而不自知（铁律 11/24）
         LOG.error("派生失败（未捕获异常）: %s", exc, exc_info=True)
         return 2
+
+    if args.check:
+        # D848: 只读对账 —— 必须在写盘**之前**返回（--check 不产生任何副作用）
+        changed = None
+        if args.changed_files is not None:
+            changed = [c for c in re.split(r"[,\s]+", args.changed_files) if c.strip()]
+        rc, lines = check_ledger(out_path, ledger, changed)
+        for line in lines:
+            print(line)
+        return rc
 
     try:
         out_path.parent.mkdir(parents=True, exist_ok=True)

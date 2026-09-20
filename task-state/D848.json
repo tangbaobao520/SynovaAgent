@@ -1,20 +1,43 @@
 {
   "task_id": "D848",
   "title": "账本漂移门禁：证据/状态变更合并后必须重算 ledger 派生器（K3 D815 P1 归因）",
-  "status": "claimed",
+  "status": "impl_done",
   "risk": "high",
   "spec": "K3 审计 D815（docs/synova/audit-reports/2026-09-18-K3-line10.md）P1：main 已提交的 ledger.json（5b1df207）停留在线10=1/6，而 D803 证据 09-17 已合入 → 派单背景数字靠人转述而非账本自证。CTO 独立复算：跑派生器后线10 = 6/6、全局 v1_passed 25→27（degraded=false）——即账本可由机器重算，只是**没人/没机制在证据合并后重跑**。",
   "write_set": [
     "scripts/project/gen-project-board.py",
     "tests/project/gen-project-board.test.sh",
     ".github/workflows/ci.yml",
-    "task-state/D848.json"
+    "task-state/D848.json",
+    ".claude/task-briefs/2026-09-20-D848-ledger-freshness-gate.md",
+    "memory/notes/proposed/2026-09-20-d848-ledger-freshness-gate.md"
   ],
-  "impl": null,
+  "impl": {
+    "branch": "gate/ledger-fresh-b",
+    "worktree": ".synova-wt-gates-b2",
+    "by": "coding-b",
+    "files": [
+      "scripts/project/gen-project-board.py — 新增 --check（只读对账: 一致 exit 0 / 漂移 exit 1 / 无法对账 exit 2）+ --changed-files（旁路触发族判定）；漂移判据复用文件既有 @determinism 不变量（除 generated_at/git_head），显式豁免 pr_queue（D811 旁路物）+ 时间相对字段（*/freshness、*/age_days、blocked[].days、tasks[].stale_days）；契约写进文件头 @check/@input/@exit",
+      "tests/project/gen-project-board.test.sh — 新增组 ⑩（14 断言: 一致/先红/后绿/旁路不误伤/证据类触发/缺账本 fail-closed/只读/隔夜豁免）；顺带修正真实仓库冒烟两条过期期望值（backlog 36→46、v1_passed 22→27，真值经 CTO 独立复算证实）",
+      ".github/workflows/ci.yml — 末尾追加独立 job ledger-freshness（Ledger Freshness Gate）；只追加不重排（git diff --numstat = 19 insertions / 0 deletions）"
+    ],
+    "evidence": {
+      "DS1_red_green_real_repo": "篡改盘上 ledger（线10→1/6、totals.v1_passed→25）→ --check exit 1，差异 = lines/9/v1_passed 1→6 + totals/v1_passed 25→27（与 CTO 复算一致）；恢复后 exit 0",
+      "DS2_one_step": "漂移输出内含 'python3 scripts/project/gen-project-board.py --out docs/synova/project/ledger.json'（组 ⑩-2 断言）",
+      "DS3_bypass_wiring": "CI job 调用 --check --changed-files \"$(git diff --name-only origin/main...HEAD)\"；普通变更 → 'skip: 变更集不含证据/标准类路径' exit 0；证据类路径变更 → 接管对账（组 ⑩-4/⑩-5）",
+      "DS4_zero_main_path": "grep -rn 'gen-project-board' scripts/pre-commit-check.sh scripts/pre-push-check.sh scripts/hooks/ .git/hooks/ → 0 命中；git status 仅 3 个写集文件",
+      "DS5_no_false_positive": "组 ⑩-4（普通变更 exit 0）+ 组 ⑩-8（--today 差 8 天仍一致；实测时间相对差异 309 处全部出自 tasks[].stale_days）",
+      "DS6_readonly": "组 ⑩-7: --check 前后盘上账本 sha256 不变",
+      "DS7_fail_closed": "组 ⑩-6: 账本缺失 → exit 2 + '无法对账' 显式点名（绝不当成一致）",
+      "DS8_no_regression": "基线派生器（同位置同参数）与改版输出逐键相等 = True（除 generated_at/git_head）",
+      "DS9_fixture_green": "bash tests/project/gen-project-board.test.sh → PASS=108 FAIL=0"
+    },
+    "red_lines": "scripts/audit/** 零触碰；scripts/control-tower/** 零触碰；.git/hooks/** 与 scripts/hooks/** 零改动；docs/synova/project/ledger.json 零手改（读改前已与 HEAD 逐字节一致）"
+  },
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-09-20",
-  "updated_by": "synova-cto",
+  "updated_by": "coding-b",
   "domain": "mac",
   "owner": "mac-coding",
   "executor": "mac-coding",
@@ -30,5 +53,9 @@
     "禁改 scripts/audit/**；不写审计标准；交付标注可提请独立审计"
   ],
   "next": "① 重新核行号 ② 先红后绿夹具 ③ 接线 CI（低冲突：追加调用，不重排既有清单）④ 交回三件",
-  "note": "来源：K3 D815 P1『账本漂移』。CTO 复算证据：main 线10=1/6 → 重算 6/6、全局 25→27、verified 16、delivery 21.1%、degraded=false。本卡不新增主路径门禁，走 CI 旁路。"
+  "note": "来源：K3 D815 P1『账本漂移』。CTO 复算证据：main 线10=1/6 → 重算 6/6、全局 25→27、verified 16、delivery 21.1%、degraded=false。本卡不新增主路径门禁，走 CI 旁路。",
+  "leftover": [
+    "真实仓库冒烟的冻结数字（backlog_points / v1_passed）本质是'冻结移动目标'——本卡仅更新期望值；建议另开卡改为不变量断言（如 v1_passed == Σ lines[].v1_passed、backlog_points == pl_total - v1_total），避免每次看板推进都要改夹具",
+    "tests/project/gen-project-board.test.sh 与 tests/project/pr-queue-scan.test.sh 均**未接入 CI**（grep tests/project/ .github/workflows/*.yml 零命中）——本卡只接了自己的旁路 job（--check 不跑该夹具）；夹具本身的 CI 化建议随 CT-51 队列处理"
+  ]
 }

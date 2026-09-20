@@ -328,3 +328,22 @@ jobs:
         run: npx tsx scripts/ci/golden-case-checker.ts
       - name: Run diagnosis quality check
         run: bash scripts/ci/diagnosis-quality-check.sh
+
+  # D848 账本漂移门禁（**旁路**，不压主路径）: 证据/标准类路径变更时，重算账本与盘上 ledger 对账。
+  #   旁路语义: 变更集不含证据/标准类路径 → 检查内部直接 skip（exit 0，防误伤）；
+  #   主提交路径零新增检查 —— 本作业只走 CI，pre-commit / pre-push / .git/hooks 零引用
+  #   （物理证明: grep -rn "gen-project-board" scripts/pre-commit-check.sh scripts/pre-push-check.sh
+  #    scripts/hooks/ .git/hooks/ → 零命中）。
+  #   为什么需要它（K3 D815 P1）: ledger 是派生物，证据合入后没人重算 → 看板数字停在旧值
+  #   （实证: 线10 1/6 vs 重算 6/6、全局 v1_passed 25 vs 27），派单/汇报引用过期数字却无告警。
+  ledger-freshness:
+    name: Ledger Freshness Gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # 需要 origin/main 作为变更集基准（PR diff）
+      - name: Recompute ledger and compare with committed ledger
+        run: |
+          CHANGED="$(git diff --name-only origin/main...HEAD | tr '\n' ',')"
+          python3 scripts/project/gen-project-board.py --check --changed-files "$CHANGED"
