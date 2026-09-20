@@ -211,7 +211,13 @@ export async function handleCommand(input: string, ctx: CommandContext): Promise
   // /search
   if (cmd.startsWith('/search ')) {
     const q = input.slice(8).trim();
-    const results = ctx.store.search(q, 5);
+    // D826: 租户必填 —— 取本会话所属 org；取不到则明确提示，绝不发无租户查询
+    const sessionOrgId = ctx.store.getSession(ctx.sessionId)?.orgId;
+    if (!sessionOrgId) {
+      ctx.addSystemMessage('无法确定当前会话所属组织 — 已跳过搜索（D826 租户隔离）');
+      return { handled: true };
+    }
+    const results = ctx.store.search(q, sessionOrgId, 5);
     if (results.length === 0) {
       ctx.addSystemMessage('无匹配结果');
     } else {

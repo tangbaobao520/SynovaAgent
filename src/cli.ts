@@ -201,7 +201,7 @@ function startChat(provider: LLMProvider, store: SessionStore, conv: Conversatio
 
     if (input.startsWith('/search ')) {
       const query = input.slice(8).trim();
-      const results = store.search(query, 5);
+      const results = store.search(query, conv.getOrgId(), 5); // D826: 租户必填（本 CLI 会话所属 org）
       if (results.length === 0) {
         console.log(`${DIM}  无匹配结果${RESET}`);
       } else {

@@ -176,6 +176,21 @@ const PHASE5_LIST_PREDICATE =
 
 // ═══ SessionStore ═══
 
+/**
+ * FTS5 检索词 → **字面短语**（D826 注入面修复）。
+ *
+ * 契约（铁律 47）:
+ *   @input  — 任意用户输入字符串（可含 `"`、`*`、`OR`/`NEAR`/`AND` 等 FTS5 语法字符）
+ *   @output — 可安全用于 `MATCH ?` 的字面短语（`"…"` 包裹；内部 `"` 翻倍转义）
+ *   @degrade — 无（纯字符串变换，无失败路径）
+ *   @why    — 未转义时实测 `q="` / `q=a"b` / `q=*` / `q=alpha AND` 均使 sqlite **抛异常**
+ *             （`unterminated string` / `unknown special query` / `syntax error`）⇒ 路由 500；
+ *             且 `a OR b` 被当**布尔算符**（误召回）。字面短语化后：不抛，且语义为用户所见的字面串。
+ */
+function toFtsLiteralPhrase(query: string): string {
+  return `"${query.replace(/"/g, '""')}"`;
+}
+
 export class SessionStore {
   private db: Database.Database;
 
@@ -602,7 +617,19 @@ export class SessionStore {
 
   // ═══ FTS5 Search ═══
 
-  search(query: string, limit = 10): SearchResult[] {
+  /**
+   * 会话全文检索（**强制租户隔离**，D826）。
+   *
+   * 契约（铁律 47）:
+   *   @input  — query: 用户检索词；orgId: **租户（必填，编译期强制）**；limit: 结果上限（默认 10）
+   *   @output — SearchResult[]：**仅 orgId 所属租户**的会话行（两条 SQL 都带 `s.org_id = ?`）；
+   *             `SearchResult.orgId` 恒等于入参 orgId
+   *   @degrade — 无（纯查询；SQL 异常向上抛，由调用方分类降级——路由侧 400/500 分类见 routes/sessions.ts）
+   *   @bound  — CJK 走 LIKE 分支（FTS5 unicode61 中文支持有限）；ASCII 走 FTS5 分支；
+   *             FTS5 检索词一律**字面短语化**（`toFtsLiteralPhrase`），杜绝 MATCH 语法注入
+   *   @invariant — **任何分支都必须带租户过滤**（不存在"不过滤"路径；加新分支时同步加）
+   */
+  search(query: string, orgId: string, limit = 10): SearchResult[] {
     // FTS5 unicode61 对中文支持有限——使用 LIKE 作为 fallback
     const hasCJK = /[一-鿿]/.test(query);
     if (hasCJK) {
@@ -613,27 +640,27 @@ export class SessionStore {
                substr(m.content, max(0, instr(m.content, ?) - 30), 80) as snippet
         FROM agent_messages m
         JOIN agent_sessions s ON s.id = m.session_id
-        WHERE m.content LIKE ?
+        WHERE m.content LIKE ? AND s.org_id = ?
         ORDER BY s.updated_at DESC
         LIMIT ?
-      `).all(query, likePattern, limit) as SqliteRow[];
+      `).all(query, likePattern, orgId, limit) as SqliteRow[];
       return rows.map(r => ({
         sessionId: r.session_id as string, orgId: r.org_id as string,
         messageCount: Number(r.msg_count), snippet: r.snippet as string, updatedAt: r.updated_at as string,
       }));
     }
 
-    // English/ASCII → FTS5
+    // English/ASCII → FTS5（检索词字面短语化：既防语法注入，也避免 OR/NEAR 被当算符）
     const rows = this.db.prepare(`
       SELECT f.session_id, s.org_id, s.updated_at,
              (SELECT COUNT(*) FROM agent_messages WHERE session_id=f.session_id) as msg_count,
              snippet(agent_messages_fts, 1, '<mark>', '</mark>', '...', 40) as snippet
       FROM agent_messages_fts f
       JOIN agent_sessions s ON s.id = f.session_id
-      WHERE agent_messages_fts MATCH ?
+      WHERE agent_messages_fts MATCH ? AND s.org_id = ?
       ORDER BY rank
       LIMIT ?
-    `).all(query, limit) as SqliteRow[];
+    `).all(toFtsLiteralPhrase(query), orgId, limit) as SqliteRow[];
     return rows.map(r => ({
       sessionId: r.session_id as string, orgId: r.org_id as string,
       messageCount: Number(r.msg_count), snippet: r.snippet as string, updatedAt: r.updated_at as string,

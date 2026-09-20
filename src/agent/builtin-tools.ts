@@ -104,8 +104,8 @@ export function registerBuiltinTools(
           suggestion: '可运行完整诊断获取更详细的分析',
         };
       }
-      // 搜索所有历史会话
-      const searchResults = store.search(findingId, 5);
+      // 搜索所有历史会话（D826: 租户必填 —— 用引擎所在 org，禁止跨租户检索）
+      const searchResults = store.search(findingId, getOrgId(), 5);
       if (searchResults.length > 0) {
         return {
           findingId,

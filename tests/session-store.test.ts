@@ -91,7 +91,7 @@ describe('SessionStore — FTS5 search', () => {
     store.addMessage(s2.id, 'user', '公司营收下滑严重');
     store.addMessage(s2.id, 'assistant', '从什么时候开始的？');
 
-    const results = store.search('协作效率');
+    const results = store.search('协作效率', 'org-A');
     expect(results.length).toBeGreaterThanOrEqual(1);
     expect(results[0].sessionId).toBe(s1.id);
   });
@@ -99,14 +99,14 @@ describe('SessionStore — FTS5 search', () => {
   it('Given no matching text, When searched, Then returns empty', () => {
     const s = store.createSession('test');
     store.addMessage(s.id, 'user', 'hello');
-    const results = store.search('不存在的关键词xyz');
+    const results = store.search('不存在的关键词xyz', 'test');
     expect(results).toHaveLength(0);
   });
 
   it('Given search by message content, When searched, Then finds matching content', () => {
     const s = store.createSession('acme-corp');
     store.addMessage(s.id, 'user', '我们需要提升营收');
-    const results = store.search('营收');
+    const results = store.search('营收', 'acme-corp');
     expect(results.length).toBeGreaterThanOrEqual(1);
     expect(results[0].orgId).toBe('acme-corp');
   });

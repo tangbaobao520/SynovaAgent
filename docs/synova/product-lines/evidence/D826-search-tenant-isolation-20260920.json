@@ -1,0 +1,120 @@
+{
+  "task": "D826",
+  "title": "search() 租户隔离（两条 SQL + 注入面 + HTML 面结论）· 判据 C/D",
+  "record_type": "test",
+  "date": "2026-09-20",
+  "team": "批十四小队（win 并行）",
+  "owner": "coder-b",
+  "worktree": ".synova-wt-team14",
+  "branch": "team/win-batch14",
+  "spec": ".claude/task-briefs/2026-09-20-D826-search-tenant-isolation.md",
+  "note": "memory/notes/implemented/2026-09-20-D826-search-tenant-isolation.md",
+  "decision": {
+    "ruling": "队长裁定 B —— 租户权威只取 `req.auth?.orgId`（JWT 验签后）；取不到 → 服务端实例 org `loadConfig().orgId`；永不采信 `?orgId=` / `x-synova-token`",
+    "why_not_extractAuth": "extractAuthFromRequest 优先级 2 是无签名的 x-synova-token（src/middleware/auth.ts:401-402，orgId=parts[1]），而 /api/sessions 在白名单（:124）、中间件白名单早退不验签（:282-284）⇒ 用它等于把租户权威交给调用方（换洞）",
+    "premise_corrections": [
+      "行号漂移：search 实为 src/store/session-store.ts:605（卡面写 :534）",
+      "原验收点 3『substr 切半个汉字』= 空判据（SQLite instr/substr 对 TEXT 是字符级）→ 已作废并替换"
+    ]
+  },
+  "entry": "GET /api/sessions/search?q=&limit=（src/routes/sessions.ts）→ SessionStore.search(query, orgId, limit)",
+  "tests": ["tests/store/search-tenant-isolation.test.ts（7 用例）"],
+  "commands": [
+    {
+      "id": "D826-1..7 绿",
+      "cmd": "node_modules/.bin/vitest run tests/store/search-tenant-isolation.test.ts",
+      "raw_output": " ✓ tests/store/search-tenant-isolation.test.ts (7 tests) 113ms\n Test Files  1 passed (1)\n      Tests  7 passed (7)",
+      "verdict": "pass"
+    },
+    {
+      "id": "修复前红基线（未改一行时）",
+      "cmd": "node_modules/.bin/vitest run tests/store/search-tenant-isolation.test.ts  # 实现前",
+      "raw_output": "× D826-1 跨租户不泄露 · 中文词走 LIKE 分支\nAssertionError: org-A 不得看到 org-B 的「渠道投放」: expected [ { …(5) } ] to deeply equal []\n× D826-2 … AssertionError: org-A 不得看到 org-B 的 d826markbeta: expected [ { …(5) }, { …(5) } ] to deeply equal []\n× D826-3 … 带 ?orgId=org-B 也不得越权拿到 org-B 数据\n× D826-4 … q=\"\\\"\" 不得为 500: expected [ 200, 400 ] to include 500\n× D826-6 … 未认证回落实例 org 时也不得看到 org-B\n Tests  5 failed | 2 passed (7)",
+      "verdict": "red（预期：两条 SQL 都不过滤 + MATCH 未转义 + 无权威链）"
+    },
+    {
+      "id": "反向验收 A（抽掉 LIKE 过滤）",
+      "cmd": "python3 去掉 `AND s.org_id = ?`(LIKE) 及其绑定参数 → vitest -t D826-1 / -t D826-2",
+      "raw_output": "== 缺陷态 A ==\n × D826-1 … AssertionError: org-A 不得看到 org-B 的「渠道投放」\n      Tests  1 failed | 6 skipped (7)\n ✓ D826-2（FTS5 半仍绿 → 两半独立可证伪）\n      Tests  1 passed | 6 skipped (7)",
+      "verdict": "red（且证明另一半未被连带）"
+    },
+    {
+      "id": "还原 A（cp + sha256）",
+      "cmd": "cp /tmp/d826-store-fixed.ts src/store/session-store.ts && shasum -a 256",
+      "raw_output": "7fb026d2b77398d4ae810b18d822b946ca104f1352440e28b56f66c11de92a7f  src/store/session-store.ts\n ✓ D826-1 … Tests 1 passed | 6 skipped (7)",
+      "verdict": "pass（指纹与修复态一致）"
+    },
+    {
+      "id": "反向验收 B（抽掉 FTS5 过滤）",
+      "cmd": "python3 去掉 `AND s.org_id = ?`(FTS5) 及其绑定参数 → vitest -t D826-2 / -t D826-1",
+      "raw_output": "== 缺陷态 B ==\n × D826-2 … AssertionError: org-A 不得看到 org-B 的 d826markbeta: expected [ { …(5) }, { …(5) } ] to deeply equal []\n      Tests  1 failed | 6 skipped (7)\n ✓ D826-1（LIKE 半仍绿）\n      Tests  1 passed | 6 skipped (7)",
+      "verdict": "red（两条 SQL 各自可证伪 → 队长硬要求 1 达成）"
+    },
+    {
+      "id": "反向验收 C（抽掉 FTS5 字面短语化）",
+      "cmd": "python3 将 toFtsLiteralPhrase(query) 还原为 query → vitest -t D826-4",
+      "raw_output": "== 缺陷态 C ==\n × D826-4 注入面 … AssertionError: 应命中字面 \"a OR b\" 的消息: expected false to be true\n      Tests  1 failed | 6 skipped (7)",
+      "verdict": "red（字面语义半亦可证伪）"
+    },
+    {
+      "id": "还原 C + 全量复跑",
+      "cmd": "cp /tmp/d826-store-fixed.ts src/store/session-store.ts && vitest run tests/store/search-tenant-isolation.test.ts",
+      "raw_output": "7fb026d2b77398d4ae810b18d822b946ca104f1352440e28b56f66c11de92a7f  src/store/session-store.ts\n ✓ tests/store/search-tenant-isolation.test.ts (7 tests) 113ms\n      Tests  7 passed (7)",
+      "verdict": "pass"
+    },
+    {
+      "id": "存量回归（签名同步未改判定）",
+      "cmd": "node_modules/.bin/vitest run tests/session-store.test.ts tests/store/fts-sync-trigger.test.ts tests/sessions-api.test.ts",
+      "raw_output": " ✓ tests/store/fts-sync-trigger.test.ts (5 tests)\n ✓ tests/session-store.test.ts (10 tests)\n ✓ tests/sessions-api.test.ts (6 tests)\n Test Files  3 passed (3)\n      Tests  21 passed (21)",
+      "verdict": "pass"
+    },
+    {
+      "id": "调用点同步（编译期证明）",
+      "cmd": "node_modules/.bin/tsc --noEmit | grep -E 'session-store|routes/sessions|src/cli|tui-v2/lib/commands|builtin-tools'",
+      "raw_output": "（零命中）total errors: 28（全部为存量：extensions/sentinels/_extinct/**、src/connectors/ima.ts、src/server.ts — 与本卡无关）",
+      "verdict": "pass（5 个 src 文件 + 新测试零 error ⇒ 全部调用点已同步）"
+    },
+    {
+      "id": "FTS 表 schema 零改动",
+      "cmd": "git diff -- src/store/session-store.ts | grep -E '^[+-].*(CREATE VIRTUAL TABLE|tokenize=)'",
+      "raw_output": "（无输出 → 建表段与 tokenize 未变）",
+      "verdict": "pass"
+    }
+  ],
+  "acceptance_points_coverage": [
+    { "point": "org-A 搜只在 org-B 存在的词 → 空（LIKE 分支）", "status": "pass", "how": "D826-1：org-A → []；org-B 同词 → 命中（同词对照排除『词不存在』）" },
+    { "point": "org-A 搜只在 org-B 存在的词 → 空（FTS5 分支）", "status": "pass", "how": "D826-2：同上，英文词走 FTS5；并断言 org-A 搜自己的词仍命中（不是全过滤）" },
+    { "point": "两条 SQL 都加 org 过滤且各自可证伪", "status": "pass", "how": "反向验收 A/B：分别抽掉 → 各自报红、另一半仍绿" },
+    { "point": "客户端入参不得选租户", "status": "pass", "how": "D826-3：org-A + ?orgId=org-B → 结果恒等于 org-A 无参结果、无 org-B 行，且有 log.warn 审计（requestedOrgId/authoritativeOrgId）" },
+    { "point": "注入面 200/400 绝无 500 + 字面短语", "status": "pass", "how": "D826-4：q=\" / q=a OR b / q=* / q=alpha AND 全 ∈ {200,400}；`a OR b` 只命中字面串（反向验收 C 证其可证伪）" },
+    { "point": "HTML 面结论（替换原空判据）", "status": "pass", "how": "D826-5 断言 `<mark>` 契约保留；消费者清单（grep -rln sessions/search）证明无 HTML 渲染 ⇒ 本卡注入面=FTS5 语法。注：该用例缺陷态亦绿 → 不具反向判别力，已标注" },
+    { "point": "未认证（白名单）→ 服务端实例 org，绝不返回全部", "status": "pass", "how": "D826-6：独立 app（无任何身份注入）+ SYNOVA_ORG_ID=org-A → 跨租户词 []、自身词命中、orgId=org-A" },
+    { "point": "五态定位", "status": "能跑未验证 → 健康（本卡范围内）", "how": "live=true（穿真实 HTTP 路由 + 真实 SQL）；testedThroughEntry=true（7 用例）。**验证边界**：身份边界为『模拟已验证身份』——白名单早退使本进程内无法用真实 JWT 中间件驱动租户（如实标注，禁 overclaim）" }
+  ],
+  "three_questions": {
+    "who_calls_it": "生产：`src/routes/sessions.ts` 的 `GET /api/sessions/search`（唯一 HTTP 入口）；`src/cli.ts:204`（CLI /search）、`src/tui-v2/lib/commands.ts:214`（TUI /search）、`src/agent/builtin-tools.ts:108`（历史会话检索工具）",
+    "test_through_real_impl": "tests/store/search-tenant-isolation.test.ts —— 真实 express 路由 + 真实 SessionStore(:memory:，同库两租户) + 真实 SQL（两条分支各走一次）；JWT 真实签发 + 真实 verifyJwtToken；未 mock 管线/路由/store（仅身份边界按白名单语义显式模拟）",
+    "what_breaks_if_deleted": "删掉租户过滤 → 任一租户可召回全部租户的会话片段（反向验收 A/B 已实证：跨租户命中）；删掉字面短语化 → `q=\"` 等输入使 sqlite 抛异常回落 500，且 `a OR b` 被当布尔算符误召回（反向验收 C 已实证）"
+  },
+  "guardrails": {
+    "no_test_only_switch_in_src": true,
+    "no_mock_of_pipeline": true,
+    "fts_table_schema_unchanged": true,
+    "no_write_to_scripts_audit_or_control_tower": true,
+    "reverse_verification_serially_with_cp_and_sha256": true,
+    "audit_claim": "本文件不含任何『审计通过/审计合格』结论；队内结论仅限『可提请独立审计』/『退回（附理由）』"
+  },
+  "case_reverse_power": {
+    "has_reverse_power": ["D826-1", "D826-2", "D826-3", "D826-4", "D826-6"],
+    "no_reverse_power_explicitly_marked": ["D826-5（snippet 契约断言，非行为修复）", "D826-7（limit 边界，弱）"]
+  },
+  "overclaim_guard": "D826 的价值是为多租户阶段做纵深防御；当前 D590 单机本地信任模型下今天实际泄露风险 ≈ 0。不得表述为『当前正在泄露』。",
+  "leftovers": [
+    "🔴 鉴权模型层缺陷（队长已升级处置；结论留 K3/CTO）：白名单路由 req.auth 恒空（middleware/auth.ts:282-284），extractAuthFromRequest 落到无签名 x-synova-token（:401-402）⇒ 白名单上调用方可自称任意租户。影响前缀见 note §遗留 1（:124 起 13 条）",
+    "listSessions() 无租户过滤 → GET /api/sessions 列表同型泄露面（另立卡）",
+    "GET /api/sessions/:id 无 org 校验（任取 id 可读任意租户会话，另立卡）",
+    "多租户阶段需按施工图 §5.5 重构为会话级鉴权（建议 26 线验收点挂账）",
+    "TUI 显示 <mark> 原文（cosmetic，与 src/cli.ts:209 ANSI 着色对齐，另立卡）",
+    "DSH UNINDEXED org_id 免 join 优化（性能卡候选）"
+  ]
+}

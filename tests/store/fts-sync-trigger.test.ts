@@ -71,12 +71,12 @@ describe('D820-FTS: FTS5 同步触发器（删除可用 + 索引不残留消息�
     const sid = store.createSession('org-x').id;
     store.addMessage(sid, 'user', 'customer concentration is too high');
     expect(count(db, 'agent_messages_fts'), '双写后索引应有 1 行').toBe(1);
-    expect(store.search('customer', 5).map(r => r.sessionId), '删除前 FTS 可召回').toContain(sid);
+    expect(store.search('customer', 'org-x', 5).map(r => r.sessionId), '删除前 FTS 可召回').toContain(sid);
 
     expect(() => store.deleteSession(sid), '删有消息的会话不得抛错（修复前 SQL logic error）').not.toThrow();
     expect(count(db, 'agent_messages'), '消息行真删').toBe(0);
     expect(count(db, 'agent_messages_fts'), '索引行真清（不是留孤儿）').toBe(0);
-    expect(store.search('customer', 5), '删除后不得再召回已删会话内容（隐私面）').toEqual([]);
+    expect(store.search('customer', 'org-x', 5), '删除后不得再召回已删会话内容（隐私面）').toEqual([]);
     db.close();
   });
 
@@ -89,7 +89,7 @@ describe('D820-FTS: FTS5 同步触发器（删除可用 + 索引不残留消息�
 
     expect(() => db.prepare('DELETE FROM agent_messages WHERE rowid = ?').run(rowId)).not.toThrow();
     expect(count(db, 'agent_messages_fts')).toBe(0);
-    expect(store.search('searchable', 5)).toEqual([]);
+    expect(store.search('searchable', 'org-x', 5)).toEqual([]);
     db.close();
   });
 
@@ -122,7 +122,7 @@ describe('D820-FTS: FTS5 同步触发器（删除可用 + 索引不残留消息�
     expect(aligned.c, '每行索引都必须挂到同 id 的消息行上').toBe(count(db, 'agent_messages'));
     expect(count(db, 'agent_messages_fts'), '索引行数 = 消息行数（孤儿被清）').toBe(count(db, 'agent_messages'));
     expect(ftsMatchCount(db, 'orphan'), '孤儿索引明文必须已从索引中消失（隐私面，直查 FTS 不靠 join）').toBe(0);
-    expect(store.search('orphan', 5), '经 API 也不得召回').toEqual([]);
+    expect(store.search('orphan', 'org-x', 5), '经 API 也不得召回').toEqual([]);
     expect(ftsMatchCount(db, 'legacy'), '真实消息仍可召回（重建没把数据丢掉）').toBe(2);
     db.close();
   });
