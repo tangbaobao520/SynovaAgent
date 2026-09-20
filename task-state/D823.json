@@ -13,7 +13,7 @@
     "docs/synova/product-lines/evidence/D823-im-inbound-history-20260920.json"
   ],
   "impl": {
-    "sha": null,
+    "sha": "3a0d5b5c",
     "by": "coder-b(批十四小队)",
     "at": "2026-09-20",
     "decision": "(a′) 会话级引擎复用（队长 2026-09-20 批，附 6 条硬条件；(b) 否决）",
@@ -34,7 +34,7 @@
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-09-20",
-  "updated_by": "coder-b(批十四小队)",
+  "updated_by": "synova-cto(批十四小队队长)",
   "domain": "win",
   "owner": "coder-b(批十四小队)",
   "team": "批十四小队",
