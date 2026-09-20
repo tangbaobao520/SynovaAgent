@@ -1,7 +1,7 @@
 {
   "task_id": "D852",
   "title": "§6-5 四项产品决定落地：线 8 出站/入站 webhook、线 4 spill 双阈值、线 3 时间窗粒度、线 25 live/restart（各新增验收点）",
-  "status": "claimed",
+  "status": "impl_done",
   "risk": "medium",
   "spec": "依据 docs/synova/coordination/创始人裁定表-§6五项-20260920.md §6-5（四项产品决定）与 docs/authority/产品完成度定义与推进总纲-20260918.md §2.1（11 项 DSH 缺口『归线不新开』），把四项决定落成 product-lines.yaml 中可证伪的验收点（只加验收点、不新增线），并把 live/restart 清单成文 + 起草 V1 轻量变更单（冻结件 §六 路径）。",
   "write_set": [
@@ -14,7 +14,7 @@
     "task-state/D852.json",
     ".claude/task-briefs/D852.md"
   ],
-  "impl": null,
+  "impl": "docs/synova/product-lines/product-lines.yaml（+6 验收点，28 线不变）+ preconditions.yaml（NA-D852 + CLC-1/CLC-2）+ 3 份 coordination 落地件；已合 main 25082884（PR #681）",
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-09-20",
