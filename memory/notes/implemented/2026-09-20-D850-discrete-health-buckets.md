@@ -82,3 +82,32 @@ null 档不参与求和但**显式登记在 `identity.null_terms`** —— 所�
 （`.github/workflows/product-progress.yml` 在 push 到 main 后调 `refresh-all.sh` 重生成并推 `auto/product-progress`）。
 故本卡**本地由脚本重生成并验证，但不把它们纳入提交**（提交会硬阻断，且 `--no-verify` 是本项目红线）。
 → 合并后由 CI 重生成；CTO 需用 PAT 从 `auto/product-progress` 开 PR 合并（D786 通道设计 b）。
+
+## 七、退回与返工（V-1 / V-2，同批 2026-09-20）
+
+首轮交付被队长退回，两点都成立，记录在此以防复发：
+
+- **V-1（阻塞）**：面板侧 evidence_cmd **144/203 条 rc≠0**。根因两处，都在
+  `scripts/product-lines/calc-progress.py`：① 生成命令时把**点分路径当单键**
+  （`d['buckets']['other_states.live_unverified']` → KeyError，正确是逐段
+  `d['buckets']['other_states']['live_unverified']['count']`）；② 线级键用 `lines[].buckets.x` 占位（非合法取值）。
+  自验还查出**队长未点名的第三子缺陷**：**57/203 条值不匹配**——探针型档输出 `implemented=SOURCE_ABSENT`
+  而档值是 `null`；线级 `written_not_wired` 输出的是**全局** 3 而不是本线的值。
+- **V-2（阻塞）**：面板新契约（buckets / evidence_cmd）**零测试覆盖** → 117/0 全绿仍漏 V-1。
+  补 `tests/project/calc-progress-panel.test.sh`（密封 + 可进 CI）：全部 203 条 evidence_cmd 逐条实跑断言
+  rc=0 且值 == JSON count；源侧判据；null+reason；恒等式；**反漂移**（已提交派生件 == 现场重跑）；面板零渲染型百分比。
+
+**设计变更（重要）**：首版 evidence_cmd 是「重跑本器 + 抽值」。实测单次派生 **~1.4 s**，
+203 档 × 1.4 s ≈ **5 分钟** —— 看板命令与测试都不可用（可复现 ≠ 可等待）。
+改为三件套，语义分开、不许混用：
+- `evidence_cmd`：从**派生物**复现该档取值（逐段下钻 + 线 id 定位；必 rc=0；毫秒级），
+- `regenerate_cmd`：整件**源侧重生成**（一次派生全件，供读者从权威输入重算），
+- `independent_check_cmd`（仅顶层 `written_not_wired`，不读派生物独立复现同一数字）/
+  `source_probe_cmd`（仅 `missing`，复现「为什么没有数字」= `SOURCE_ABSENT`）。
+
+**口径边界（队长裁定，已写入两件 `identity.note`）**：恒等式**只保证完备性**（丢点会显形为
+`state_unknown`），**不保证各档归类正确** —— 它是自洽性检查，不是正确性证据。
+
+**跨切片一致性**：D852（PR #681）合并后 `product-lines.yaml` 验收点 174 → 180，
+`ledger.json` 的 `backlog_points` **46 → 52**（`v1_total` 仍 128）；面板 `denominator` 174 → 180，
+`total_lines` 仍 29。派生件已按新 main 重生成后提交。

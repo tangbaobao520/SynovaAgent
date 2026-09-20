@@ -1,8 +1,8 @@
 {
   "schema": "project-ledger/1",
   "generated_by": "gen-project-board.py",
-  "generated_at": "2026-09-20T22:34:03+08:00",
-  "git_head": "e1b3a9c50cfbbca40877294bfa1369d42109a0ec",
+  "generated_at": "2026-09-20T23:01:23+08:00",
+  "git_head": "3170eaa16d46347de7df084f0ab63a88822dad77",
   "sources": {
     "yaml": "docs/synova/product-lines/product-lines.yaml",
     "v1_dod": "docs/synova/project/26线-V1验收标准-v0.2-20260917.md",
@@ -27,6 +27,7 @@
       "schema": "discrete-health-buckets/1",
       "authority": "docs/authority/产品完成度定义与推进总纲-20260918.md §1.2（v1，2026-09-18） + docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md §二（v1.1，2026-09-19） + 方案-项目度量-从声明驱动到事实驱动.md §四/§六（创始人授权引用）",
       "granularity": "acceptance_point",
+      "regenerate_cmd": "python3 scripts/project/gen-project-board.py --out docs/synova/project/ledger.json",
       "denominator": 128,
       "denominator_note": "与 `docs/synova/product-lines/product-progress.json` 的顶层 buckets 分母不同（此处 = V1 断言表条数；该件 = product-lines.yaml 验收点数）——同名档不可跨件混读，各档自带 denominator",
       "healthy": {
@@ -90,7 +91,7 @@
         "denominator": 128,
         "known_terms_sum": 128,
         "holds": true,
-        "note": "null 档不参与求和（其归属不可判定，禁猜 0）；state_unknown 是显式残余，故恒等式永远闭合——任何点都不会被静默丢弃"
+        "note": "null 档不参与求和（其归属不可判定，禁猜 0）；state_unknown 是显式残余，故恒等式永远闭合——任何点都不会被静默丢弃。边界（队长 2026-09-20 裁定）：本恒等式**只保证完备性**（丢点会显形为 state_unknown），**不保证各档归类正确**——归类正确性由tests/project/*.test.sh 与各档 evidence_cmd/判定源探针负责；它是自洽性检查，不是正确性证据"
       },
       "strict_source_absent": {
         "field": "testedThroughEntry / live / wired / implemented",
@@ -103,7 +104,7 @@
       "red": 6
     },
     "blocked_count": 0,
-    "backlog_points": 46
+    "backlog_points": 52
   },
   "pr_queue": {
     "source": "synova/project/pr-queue.json",
@@ -409,7 +410,7 @@
       "v1_passed": 0,
       "v1_verified": 0,
       "pending_k3": 0,
-      "points_total": 8,
+      "points_total": 9,
       "freshness": {
         "green": 0,
         "yellow": 0,
@@ -475,7 +476,7 @@
       "v1_passed": 2,
       "v1_verified": 0,
       "pending_k3": 0,
-      "points_total": 8,
+      "points_total": 9,
       "freshness": {
         "green": 2,
         "yellow": 0,
@@ -785,7 +786,7 @@
       "v1_passed": 0,
       "v1_verified": 0,
       "pending_k3": 0,
-      "points_total": 6,
+      "points_total": 8,
       "freshness": {
         "green": 0,
         "yellow": 0,
@@ -2202,7 +2203,7 @@
       "v1_passed": 4,
       "v1_verified": 0,
       "pending_k3": 0,
-      "points_total": 7,
+      "points_total": 9,
       "freshness": {
         "green": 4,
         "yellow": 0,
@@ -5865,6 +5866,17 @@
       "title": "度量口径改造：取消整体完成度百分数 → 离散三档 + evidenceCmd（小队 D850 编码 A）",
       "status": "impl_done",
       "owner": "mac-coding",
+      "domain": "mac",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 0,
+      "updated_at": "2026-09-20"
+    },
+    {
+      "id": "D852",
+      "title": "§6-5 四项产品决定落地：线 8 出站/入站 webhook、线 4 spill 双阈值、线 3 时间窗粒度、线 25 live/restart（各新增验收点）",
+      "status": "claimed",
+      "owner": "mac-dev-doc",
       "domain": "mac",
       "depends_on": [],
       "blocked": null,

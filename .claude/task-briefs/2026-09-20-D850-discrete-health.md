@@ -88,9 +88,10 @@ SynovaAgent 是一个驻扎企业的 AI 诊断系统。诊断是手段，增长�
 - scripts/product-lines/calc-progress.py — total_lines 计入 v2_lines 得 29；顶层去百分比字段改 buckets；线级 progress_pct 保留并标 deprecated + 加线级 buckets；汇总日志去百分比
 - scripts/product-lines/gen-progress-page.py — 面板零百分比：29 条产品线 + 三档 + 每档 evidenceCmd；页脚文案同步改离散口径
 - tests/project/gen-project-board.test.sh — 新增组⑩ 三档恒等式/evidence_cmd 实跑/无百分比字段；修 CT-67 三处 live 硬编码 → 不变量断言；修组⑤ 反条件断言
+- tests/project/calc-progress-panel.test.sh — 【V-2 修复，队长批写集】面板契约密封测试：全部 evidence_cmd（顶层 + 每条线）逐条实跑断言 rc=0 且值 == JSON count；源侧独立核对命令；null 带 reason + 恒等式；反漂移（已提交派生件 == 现场重跑）；面板零渲染型百分比
 - docs/synova/project/ledger.json — 由 gen-project-board.py 重生成（禁手改）
 - task-state/D850.json — 任务卡登记
-- .claude/task-briefs/D850.md — 本文件
+- .claude/task-briefs/2026-09-20-D850-discrete-health.md — 本文件（task-start 原生成 `D850.md` 无日期前缀 → G12 今日认领窗口漏判，已改名）
 - memory/notes/implemented/2026-09-20-D850-discrete-health-buckets.md — 决策沉淀（铁律 49，commit-msg 门禁消费）
   ※ 与任务卡 writeScopes 的偏差：卡写 `memory/notes/proposed`，实际落 `implemented/`。
     理由：`check-notes-lifecycle.sh` 判定「proposed/ Note 引用 D# 且该 D# 已 impl_done」= 僵尸条目 → 硬阻断；

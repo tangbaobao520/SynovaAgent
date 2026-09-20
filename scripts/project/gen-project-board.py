@@ -636,6 +636,8 @@ def build_buckets(v1_total, v1_passed, v1_verified, v1_pending_k3):
         "schema": BUCKETS_SCHEMA,
         "authority": BUCKETS_AUTHORITY,
         "granularity": "acceptance_point",
+        "regenerate_cmd": ("python3 scripts/project/gen-project-board.py --out "
+                           "docs/synova/project/ledger.json"),
         "denominator": v1_total,
         "denominator_note": ("与 `docs/synova/product-lines/product-progress.json` 的顶层 buckets "
                              "分母不同（此处 = V1 断言表条数；该件 = product-lines.yaml 验收点数）——"
@@ -685,7 +687,11 @@ def build_buckets(v1_total, v1_passed, v1_verified, v1_pending_k3):
         "known_terms_sum": known_sum,
         "holds": (v1_total is not None and known_sum == v1_total),
         "note": ("null 档不参与求和（其归属不可判定，禁猜 0）；state_unknown 是显式残余，"
-                 "故恒等式永远闭合——任何点都不会被静默丢弃"),
+                 "故恒等式永远闭合——任何点都不会被静默丢弃。"
+                 "边界（队长 2026-09-20 裁定）：本恒等式**只保证完备性**"
+                 "（丢点会显形为 state_unknown），**不保证各档归类正确**——归类正确性由"
+                 "tests/project/*.test.sh 与各档 evidence_cmd/判定源探针负责；"
+                 "它是自洽性检查，不是正确性证据"),
     }
     buckets["strict_source_absent"] = {
         "field": "testedThroughEntry / live / wired / implemented",

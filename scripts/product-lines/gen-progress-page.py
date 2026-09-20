@@ -165,16 +165,19 @@ def render_buckets(buckets):
         e = buckets.get(key) or {}
         cmd = html.escape(e.get("evidence_cmd") or "")
         why = e.get("reason")
+        probe = e.get("source_probe_cmd")
+        probe_html = ("<div class='bkt-why'>「无判定源」这一步的复现依据（点开可跑）：</div>"
+                      "<pre class='bkt-cmd'>%s</pre>" % html.escape(probe)) if probe else ""
         why_html = ("<div class='bkt-why'>为什么「无法判定」：%s</div>"
                     % html.escape(scrub(why))) if why else ""
         rows.append(
             "<div class='bkt'>"
             "<div class='bkt-head'><b style='color:%s'>%s</b> "
             "<span class='bkt-cnt'>%s</span></div>"
-            "<div class='bkt-def'>%s</div>%s"
+            "<div class='bkt-def'>%s</div>%s%s"
             "<pre class='bkt-cmd'>%s</pre>"
             "</div>" % (color, label, html.escape(fmt_bucket_count(e)),
-                        html.escape(scrub(e.get("definition") or "")), why_html, cmd))
+                        html.escape(scrub(e.get("definition") or "")), why_html, probe_html, cmd))
     other = buckets.get("other_states") or {}
     others = []
     for key, label in OTHER_STATE_UI:
@@ -185,14 +188,17 @@ def render_buckets(buckets):
     ident = buckets.get("identity") or {}
     denom = buckets.get("denominator")
     note = buckets.get("denominator_note") or ""
+    regen = buckets.get("regenerate_cmd") or ""
+    regen_html = ("<div class='bkt-sum'>整件重生成命令（源侧一次派生，上面每档的数字都由它产出）："
+                  "<pre class='bkt-cmd'>%s</pre></div>" % html.escape(regen)) if regen else ""
     return (
         "<div class='buckets'>%s"
         "<div class='bkt-others'><b>其它状态（显式列出，不并进「健康」、不丢点）：</b>%s</div>"
-        "<div class='bkt-sum'>各档之和 + 显式其它状态 = 验收点总数 %s（恒等式%s）。%s</div>"
+        "<div class='bkt-sum'>各档之和 + 显式其它状态 = 验收点总数 %s（恒等式%s）。%s</div>%s"
         "</div>" % ("".join(rows), "　·　".join(others),
                     html.escape(str(denom)),
                     "成立" if ident.get("holds") else "**未成立——数据源异常，请勿采信**",
-                    html.escape(scrub(note))))
+                    html.escape(scrub(note)), regen_html))
 
 
 def render_line_card(line, todos_by_line):

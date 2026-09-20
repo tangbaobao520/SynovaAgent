@@ -105,6 +105,8 @@ BUCKETS_AUTHORITY = (
 # D809 撤回标记（不是证据类型，是「点亮已撤回、等接线」的显式声明）——三档中「写了没接」的唯一源
 WITHDRAWAL_KIND = "pending_wiring"
 V1_DOD_GLOB = "docs/synova/project/26线-V1验收标准*.md"
+# 本器派生物（evidence_cmd 复现取值的位置；仓库相对路径，跨平台）
+BUCKETS_ARTIFACT = "docs/synova/product-lines/product-progress.json"
 
 # 「写了没接」档的 evidence_cmd = **独立源侧扫描**（不重跑本器、不读派生物）
 _WITHDRAWN_CMD = """python3 - written_not_wired <<'PY'
@@ -132,17 +134,38 @@ print('%s=%s' % (name, 'SOURCE_PRESENT' if hits else 'SOURCE_ABSENT'))
 PY"""
 
 
-def rerun_evidence_cmd(json_path, field):
-    """其余档的 evidence_cmd = **重跑本器**（源 = yaml + 证据记录 + V1 表撤回标记）后抽取该档。
+def artifact_drill_cmd(field, segments, line_id=None):
+    """三档 evidence_cmd = 从**本器产出的派生物**复现该档取值的命令（每档必有）。
 
-    @input  — json_path:str（`buckets` 内的点分路径，如 'other_states.live_unverified'）
-              field:str（档名，命令输出 `<field>=<count>`）
-    @output — str（可直接交给 bash -c 的可复现命令）
-    @contract — 重跑即「从权威输入重新派生」，**不读回派生物**（读回自己的输出不构成证据）。
+    @input  — field:str（档名；命令输出 `<field>=<值>`，null 打印 `None`）
+              segments:tuple[str,...]（**逐段**下钻路径，从顶层对象起算；
+                        如 ('buckets','other_states','live_unverified')）
+              line_id:int|str|None（非 None = 线级：先按线 id 定位该线，再下钻 segments）
+    @output — str（可直接交给 bash -c 的命令；**必 rc=0** 且值 == 派生物里的 count）
+    @contract — V-1 修复（退回单实测 144/203 条 rc≠0），两条硬约束:
+                ① **禁止把点分路径当单键** —— 复盘 `d['buckets']['other_states.live_unverified']`
+                   必然 KeyError；必须逐段 `d['buckets']['other_states']['live_unverified']`
+                ② **线级禁止 `lines[]` 占位** —— 必须按线 id 定位具体线
+                   （`next(l for l in d['lines'] if str(l['id'])==<id>)`）
+                语义边界（诚实声明）：本命令复现的是「该数字在**派生物**中的取值」；
+                派生物本身的**源侧重生成**命令见 `buckets.regenerate_cmd`（一次派生全件）；
+                不读派生件的**独立核对**见 `independent_check_cmd`（有则给）。
+                之所以不逐档重跑本器：单次派生实测 ~1.4s × 203 档 ≈ 5 分钟，
+                看板命令与测试都不可用（可复现 ≠ 可等待）。
     """
-    return ("python3 scripts/product-lines/calc-progress.py --out /tmp/pp-evidence.json >/dev/null 2>&1 && "
-            "python3 -c \"import json;d=json.load(open('/tmp/pp-evidence.json',encoding='utf-8'));"
-            "v=d['buckets']['%s']['count'];print('%s=%%s' %% v)\"" % (json_path, field))
+    if line_id is not None:
+        expr = "next(l for l in d['lines'] if str(l['id']) == %s)" % repr(str(line_id))
+    else:
+        expr = "d"
+    # 逐段下钻到该档的 **count**（segments 以档名为末段，故再补一段 'count'）
+    expr += "".join("[%s]" % repr(s) for s in tuple(segments) + ("count",))
+    return ("python3 -c \"import json;d=json.load(open('%s',encoding='utf-8'));v=%s;"
+            "print('%s=' + str(v))\"" % (BUCKETS_ARTIFACT, expr, field))
+
+
+# 全件源侧重生成命令（一次派生，供 buckets.regenerate_cmd）
+REGENERATE_CMD = ("python3 scripts/product-lines/calc-progress.py --out "
+                  "docs/synova/product-lines/product-progress.json")
 
 
 _MISSING_REASON = ("本仓无「implemented」机器可读源（yaml 与证据记录均无；而总纲 §1.2「缺」的"
@@ -167,14 +190,14 @@ _BUCKET_DEFS = {
 }
 
 
-def build_buckets(status_counts, withdrawn_count, withdrawn_known, denominator, nested=False):
+def build_buckets(status_counts, withdrawn_count, withdrawn_known, denominator, line_id=None):
     """D850: 六态状态机 → **离散三档**（+ 显式其它态），每档带可复现命令；无法判定者 null + 原因。
 
     @input  — status_counts:dict[str,int]（六态计数，SIX_STATES 全键）
               withdrawn_count:int|None（本分母内的 D809 撤回点数；None = V1 断言表不可用）
               withdrawn_known:bool（撤回源是否可读）
               denominator:int|None（本口径的分母 = 验收点数；None = 未知）
-              nested:bool（True = 线级 buckets，evidence_cmd 指 `lines[i].buckets.*`）
+              line_id:int|str|None（非 None = 线级 buckets；evidence_cmd 按**线 id** 定位具体线）
     @output — dict（schema discrete-health-buckets/1）：
                 healthy / written_not_wired / missing（三档，互斥）
                 + other_states{wired_broken, live_unverified, stale, state_unknown}
@@ -208,50 +231,70 @@ def build_buckets(status_counts, withdrawn_count, withdrawn_known, denominator, 
         n_unknown = uncommitted - withdrawn_count
         w_reason = None
 
-    def entry(count, definition, source, cmd, reason=None):
-        return {"count": count, "evidence_cmd": cmd, "definition": definition,
-                "source": source, "reason": reason}
+    def entry(count, definition, source, segments, reason=None, independent=None, probe=None):
+        """一档 = 值 + 口径 + **可复现命令**（V-1: 逐段下钻 + 线 id 定位）。
 
-    pre = "lines[].buckets." if nested else ""
+        @input  — segments:tuple[str,...] 从顶层起的**逐段**路径（含 'buckets'）
+                  independent:str|None 不读派生件、**独立复现同一个数字**的命令（有则给）
+                  probe:str|None 证明该档「无机器可读判定源」的命令（用于显式 null 的档；
+                        它**不**复现数字，只复现「为什么没有数字」——两者语义不可混用）
+        """
+        return {
+            "count": count,
+            "evidence_cmd": artifact_drill_cmd(segments[-1], segments, line_id),
+            "independent_check_cmd": independent,
+            "source_probe_cmd": probe,
+            "definition": definition,
+            "source": source,
+            "reason": reason,
+        }
+
+    def seg(*parts):
+        return ("buckets",) + tuple(parts)
+
+    # 独立复现（numeric）只给**顶层 written_not_wired**：线级的独立扫描需按线过滤 V1 表行，
+    # 与「线点集 ∩ 撤回集」的口径可能因 yaml/V1 表不同步而分歧 → 不给（宁缺勿造）。
+    # 「判定源存在性探针」只给 missing（显式 null 的那一档）——它复现的是「为什么没有数字」。
+    ind_withdrawn = _WITHDRAWN_CMD if line_id is None else None
+    probe_missing = _MISSING_PROBE_CMD if line_id is None else None
     buckets = {
         "schema": BUCKETS_SCHEMA,
         "authority": BUCKETS_AUTHORITY,
         "granularity": "acceptance_point(product-lines.yaml)",
         "denominator": denominator,
+        "regenerate_cmd": REGENERATE_CMD,
         "denominator_note": ("与 `docs/synova/project/ledger.json` 的 totals.buckets 分母不同"
                              "（此处 = product-lines.yaml 验收点数；账本 = V1 断言表条数）——"
                              "同名档不可跨件混读，各档自带 denominator"),
         "healthy": entry(
             verified, _BUCKET_DEFS["healthy"],
-            "证据记录（六态状态机出口 verified）", rerun_evidence_cmd(pre + "healthy", "healthy")),
+            "证据记录（六态状态机出口 verified）", seg("healthy")),
         "written_not_wired": entry(
             n_written, _BUCKET_DEFS["written_not_wired"],
             "V1 断言表「证据」列 = pending_wiring（D809 撤回标记）",
-            _WITHDRAWN_CMD, reason=w_reason),
+            seg("written_not_wired"), reason=w_reason, independent=ind_withdrawn),
         "missing": entry(
             None, _BUCKET_DEFS["missing"],
             "判定手段 = 代码检索（本口径禁用；事实驱动 §六 实测静态检测 3/5=60%）",
-            _MISSING_PROBE_CMD,
-            reason=_MISSING_REASON,
+            seg("missing"), reason=_MISSING_REASON, probe=probe_missing,
         ),
         "other_states": {
             "wired_broken": entry(
                 failed + rejected, _BUCKET_DEFS["wired_broken"],
                 "证据记录（六态 failed + rejected）",
-                rerun_evidence_cmd(pre + "other_states.wired_broken", "wired_broken")),
+                seg("other_states", "wired_broken")),
             "live_unverified": entry(
                 pending, _BUCKET_DEFS["live_unverified"],
                 "证据记录（六态 pending_k3）",
-                rerun_evidence_cmd(pre + "other_states.live_unverified", "live_unverified")),
+                seg("other_states", "live_unverified")),
             "stale": entry(
                 stale, _BUCKET_DEFS["stale"],
                 "证据记录 + git（六态 stale）",
-                rerun_evidence_cmd(pre + "other_states.stale", "stale")),
+                seg("other_states", "stale")),
             "state_unknown": entry(
                 n_unknown, _BUCKET_DEFS["state_unknown"],
                 "product-lines.yaml 验收点 − 撤回集（六态 uncommitted）",
-                rerun_evidence_cmd(pre + "other_states.state_unknown", "state_unknown"),
-                reason=w_reason),
+                seg("other_states", "state_unknown"), reason=w_reason),
         },
     }
     terms = {
@@ -272,7 +315,11 @@ def build_buckets(status_counts, withdrawn_count, withdrawn_known, denominator, 
         "known_terms_sum": known_sum,
         "holds": (denominator is not None and known_sum == denominator),
         "note": ("null 档不参与求和（归属不可判定，禁猜 0）；state_unknown 是显式残余，"
-                 "故恒等式永远闭合——任何验收点都不会被静默丢弃"),
+                 "故恒等式永远闭合——任何验收点都不会被静默丢弃。"
+                 "边界（队长 2026-09-20 裁定）：本恒等式**只保证完备性**"
+                 "（丢点会显形为 state_unknown），**不保证各档归类正确**——归类正确性由"
+                 "tests/project/calc-progress-panel.test.sh 与源侧独立核对命令负责；"
+                 "它是自洽性检查，不是正确性证据"),
     }
     buckets["strict_source_absent"] = {
         "field": "testedThroughEntry / live / wired / implemented",
@@ -590,7 +637,9 @@ def compute(yaml_path, evidence_dir, override_path, git_cmd, out_path, v1_dod_pa
             "verified": verified,
             # D850: 百分比口径已取消；本字段仅为兼容 win 域消费方而保留，**已 deprecated**
             "progress_pct": progress,
-            "buckets": build_buckets(counts, line_withdrawn, withdrawn_known, total, nested=True),
+            # V-1 修复：线级 evidence_cmd 必须按**线 id** 定位（原用 `lines[]` 占位 → 全不可跑）
+            "buckets": build_buckets(counts, line_withdrawn, withdrawn_known, total,
+                                     line_id=line["id"]),
             "k3_gate": k3_gate,
             "status_counts": counts,
             "points": points_out,
