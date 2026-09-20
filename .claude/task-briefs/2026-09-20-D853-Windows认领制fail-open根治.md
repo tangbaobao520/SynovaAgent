@@ -201,6 +201,20 @@ CI 实测（`ddd283ac`）：**ubuntu success**；windows 只剩 `claim_release.t
 - 两处均为**取证通道**，零语义变更、零断言放宽；自检：注入失败 → `DIAG-FAIL …` 如期出现；正常态输出零变化
   （staging_guard 38/0、claim_release 33/0）。
 
+## 第六轮（2026-09-20）：H 前提修正 + H2 契约级 + 诊断压缩
+CI（`e974da23`）断言级证据到位：
+- `staging_guard.test.sh`：`DIAG-H rc=1 mark=[SYNO-RESOLVER-DEGRADED] out=[]` → **直调 resolver 确实断链并发标记**，
+  但同场景走 guard 是 `ec0/warn`。根因判定：**夹具 H 的"shim 断链"前提在 Windows 上不成立**——
+  guard 侧 `_bash_env()` 会把 `Path(sys.executable).parent`（Windows = hostedtoolcache，**里面有可用 python3**）
+  前置进 PATH → PATH 上的坏 shim 被"反超" → 链根本没断 → guard 正常判 → 命中场景 C 留下的"D901 已释放"台账 → warn。
+  （不是 guard 没接标记：那一路由 H2 全平台确定覆盖。）
+- 处置：H 改为**前提探针门控**（直调 resolver 未发标记 → 打印 `⚠ 场景H 前提不可造（…）→ 不适用`，
+  **不计分也不静默通过**）；新增 **H2 契约级**：把沙箱 resolver 换成"只发 `SYNO-RESOLVER-DEGRADED` + exit 1"的桩
+  → 断言 guard `exit 1` + `status=block` + `degraded:true` + 原因点名。H2 **与环境无关**，
+  且在基线 guard（无标记解析）上红 3 条 = 判别性成立。
+- `claim_release.test.sh`：`DIAG-FAIL` 条目压到 ≤26 字符（4 条断言名一起活过 `cut -c1-450`）；
+  新增 `DIAG-⑧` 打印 `str repo` vs `Path repo` 的原始差异（`BOTH=[…]`），供下一轮定位 Windows 上的 str/Path 分歧。
+
 ## 架构层: 基础设施
 控制塔门禁层（`scripts/workflow/**` + `scripts/control-tower/**` + `tests/control-tower/**`），不进 L1-L5，不 import `src/**`。
 
@@ -218,6 +232,7 @@ CI 实测（`ddd283ac`）：**ubuntu success**；windows 只剩 `claim_release.t
 | 文件 | 类型 |
 |---|---|
 | .claude/task-briefs/2026-09-20-D853-Windows认领制fail-open根治.md | task |
+| memory/notes/implemented/2026-09-20-D853-windows-claim-gate-failopen.md | task |
 | tests/control-tower/claim_release.test.sh | task |
 | tests/control-tower/staging_guard.test.sh | task |
 

@@ -31,7 +31,7 @@ PASS=0; FAIL=0
 pass() { PASS=$((PASS + 1)); echo "  ✅ $1"; }
 # D853（F12 同款修法）: 失败断言名必须进 tail -8 —— 否则 CI 注解里只剩尾部 ✅，根本看不见是哪条红
 FAILLOG=""
-fail() { FAIL=$((FAIL + 1)); echo "  ❌ $1" >&2; FAILLOG="${FAILLOG}${1} ; "; }
+fail() { FAIL=$((FAIL + 1)); echo "  ❌ $1" >&2; FAILLOG="${FAILLOG}$(printf '%s' "$1" | cut -c1-26); "; }
 assert_eq() { if [ "$1" = "$2" ]; then pass "$3 (=$1)"; else fail "$3 — 实际 $1 期望 $2"; fi; }
 assert_contains() { if echo "$1" | grep -qF -- "$2"; then pass "$3"; else fail "$3 — 未找到: $2"; fi; }
 assert_not_contains() { if echo "$1" | grep -qF -- "$2"; then fail "$3 — 不应包含: $2"; else pass "$3"; fi; }
@@ -111,6 +111,9 @@ print(a['released'])
 " 2>&1)
 assert_contains "$BOTH" "SAME" "⑧ str repo 与 Path repo 判定一致"
 assert_contains "$BOTH" "True" "⑧ str repo 仍能识别已释放（源头过滤不被吞）"
+# D853: ⑧ 的原始差异（CI 上一句"SAME 未找到"信息量不够——要看 a/b 各自判什么）
+DIAG8=""
+printf '%s' "$BOTH" | grep -qF "SAME" || DIAG8="BOTH=[$(printf '%s' "$BOTH" | tr '\n' '/' | tr -s ' ' | cut -c1-108)]"
 
 echo "── 组 9-10: scan ──"
 rm -f "$SB/task-state/claim-releases.json" "$SB/.codex/control-tower/session-registry.json"
@@ -190,6 +193,7 @@ echo "  PASS=$PASS FAIL=$FAIL"
 if [ "$FAIL" -ne 0 ]; then
   # D853: CI 注解只带 tail -8 → 失败断言名 + 关键环境事实压进末尾（否则被尾部 ✅ 挤出可见区）
   echo "DIAG-FAIL $(printf '%s' "$FAILLOG" | tr '\n' ' ' | tr -s ' ' | cut -c1-150)"
+  [ -n "${DIAG8:-}" ] && echo "DIAG-⑧ $(printf '%s' "$DIAG8" | cut -c1-120)"
   echo "DIAG-ENV py=$(command -v python3 2>/dev/null || echo NONE) bash=$(command -v bash 2>/dev/null || echo NONE) git=$(command -v git 2>/dev/null || echo NONE)"
 fi
 exit $([ "$FAIL" -eq 0 ] && echo 0 || echo 1)

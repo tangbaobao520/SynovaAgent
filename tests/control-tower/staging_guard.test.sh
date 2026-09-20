@@ -355,16 +355,24 @@ if [ -f "$CLAIM" ]; then
   printf '#!/bin/sh\nexit 1\n' > "$SHIM/python3"; chmod +x "$SHIM/python3"
   cp "$SHIM/python3" "$SHIM/python"; cp "$SHIM/python3" "$SHIM/py"
   REALPY=$(command -v python3)
-  # 链路证据（判 H 为何没 fail-closed：链是否真断 / 标记是否发 / guard 判什么）
+  # 前提探针：**先直调 resolver** 看本环境能否真造出"链断"（发标记）。
+  #   D853 实测教训: guard 侧 `_bash_env()` 会把 `sys.executable` 所在目录前置进 PATH ——
+  #   若该目录里有可用的 python3（Windows hostedtoolcache 就是），PATH 上的 shim 会被"反超"，
+  #   链根本断不了 → 场景前提不成立。此时**不能**把"没 block"当作 guard 的错（那是误判）。
   H_RES=$(cd "$SB" && PATH="$SHIM:$PATH" "$BASH_BIN" "$SB/scripts/workflow/resolve-commit-brief.sh" --session D902 docs/x.md 2>&1); H_RC=$?
   H_MARK=$(printf '%s' "$H_RES" | grep -oE 'SYNO-RESOLVER-DEGRADED' | head -1)
-  OUT=$(cd "$SB" && PATH="$SHIM:$PATH" "$REALPY" "$GUARD" --session-id D902 --staged docs/x.md 2>&1); EC=$?
-  diag H "$EC" "$(_status_of "$OUT")"
-  DIAG_H=$(printf 'rc=%s mark=[%s] out=[%s]' "$H_RC" "${H_MARK:-none}" "$(printf '%s' "$H_RES" | grep -v SYNO-RESOLVER | head -1 | cut -c1-40)")
-  printf '%s' "$H_RES" | grep -q "SYNO-RESOLVER-DEGRADED" || DIAG_H="$DIAG_H (标记未发: PYBIN 仍可用?)"
-  assert_eq "$EC" "1" "场景H 链断 → exit 1（fail-closed，禁静默 pass）"
-  assert_contains "$OUT" '"status": "block"' "场景H status=block（不是 pass）"
-  assert_contains "$OUT" '"degraded": true' "场景H 降级显式传播（铁律 11/31）"
+  DIAG_H=$(printf 'rc=%s mark=[%s]' "$H_RC" "${H_MARK:-none}")
+  if [ "$H_MARK" = "SYNO-RESOLVER-DEGRADED" ]; then
+    OUT=$(cd "$SB" && PATH="$SHIM:$PATH" "$REALPY" "$GUARD" --session-id D902 --staged docs/x.md 2>&1); EC=$?
+    diag H "$EC" "$(_status_of "$OUT")"
+    DIAG_H="$DIAG_H g_deg=$(printf '%s' "$OUT" | grep -oE '"degraded": (true|false)' | head -1)"
+    assert_eq "$EC" "1" "场景H 链断 → exit 1（fail-closed，禁静默 pass）"
+    assert_contains "$OUT" '"status": "block"' "场景H status=block（不是 pass）"
+    assert_contains "$OUT" '"degraded": true' "场景H 降级显式传播（铁律 11/31）"
+  else
+    # 前提不可造 → 不计分但**显式打印**（不静默通过）；契约面由 H2 全平台确定覆盖
+    echo "  ⚠ 场景H 前提不可造（resolver 直调未发标记：$DIAG_H）→ 该场景本环境不适用，契约面由 H2 覆盖"
+  fi
   # 标记字面量两端一致（resolver 发 / guard 解析）——防两处定义漂移（D839 踩过）
   RESM=$(grep -o "SYNO-RESOLVER-DEGRADED" "$SB/scripts/workflow/resolve-commit-brief.sh" | head -1)
   GRDM=$(cd "$SB" && python3 -c "import sys;sys.path.insert(0,'scripts/control-tower');import staging_guard;print(staging_guard.RESOLVER_DEGRADED_MARK)")
@@ -375,6 +383,30 @@ else
   fail "场景H claim_release.py 不存在（未实现）"
 fi
 scen_end SCEN_H
+scen_start
+echo "── 场景 H2（D853 · 契约级）: resolver 发链断标记 → guard 必须 fail-closed（全平台确定）──"
+if [ -f "$CLAIM" ]; then
+  mk_state D901 claimed
+  REAL_RES="$SB/scripts/workflow/resolve-commit-brief.sh"
+  cp "$REAL_RES" "$REAL_RES.real"
+  # 桩：只发标记 + exit 1（模拟"python/git 不可用"的 resolver），其余行为无关
+  cat > "$REAL_RES" <<'STUBEOF'
+#!/usr/bin/env bash
+printf 'SYNO-RESOLVER-DEGRADED\t夹具桩：python 不可用\n' >&2
+exit 1
+STUBEOF
+  chmod +x "$REAL_RES"
+  OUT=$(cd "$SB" && python3 "$GUARD" --session-id D902 --staged docs/x.md 2>&1); EC=$?
+  mv "$REAL_RES.real" "$REAL_RES"
+  diag H2 "$EC" "$(_status_of "$OUT")"
+  assert_eq "$EC" "1" "场景H2 标记 → exit 1（fail-closed）"
+  assert_contains "$OUT" '"status": "block"' "场景H2 status=block（不是 pass/warn）"
+  assert_contains "$OUT" '"degraded": true' "场景H2 降级显式传播（铁律 11/31）"
+  assert_contains "$OUT" '认领判定不可用' "场景H2 原因点名（可诊断，非静默）"
+else
+  fail "场景H2 claim_release.py 不存在（未实现）"
+fi
+
 
 echo "── 场景 F（沙箱围栏）: 测试不得写真实仓库 ──"
 scen_start

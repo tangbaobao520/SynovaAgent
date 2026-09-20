@@ -101,6 +101,18 @@
   夹具 ⑩ 行为面：沙箱 PATH 前置三个坏 python shim → 旧实现 `rc=0`（放行）/ 新实现 `rc=1`（阻断 + 点名）
   → 判别性成立。至此 `synova-commit` 的两条放行语义（异常 / python 不可用）都已收干净。
 
+## 第六轮（2026-09-20）：H 前提修正 + H2 契约级
+
+- CI 断言级证据：`DIAG-H rc=1 mark=[SYNO-RESOLVER-DEGRADED] out=[]`（直调断链+发标记）但 guard `ec0/warn`
+  ⇒ 根因是**夹具前提在 Windows 不成立**：`_bash_env()` 前置 `sys.executable` 所在目录（hostedtoolcache 有可用
+  python3）→ PATH 上的坏 shim 被反超 → 链没断 → guard 走正常判定，命中场景 C 留下的 D901 已释放台账 → warn。
+  **不是 guard 没接标记**（那条路由 H2 确定覆盖）。
+- H 改为**前提探针门控**（未发标记 → 显式打印"前提不可造/不适用"，不计分也不静默通过）；
+  新增 **H2 契约级**（桩 resolver 只发标记 + exit 1 → guard 必须 `exit 1`+`block`+`degraded`+点名），
+  与环境无关，基线 guard 上红 3 条（判别性）。staging_guard 夹具 42/0。
+- `claim_release.test.sh`：`DIAG-FAIL` ≤26 字符/条（4 条断言名活过注解预算）+ 新增 `DIAG-⑧`
+  （str/Path 原始差异），下一轮定位 Windows str/Path 分歧。
+
 ## 残余（显式登记，未静默放过）
 
 - 假 git 若同时①输出合法 `git version N.`②不在临时目录③不在被判定的仓库内，仍可能被采信
