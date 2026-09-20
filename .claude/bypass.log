@@ -1622,3 +1622,4 @@ Binary file .claude/bypass.log matches
 2026-09-20T21:40:33+08:00 | COMMITTED | pre-commit DEGRADED-PASS | TASK_ID=D331-test | AGENT=test | HASH=7242c2a3b170f60d271a462df539f60e4e1ee67d
 2026-09-20T22:32:26+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=8ad07f000b6f3d51f9468e2a191831dd8ec0ce14
 2026-09-20T22:36:06+08:00 | GATE_FAIL_SOFT | exit=1 | branch=tmp/d839-657-green
+2026-09-20T22:37:07+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=342c3d8a9b30f3b4491f70161ec733fd6dbab8ae
