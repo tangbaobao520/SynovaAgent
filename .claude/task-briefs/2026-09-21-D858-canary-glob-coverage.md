@@ -72,7 +72,7 @@ SynovaAgent 是一个驻扎企业的 AI 诊断系统。诊断是手段，增长�
 - docs/synova/coordination/收口-D858-canary-glob-20260921.md — M6 收口三件（diff/自验结论/遗留清单）。
 - docs/synova/product-lines/evidence/D858-evidence-20260921.md — 证据索引（P1/L4-1/P2/回归/L4-3 逐项）。
 - docs/synova/product-lines/evidence/D858-verify-20260921.md — 队内自验结论（独立验证者产出，队长落库）。
-- docs/synova/product-lines/evidence/D858-ci-35528894381-ctgate-ubuntu.log — CI 归档片段（P2 绿腿可见证据）。
+- docs/synova/product-lines/evidence/D858-ci-35529862520-ctgate-{ubuntu,windows}.log.txt — CI 归档片段（P2 绿腿可见证据，run 35529862520 双腿 success）。
 
 不做什么（含文件路径，硬边界）:
 - 不改 .github/workflows/ci.yml（CT-70/PR #682 与 #657 在飞，单写者规则；`|| true` 吞退出码 + 成功路径回捞 ⚠ → D862 排期）
@@ -97,10 +97,12 @@ SynovaAgent 是一个驻扎企业的 AI 诊断系统。诊断是手段，增长�
 | `docs/synova/coordination/D858-开工前冲突扫描-20260921.md` | task |
 | `docs/synova/coordination/D858-证据包标准件-匿名取CI证据-20260921.md` | task |
 | `docs/synova/coordination/收口-D858-canary-glob-20260921.md` | task |
+| `docs/synova/coordination/审计提请-D858-K3-复审判-20260921.md` | task |
 | `docs/synova/coordination/AUDIT-FINDINGS-LEDGER.md` | task |
 | `docs/synova/product-lines/evidence/D858-evidence-20260921.md` | task |
 | `docs/synova/product-lines/evidence/D858-verify-20260921.md` | task |
-| `docs/synova/product-lines/evidence/D858-ci-35528894381-ctgate-ubuntu.log` | builtin（CI 运行产物归档） |
+| `docs/synova/product-lines/evidence/D858-ci-35529862520-ctgate-ubuntu.log.txt` | builtin（CI 运行产物归档） |
+| `docs/synova/product-lines/evidence/D858-ci-35529862520-ctgate-windows.log.txt` | builtin（CI 运行产物归档） |
 
 ## Q3: 验收 — 入口 → 交互 → 结果
 

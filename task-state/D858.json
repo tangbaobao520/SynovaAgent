@@ -1,7 +1,7 @@
 {
   "task_id": "D858",
   "title": "D854/CT-70 审计条件闭环：canary 覆盖语义物理展开（glob）+ 绿腿告警可见 + 假覆盖 fail-closed + 证据包标准化",
-  "status": "claimed",
+  "status": "impl_done",
   "risk": "high",
   "domain": "mac",
   "owner": "mac-coding",
@@ -14,7 +14,7 @@
   "blocked": null,
   "target": "2026-W38",
   "spec": "K3 审计 docs/synova/audit-reports/2026-09-20-K3-D854.md 结论 CONDITIONAL PASS（创始人 2026-09-20 纪律：有条件通过=未通过）→ 四条条件逐条闭环。派单件：docs/synova/coordination/派单-D858-CT70审计条件闭环-20260920.md。规格（先规格后编码）：.claude/task-briefs/2026-09-21-D858-canary-glob-coverage.md",
-  "impl": null,
+  "impl": "scripts/control-tower/check-canary-drift.sh（83→270 行，sha256 574d4465…）+ tests/control-tower/check-canary-drift.test.sh（76→314 行，sha256 cff8c1dc…）：覆盖语义物理化（非注释行可执行项 + glob 文件系统展开）/ 注释声明一致性 fail-closed（exit 1 + ::error canary-fake-coverage）/ 独立通道 GITHUB_STEP_SUMMARY / awk 缺失 fail-closed（exit 2 + ::error canary-exec）/ 注释词法对齐真实 shell（; | & ( ) 词边界 + 引号转义感知）。三轮自验：T2 有条件通过（C1/C2）→ T4 通过（登记 R1/R3）→ T6 通过（R1/R3 闭合、30/30 夹具零退化）。配对测试 65 通过 0 失败。回归：main 41/71/exit 0 与基线 stdout 同 sha256 b12210c4…；#682 预演 44/68/0/exit 0（物理展开 3）。",
   "audit": null,
   "fix_task_id": null,
   "write_set": [
@@ -37,16 +37,23 @@
     "P2：告警走独立通道（GITHUB_STEP_SUMMARY）→ stdout 被重定向仍可见；给一次真实 CI 运行证据（run/job id + 匿名可核命令 + 归档日志片段）",
     "L4-1：注释声明 N 条 > 物理展开覆盖数 → 报红（exit 1 + ::error title=canary-fake-coverage）",
     "L4-3：证据包标准化——匿名/无 token 取 job 级告警与失败文本的一条命令 + 示例输出 + sha256",
-    "回归：既有 41 条清单 / 71 条漂移判定与基线逐字一致；对 #682 的 ci.yml 预演绿（43 / 0 假覆盖）",
-    "M6 三件（diff/自验结论/遗留清单）提交进仓库 + 归属收口 + PR + K3 复审提请 + ls-remote 回执"
+    "回归：既有 41 条清单 / 71 条漂移判定与基线逐字一致；对 #682 的 ci.yml 预演绿（清单 44 / 漂移 68 / 0 假覆盖——物理展开 3 个 tests/project 测试，比 43 口径多算 calc-progress-panel.test.sh）",
+    "M6 三件（diff/自验结论/遗留清单）提交进仓库 + 归属收口 + PR #687 + K3 复审提请 + ls-remote 回执"
   ],
-  "next": "① 编码（本卡写集两文件）② 队内自验（独立，只读+/tmp）③ 反向验收 ④ M6 收口 + PR ⑤ K3 队外复审（通过前不得合并；#682 亦待本卡闭环后才可合并）",
+  "next": "① ~~编码~~ ② ~~队内自验~~（T2→T4→T6 通过）③ ~~反向验收~~ ④ ~~M6 收口 + PR #687~~ ⑤ **K3 队外复审（审计提请件 docs/synova/coordination/审计提请-D858-K3-复审判-20260921.md；通过前不得合并，#682 亦待本卡闭环后才可合并）** ⑥ 遗留项 D862（ci.yml `|| true` 吞 exit 1/2 + 绿腿 ⚠ 回捞，等 #682/#657 合并）",
   "authority": [
     "docs/synova/audit-reports/2026-09-20-K3-D854.md（K3 报告，PR #686 入库 main cc4e4166）",
     "docs/synova/coordination/派单-D858-CT70审计条件闭环-20260920.md",
-    "docs/synova/coordination/AUDIT-FINDINGS-LEDGER.md CT-70（tests/project 零 CI 接线假绿）"
+    "docs/synova/coordination/AUDIT-FINDINGS-LEDGER.md CT-70（tests/project 零 CI 接线假绿）/ CT-78 / CT-79"
   ],
-  "updated_at": "2026-09-21T02:20:00+08:00",
+  "evidence": [
+    "docs/synova/product-lines/evidence/D858-evidence-20260921.md",
+    "docs/synova/product-lines/evidence/D858-verify-20260921.md",
+    "docs/synova/coordination/收口-D858-canary-glob-20260921.md",
+    "docs/synova/coordination/D858-证据包标准件-匿名取CI证据-20260921.md",
+    "docs/synova/coordination/D858-开工前冲突扫描-20260921.md"
+  ],
+  "updated_at": "2026-09-21T02:40:00+08:00",
   "updated_by": "synova-cto",
-  "note": "来源：K3 审计 D854（CONDITIONAL PASS）。前置（K3 报告入库 main）已由 CTO 合并 PR #686 解除。#682 当前 mergeable=dirty（需其 owner rebase），本卡闭环是其合并前置之一。"
+  "note": "来源：K3 审计 D854（CONDITIONAL PASS）。前置（K3 报告入库 main）已由 CTO 合并 PR #686 解除。#682 当前 mergeable=dirty（需其 owner rebase），本卡闭环是其合并前置之一。自验结论：T2 有条件通过 → V2 闭合 C1/C2 → T4 通过 → V3 闭合 R1/R3 + 降级 fail-closed → T6 通过。"
 }
