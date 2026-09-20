@@ -1,0 +1,33 @@
+{
+  "task_id": "D857",
+  "title": "控制塔两处「总完成度」改读离散三档（CT-74）+ 补『禁百分比』grep 断言",
+  "status": "claimed",
+  "risk": "high",
+  "spec": "DSH 原则⑤：一处生产、多处消费；当前 app/founder-dashboard.html:126-127 与 views/pm_dashboard.py:109-110 仍渲染总完成度，与 D850 口径冲突。",
+  "write_set": [
+    "app/founder-dashboard.html",
+    "views/pm_dashboard.py",
+    "scripts/project/gen-project-board.py",
+    "task-state/D857.json"
+  ],
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-20",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": "mac-coding",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [],
+  "blocked": null,
+  "target": "2026-W38",
+  "acceptance_points": [
+    "两处点位改读 D850 的离散三档（健康/写了没接/缺+未知），不再出现任何总完成度百分比",
+    "把这两处纳入『禁百分比』grep 断言清单（现 6 文件 → 含本两处）",
+    "给 grep 原始输出证明全仓无总完成度百分比渲染点",
+    "主路径零新增检查（不改 pre-commit 组数/耗时）"
+  ],
+  "next": "① 重新核行号 ② 先红后绿（如适用）③ 交回三件",
+  "note": "来源：CT-74；创始人 2026-09-20 授权按 DSH 逻辑处理。"
+}
