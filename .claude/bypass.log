@@ -1601,3 +1601,4 @@ Binary file .claude/bypass.log matches
 2026-09-21T21:25:49+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/p2-invariants-core
 2026-09-21T21:25:50+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=9f67007b86f3253a61a117de20cc66c7794767da
 2026-09-21T21:40:56+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=a973a005932e6f81917431010b1c4354c19de3ab
+2026-09-21T21:42:52+08:00 | COMMITTED | pre-commit PASS (cherry-pick 一次性补记 D865) | HASH=820b9bc98737f564c437f2728097606b5332ca8e
