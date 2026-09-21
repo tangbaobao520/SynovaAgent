@@ -13,6 +13,8 @@
  * API 文档: https://ima.qq.com/agent-interface
  */
 import { createLogger } from '@synova/logger';
+// D862/P-1: 出站走唯一出口 outboundFetch（AbortSignal.timeout(15s) 原语义保留）
+import { outboundFetch, OutboundHttpError } from '../providers/http-exit';
 
 const log = createLogger('connectors/ima');
 
@@ -54,7 +56,7 @@ export function createImaConnector(config: ImaConfig): ImaConnector {
 
   async function imaPost<T>(path: string, body: Record<string, unknown>): Promise<T | null> {
     try {
-      const res = await fetch(`${baseUrl}${path}`, {
+      const res = await outboundFetch(`${baseUrl}${path}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -69,7 +71,11 @@ export function createImaConnector(config: ImaConfig): ImaConnector {
       if (json.code !== 0) { log.warn({ code: json.code, msg: json.msg }, 'IMA API 返回错误'); return null; }
       return json.data;
     } catch (err: unknown) {
-      log.warn({ err, path }, 'IMA API 网络错误');
+      // 铁律 32：出站错误按 code/phase/retryable 分类进日志（降级可见）
+      const detail = err instanceof OutboundHttpError
+        ? { code: err.code, phase: err.phase, retryable: err.retryable }
+        : {};
+      log.warn({ err, path, ...detail }, 'IMA API 网络错误');
       return null;
     }
   }
