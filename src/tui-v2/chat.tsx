@@ -18,7 +18,7 @@ import { checkForUpdates, formatUpdateMessage, type UpdateCheckResult } from '..
 import { getCostTracker, formatCost } from '../services/llm-cost';
 import { fetchDeepseekBalance, formatBalance, type BalanceResult } from '../services/deepseek-balance';
 import { loadConfig } from '../config';
-import { outboundFetch } from '../providers/http-exit';
+import { probeOntologyGraph } from './lib/ontology-probe';
 import { getAllExpertIds } from '../agent/expert-config-loader';
 
 import { Header } from './components/header';
@@ -246,11 +246,12 @@ function TuiApp({ bctx }: { bctx: BootstrapResult }) {
     const scheduler = getGlobalScheduler(db);
     scheduler.schedule('ontology-monitor', '*/5 * * * *', async () => {
       try {
-        // D862/P-1：loopback 出站走唯一出口 outboundFetch（出口契约恒绕过 loopback，行为不变）
-        const response = await outboundFetch(`http://localhost:${loadConfig().port}/api/ontology/graph/${convRef.current?.getOrgId() || 'default'}`);
-        if (response.ok) { const data = await response.json() as { nodeCount?: number }; }
-      } catch (err: unknown) {
-        log.warn({ err: err instanceof Error ? err.message : String(err) }, '[cron] 本体 API 未就绪');
+        // D862/P-1：loopback 出站走唯一出口（出口契约恒绕过 loopback，行为不变）——
+        // 经 lib/ontology-probe 收口，守卫测试见 tests/tui-v2/ontology-probe.test.ts
+        await probeOntologyGraph(`http://localhost:${loadConfig().port}/api/ontology/graph/${convRef.current?.getOrgId() || 'default'}`);
+      } catch {
+        // probeOntologyGraph 内部已 log.warn 降级（探测性失败不抛出）；此处兜底不吞错
+        log.warn({ probe: 'ontology-monitor' }, '[cron] 本体探测异常退出');
       }
     });
 
