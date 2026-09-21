@@ -5,13 +5,15 @@
  * cross_validate / trace_lineage / match_pattern / verify_closure / request_human
  */
 import type { ToolDefinition } from '../agent/tools';
+// D862/P-1: localhost 本机 API 出站也走唯一出口 outboundFetch（出口契约原生 loopback 恒绕过代理）
+import { outboundFetch } from '../providers/http-exit';
 import { createLogger } from '@synova/logger';
 
 const log = createLogger('tools/accuracy');
 
 /** Typed JSON fetch response — P1-02: 消除 `as-any`, 用 unknown 强制校验 */
 async function fetchJSON(url: string): Promise<unknown> {
-  const res = await fetch(url);
+  const res = await outboundFetch(url);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }
@@ -40,7 +42,7 @@ export const crossValidateTool: ToolDefinition = {
     // 检查数据源：访谈数据、模块计算、本体图数据、外部 API
     try {
       // 1. 检查本体图是否有此维度的数据
-      const ontRes = await fetch(`${BASE}/api/ontology/graph/${findingId}`);
+      const ontRes = await outboundFetch(`${BASE}/api/ontology/graph/${findingId}`);
       if (ontRes.ok) {
         const data = await ontRes.json() as { nodeCount?: number };
         if (data.nodeCount && data.nodeCount > 0) sources.push('ontology_graph');
@@ -49,7 +51,7 @@ export const crossValidateTool: ToolDefinition = {
 
     // 2. 检查会话历史是否有此维度的诊断数据
     try {
-      const sessRes = await fetch(`${BASE}/api/sessions/search?q=${encodeURIComponent(dimension)}`);
+      const sessRes = await outboundFetch(`${BASE}/api/sessions/search?q=${encodeURIComponent(dimension)}`);
       if (sessRes.ok) {
         const sessData = await sessRes.json() as { results?: unknown[] };
         if (sessData.results && sessData.results.length > 0) sources.push('diagnostic_sessions');
@@ -88,7 +90,7 @@ export const traceLineageTool: ToolDefinition = {
     const evidenceId = params.evidenceId as string;
     try {
       const BASE = `http://localhost:${process.env.PORT || 3000}`;
-      const res = await fetch(`${BASE}/api/ontology/graph/${evidenceId}`);
+      const res = await outboundFetch(`${BASE}/api/ontology/graph/${evidenceId}`);
       if (res.ok) {
         const data = await res.json() as { edges?: Array<{ to?: string; from?: string; type?: string; weight?: number }> };
         // 提取该节点的上下游边
@@ -136,7 +138,7 @@ export const matchPatternTool: ToolDefinition = {
 
     try {
       const BASE = `http://localhost:${process.env.PORT || 3000}`;
-      const res = await fetch(`${BASE}/api/ontology/graph/${orgId}`);
+      const res = await outboundFetch(`${BASE}/api/ontology/graph/${orgId}`);
       if (res.ok) {
         const data = await res.json() as Record<string, unknown>;
         const nodeCount = Number(data.nodeCount ?? 0);
@@ -180,7 +182,7 @@ export const verifyClosureTool: ToolDefinition = {
     const orgId = params.orgId as string;
     try {
       const BASE = `http://localhost:${process.env.PORT || 3000}`;
-      const res = await fetch(`${BASE}/api/sessions/search?q=${encodeURIComponent(orgId)}`);
+      const res = await outboundFetch(`${BASE}/api/sessions/search?q=${encodeURIComponent(orgId)}`);
       if (res.ok) {
         const data = await res.json() as { results?: Array<Record<string, unknown>> };
         const results = data.results ?? [];

@@ -3,6 +3,8 @@ import { NodeType, EdgeType } from '@synova/ontology';
  * tools/tech-expert-tools.ts — 技术专家工具链 (Phase C2)
  */
 import type { ToolDefinition } from '../agent/tools';
+// D862/P-1: localhost 出站走唯一出口 outboundFetch（出口契约原生 loopback 恒绕过代理）
+import { outboundFetch } from '../providers/http-exit';
 import { createLogger } from '@synova/logger';
 const log = createLogger('tools/tech-expert');
 
@@ -14,7 +16,7 @@ export const scanSoftwareEcosystemTool: ToolDefinition = {
     const orgId = params.orgId as string;
     try {
       const BASE = `http://localhost:${process.env.PORT || 3000}`;
-      const res = await fetch(`${BASE}/api/ontology/graph/${orgId}`);
+      const res = await outboundFetch(`${BASE}/api/ontology/graph/${orgId}`);
       if (res.ok) {
         const data = await res.json() as { nodes?: Array<{ type?: string; props?: Record<string, unknown> }> };
         const tools = (data.nodes || []).filter(n => n.type === NodeType.RESOURCE_TOOL);
@@ -42,7 +44,7 @@ export const assessAiMaturityTool: ToolDefinition = {
     const orgId = params.orgId as string;
     try {
       const BASE = `http://localhost:${process.env.PORT || 3000}`;
-      const res = await fetch(`${BASE}/api/ontology/graph/${orgId}`);
+      const res = await outboundFetch(`${BASE}/api/ontology/graph/${orgId}`);
       if (res.ok) {
         const data = await res.json() as { nodes?: Array<{ type?: string; props?: Record<string, unknown> }> };
         const agents = (data.nodes || []).filter(n => n.type === NodeType.RESOURCE_AGENT);

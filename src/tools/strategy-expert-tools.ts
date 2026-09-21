@@ -1,12 +1,14 @@
 /** tools/strategy-expert-tools.ts — 战略专家工具链 (数据源: 文档提取 + 连接器) */
 import type { ToolDefinition } from '../agent/tools';
+// D862/P-1: localhost 本机 API 出站也走唯一出口 outboundFetch（出口契约原生 loopback 恒绕过代理）
+import { outboundFetch } from '../providers/http-exit';
 import { NodeType } from '@synova/ontology';
 import { createLogger } from '@synova/logger';
 const log = createLogger('tools/strategy-expert');
 
 interface GraphData { nodes?: Array<{ type: string; props?: Record<string, unknown> }>; }
 const getGraph = async (orgId: string): Promise<GraphData | null> => {
-  try { const r = await fetch(`http://localhost:${process.env.PORT || 3000}/api/ontology/graph/${orgId}`); return r.ok ? await r.json() as GraphData : null; } catch { log.debug('本体 API 不可达 — 返回 null'); return null; }
+  try { const r = await outboundFetch(`http://localhost:${process.env.PORT || 3000}/api/ontology/graph/${orgId}`); return r.ok ? await r.json() as GraphData : null; } catch { log.debug('本体 API 不可达 — 返回 null'); return null; }
 };
 
 export const scanIndustryLandscapeTool: ToolDefinition = {
