@@ -11,6 +11,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { createLogger } from '@synova/logger';
 import { getDataDirectory } from '../deploy/data-directory';
+import { getProxyStatus } from '../providers/http-exit';
 
 const log = createLogger('routes/healthz');
 const router = Router();
@@ -44,6 +45,7 @@ async function runAllChecks(): Promise<HealthzResponse> {
     { name: 'disk_free_gb', fn: checkDiskFree },
     { name: 'data_freshness', fn: checkDataFreshness },
     { name: 'watchdog_alive', fn: checkWatchdogAlive },
+    { name: 'outbound_proxy', fn: checkOutboundProxy },
   ];
 
   const results = await Promise.all(
@@ -298,6 +300,40 @@ async function checkWatchdogAlive(): Promise<HealthCheck> {
     return { status: 'degraded', detail: `看门狗日志超过5分钟未更新 (${Math.floor((Date.now() - stat.mtimeMs) / 60000)}分钟前)` };
   } catch {
     return { status: 'degraded', detail: '无法读取看门狗日志' };
+  }
+}
+
+// ─── 检查 7: 出站代理配置（D862/P-1）───
+
+/**
+ * 出站代理配置检查 — 只暴露「是否配置 / 来源形态」，**永不含值**。
+ *
+ * 数据源：`getProxyStatus()`（variables 只含变量名——出口安全契约）。
+ * 本检查自身零 env 读取、零字符串拼接 env 值，从源头保证响应不可能反推凭据。
+ * - 未配置 → ok（直连是合法形态）
+ * - 配置可用 → ok（含被 loopback/NO_PROXY 绕过说明）
+ * - 配置不可用（socks / 畸形）→ degraded（出口已 log.warn，此处可见标记，铁律 11/31）
+ */
+async function checkOutboundProxy(): Promise<HealthCheck> {
+  try {
+    const status = getProxyStatus();
+    const vars = status.variables.length > 0 ? status.variables.join(',') : '无';
+    if (!status.configured) {
+      return { status: 'ok', detail: `未设置代理环境变量（全量直连）；已配置变量: ${vars}` };
+    }
+    if (status.active) {
+      return {
+        status: 'ok',
+        detail: `代理可用（kind=${status.kind}）；已配置变量: ${vars}；loopback 恒绕过${status.reason ? `；${status.reason}` : ''}`,
+      };
+    }
+    return {
+      status: 'degraded',
+      detail: `代理已配置但不可用（kind=${status.kind}）→ 出站降级直连；已配置变量: ${vars}${status.reason ? `；${status.reason}` : ''}`,
+    };
+  } catch (err: unknown) {
+    log.error({ err: err instanceof Error ? err.message : String(err) }, '出站代理状态检查异常');
+    return { status: 'degraded', detail: `出站代理状态检查异常: ${err instanceof Error ? err.message : String(err)}` };
   }
 }
 
