@@ -7,6 +7,8 @@
  * 流程: LLM → tool call → ToolRegistry.execute() → result → LLM → 最终回复
  */
 import { createLogger } from '@synova/logger';
+// D862/P-1: 出站走唯一出口 outboundFetch（localhost 恒绕过代理；AbortSignal.timeout 原语义保留）
+import { outboundFetch } from '../providers/http-exit';
 import { getProfileForRole } from './tool-profiles';
 
 const log = createLogger('agent/tools');
@@ -225,7 +227,7 @@ export class ToolRegistry {
           if (!tool.httpEndpoint) {
             return { error: `HTTP 模式工具 "${name}" 缺少 httpEndpoint` };
           }
-          const res = await fetch(tool.httpEndpoint, {
+          const res = await outboundFetch(tool.httpEndpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(params),

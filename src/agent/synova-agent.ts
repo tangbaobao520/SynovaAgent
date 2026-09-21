@@ -27,6 +27,8 @@ import { ProactivePush } from './proactive-push';
 import { ActionStore } from '../growth/action-store';
 import { getFeedbackCollector } from '../growth/feedback-collector';
 import { CommandLanes } from '../infra/command-lanes';
+// D862/P-1: 出站走唯一出口 outboundFetch（localhost 恒绕过代理；AbortSignal.timeout 原语义保留）
+import { outboundFetch } from '../providers/http-exit';
 
 const log = createLogger('agent/synova-agent');
 
@@ -54,7 +56,7 @@ export class SynovaAgent {
     this.scheduler = getGlobalScheduler(this.db);
     this.scheduler.schedule('ontology-monitor', '*/5 * * * *', async () => {
       try {
-        const res = await fetch(`http://localhost:${config.port}/api/ontology/graph/default`);
+        const res = await outboundFetch(`http://localhost:${config.port}/api/ontology/graph/default`);
         if (res.ok) log.info('[cron] ontology-monitor: OK');
       } catch (err: any) {
         log.warn({ err: err.message }, '[cron] ontology-monitor 执行失败');

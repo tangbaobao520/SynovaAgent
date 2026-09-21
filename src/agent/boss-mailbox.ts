@@ -6,6 +6,9 @@
  * 铁律 24+31: 所有错误路径有 log + degraded。
  */
 import { createLogger } from '@synova/logger';
+// D862/P-1: webhook 出站走唯一出口 outboundFetch（真实外网出站；错误按 OutboundHttpError 分类消费）
+import { outboundFetch, OutboundHttpError } from '../providers/http-exit';
+
 import { sendEmail, renderHtmlReport } from '../services/email-service';
 
 const log = createLogger('agent/boss-mailbox');
@@ -99,7 +102,7 @@ export class BossMailbox {
     try {
       const text = this.renderText(report);
       const payload = { msg_type: 'text', content: { text } };
-      const response = await fetch(webhookUrl, {
+      const response = await outboundFetch(webhookUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -112,7 +115,9 @@ export class BossMailbox {
       return true;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      log.warn({ err: msg }, '飞书推送异常');
+      // 铁律 32：出站错误分类摘要（code/phase/retryable）随降级日志上报
+      const detail = err instanceof OutboundHttpError ? { code: err.code, phase: err.phase, retryable: err.retryable } : {};
+      log.warn({ err: msg, ...detail }, '飞书推送异常 — 降级返回 false');
       return false;
     }
   }

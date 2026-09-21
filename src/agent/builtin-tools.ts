@@ -8,6 +8,8 @@ import type { ToolRegistry } from './tools';
 import type { SessionStore } from '../store/session-store';
 import { ACCURACY_TOOLS, ORG_EXPERT_TOOLS, TECH_EXPERT_TOOLS, STRATEGY_EXPERT_TOOLS, FINANCE_EXPERT_TOOLS, ACTION_EXPERT_TOOLS, MARKETING_EXPERT_TOOLS } from '../tools';
 import { createLogger } from '@synova/logger';
+// D862/P-1: 出站走唯一出口 outboundFetch（localhost 恒绕过代理；AbortSignal.timeout 原语义保留）
+import { outboundFetch } from '../providers/http-exit';
 import { registerPandocTools } from '../../vendor/pandoc-skill/synova-tools';
 
 const log = createLogger('agent/builtin-tools');
@@ -34,7 +36,7 @@ export function registerBuiltinTools(
       log.info({ orgId }, 'query_ontology 工具调用');
       try {
         const BASE = `http://localhost:${process.env.PORT || 3000}`;
-        const res = await fetch(`${BASE}/api/ontology/graph/${orgId}`);
+        const res = await outboundFetch(`${BASE}/api/ontology/graph/${orgId}`);
         if (res.ok) {
           const data = await res.json() as { nodes?: Array<{ type?: string }>; edges?: unknown[]; nodeCount?: number; edgeCount?: number; orgId?: string };
           const nodeTypes = [...new Set((data.nodes || []).map(n => n.type).filter(Boolean))];
@@ -166,7 +168,7 @@ export function registerBuiltinTools(
       try {
         const orgId = String(params.orgId || getOrgId());
         const BASE = `http://localhost:${process.env.PORT || 3000}`;
-        const res = await fetch(`${BASE}/api/ontology/graph/${orgId}`);
+        const res = await outboundFetch(`${BASE}/api/ontology/graph/${orgId}`);
         if (!res.ok) return { documents: [], count: 0, hint: '本体 API 不可达' };
         const data = await res.json() as { nodes?: Array<{ type?: string; props?: Record<string, unknown> }> };
         const docs = (data.nodes || [])
