@@ -1,17 +1,26 @@
 {
   "task_id": "D831",
   "title": "P-2 不变量机制（前提清单第 2 项；首批 3 条断言）",
-  "status": "claimed",
+  "status": "impl-done",
   "risk": "high",
-  "spec": "派单即规格：docs/synova/coordination/批十三-断线补卡与固化-20260918.md",
+  "spec": "派单即规格：docs/synova/coordination/派单-小队B-P2不变量-20260921.md",
   "write_set": [
     "task-state/D831.json"
   ],
-  "impl": null,
+  "impl": {
+    "branch": "feat/p2-invariants",
+    "worktree": ".synova-wt-p2",
+    "summary": "P-2 运行期不变量机制落地：src/invariants（registry + 3 伴生 + Phase 6 + /api/healthz/invariants 探针）；bootstrap fatal Phase fail-closed（registered==0 启动失败）+ 原子回滚；tests/sentinel/invariants.test.ts 15 用例（负向/正向/探针/回滚/void 类型）全绿；tsc 我方文件零新增错误",
+    "deviations": [
+      "src/server.ts 超派单写集（+5 行）：探针路由必须在生产 HTTP 入口挂载才可达（铁律 0-2 接线必需）；routes/healthz.ts 小队 A 地盘一字未改",
+      "INV-TOOL-SCHEMA-SENT 的 B 判定带前缀豁免：生产收尾轮（MAX_ROUNDS 用尽后无 tools 最终调用，C2 测试锁定的既有行为）与 D819 中途丢 tools 在 HTTP 层不可区分——已带过 tools 的对话放行；遗留：小队 A 裁决收尾轮显式 tool_choice:'none' 后可收紧为全量检查"
+    ],
+    "verification": "npx vitest run tests/sentinel/invariants.test.ts → 15 passed；tests/agent/tool-loop-tool-pairing.integration.test.ts（真实 createServer + 假上游）5 passed；tests/sentinel + tests/agent 全量 1376 passed / 5 failed（expert-file-loader 预先存在，main 同样失败）"
+  },
   "audit": null,
   "fix_task_id": null,
-  "updated_at": "2026-09-18",
-  "updated_by": "synova-cto",
+  "updated_at": "2026-09-21",
+  "updated_by": "squad-b/coding",
   "domain": "win",
   "owner": "mac-coding",
   "milestone": "M1 产品可用",
