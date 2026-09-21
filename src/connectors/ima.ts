@@ -12,8 +12,19 @@
  */
 import { createLogger } from '@synova/logger';
 import { randomBytes, createCipheriv, createDecipheriv, pbkdf2Sync } from 'crypto';
+// D862/P-1: 出站走唯一出口 outboundFetch（loopback/代理由出口统一裁决；
+// AbortSignal.timeout 原语义保留 — ima 自身的超时策略不变，不硬套 provider 策略）
+import { outboundFetch, OutboundHttpError } from '../providers/http-exit';
 
 const log = createLogger('connectors/ima');
+
+/** 铁律 32：出站错误分类摘要（code/phase/retryable）— 供 catch 日志消费。 */
+function outboundDetail(err: unknown): { code?: string; phase?: string; retryable?: boolean } {
+  if (err instanceof OutboundHttpError) {
+    return { code: err.code, phase: err.phase, retryable: err.retryable };
+  }
+  return {};
+}
 
 export interface ImaConfig {
   baseUrl: string;
@@ -104,7 +115,7 @@ export class ImaClient {
     if (!key) { throw new Error('API Key 未配置'); }
 
     try {
-      const response = await fetch(`${this.config.baseUrl}/v1/auth`, {
+      const response = await outboundFetch(`${this.config.baseUrl}/v1/auth`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-API-Key': key },
         signal: AbortSignal.timeout(this.config.timeoutMs!),
@@ -116,7 +127,7 @@ export class ImaClient {
       return data.accessToken;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      log.warn({ err: msg }, 'ima 认证失败 — 降级');
+      log.warn({ err: msg, ...outboundDetail(err) }, 'ima 认证失败 — 降级');
       throw new Error(`ima 认证失败: ${msg}`);
     }
   }
@@ -134,7 +145,7 @@ export class ImaClient {
       const token = this.accessToken || await this.authenticate().catch(() => { throw new Error('认证失败'); });
       const types = filter?.documentTypes || ['strategy', 'operations', 'meetings'];
       const limit = filter?.limit || 20;
-      const response = await fetch(
+      const response = await outboundFetch(
         `${this.config.baseUrl}/v1/documents?types=${types.join(',')}&limit=${limit}`,
         { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(this.config.timeoutMs!) },
       );
@@ -142,7 +153,7 @@ export class ImaClient {
       const data = await response.json() as { documents?: ImaDocument[] };
       return (data.documents || []).filter(d => types.includes(d.type as string));
     } catch (err: unknown) {
-      log.warn({ err: err instanceof Error ? err.message : String(err) }, 'ima 文档扫描失败 — 降级');
+      log.warn({ err: err instanceof Error ? err.message : String(err), ...outboundDetail(err) }, 'ima 文档扫描失败 — 降级');
       return [];
     }
   }
@@ -150,7 +161,7 @@ export class ImaClient {
   async extractContent(documentId: string): Promise<ExtractedPkbEntry | null> {
     try {
       const token = this.accessToken || await this.authenticate().catch(() => { throw new Error('认证失败'); });
-      const response = await fetch(`${this.config.baseUrl}/v1/documents/${documentId}/content`, {
+      const response = await outboundFetch(`${this.config.baseUrl}/v1/documents/${documentId}/content`, {
         headers: { Authorization: `Bearer ${token}` },
         signal: AbortSignal.timeout(this.config.timeoutMs!),
       });
@@ -163,17 +174,17 @@ export class ImaClient {
         metadata: { documentType: doc.type, author: doc.author, createdAt: doc.createdAt, extractedAt: new Date().toISOString() },
       };
     } catch (err: unknown) {
-      log.warn({ err: err instanceof Error ? err.message : String(err), documentId }, 'ima 内容提取失败 — 降级');
+      log.warn({ err: err instanceof Error ? err.message : String(err), documentId, ...outboundDetail(err) }, 'ima 内容提取失败 — 降级');
       return null;
     }
   }
 
   async checkHealth(): Promise<{ ok: boolean; message?: string }> {
     try {
-      const response = await fetch(`${this.config.baseUrl}/v1/health`, { signal: AbortSignal.timeout(5000) });
+      const response = await outboundFetch(`${this.config.baseUrl}/v1/health`, { signal: AbortSignal.timeout(5000) });
       return response.ok ? { ok: true } : { ok: false, message: `HTTP ${response.status}` };
     } catch (err: unknown) {
-      log.warn({ err: err instanceof Error ? err.message : String(err) }, "网络请求失败");
+      log.warn({ err: err instanceof Error ? err.message : String(err), ...outboundDetail(err) }, '网络请求失败');
       return { ok: false, message: err instanceof Error ? err.message : String(err) };
     }
   }
