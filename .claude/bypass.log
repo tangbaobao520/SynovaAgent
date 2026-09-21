@@ -1610,3 +1610,5 @@ Binary file .claude/bypass.log matches
 2026-09-21T14:20:22Z detected-bypass head-mismatch marker=044da914ae1c36bce4833004b40551e9bd344c7f parent=210e3ee021fb9a9ee2c47ddc7b633f989a528a0a
 2026-09-21T14:20:24Z detected-bypass head-mismatch marker=044da914ae1c36bce4833004b40551e9bd344c7f parent=4ab792ec6f199eae2f7f88848cb846a745a2cb75
 2026-09-21T14:20:27Z detected-bypass head-mismatch marker=044da914ae1c36bce4833004b40551e9bd344c7f parent=9831eccbe29d610c20e660d4085f5e9f71752ce1
+2026-09-21T22:20:58+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/p2-invariants-failclosed
+2026-09-21T22:20:58+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=5de3c787bada1318ebb37b60ecbb5189553e4c11
