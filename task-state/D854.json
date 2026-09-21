@@ -1,7 +1,7 @@
 {
   "task_id": "D854",
   "title": "D811 条件闭环 + CT-70 立卡（tests/project 在 CI 上是绿色假象）",
-  "status": "claimed",
+  "status": "impl_done",
   "risk": "high",
   "spec": "D811 CTO 验收退回态：(1) 报告写 pr-queue.json 在 docs/synova/coordination/，实测在 docs/synova/project/；(2) ledger 快照 queue_length=46 陈旧（现 40）→ 与 D848 同族；(3) 团队自曝 CT-70：tests/project/** 在 ci.yml 命中 0 → 46 条断言不在 CI 跑，必须立卡修复。",
   "write_set": [
@@ -11,7 +11,13 @@
     "task-state/D854.json"
   ],
   "impl": null,
-  "audit": null,
+  "audit": {
+    "verdict": "通过（条件已闭环）",
+    "by": "CTO",
+    "at": "2026-09-21",
+    "report": "docs/synova/audit-reports/2026-09-21-K3-D858-复审.md",
+    "note": "D858 K3 PASS → 原 CONDITIONAL PASS 条件全部闭环，按三态改判通过"
+  },
   "fix_task_id": null,
   "updated_at": "2026-09-20",
   "updated_by": "synova-cto",
@@ -29,5 +35,5 @@
     "CT-67/68/69 各自有卡或明确挂起理由"
   ],
   "next": "① 逐条闭环 ② CTO 复验 ③ K3 抽审",
-  "note": "团队自曝 CT-70 记功；但『有条件通过』不得放行，故立卡闭环。"
+  "note": "团队自曝 CT-70 记功；但『有条件通过』不得放行，故立卡闭环。\n\n【2026-09-21 改判】D858 经 K3 复审 PASS → D854 由『退回』改判**通过**（闭环条件全部达成）。#682 仍按 K3 建议：owner rebase + 与 D863 同批或其后。"
 }
