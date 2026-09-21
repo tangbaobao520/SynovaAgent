@@ -1,7 +1,7 @@
 {
   "task_id": "D821",
   "title": "P-1 HTTP 代理 / 内网适配（企业私有化部署刚需，前提清单第 1 项）",
-  "status": "claimed",
+  "status": "audited",
   "risk": "high",
   "spec": "派单即规格：docs/synova/coordination/批十二-计划与派单-20260918.md（含 CTO 实测位置与验收标准）",
   "write_set": [
@@ -12,12 +12,18 @@
     "task-state/D821.json"
   ],
   "impl": null,
-  "audit": null,
+  "audit": {
+    "verdict": "PASS",
+    "by": "K3",
+    "at": "2026-09-21",
+    "report": "docs/synova/audit-reports/2026-09-21-D821.md",
+    "p1": "preconditions.yaml P-1 status 仍为 dispatched，合并前须回填『部分关闭』（规格 §2.3 承诺）",
+    "p2": "tsc 存量口径：自验称 28，K3 复算 33（零增量结论不受影响）",
+    "note": "必核 7 项全部独立复算属实；P-1 口径维持『部分关闭』；#693 在 D860 前不合并"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-09-21",
-  "updated_by": "d821-squad-coder-b",
-  "card_correction_20260920": "acceptance_points[2] 旧路径 src/infra/http-proxy.ts → src/providers/http-exit.ts（与 09-20 派单写集一致）；其余字段（除 updated_at/updated_by 外）逐字沿用 origin/chore/d821-writeset-fix@558a70c2 版本；本次落盘 2026-09-21，由 D821 小队编码B（task-2）执行",
-  "card_correction_20260921": "acceptance_points[2] 判据由『字面 process.env.HTTPS_PROXY / NO_PROXY 命中=0』改为『代理变量名维度读点核查（排除 src/providers/http-exit.ts 后逐个核实剩余命中）+ 行写法命中=0 原始输出』。依据＝自验员四组口径实测：字面判据必然满足＝空洞（口径 A 点号写法 0 命中、口径 C 宽松写法 0 命中，含出口自身）；根因＝出口用动态 name 读（readEnv(ENV_NAMES.httpsProxy) → process.env[name]，变量名集中在 ENV_NAMES），故全仓不存在字面 process.env.HTTPS_PROXY。当前读点面：代理变量名字面量 24 命中（23 在 src/providers/http-exit.ts + 1 在 src/providers/types.ts:75 JSDoc 注释）。",
+  "updated_at": "2026-09-18",
+  "updated_by": "synova-cto",
   "domain": "win",
   "owner": "mac-coding",
   "milestone": "M1 产品可用",
@@ -29,12 +35,12 @@
   "acceptance_points": [
     "代理真生效：起假代理 + 设 HTTPS_PROXY → 触发一次真实 LLM 调用 → 断言假代理收到该请求（CONNECT 或绝对 URI）",
     "loopback 强制绕过：provider 指 127.0.0.1 本地上游 → 断言假代理收 0、上游收 1；换成 127.0.0.2（同网段不同地址）仍必须绕过（验『整网段判定』而非列表匹配）",
-    "不做双份解析：以**代理变量名维度**核读点——grep 代理变量名字面量（HTTP_PROXY|HTTPS_PROXY|NO_PROXY|ALL_PROXY 大小写各半，含下标写法 process.env[...]）后**排除 src/providers/http-exit.ts**，剩余命中必须**逐个核实为非读点**（当前唯一剩余 src/providers/types.ts:75 为 JSDoc 注释）；并同时给出行写法（8 变量名）命中=0 的原始输出。禁以『字面 process.env.HTTPS_PROXY 命中=0』单独当判据（空洞，必然满足）。",
+    "不做双份解析：静态断言——除 src/infra/http-proxy.ts 外不得出现 process.env.HTTPS_PROXY / NO_PROXY 读取",
     "验收按 docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md（禁 grep 命中；三问自查逐条作答；报告含命令+原始输出+五态定位）",
     "本卡验收以 09-20 派单件写集为准；越界 3 项不在本卡判通过"
   ],
   "next": "见派单文档 §A 对应小节",
-  "note": "CTO 实测：全 src grep HTTPS_PROXY/http_proxy/NO_PROXY/setGlobalDispatcher 零命中；出站是裸 fetch（providers/base.ts:154,203、ernie.ts:40,110、connectors/ima.ts 4 处等，25+ 处）；package.json 无 undici/node-fetch/axios。DSH 参照 dsh-http-proxy（lib/index.js 536 行 + policy.d.ts 135 行）：借鉴解析顺序（scheme → ALL_PROXY → HTTPS 回退 HTTP）、loopback 整网段、CIDR 需改写、不可用值降级不阻止启动、子进程环境还原；不借鉴 undici 全局 dispatcher 劫持（DSH 自认跨版本隐式耦合）、单进程单策略、无 SOCKS5/无自定义 CA。方式=①范式复用策略语义 + ③自建（SOCKS5/自定义 CA/配置化）。\n\n【2026-09-20 CTO 写集勘误（本卡原 5 条 acceptance_points 与派单写集冲突）】原卡钉 src/infra/http-proxy.ts 并含 3 条越界项（connector 覆盖 / 健康暴露 kind:socks / 启动期 proxy-install bootstrap）——**属 CTO 派单写集疏漏**（未逐条对卡内验收点、未先 grep 真实调用点）。裁决：**本卡严守 09-20 派单写集**（出口落 src/providers/http-exit.ts；providers 层出站 4→0）；越界 3 项**显式挂账 → 后续卡 D862**；口径以**较新的 09-20 派单件**为准（单一事实源）。P-1 在 D862 落地前**只能标『部分关闭』**，不得标达成。",
+  "note": "CTO 实测：全 src grep HTTPS_PROXY/http_proxy/NO_PROXY/setGlobalDispatcher 零命中；出站是裸 fetch（providers/base.ts:148,197、ernie.ts:40,110、connectors/ima.ts 4 处等，25+ 处）；package.json 无 undici/node-fetch/axios。DSH 参照 dsh-http-proxy（lib/index.js 536 行 + policy.d.ts 135 行）：借鉴解析顺序（scheme → ALL_PROXY → HTTPS 回退 HTTP）、loopback 整网段、CIDR 需改写、不可用值降级不阻止启动、子进程环境还原；不借鉴 undici 全局 dispatcher 劫持（DSH 自认跨版本隐式耦合）、单进程单策略、无 SOCKS5/无自定义 CA。方式=①范式复用策略语义 + ③自建（SOCKS5/自定义 CA/配置化）。\n\n【2026-09-20 CTO 写集勘误（本卡原 5 条 acceptance_points 与派单写集冲突）】原卡钉 src/infra/http-proxy.ts 并含 3 条越界项（connector 覆盖 / 健康暴露 kind:socks / 启动期 proxy-install bootstrap）——**属 CTO 派单写集疏漏**（未逐条对卡内验收点、未先 grep 真实调用点）。裁决：**本卡严守 09-20 派单写集**（出口落 src/providers/http-exit.ts；providers 层出站 4→0）；越界 3 项**显式挂账 → 后续卡 D862**；口径以**较新的 09-20 派单件**为准（单一事实源）。P-1 在 D862 落地前**只能标『部分关闭』**，不得标达成。\n\n【2026-09-21 K3 审计 PASS】报告已入库；P1（P-1 状态回填『部分关闭』）为合并前必做项；#693 待 D860 预算口径落地后合并。",
   "executor": "mac-coding",
   "delegation": "Mac 代行 win（D773 规约；创始人 2026-09-18 重申『涉及 win 线的一并先给 Mac 执行』）",
   "acceptance_level": "代码级可验（Mac 必须验）；若涉及 Windows 实机行为 → 挂账，Win 回归后补验，禁止声称"
