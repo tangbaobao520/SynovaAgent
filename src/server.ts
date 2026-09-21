@@ -35,6 +35,10 @@ import deptWorkspaceRoutes from './routes/department-workspace';
 import actionsApiRoutes from './routes/actions-api';
 import healthRoutes from './routes/health';
 import healthzRoutes from './routes/healthz';
+// D831 (P-2): 运行期不变量健康探针——GET /api/healthz/invariants。
+// 超派单写集（src/server.ts）理由：接线必需（铁律 0-2）——探针路由必须在生产
+// HTTP 入口挂载才可达；routes/healthz.ts 为小队 A 地盘一字未改，故走独立路由。
+import { invariantHealthRoutes } from './invariants';
 import evolutionRoutes from './routes/evolution';
 import gaEvolutionRoutes from './routes/ga-evolution';
 import ontologyRoutes from './routes/ontology';
@@ -377,6 +381,7 @@ export async function createServer(): Promise<Server> {
   app.use(dataLifecycleRoutes);
   app.use(healthRoutes);
   app.use(healthzRoutes);
+  app.use(invariantHealthRoutes); // D831 (P-2): /api/healthz/invariants 运行期不变量探针
   app.use(evolutionRoutes);
   app.use(gaEvolutionRoutes);
   app.use(ontologyRoutes);
