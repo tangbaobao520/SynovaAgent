@@ -15,6 +15,7 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import Database from 'better-sqlite3';
+import express from 'express';
 import { SessionStore } from '../../src/store/session-store';
 import { createOpenAICompatibleProvider } from '../../src/providers/base';
 import type { LLMProvider } from '../../src/providers/types';
@@ -27,7 +28,9 @@ import {
   getStickyDegradedSessions,
   RUNTIME_INVARIANT_COMPANIONS,
   createRuntimeInvariantsPhase,
+  installRuntimeInvariants,
   invariantRegistry,
+  invariantHealthRoutes,
 } from '../../src/invariants';
 import { Bootstrap } from '../../src/deploy/bootstrap';
 
@@ -151,7 +154,7 @@ describe('负向：注入违约 → fail-closed', () => {
     const sid = createRealSession();
     // 故意破坏：把 store 实例的 lastDegraded 变成"永远读 false、写无效"——
     // 模拟降级标记被抹掉（违约数据流仍走真实 addMessage → appendEvent 链）
-    const realStore = store as unknown as { lastDegraded: boolean };
+    // （lastDegraded 为 public 字段 session-store.ts:172，直接 defineProperty 即可，无需类型强转）
     Object.defineProperty(store, 'lastDegraded', {
       get: () => false,
       set: () => { /* 吞掉：写入降级但标记永远不可见 */ },
@@ -161,7 +164,6 @@ describe('负向：注入违约 → fail-closed', () => {
     db.exec('DROP TABLE session_events');
     expect(() => store.addMessage(sid, 'user', 'hello')).toThrow(InvariantError);
     expect(registry.statusOf('INV-DEGRADED-STICKY')!.lastFailure).toContain('静默吞掉');
-    void realStore;
   });
 });
 
@@ -241,8 +243,8 @@ describe('正向：正常路径 → 无违约、lastFailure 空、hitCount 增�
       )
     `);
     store.addMessage(sid, 'user', 'recover');
-    // 粘滞恢复（enforcement 分支 B）：可见标记必须仍是 true
-    expect((store as unknown as { lastDegraded: boolean }).lastDegraded).toBe(true);
+    // 粘滞恢复（enforcement 分支 B）：可见标记必须仍是 true（public 字段直接读）
+    expect(store.lastDegraded).toBe(true);
     expect(getStickyDegradedSessions()).toContain(sid);
     const status = registry.statusOf('INV-DEGRADED-STICKY')!;
     expect(status.lastFailure).toBeNull(); // 粘滞是 enforcement，不是违约
@@ -380,5 +382,71 @@ describe('异步纪律（类型级）', () => {
   it('无 notChecked 清单的伴生拒绝注册（总纲 §9.4 硬要求）', () => {
     const naked = { ...onToolSchemaSent, notChecked: [] };
     expect(() => registry.install(naked)).toThrow(/notChecked/);
+  });
+});
+
+// ═══ 6. 探针路由自动化（真实 express Router + 真实 HTTP 监听，D831 自验复核补） ═══
+
+describe('探针路由（GET /api/healthz/invariants，真实 HTTP）', () => {
+  /**
+   * 起真实 express 服务器挂 invariantHealthRoutes（探针路由挂的是模块单例 invariantRegistry，
+   * 与 bootstrap Phase 6 同款实例）。探针请求用 originalGlobalFetch（未被 wrap 的原生 fetch）
+   * 发出——探针请求本身不穿检查缝，注册表状态经由单例共享。
+   */
+  async function withProbeServer(probe: (url: string) => Promise<void>): Promise<void> {
+    const app = express();
+    app.use(invariantHealthRoutes);
+    const server = app.listen(0);
+    try {
+      const addr = server.address();
+      const port = typeof addr === 'object' && addr !== null ? addr.port : 0;
+      await probe(`http://127.0.0.1:${port}/api/healthz/invariants`);
+    } finally {
+      server.close();
+    }
+  }
+
+  it('注册表为空 → 503 且 body.error 含 fail-closed（探针自身 fail-closed）', async () => {
+    // 前提：单例在本用例前未被安装（beforeEach 不动单例，afterEach uninstallAll 兜底隔离）
+    expect(invariantRegistry.registered).toBe(0);
+    await withProbeServer(async (url) => {
+      const res = await originalGlobalFetch(url);
+      expect(res.status).toBe(503);
+      const body = JSON.parse(await res.text()) as { registered: number; error: string };
+      expect(body.registered).toBe(0);
+      expect(body.error).toContain('fail-closed');
+    });
+  });
+
+  it('install 3 条并跑一轮正向 → 200、registered=3、每条含 hitCount 字段', async () => {
+    installRuntimeInvariants(); // 装到探针路由同款单例（用例独立于其他 describe 的局部 registry）
+    // 正向驱动三条检查点：配对 tool 序列（pairing，hit 在 role=tool 消息）、
+    // addMessage（degraded-sticky）、chat/completions 出站（schema-sent）
+    const sid = createRealSession();
+    store.appendEvent(sid, 'message', {
+      role: 'assistant', content: '',
+      tool_calls: [{ id: 'hp1', type: 'function', function: { name: 't', arguments: '{}' } }],
+    });
+    store.appendEvent(sid, 'message', { role: 'tool', tool_call_id: 'hp1', content: '{}' });
+    store.addMessage(sid, 'user', 'hello');
+    await globalThis.fetch('http://x.local/v1/chat/completions', {
+      method: 'POST',
+      body: JSON.stringify({ model: 'm', messages: [{ role: 'user', content: 'q' }] }),
+    });
+    await withProbeServer(async (url) => {
+      const res = await originalGlobalFetch(url);
+      expect(res.status).toBe(200);
+      const body = JSON.parse(await res.text()) as {
+        registered: number;
+        invariants: Array<{ code: string; hitCount: number }>;
+      };
+      expect(body.registered).toBe(3);
+      expect(body.invariants).toHaveLength(3);
+      for (const inv of body.invariants) {
+        expect(inv.code).toMatch(/^INV-/);
+        expect(typeof inv.hitCount).toBe('number');
+      }
+      expect(body.invariants.filter((inv) => inv.hitCount > 0)).toHaveLength(3);
+    });
   });
 });

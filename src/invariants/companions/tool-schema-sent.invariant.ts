@@ -91,8 +91,14 @@ export const onToolSchemaSent: InvariantCompanion = {
           let body: ChatRequestBody | null = null;
           try {
             body = JSON.parse(init.body) as ChatRequestBody;
-          } catch {
-            body = null; // 非 JSON body 不在检查面（notChecked #4）
+          } catch (err: unknown) {
+            // 豁免理由保留：非 JSON body 不在检查面（notChecked #4）——非违约，放行原请求。
+            // 铁律 24：catch 不静默吞——log.debug 留痕（降级放行而非错误，debug 级别足够）
+            log.debug(
+              { err: err instanceof Error ? err.message : String(err) },
+              'INV-TOOL-SCHEMA-SENT: body 非 JSON 字符串，豁免检查放行（notChecked #4）',
+            );
+            body = null;
           }
           if (body !== null && Array.isArray(body.messages)) {
             hit();
