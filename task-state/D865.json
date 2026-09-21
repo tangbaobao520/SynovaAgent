@@ -28,16 +28,56 @@
     "commit_identity": "本环境提交者名固定 synova-cto（git 配置层不可分身）；D865 全部提交由小队 B 编码 session 产出，提交映射见 M6 文档 §D865 commit 清单（K3 P2-5 附注如实登记）"
   },
   "findings_disposition": [
-    { "id": "P0-1", "resolution": "fixed-in-this-card", "evidence": "tests/integration/invariant-failclosed.integration.test.ts ①（原始输出：POST /api/conversations → status=500 content-type=application/json，body {ok:false,code:INVARIANT_VIOLATED,invariant:INV-TOOL-SCHEMA-SENT,owner:squad-b/coding}）+ ③ 中途违约=流内 INVARIANT_VIOLATED 帧 + end 断流 + ④ 健康路径不误伤；服务端三行日志链 registry→retry-middleware→routes/conversations 均含 code+owner（M6 §D865 P0-1 全文）" },
-    { "id": "P0-2", "resolution": "fixed-in-this-card（叠栈三支 + job 级回执）；结构性残余 → new-card（控制塔预算口径）", "evidence": "叠栈三支各自 check-pr-budget.sh --base <其 base> 均 ≤12 文件 + 单域；CI job 级回执见 M6 §D865 P0-2。**结构性事实**：CI 的 D734 预算与 G12 域判定都以 origin/main...HEAD（三点）计算（.github/workflows/ci.yml:84 + check-pr-budget.sh 默认 base），故叠栈后支的 main 相对变更集 = 整栈并集（14 win 文件）> 12 上限 → 后支在 CI 上结构性必红。此口径属控制塔域（scripts/**，本卡硬边界不可碰）→ 建议另立卡修正（排除已在上游 base 的祖先文件 / 按 PR base 计算差异），并请 CTO 对 D734 上限与本卡最小自洽代码集（14 win 文件）作出书面裁决" },
-    { "id": "P1-1", "resolution": "fixed-in-this-card", "evidence": "tests/sentinel/invariants.test.ts「registered==0 → 启动失败（真实 Bootstrap fatal Phase）」改为 registerPhase(真 phase) + 临时替换单例 invariantRegistry.installAll 为空操作，断言 aborted=true / status=failed / errors[0] 含 registered==0（真 execute 分支被测，测试内不再重写 execute）" },
-    { "id": "P1-2", "resolution": "fixed-in-this-card", "evidence": "degraded-sticky.invariant.ts 分支 B 不再写 surface.lastDegraded；用例「③ 真实降级后粘滞」「③【D865 P1-2】守卫不写 store 字段」断言 store.lastDegraded===false 且 stickyDegradedSessions 含 sid；消费方 src/routes/conversations.ts:294 STORE_DEGRADED 不再被健康轮次误触发" },
-    { "id": "P1-3", "resolution": "new-card:D866", "evidence": "pairing notChecked 增列「生产 message 双写路径不携带 tool_call_id（D866 前不检查；当前生产触发面=0）」；D866 建议：小队 A 在 src/agent/conversation-engine.ts 的 message 双写点携带 tool_calls/tool_call_id（本卡硬边界不可碰该文件）" },
-    { "id": "P2-1", "resolution": "fixed-in-this-card", "evidence": "D831.json impl.verification 改为本卡最终串行复跑实数：1381 passed/5 failed/1 skipped（分支）vs 1361 passed/5 failed/1 skipped（main 74356ba6 同子集），失败集逐条相同；文件级 261 vs 260" },
-    { "id": "P2-2", "resolution": "fixed-in-this-card", "evidence": "D831.json impl.summary 用例数改 20（D831 首发 17 + D865 增 3），以本机复跑 tests/sentinel/invariants.test.ts 20 passed 为准" },
-    { "id": "P2-3", "resolution": "fixed-in-this-card", "evidence": "registry.flagAnomaly（条目级 + 注册表级累积，uninstall 后注册表级仍可见）+ tool-schema-sent 回滚遇「已被他人替换」log.error+flagAnomaly + health-route 暴露 anomalies（条目级与注册表级）+ 用例断言 snapshot.anomalies[0] 含 code 与「已被他人替换」" },
-    { "id": "P2-4", "resolution": "new-card:D867", "evidence": "check-architecture.sh 的 L3→L5 规则只扫 src/l3/（scripts/check-architecture.sh 硬边界不可碰）→ D867：扫描面按层声明表生成（K3 §15-G5 补法），本卡不动控制塔" },
-    { "id": "P2-5", "resolution": "fixed-in-this-card", "evidence": "src/invariants/index.ts execute 改断言 registered === RUNTIME_INVARIANT_COMPANIONS.length（installAll 被替身/空转时可达，真 Bootstrap 用例覆盖）+ 错误消息含 registered/expected 两数；commit 身份不可分身一事在 impl.commit_identity 如实登记" }
+    {
+      "id": "P0-1",
+      "resolution": "fixed-in-this-card",
+      "evidence": "tests/integration/invariant-failclosed.integration.test.ts ①（原始输出：POST /api/conversations → status=500 content-type=application/json，body {ok:false,code:INVARIANT_VIOLATED,invariant:INV-TOOL-SCHEMA-SENT,owner:squad-b/coding}）+ ③ 中途违约=流内 INVARIANT_VIOLATED 帧 + end 断流 + ④ 健康路径不误伤；服务端三行日志链 registry→retry-middleware→routes/conversations 均含 code+owner（M6 §D865 P0-1 全文）"
+    },
+    {
+      "id": "P0-2",
+      "resolution": "fixed-in-this-card（叠栈三支 + job 级回执）；结构性残余 → new-card（控制塔预算口径）",
+      "evidence": "叠栈三支各自 check-pr-budget.sh --base <其 base> 均 ≤12 文件 + 单域；CI job 级回执见 M6 §D865 P0-2。**结构性事实**：CI 的 D734 预算与 G12 域判定都以 origin/main...HEAD（三点）计算（.github/workflows/ci.yml:84 + check-pr-budget.sh 默认 base），故叠栈后支的 main 相对变更集 = 整栈并集（14 win 文件）> 12 上限 → 后支在 CI 上结构性必红。此口径属控制塔域（scripts/**，本卡硬边界不可碰）→ 建议另立卡修正（排除已在上游 base 的祖先文件 / 按 PR base 计算差异），并请 CTO 对 D734 上限与本卡最小自洽代码集（14 win 文件）作出书面裁决"
+    },
+    {
+      "id": "P1-1",
+      "resolution": "fixed-in-this-card",
+      "evidence": "tests/sentinel/invariants.test.ts「registered==0 → 启动失败（真实 Bootstrap fatal Phase）」改为 registerPhase(真 phase) + 临时替换单例 invariantRegistry.installAll 为空操作，断言 aborted=true / status=failed / errors[0] 含 registered==0（真 execute 分支被测，测试内不再重写 execute）"
+    },
+    {
+      "id": "P1-2",
+      "resolution": "fixed-in-this-card",
+      "evidence": "degraded-sticky.invariant.ts 分支 B 不再写 surface.lastDegraded；用例「③ 真实降级后粘滞」「③【D865 P1-2】守卫不写 store 字段」断言 store.lastDegraded===false 且 stickyDegradedSessions 含 sid；消费方 src/routes/conversations.ts:294 STORE_DEGRADED 不再被健康轮次误触发"
+    },
+    {
+      "id": "P1-3",
+      "resolution": "new-card:D866",
+      "evidence": "pairing notChecked 增列「生产 message 双写路径不携带 tool_call_id（D866 前不检查；当前生产触发面=0）」；D866 建议：小队 A 在 src/agent/conversation-engine.ts 的 message 双写点携带 tool_calls/tool_call_id（本卡硬边界不可碰该文件）"
+    },
+    {
+      "id": "P2-1",
+      "resolution": "fixed-in-this-card",
+      "evidence": "D831.json impl.verification 改为本卡最终串行复跑实数：1381 passed/5 failed/1 skipped（分支）vs 1361 passed/5 failed/1 skipped（main 74356ba6 同子集），失败集逐条相同；文件级 261 vs 260"
+    },
+    {
+      "id": "P2-2",
+      "resolution": "fixed-in-this-card",
+      "evidence": "D831.json impl.summary 用例数改 20（D831 首发 17 + D865 增 3），以本机复跑 tests/sentinel/invariants.test.ts 20 passed 为准"
+    },
+    {
+      "id": "P2-3",
+      "resolution": "fixed-in-this-card",
+      "evidence": "registry.flagAnomaly（条目级 + 注册表级累积，uninstall 后注册表级仍可见）+ tool-schema-sent 回滚遇「已被他人替换」log.error+flagAnomaly + health-route 暴露 anomalies（条目级与注册表级）+ 用例断言 snapshot.anomalies[0] 含 code 与「已被他人替换」"
+    },
+    {
+      "id": "P2-4",
+      "resolution": "new-card:D867",
+      "evidence": "check-architecture.sh 的 L3→L5 规则只扫 src/l3/（scripts/check-architecture.sh 硬边界不可碰）→ D867：扫描面按层声明表生成（K3 §15-G5 补法），本卡不动控制塔"
+    },
+    {
+      "id": "P2-5",
+      "resolution": "fixed-in-this-card",
+      "evidence": "src/invariants/index.ts execute 改断言 registered === RUNTIME_INVARIANT_COMPANIONS.length（installAll 被替身/空转时可达，真 Bootstrap 用例覆盖）+ 错误消息含 registered/expected 两数；commit 身份不可分身一事在 impl.commit_identity 如实登记"
+    }
   ],
   "path_deviations": [
     "派单写集写 src/agent/retry-middleware.ts，实物在 src/llm/retry-middleware.ts（按实物改）",
@@ -54,17 +94,23 @@
     "structural_new_card_suggestion": "D868（建议）：check-pr-budget.sh 按 PR base 计算差异 / 排除上游 base 已含的祖先文件 / 对 D773 代行任务按主域归并 / 治理产物不计入上限"
   },
   "ci": {
-    "verdict": "待本轮推送后回填（job 级：TypeScript+Lint+Iron Laws / Vitest shard 非 SKIPPED）",
+    "verdict": "按 CTO 裁决 B 闭环：job 级因果证明（仅 D734 预算红）+ 本地 CI 等价全量 vitest 双轴 + Vitest skip 因果链；CI 红按裁决留痕并立卡 D868（控制塔计数口径）。",
     "runs": [],
-    "structural_finding": "CI 侧 D734 预算以 origin/main...HEAD 计算（.github/workflows/ci.yml:84 env SYNO_DIFF_BASE=origin/main；check-pr-budget.sh 默认基线与三点 diff）→ 叠栈后支的 main 相对变更集必为整栈并集。本卡最小自洽代码集（含 e2e 用例）为 14 个 win 文件 > 12 上限，且去掉任一文件都会使 tsc/vitest 变红（详见 M6 §D865 P0-2 论证）→ 「叠栈 + CI 真绿」在本卡硬边界（不可改 scripts/** 与 .github/**）下不可同时成立。"
+    "structural_finding": "CI 侧 D734 预算以 origin/main...HEAD 计算（.github/workflows/ci.yml:84 env SYNO_DIFF_BASE=origin/main；check-pr-budget.sh 默认基线与三点 diff）→ 叠栈后支的 main 相对变更集必为整栈并集。本卡最小自洽代码集（含 e2e 用例）为 14 个 win 文件 > 12 上限，且去掉任一文件都会使 tsc/vitest 变红（详见 M6 §D865 P0-2 论证）→ 「叠栈 + CI 真绿」在本卡硬边界（不可改 scripts/** 与 .github/**）下不可同时成立。 三支逐支实测（终态）：core 18 文件/单域 win（15>12）、failclosed 24 文件/单域 win（21>12）、docs 29 文件/跨域；更硬的根因——tests/sentinel/invariants.test.ts 判 mac 而被测主体 src/invariants/** 判 win，'测试与实现同 PR'在现 ownership.yaml 下必然跨域（铁律 48 与 D733 直接冲突）。"
   },
-  "audit": { "k3_report": "docs/synova/audit-reports/2026-09-21-K3-D831.md", "verdict": "FAIL P0×2/P1×3/P2×6", "closed_by": "D865（本卡）" },
+  "audit": {
+    "k3_report": "docs/synova/audit-reports/2026-09-21-K3-D831.md",
+    "verdict": "FAIL P0×2/P1×3/P2×6",
+    "closed_by": "D865（本卡）"
+  },
   "updated_at": "2026-09-21",
   "updated_by": "squad-b/coding",
   "domain": "win",
   "owner": "mac-coding",
   "milestone": "M1 产品可用",
-  "depends_on": ["D831"],
+  "depends_on": [
+    "D831"
+  ],
   "acceptance_points": [
     "P0-1：注入违约（出站请求丢/空 tools）→ 真实 HTTP 入口 5xx + body/日志含 owner（不许 200+降级文案）——附端到端原始输出",
     "P0-2：叠栈分支 CI job 级真绿（Vitest shard 非 SKIPPED 且 success）",
