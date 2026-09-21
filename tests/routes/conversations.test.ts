@@ -452,38 +452,35 @@ describe('D590: 对话 SSE 端点 + SessionStore 持久化 + 鉴权落地', () =
 
   // ── 用例 ⑦: 忙锁 ──
   it('⑦ 忙锁：同 sessionId 并发第二请求 → 409 SESSION_BUSY；首请求完成后可再发', async () => {
+    // D865: SSE 建流延迟到首个 token（fail-closed）——闸门挂起期间 open 帧不再流出，
+    // sessionId 改由预热完成轮获取；"锁已持有"以 fake provider chat 被调用为判据
+    // （busySessions.add 先于引擎轮次，chat 进入 = 锁必已持有，确定性无竞态）
+    const warm = await postConversation(baseUrl, { message: '忙锁预热：建会话' });
+    expect(warm.status).toBe(200);
+    const sessionId = requireSessionId(parseSse(await warm.text()));
+
     let resolveGate!: () => void;
     mocks.gate.promise = new Promise<void>(resolve => { resolveGate = resolve; });
+    mocks.chatCalls.length = 0;
 
-    const first = await postConversation(baseUrl, { message: '忙锁第一请求' });
-    expect(first.status).toBe(200);
-    const reader = first.body?.getReader();
-    expect(reader).toBeDefined();
-    const decoder = new TextDecoder();
-    let openText = '';
-    // chunk 可能在任意字节处切开——读到 open 帧数据完整出现为止
-    for (let i = 0; i < 100; i++) {
-      const { done, value } = await reader!.read();
-      if (done) break;
-      openText += decoder.decode(value, { stream: true });
-      if (openText.includes('"type":"open"')) break;
+    // 首请求在途（延迟建流 → 响应头未发出，不 await）
+    const firstPending = postToSession(baseUrl, sessionId, { message: '忙锁第一请求' });
+    // 等 chat 进入 = 锁已持有（同进程 vi.mock 状态共享，轮询 chatCalls）
+    for (let i = 0; i < 100 && mocks.chatCalls.length === 0; i++) {
+      await sleep(20);
     }
-    const sessionId = (openText.match(/"sessionId":"(sess_[a-z0-9_]+)"/) ?? [])[1];
-    expect(sessionId).toBeDefined(); // open 帧已发 = 锁已持有
+    expect(mocks.chatCalls.length).toBeGreaterThan(0); // chat 已进入（= 锁已持有）
 
     // 同会话第二请求 → 409 流前 JSON
-    const second = await postToSession(baseUrl, sessionId as string, { message: '忙锁第二请求' });
+    const second = await postToSession(baseUrl, sessionId, { message: '忙锁第二请求' });
     expect(second.status).toBe(409);
     expect(((await second.json()) as { code: string }).code).toBe('SESSION_BUSY');
 
     // 放行首请求 → 流完整结束（end 帧）→ 锁释放
     resolveGate();
-    let tail = openText;
-    for (;;) {
-      const { done, value: chunk } = await reader!.read();
-      if (done) break;
-      tail += decoder.decode(chunk, { stream: true });
-    }
+    const first = await firstPending;
+    expect(first.status).toBe(200);
+    const tail = await first.text();
     expect(parseSse(tail).at(-1)?.data.type).toBe('end');
 
     // 完成后同会话可再发（锁已释放）

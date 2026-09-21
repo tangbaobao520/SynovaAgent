@@ -29,15 +29,45 @@ const HEARTBEAT_INTERVAL_MS = 15_000;
 /** SSE 协议帧载荷（type 自描述；sendFrame 按 payload.type 写 event 行） */
 export type SseFramePayload = { type: string } & Record<string, unknown>;
 
+/** 构造选项（D865 P0-1）: deferHeaders = 推迟写 SSE 响应头到首个真实输出——
+ * 首轮 LLM 调用违约（InvariantError）时响应头未发出，路由可改写 5xx（fail-closed） */
+export interface WebViewAdapterOptions {
+  /** true = 建构造时不 flush 头、不启心跳；帧缓冲，ensureActive() 时统一写出 */
+  deferHeaders?: boolean;
+}
+
 export class WebViewAdapter implements ViewAdapter {
   private res: Response;
   /** 断线/关闭后置 true——停写停心跳（写前检查，防止向已销毁 socket 写入） */
   private closed = false;
   private onClosedCallback: (() => void) | null = null;
   private heartbeat: ReturnType<typeof setInterval> | null = null;
+  /** D865: 延迟建流模式——activate 前帧缓冲于此，保持发出顺序 */
+  private pendingFrames: string[] = [];
+  /** D865: 延迟建流模式标记（constructor 设 true，ensureActive 后恒 false） */
+  private deferred = false;
 
-  constructor(res: Response) {
+  constructor(res: Response, options: WebViewAdapterOptions = {}) {
     this.res = res;
+    if (options.deferHeaders === true) {
+      this.deferred = true;
+      // D865 P0-1: 首轮 LLM 违约前不写头（res.headersSent=false）→ 路由可 5xx fail-closed。
+      // 头写出推迟到 ensureActive()（首个 token / 首轮成功后的首帧）。
+      res.on('close', () => {
+        const wasClosed = this.closed;
+        this.closed = true;
+        this.clearHeartbeat();
+        this.pendingFrames.length = 0;
+        if (!wasClosed) {
+          log.debug('SSE 连接关闭（延迟建流模式）— 停写停心跳');
+          this.onClosedCallback?.();
+        }
+      });
+      res.on('error', (err: Error) => {
+        log.debug({ err }, 'SSE 流错误 — 客户端侧连接异常');
+      });
+      return;
+    }
     // SSE headers
     res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
     res.setHeader('Cache-Control', 'no-cache');
@@ -68,6 +98,28 @@ export class WebViewAdapter implements ViewAdapter {
     this.onClosedCallback = fn;
   }
 
+  /**
+   * D865 P0-1: 延迟建流模式的激活点——写出 SSE 头 + 启心跳 + 按序 flush 缓冲帧。
+   * 幂等（非延迟模式或已激活时为 no-op）。路由在首个 token / 首轮成功后的首个帧前调用，
+   * 保证首轮 LLM 违约（InvariantError）发生时 res.headersSent===false，可改写 5xx。
+   */
+  ensureActive(): void {
+    if (!this.deferred) return;
+    if (this.closed) {
+      this.pendingFrames.length = 0;
+      return;
+    }
+    this.deferred = false;
+    this.res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+    this.res.setHeader('Cache-Control', 'no-cache');
+    this.res.setHeader('Connection', 'keep-alive');
+    this.res.flushHeaders();
+    this.heartbeat = setInterval(() => this.writeRaw(': ping\n\n'), HEARTBEAT_INTERVAL_MS);
+    const buffered = [...this.pendingFrames];
+    this.pendingFrames.length = 0;
+    for (const frame of buffered) this.writeRaw(frame);
+  }
+
   private clearHeartbeat(): void {
     if (this.heartbeat !== null) {
       clearInterval(this.heartbeat);
@@ -77,6 +129,11 @@ export class WebViewAdapter implements ViewAdapter {
 
   private writeRaw(chunk: string): void {
     if (this.closed) return; // 断线停写（中断锚语义：在途轮次由路由继续 settle 落库）
+    if (this.deferred) {
+      // D865: 延迟建流——头未写出，帧按序缓冲（ensureActive 时统一 flush）
+      this.pendingFrames.push(chunk);
+      return;
+    }
     try {
       this.res.write(chunk);
     } catch (err) {
@@ -130,6 +187,12 @@ export class WebViewAdapter implements ViewAdapter {
     this.clearHeartbeat();
     if (this.closed) return;
     this.closed = true;
+    // D865: 延迟建流且从未激活（如首轮违约路由直接 5xx JSON）——响应由路由终结束，
+    // 此处不得再 end（json 已结束响应；重复 end 属协议错误）
+    if (this.deferred) {
+      this.pendingFrames.length = 0;
+      return;
+    }
     try {
       this.res.end();
     } catch (err) {

@@ -148,12 +148,45 @@ export interface ResilienceFailure {
   retryable: boolean;
 }
 
-/** callWithResilience 结果: 成功携带 ChatResult，失败为分类 outcome（永不抛异常） */
+/**
+ * 运行期不变量违约错误（src/invariants/registry.ts InvariantError）。
+ * 判别方式 = err.name === 'InvariantError'（鸭子判型，非 instanceof）——理由:
+ * src/llm 是叶子引擎层，若 import src/invariants 会引入跨模块编译耦合与潜在
+ * 循环依赖（invariants wrap 的 fetch 正是本层 provider 出站路径）；InvariantError
+ * 构造器固定设置 name（registry.ts:40），name 判型在单实例进程内等价可靠。
+ */
+function asInvariantError(err: unknown): { code: string; owner: string; message: string } | null {
+  const found = findInvariantError(err);
+  if (found === null) return null;
+  return {
+    code: typeof found.code === 'string' ? found.code : 'UNKNOWN',
+    owner: typeof found.owner === 'string' ? found.owner : 'unknown',
+    message: found.message,
+  };
+}
+
+/**
+ * 沿 cause 链（≤6 层）找 InvariantError——provider.chat 会把 fetch 异常包成
+ * DiagnosticAgentError（cause=原始错误，tests/sentinel/invariants.test.ts traverseCause
+ * 实证），只看顶层 name 会漏判（P0-1 修复过程中的实测教训）。
+ */
+function findInvariantError(err: unknown): (Error & { code?: unknown; owner?: unknown }) | null {
+  let cur: unknown = err;
+  for (let i = 0; i < 6 && cur instanceof Error; i++) {
+    if (cur.name === 'InvariantError') return cur as Error & { code?: unknown; owner?: unknown };
+    cur = (cur as { cause?: unknown }).cause;
+  }
+  return null;
+}
+
+/** callWithResilience 结果: 成功携带 ChatResult，失败为分类 outcome。
+ * 唯一例外: InvariantError 直接上抛（fail-closed，D865/P-2）——不吞、不重试、不降级。 */
 export type ResilienceOutcome =
   | { ok: true; result: ChatResult; attempts: number }
   | ResilienceFailure;
 
-/** streamWithRetry 结果: 成功携带尝试数，失败为分类 outcome（永不抛异常） */
+/** streamWithRetry 结果: 成功携带尝试数，失败为分类 outcome。
+ * 唯一例外: InvariantError 直接上抛（fail-closed，D865/P-2）——不吞、不重试、不降级。 */
 export type StreamResilienceOutcome =
   | { ok: true; attempts: number }
   | ResilienceFailure;
@@ -263,11 +296,15 @@ function sleep(ms: number): Promise<void> {
 }
 
 /**
- * 协作式 LLM 调用: 重试 + 截止超时，永不抛异常（outcome 化）。
+ * 协作式 LLM 调用: 重试 + 截止超时，outcome 化。
+ * 契约（D865 修订）: 除 InvariantError 外永不抛异常——运行期不变量违约（P-2 fail-closed）
+ * 是唯一例外: log.error（含 code/owner）后原样上抛，不吞成 degraded outcome、不重试
+ * （K3 D831 P0-1: 「违约必炸」不得退化为「违约变降级」——虚假安全感是最高价值风险）。
  * @input  — provider + messages + ResilienceOptions（策略/超时/上游 signal/onRetry）
  * @output — { ok:true, result, attempts } | ResilienceFailure（degraded:true）
  * @degraded — 失败一律 degraded:true；截止超时归类 TOOL_TIMEOUT（不重试——deadline 是调用方意图）；
- *             不可重试失败立即 outcome；可重试耗尽 outcome.retryable=true
+ *             不可重试失败立即 outcome；可重试耗尽 outcome.retryable=true；
+ *             InvariantError **不 outcome 化**——直接上抛（fail-closed）
  */
 export async function callWithResilience(
   provider: LLMProvider,
@@ -289,6 +326,16 @@ export async function callWithResilience(
       return { ok: true, result, attempts: attempt + 1 };
     } catch (err) {
       dl.dispose();
+
+      // D865 P0-1: InvariantError 不吞不重试——fail-closed 唯一例外，直接上抛
+      const invErr = findInvariantError(err);
+      const inv = asInvariantError(err);
+      if (invErr !== null && inv !== null) {
+        log.error({ code: inv.code, owner: inv.owner }, `运行期不变量违约 — 上抛（fail-closed）: ${inv.message}`);
+        // 上抛链内层的 InvariantError 本体（provider 会包 DiagnosticAgentError——
+        // 上抛外层会让下游 name 判型漏判）
+        throw invErr;
+      }
 
       // 截止超时: 调用方耐心预算耗尽 → 立即结果化（重试不能违背 deadline 意图）
       if (options?.signal?.aborted !== true && dl.signal.aborted) {
@@ -336,11 +383,14 @@ export async function callWithResilience(
 }
 
 /**
- * 流式调用: idleWatchdog 包流，每个 token pulse 重臂，永不抛异常（outcome 化）。
+ * 流式调用: idleWatchdog 包流，每个 token pulse 重臂，outcome 化。
+ * 契约（D865 修订）: 除 InvariantError 外永不抛异常——不变量违约 log.error（含
+ * code/owner）后原样上抛（fail-closed，同 callWithResilience 唯一例外）。
  * @input  — provider + messages + onToken + ResilienceOptions（idleTimeoutMs 看门狗窗口）
  * @output — { ok:true, attempts } | ResilienceFailure；空闲耗尽归类 TOOL_TIMEOUT
  * @degraded — 空闲超时按 TIMEOUT 可重试（传输健康问题，非调用方耐心预算）；重试耗尽落
- *             TOOL_TIMEOUT outcome（degraded:true）；provider.stream 异常同 chat 分类路径
+ *             TOOL_TIMEOUT outcome（degraded:true）；provider.stream 异常同 chat 分类路径；
+ *             InvariantError **不 outcome 化**——直接上抛（fail-closed）
  */
 export async function streamWithRetry(
   provider: LLMProvider,
@@ -369,6 +419,16 @@ export async function streamWithRetry(
       return { ok: true, attempts: attempt + 1 };
     } catch (err) {
       wd.dispose();
+
+      // D865 P0-1: InvariantError 不吞不重试——fail-closed 唯一例外，直接上抛
+      const invErr = findInvariantError(err);
+      const inv = asInvariantError(err);
+      if (invErr !== null && inv !== null) {
+        log.error({ code: inv.code, owner: inv.owner }, `运行期不变量违约 — 上抛（fail-closed）: ${inv.message}`);
+        // 上抛链内层的 InvariantError 本体（provider 会包 DiagnosticAgentError——
+        // 上抛外层会让下游 name 判型漏判）
+        throw invErr;
+      }
 
       const upstreamAborted = options?.signal?.aborted === true;
       const idleFired = !upstreamAborted && wd.signal.aborted;

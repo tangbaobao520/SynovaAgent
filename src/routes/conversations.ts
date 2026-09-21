@@ -153,6 +153,30 @@ async function buildDiagnosisEngine(): Promise<DiagnosisEngine> {
   return engine;
 }
 
+/**
+ * D865 P0-1: 运行期不变量违约判别（鸭子判型 err.name==='InvariantError'，同
+ * retry-middleware/tool-loop-executor 的选择——避免 routes → invariants 编译耦合；
+ * InvariantError 构造器固定设置 name，registry.ts:40）。
+ * 返回 null = 非违约错误（走既有流内 error 帧路径）。
+ */
+function asInvariantViolation(err: unknown): { code: string; owner: string; message: string } | null {
+  if (!(err instanceof Error)) return null;
+  // 沿 cause 链找（≤6 层）——韧性层已上抛 InvariantError 本体，此处遍历为防御性兜底
+  let cur: unknown = err;
+  for (let i = 0; i < 6 && cur instanceof Error; i++) {
+    if (cur.name === 'InvariantError') {
+      const e = cur as Error & { code?: unknown; owner?: unknown };
+      return {
+        code: typeof e.code === 'string' ? e.code : 'UNKNOWN',
+        owner: typeof e.owner === 'string' ? e.owner : 'unknown',
+        message: cur.message,
+      };
+    }
+    cur = (cur as { cause?: unknown }).cause;
+  }
+  return null;
+}
+
 /** 两条路由共用的对话 handler（spec §5.2-A：单 handler，入口差异仅在 sessionId 来源） */
 async function handleConversationMessage(req: Request, res: Response, pathSessionId?: string): Promise<void> {
   // ① 输入边界（流前 JSON，违规不进 SSE）
@@ -209,8 +233,11 @@ async function handleConversationMessage(req: Request, res: Response, pathSessio
   }
   busySessions.add(sessionId);
 
-  // ⑥ SSE 流建立（此后错误一律走流内 error 帧，不再改状态码）
-  const adapter = new WebViewAdapter(res);
+  // ⑥ SSE 流建立——D865 P0-1 延迟建流: 响应头推迟到首个真实输出（token/首轮成功帧）
+  //    才写出（WebViewAdapter deferHeaders）。首轮 LLM 调用违约（InvariantError）时
+  //    res.headersSent===false → catch 分支可改写 5xx（fail-closed）；此后（头已发出）
+  //    的错误一律走流内 error 帧、不再改状态码；中途违约=流内 INVARIANT_VIOLATED 帧 + 断流。
+  const adapter = new WebViewAdapter(res, { deferHeaders: true });
   let disconnected = false;
   adapter.setOnClosed(() => {
     if (disconnected) return;
@@ -248,8 +275,15 @@ async function handleConversationMessage(req: Request, res: Response, pathSessio
     // ⑧ 持久化时序 ①：用户消息引擎处理前落库（崩溃安全；双写自动进事件流）
     store.addMessage(sessionId, 'user', message);
 
-    // ⑨ 引擎流式轮次（onToken → adapter token 帧；断线后 adapter 自动停写，轮次自然 settle）
-    const result = await conv.processMessageStream(message, (token) => adapter.appendToken(token));
+    // ⑨ 引擎流式轮次（onToken → adapter token 帧；首个 token 激活延迟建流——写头+flush 缓冲帧；
+    //    断线后 adapter 自动停写，轮次自然 settle）
+    const result = await conv.processMessageStream(message, (token) => {
+      adapter.ensureActive();
+      adapter.appendToken(token);
+    });
+
+    // 首轮成功且无 token 路径（如空回复/phaseComplete 短路）——激活建流再发后续帧
+    adapter.ensureActive();
 
     // ⑩ 持久化时序 ③④⑤（断线也执行——完整回复落库，重连不丢）
     store.addMessage(sessionId, 'assistant', result.reply);
@@ -338,6 +372,26 @@ async function handleConversationMessage(req: Request, res: Response, pathSessio
     // ⑫ 终帧 + 关流（心跳随 close 清除）
     adapter.sendFrame({ type: 'end' });
   } catch (err: unknown) {
+    // D865 P0-1: 运行期不变量违约 fail-closed——响应头未发出 → 5xx（违约必炸，
+    // 不得退化为 200+降级文案，K3 D831 §4）；头已发出（中途违约）→ 流内
+    // INVARIANT_VIOLATED 帧 + 断流（M6 行为声明）
+    const inv = asInvariantViolation(err);
+    if (inv !== null) {
+      log.error({ sessionId, invariant: inv.code, owner: inv.owner }, `运行期不变量违约: ${inv.message}`);
+      if (!res.headersSent) {
+        res.status(500).json({
+          ok: false,
+          code: 'INVARIANT_VIOLATED',
+          invariant: inv.code,
+          owner: inv.owner,
+          message: inv.message,
+        });
+        return;
+      }
+      adapter.sendFrame({ type: 'error', code: 'INVARIANT_VIOLATED', invariant: inv.code, owner: inv.owner, message: inv.message, degraded: false });
+      adapter.sendFrame({ type: 'end' });
+      return;
+    }
     const msg = err instanceof Error ? err.message : String(err);
     log.error({ err, sessionId, disconnected }, '对话轮次失败 — 流内 error 帧');
     if (!disconnected) {

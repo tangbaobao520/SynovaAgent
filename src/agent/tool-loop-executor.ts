@@ -92,8 +92,10 @@ export class ToolLoopExecutor {
    * D810: 协作式 LLM 调用（D593 韧性层 B-02/B-06 的生产接入口）。
    * @input  — messages + ChatOptions（tools 等原样透传给 provider）
    * @output — { ok:true, result, attempts } | ResilienceFailure{ code, kind, degraded, retryable }
-   * @degraded — 本方法**永不抛**：可重试失败按策略退避重试；截止超时归类 TOOL_TIMEOUT
-   *             立即结果化（重试不能违背调用方 deadline 意图）；调用方按 outcome.code 降级。
+   * @degraded — 除 InvariantError 外**永不抛**：可重试失败按策略退避重试；截止超时归类
+   *             TOOL_TIMEOUT 立即结果化（重试不能违背调用方 deadline 意图）；调用方按
+   *             outcome.code 降级。InvariantError 唯一例外直接上抛（D865 P0-1 fail-closed），
+   *             由本文件各 catch 穿透到 HTTP 入口——违约不得退化为「抱歉，调用失败」文案。
    */
   private callLlm(messages: LLMMessage[], options?: ChatOptions): Promise<ResilienceOutcome> {
     return callWithResilience(this.ctx.provider, messages, {
@@ -247,6 +249,7 @@ export class ToolLoopExecutor {
 
         continue; // 下一轮 LLM 调用
       } catch (err: unknown) {
+        if (isInvariantError(err)) throw err; // D865 P0-1: 违约穿透到 HTTP 入口（fail-closed）
         this.log.error({ err, round }, 'LLM 调用失败');
         return `抱歉，调用失败：${errorMessage(err)}`;
       }
@@ -264,6 +267,7 @@ export class ToolLoopExecutor {
       }
       return outcome.result.content || '(no response)';
     } catch (err: unknown) {
+      if (isInvariantError(err)) throw err; // D865 P0-1: 违约穿透到 HTTP 入口（fail-closed）
       this.log.error({ err }, 'callLLMWithTools: 最终轮 LLM 调用失败');
       return `工具调用超过最大轮次: ${errorMessage(err)}`;
     }
@@ -397,6 +401,7 @@ export class ToolLoopExecutor {
 
         continue;
       } catch (err: unknown) {
+        if (isInvariantError(err)) throw err; // D865 P0-1: 违约穿透到 HTTP 入口（fail-closed）
         this.log.error({ err, round }, 'streamWithToolLoop: LLM 调用失败');
         return `抱歉，调用失败：${errorMessage(err)}`;
       }
@@ -420,10 +425,28 @@ export class ToolLoopExecutor {
       // D819: 同上——最终态 assistant 由 ConversationEngine 统一入上下文（此处勿再 push，防双推）
       return final.content || '(no response)';
     } catch (err: unknown) {
+      if (isInvariantError(err)) throw err; // D865 P0-1: 违约穿透到 HTTP 入口（fail-closed）
       this.log.error({ err }, 'streamWithToolLoop: 最终轮 LLM 调用失败');
       return '工具调用超过最大轮次，请稍后重试。';
     }
   }
+}
+
+/**
+ * D865 P0-1: 运行期不变量违约判别（鸭子判型，同 retry-middleware.asInvariantError 理由——
+ * 鸭子判型避免 src/agent → src/invariants 编译耦合）。InvariantError 由韧性层上抛后，
+ * 本文件所有 catch 必须穿透，不得降级为「抱歉，调用失败」文案（K3 D831 P0-1 判据）。
+ */
+function isInvariantError(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  // 沿 cause 链找（≤6 层）——防御性：韧性层已上抛 InvariantError 本体，
+  // 但若上游又包一层（DiagnosticAgentError 形态），顶层 name 判型会漏判
+  let cur: unknown = err;
+  for (let i = 0; i < 6 && cur instanceof Error; i++) {
+    if (cur.name === 'InvariantError') return true;
+    cur = (cur as { cause?: unknown }).cause;
+  }
+  return false;
 }
 
 function sleep(ms: number): Promise<void> {
