@@ -1613,3 +1613,5 @@ Binary file .claude/bypass.log matches
 2026-09-21T22:20:58+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/p2-invariants-failclosed
 2026-09-21T22:20:58+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=5de3c787bada1318ebb37b60ecbb5189553e4c11
 2026-09-21T14:53:56Z detected-bypass no-precommit-marker
+2026-09-21T22:54:03+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/p2-invariants-failclosed
+2026-09-21T22:54:04+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=8008cee84e0b62a781f4d98314aabe930a4e83f4
