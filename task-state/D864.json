@@ -1,0 +1,69 @@
+{
+  "task_id": "D864",
+  "title": "D862/P-1 收尾退回条件闭环（K3 CONDITIONAL PASS ⇒ 按纪律未通过）：P1-1 pr6 base 声明 ｜ P2-a 扩扫描口径+第 3 条 loopback 登记 ｜ P2-b healthz catch 零回显+整包断言 ｜ P2-c bypass.log 唯一交集（M8） ｜ 双轴回归零差集",
+  "status": "audited",
+  "risk": "high",
+  "spec": "派单件 docs/synova/coordination/派单-D864-D865-退回闭环-20260921.md §A（出件 2026-09-21 CTO，依据 K3 报告 docs/synova/audit-reports/2026-09-21-K3-D862.md）。纪律：有条件通过＝未通过。闭环后 CTO 复验 → K3 复审。",
+  "write_set": [
+    "src/deploy/backup-scheduler.ts",
+    "src/routes/healthz.ts",
+    "tests/**",
+    "task-state/D862.json",
+    "task-state/D864.json"
+  ],
+  "write_set_correction": "派单写 src/backup/backup-scheduler.ts 与 src/invariants/health-route.ts；实测归属为 src/deploy/backup-scheduler.ts（find 核）+ src/routes/healthz.ts（D862 已建）。本卡按实测路径执行，不改派单原件。",
+  "impl": "小队 A 原班（coder-a 扫描口径 / coder-b 代码+台账 / verifier 独立复现 / 队长并行 CTO 落判据件）。① P1-1：pr6 以 feat/d862-pr5-routes-tui 为 base 声明并计 diff（D860 口径剔除 .claude/bypass.log、.claude/reference-map.md）；② P2-a：src/deploy/backup-scheduler.ts:182 http.request → localhost:{PORT}/api/notifications/send 登记为第 3 条 loopback 豁免（台账 §七 豁免 C），扩扫描口径命令 + 全量命中（37 行 = 26 fetch + 11 非 fetch；唯一未登记 Node 侧出站即该条）；③ P2-b：src/routes/healthz.ts catch 固定文案 + 日志收窄 name/code，测试升级整包断言 + 反例（commit 9aaca76e）；④ P2-c：bypass.log 唯一交集写入合并顺序说明（M8）；⑤ 回归双轴；⑥ 3 项挂账保持登记。",
+  "impl_commits": [
+    "9aaca76e fix(D864): healthz outbound_proxy catch 收口固定文案+日志收窄 name/code（K3 P2-4）+ 整包断言与反例测试（P2-5）",
+    "e1f015a9 docs(D864): 台账新增「非 fetch API 族出站」章节——backup-scheduler.ts:182 第 3 条 loopback 豁免（K3 P2-a）"
+  ],
+  "evidence": {
+    "p1_1": "git diff --name-only feat/d862-pr5-routes-tui..feat/d862-pr6-docs-state（原始输出）+ 每支相对自身 base 文件数；合并顺序说明：docs/synova/coordination/D862-PR合并顺序说明-20260921.md",
+    "p2_a": "台账 §七（7.1 命令 / 7.2 权威命中）+ 台账 §七 豁免 C 行",
+    "p2_b": "src/routes/healthz.ts:334-345 + tests/routes/healthz.test.ts（整包断言 + 反例：修前 1 failed → 修后 11/11 passed）",
+    "p2_c": "docs/synova/coordination/D862-PR合并顺序说明-20260921.md §M8",
+    "regression": "docs/synova/coordination/D864-自验记录-20260921.md（文件级 + 用例级双轴，与 feat/d821-http-proxy 基线）"
+  },
+  "audit": {
+    "verdict": "CONDITIONAL PASS（维持）—— 按纪律＝未通过",
+    "auditor": "kimi-k3",
+    "at": "2026-09-21",
+    "report": "docs/synova/audit-reports/2026-09-21-K3-D864-复审.md ｜ 报告分支 refs/heads/audit/k3-d864-reaudit @ 6d4e76cb",
+    "p0": "无",
+    "p1": "P1-2（新增）：受审分支的 PR 增量在现状态超 D734 上限，且 pr6 触发 D733 域判定 FAIL。证据：main…branch 三-dot 实测 16/21/20/18/19/30 文件；用真实施加 diff 喂 check-pr-budget.sh → 六支全 FAIL。pr6 即便剔除 bypass.log 后 ①（11≤12）过、②（变更跨域）FAIL，唯一越域文件 = .claude/reference-map.md（win 域；由 scripts/workflow/grep-refs.sh:18 生成）；剔除后 ✅ ①11≤12 ／ ✅ ②变更单域 mac。可达性核验：在 origin/main 上先合 D821 再逐支合并，六支实际施加 diff = 3/8/7/5/6/11，逐支喂门禁全绿（pr6 除外，同域问题）。归因 control-tower。",
+    "condition_1_P1_1": "⚠ 部分闭环：pr5..pr6 = 12 文件、src/** 重叠 = 0 逐字复核成立（6 个 pr5 源码/测试文件两侧 blob 全同：healthz ac524b14 / llm-config 81008c2c / chat.tsx be3a7504 / ontology-probe 1a70bb63 / healthz.test c3e4f60a / ontology-probe.test e1faa775）；各支 ≤12 仅在「剔除 D821 载荷(14) + main 同步文档/卡」口径下成立，现状态 PR 语义不成立（见 p1）。",
+    "condition_2_P2a": "✅ 闭环：扩口径 37 行逐字复现（出口外 27 = 26 fetch 族 + 1 非 fetch；出口本体 10 = 注释 5 + 传输实现 5）；backup-scheduler.ts:182 第 3 条 loopback 豁免成立（hostname 硬编码 localhost；D862/D864 全分支零改动该文件）；import 面 axios/node-fetch/got/ky/undici/ws 全零、new WebSocket( 零、XMLHttpRequest 零、运行时 http import 仅 backup-scheduler；台账 §7.1 三条基准命令原样复跑命中与 §7.2 一致。",
+    "condition_3_P2b": "✅ 闭环：catch 固定文案 + 日志收窄 {check, errName, errCode}（src/routes/healthz.ts:334-344，铁律 24 保持 log.error + degraded）；断言升级为 objectContaining + JSON.stringify(body).not.toContain（三路径）；交付方测试独立实跑 11 passed；K3 自拟反例（抛非 Error 对象、String() 携带凭据，与交付方用例独立设计）红→绿物理复现：RED 树（9aaca76e^）1 failed（凭据原样回显于 detail）/ GREEN 树 1 passed。",
+    "condition_4_P2c": "⚠ 部分成立：八步合并顺序实建模拟通过（origin/main 起：步骤 2-8 零冲突，落完 git diff HEAD 444b2f55 仅 M .claude/bypass.log，其余 36 文件全同；步骤 8 伞分支只贡献 1 文件）；但「15 对唯一交集 = .claude/bypass.log」在真实分支状态不成立（实测共享 10–16 文件 = D821 载荷 + main 同步文档/卡，各支 blob 与 main/D821 一致故不产生冲突）。步骤 1 在 task-state/D821.json 必冲突一次（main=d31db17e vs d821=78556b73 vs base=a151712c），取 main 侧即解。",
+    "condition_5_6_regression": "⑤ ⚠ 部分成立：全量顺序跑（--no-file-parallelism）D864 = 7 failed 文件/17 failed 用例，基线 = 7/17，文件级与用例级 diff 均空（逐字相同）；「zero-code .ts 脏树」归因成立（K3 实测：加一行未提交 .ts → 该用例红，还原 → 绿）；「metrics/sessions-api/smoke/llm-config 悬挂进程」归因成立（隔离重跑全绿）；但 p0-wane-baby / electron/use-streaming-conversation / mcp·tool-definitions 三项归因不实——它们在 main 与 D864 两棵树均失败（不可解析 import：cash-conversion-cycle / react-markdown / @modelcontextprotocol/sdk），属恒定环境依赖失败。⑥ ✅ 成立：D864 仅改 src/routes/healthz.ts(11 行) + tests/routes/healthz.test.ts(79 行)，全量跑零新失败。",
+    "condition_7_redline": "✅ 7/7：http-exit.ts 对 D821 diff 0 行（6 支 + 伞逐支）；G1 grep @deepseek-ai src/ packages/ = 0；D862..D864 区间 no-verify 提交 0（各支 12 条命中均为 2026-09-06~10 历史文档 commit）；stash 仅 1 条旧物非本卡；本地=远端哈希逐支一致（无 force push）；preconditions.yaml 无改动；未碰 scripts/control-tower/** · scripts/audit/** · .github/workflows/** · src/sentinel/**。",
+    "p2": "P2-1 合并顺序文档 §二「按此序合并（零冲突）」对第 1 步不成立（task-state/D821.json 必冲突一次，取 main 侧即解）；P2-2 15 对交集「唯一 bypass.log」口径在真实分支状态不成立（共享 10–16 文件）；P2-3「各支 ≤12」存在两套并存数字（自验 3/8/7/5/6/10 vs K3 4/9/8/7/8/12，差 1 源自 task-state/D821.json 冲突解法），宜固定唯一口径；P2-4「确定性失败集 8 例」低估，K3 实测 7 文件/17 例，且三项被归为抖动的失败两树同在（恒定环境依赖）。",
+    "known_backlog_ruling": "三项挂账维持可登记不阻断：tool_choice 前缀豁免（D862/D864 零涉及）／watchdog 探针认证（本轮无 src/deploy/** 改动，不得声称已做）／Windows 实机未验（本轮新增面仅 healthz 文案+断言，零平台分支，禁止声称已验）。",
+    "merge_ruling": "技术面可合（合并实测零冲突、落完等于终树）；但 6 支域 PR 落地前须：① 先合 D821 → 各支同步 main → 逐支 check-pr-budget.sh --base <该支 base> 全绿；② 处置 .claude/reference-map.md 的域归属（入 ownership.yaml domain_neutral 或 PR owner=win）；③ 合并顺序文档补第 1 步冲突与解法。",
+    "env_note": "审计机 macOS/Node v22.22.0；node_modules 缺 @modelcontextprotocol 与 react-markdown → src/mcp/** 与 tests/electron/** 失败作环境依赖处理（两树同败）；全量回归必须 --no-file-parallelism（并发会把 8 个文件打成 hookTimeout 未执行即计失败：实测并行下 metrics/sessions-api/smoke/routes·llm-config/agent-observer/ima-knowledge/qa-router/e2e-autonomy 8 文件假红，顺序跑全绿）。"
+  },
+  "fix_task_id": null,
+  "updated_at": "2026-09-21",
+  "updated_by": "k3-audit",
+  "domain": "win",
+  "owner": "mac-coding",
+  "executor": "mac-coding",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [
+    "D862",
+    "D821"
+  ],
+  "blocked": null,
+  "target": "2026-W38",
+  "acceptance_points": [
+    "① P1-1 二选一：pr6 以 pr5 为 base 重建 diff 使每支 ≤12 —— 给 git diff --name-only <base>..<pr6> 原始输出 + 文件数说明",
+    "② P2-a：backup-scheduler.ts:182 第 3 条 loopback 出站登记台账 + 扩扫描口径（命令 + 命中）",
+    "③ P2-b：healthz catch 不得拼 err.message + 测试断言整包（给断言 diff）",
+    "④ P2-c：bypass.log 为 6 支唯一交集文件 → 合并顺序说明写明（M8）",
+    "⑤ 回归：与 D821 基线零差集（文件级 + 用例级双轴，给命令与输出）",
+    "⑥ 挂账 3 项（tool_choice 前缀豁免 / 探针认证 / Windows 实机）保持登记，不阻断",
+    "红线：http-exit.ts 契约零改动 ｜ 不碰控制塔/审计/CI ｜ 无 --no-verify/stash/force push ｜ PR ≤12（D860 口径）"
+  ],
+  "next": "① CTO 复验 ② K3 复审（本卡 audit=null，复审 PASS 前不得标 PASS）③ 复审 PASS 后按合并顺序说明落 6 支 PR ④ D821 合 main 后关闭 P-1",
+  "note": "来源：K3 D862 审计 CONDITIONAL PASS（按纪律＝未通过）→ CTO 退回闭环。P1-1 / P2-1~P2-8 均不涉及产品代码正确性（无 P0、无代码缺陷需改）；本卡为流程与口径闭环 + 一处潜在泄值口（P2-4/5）收口。"
+}

@@ -14,10 +14,18 @@
     "task-state/D862.json"
   ],
   "impl": null,
-  "audit": null,
+  "audit": {
+    "reaudit": {
+      "at": "2026-09-21",
+      "report": "docs/synova/audit-reports/2026-09-21-K3-D864-复审.md（分支 audit/k3-d864-reaudit @ 6d4e76cb）",
+      "verdict": "CONDITIONAL PASS（维持）",
+      "closed": "P2-a / P2-b / 红色七项 / 无新增回归 完全闭环；P1-1 代码面闭环（pr5..pr6=12、src 重叠 0）",
+      "still_open": "P1-2：受审分支 PR 增量现状态超 D734 上限（三-dot 16–30 文件），pr6 触发 D733 域判定 FAIL（唯一越域文件 .claude/reference-map.md）；P2-1/2/3/4 见 D864 卡 audit.p2"
+    }
+  },
   "fix_task_id": null,
-  "updated_at": "2026-09-20",
-  "updated_by": "synova-cto",
+  "updated_at": "2026-09-21",
+  "updated_by": "k3-audit",
   "domain": "win",
   "owner": "mac-coding",
   "executor": "mac-coding",
