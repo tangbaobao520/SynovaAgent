@@ -45,6 +45,14 @@
     "派单预想拆两支 PR（win 主域 + mac 域）；ownership.yaml 实判：src/llm/**、src/agent/**、src/routes/**、src/l1-interaction/**、tests/integration/**、tests/routes/** 全部落 `**` 兜底 = **win**（mac 例外只有 src/sentinel/**、tests/sentinel/**、docs/synova/coordination/** 等）→ 按门禁硬判据（≤12 文件 + 单域）必须拆三支叠栈，已在 M6 §D865 记录实际归类",
     "tests/sentinel/invariants.test.ts 实判 mac 域 → 放入第三支（docs/mac 支），未按派单预想放 win 支"
   ],
+  "cto_ruling": {
+    "date": "2026-09-21",
+    "scope": "P0-2「CI 真绿」验收口径",
+    "ruling": "B 口径——CI 真绿在本卡硬边界（不可改 scripts/** 与 .github/**）下结构性不可达（实测：变更集 win 15 / mac 3 / domain-neutral 5；check-pr-budget.sh base 硬编码 origin/main...HEAD，无 GITHUB_BASE_REF → 叠栈不降计数；win 支最小自洽代码集含 e2e 用例 = 14+ 文件 > 12 上限）。故 P0-2 闭环证据链改为：① job 级因果证明（Iron Laws 仅因 D734 预算红）+ ② 本地 CI 等价全量 vitest 双轴证据 + ③ Vitest job skip 因果链留痕。CI 红按裁决留痕，并把「D734 计数口径 vs D773 win→Mac 代行 + 新建子系统」登记为控制塔结构缺陷（另立卡）。",
+    "also_authorized": "新增 tests/invariants/** 镜像测试文件（6 个），用于满足门禁组2「新文件配对」硬要求；已用 check-ownership.py 核实其域归属（win，与 src/invariants/** 同域）。",
+    "source": "CTO 本次对话书面裁决（创始人会话，2026-09-21）；依据 K3 §18.2「CI 绿 或 CTO 对 D734 口径作出书面裁决」",
+    "structural_new_card_suggestion": "D868（建议）：check-pr-budget.sh 按 PR base 计算差异 / 排除上游 base 已含的祖先文件 / 对 D773 代行任务按主域归并 / 治理产物不计入上限"
+  },
   "ci": {
     "verdict": "待本轮推送后回填（job 级：TypeScript+Lint+Iron Laws / Vitest shard 非 SKIPPED）",
     "runs": [],
