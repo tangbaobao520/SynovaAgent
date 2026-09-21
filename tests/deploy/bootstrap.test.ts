@@ -20,13 +20,14 @@ describe('D83: Bootstrap — 启动序列编排器', () => {
     // 每个测试重新 import 保证干净状态
   });
 
-  it('创建实例时注册默认 6 个 Phase', async () => {
+  it('创建实例时注册默认 7 个 Phase', async () => {
     const { Bootstrap } = await import('../../src/deploy/bootstrap');
     const boot = new Bootstrap();
     // 通过 run() 后的 phaseResults 验证默认 phase
     const result = await boot.run();
-    expect(result.phaseResults.length).toBe(6);
-    expect(result.phaseResults.map((r) => r.phaseId).sort()).toEqual([0, 1, 2, 3, 4, 5]);
+    // D831: Phase 6（runtime-invariants，fatal）加入 orderedIds → 6 → 7
+    expect(result.phaseResults.length).toBe(7);
+    expect(result.phaseResults.map((r) => r.phaseId).sort()).toEqual([0, 1, 2, 3, 4, 5, 6]);
   });
 
   it('全部 Phase 通过时返回 ok:true', async () => {
@@ -368,8 +369,8 @@ describe('D83: Bootstrap — 启动序列编排器', () => {
     });
 
     const result = await boot.run();
-    // 1 custom + 5 skipped (id 1-5 没注册)
-    expect(result.phaseResults.length).toBe(6);
+    // 1 custom + 6 skipped (id 1-6 没注册；D831 起 orderedIds 含 Phase 6)
+    expect(result.phaseResults.length).toBe(7);
     expect(result.phaseResults[0].name).toBe('custom');
     expect(result.phaseResults[1].status).toBe('skipped');
   });
