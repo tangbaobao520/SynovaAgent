@@ -6,6 +6,9 @@
  * 用户可在对话中切换 IM 通道。
  */
 import { createLogger } from '@synova/logger';
+// D862/P-1: webhook 出站走唯一出口 outboundFetch（真实外网出站；错误按 OutboundHttpError 分类消费）
+import { outboundFetch, OutboundHttpError } from '../providers/http-exit';
+
 
 const log = createLogger('l1/im-channel');
 
@@ -82,7 +85,7 @@ export function createFeishuWebhookChannel(webhookUrl: string): IMChannel {
 
     async sendMessage(target: string, msg: IMMessage) {
       try {
-        const res = await fetch(webhookUrl, {
+        const res = await outboundFetch(webhookUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -92,7 +95,9 @@ export function createFeishuWebhookChannel(webhookUrl: string): IMChannel {
         });
         return { ok: res.ok, error: res.ok ? undefined : `HTTP ${res.status}` };
       } catch (err: unknown) {
-        log.warn({ err: err instanceof Error ? err.message : String(err) }, "网络请求失败");
+        // 铁律 32：出站错误分类摘要（code/phase/retryable）随降级日志上报
+        const detail = err instanceof OutboundHttpError ? { code: err.code, phase: err.phase, retryable: err.retryable } : {};
+        log.warn({ err: err instanceof Error ? err.message : String(err), ...detail }, '网络请求失败');
         const msg = err instanceof Error ? err.message : String(err);
         return { ok: false, error: msg };
       }
@@ -112,7 +117,7 @@ export function createFeishuWebhookChannel(webhookUrl: string): IMChannel {
             })),
           });
         }
-        const res = await fetch(webhookUrl, {
+        const res = await outboundFetch(webhookUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -122,7 +127,9 @@ export function createFeishuWebhookChannel(webhookUrl: string): IMChannel {
         });
         return { ok: res.ok };
       } catch (err: unknown) {
-        log.warn({ err: err instanceof Error ? err.message : String(err) }, "IM 消息发送失败");
+        // 铁律 32：出站错误分类摘要（code/phase/retryable）随降级日志上报
+        const detail = err instanceof OutboundHttpError ? { code: err.code, phase: err.phase, retryable: err.retryable } : {};
+        log.warn({ err: err instanceof Error ? err.message : String(err), ...detail }, 'IM 消息发送失败');
         const msg = err instanceof Error ? err.message : String(err);
         return { ok: false, error: msg };
       }

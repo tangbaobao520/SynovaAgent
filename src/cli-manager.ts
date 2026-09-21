@@ -10,6 +10,9 @@
 
 import { fileURLToPath } from 'node:url';
 import { createLogger } from '@synova/logger';
+// D862/P-1: localhost 出站走唯一出口 outboundFetch（出口契约原生 loopback 恒绕过代理）
+import { outboundFetch } from './providers/http-exit';
+
 import { createExpertCommand } from './cli/commands/expert';
 import { createMeasurerCommand } from './cli/commands/measurer';
 import { createKnowledgeCommand } from './cli/commands/knowledge';
@@ -115,7 +118,7 @@ function createStatusCommand(): CLICommand {
       const port = config.port;
 
       try {
-        const res = await fetch(`http://127.0.0.1:${port}/api/status/budget`);
+        const res = await outboundFetch(`http://127.0.0.1:${port}/api/status/budget`);
         const result = await res.json() as Record<string, unknown>;
         console.log('\n系统状态:');
         console.log(`  预算消耗: ${result.totalSpent ?? 'N/A'} tokens`);
@@ -142,7 +145,7 @@ function createReloadCommand(): CLICommand {
       const port = config.port;
 
       try {
-        const res = await fetch(`http://127.0.0.1:${port}/api/reload`, { method: 'POST' });
+        const res = await outboundFetch(`http://127.0.0.1:${port}/api/reload`, { method: 'POST' });
         const result = await res.json() as Record<string, unknown>;
         if (result.ok) {
           console.log('✅ 配置已热加载');
