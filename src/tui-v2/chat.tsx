@@ -18,6 +18,7 @@ import { checkForUpdates, formatUpdateMessage, type UpdateCheckResult } from '..
 import { getCostTracker, formatCost } from '../services/llm-cost';
 import { fetchDeepseekBalance, formatBalance, type BalanceResult } from '../services/deepseek-balance';
 import { loadConfig } from '../config';
+import { outboundFetch } from '../providers/http-exit';
 import { getAllExpertIds } from '../agent/expert-config-loader';
 
 import { Header } from './components/header';
@@ -245,10 +246,11 @@ function TuiApp({ bctx }: { bctx: BootstrapResult }) {
     const scheduler = getGlobalScheduler(db);
     scheduler.schedule('ontology-monitor', '*/5 * * * *', async () => {
       try {
-        const response = await fetch(`http://localhost:${loadConfig().port}/api/ontology/graph/${convRef.current?.getOrgId() || 'default'}`);
+        // D862/P-1：loopback 出站走唯一出口 outboundFetch（出口契约恒绕过 loopback，行为不变）
+        const response = await outboundFetch(`http://localhost:${loadConfig().port}/api/ontology/graph/${convRef.current?.getOrgId() || 'default'}`);
         if (response.ok) { const data = await response.json() as { nodeCount?: number }; }
-      } catch (err: any) {
-        log.warn({ err: err.message }, '[cron] 本体 API 未就绪');
+      } catch (err: unknown) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, '[cron] 本体 API 未就绪');
       }
     });
 

@@ -32,6 +32,7 @@ import {
   LlmCredentialError,
 } from '../services/llm-credential-store';
 import { loadFileConfig } from '../config-file';
+import { outboundFetch, OutboundHttpError } from '../providers/http-exit';
 
 const log = createLogger('routes/llm-config');
 const router = Router();
@@ -189,7 +190,9 @@ router.post('/api/llm/test', async (req: Request, res: Response) => {
   const timer = setTimeout(() => controller.abort(), testTimeoutMs());
   const startedAt = Date.now();
   try {
-    const upstreamRes = await fetch(`${baseUrl.replace(/\/$/, '')}/chat/completions`, {
+    // D862/P-1：上游出站走唯一出口 outboundFetch（loopback 目标恒绕过代理；错误经
+    // OutboundHttpError code/phase/retryable 分类，铁律 32）。init 仅 method/headers/body/signal。
+    const upstreamRes = await outboundFetch(`${baseUrl.replace(/\/$/, '')}/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -217,7 +220,11 @@ router.post('/api/llm/test', async (req: Request, res: Response) => {
   } catch (err: unknown) {
     const latencyMs = Date.now() - startedAt;
     const aborted = err instanceof Error && err.name === 'AbortError';
-    const code = aborted ? 'TIMEOUT' : 'NETWORK';
+    // 信号语义对齐（铁律 32）：出口已分类的 socket 超时（UPSTREAM_TIMEOUT）并入 TIMEOUT，
+    // 其余网络类（代理不可达/上游不可达/隧道失败）并入 NETWORK——对调用方保持原 6 值枚举不变。
+    const code = aborted || (err instanceof OutboundHttpError && err.code === 'UPSTREAM_TIMEOUT')
+      ? 'TIMEOUT'
+      : 'NETWORK';
     log.warn(
       { provider: cfg.provider, code, latencyMs, err: err instanceof Error ? err.message : String(err) },
       'LLM 连接测试不可达 — 按网络类错误码返回',
