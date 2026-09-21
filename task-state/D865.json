@@ -107,7 +107,7 @@
   "ci": {
     "verdict": "按 CTO 裁决 B 闭环：job 级因果证明（仅 D734 预算红）+ 本地 CI 等价全量 vitest 双轴 + Vitest skip 因果链；CI 红按裁决留痕并立卡 D868（控制塔计数口径）。",
     "runs": [],
-    "structural_finding": "CI 侧 D734 预算以 origin/main...HEAD 计算（.github/workflows/ci.yml:84 env SYNO_DIFF_BASE=origin/main；check-pr-budget.sh 默认基线与三点 diff）→ 后支的 main 相对变更集必为整栈并集。本卡最小自洽代码集（含 e2e 用例）win 侧 21 文件 > 12 上限，且去掉任一文件都会使 tsc/vitest 变红（详见 M6 §D865 P0-2 论证）→ 「三支拆分 + CI 真绿」在本卡硬边界（不可改 scripts/** 与 .github/**）下不可同时成立。 三支逐支实测（终态，本卡复核）：core 18 文件（15 win + 3 中性）/单域 win（15 > 12）；failclosed 24 文件（21 win + 3 中性）/单域 win（21 > 12）；docs 29 文件（21 win + 3 mac + 5 中性）/❌ 跨域；支间增量 failclosed vs core = 17（单域 win，> 12）、docs vs failclosed = 16（跨域，> 12）——三支**皆超预算**（旧文「均 ≤12」为不实，见 P0-2 evidence 的 F2 纠正）；更硬的根因——tests/sentinel/invariants.test.ts 判 mac 而被测主体 src/invariants/** 判 win，'测试与实现同 PR'在现 ownership.yaml 下必然跨域（铁律 48 与 D733 直接冲突）。"
+    "structural_finding": "CI 侧 D734 预算以 origin/main...HEAD 计算（.github/workflows/ci.yml:84 env SYNO_DIFF_BASE=origin/main；check-pr-budget.sh 默认基线与三点 diff）→ 后支的 main 相对变更集必为整栈并集。本卡最小自洽代码集（含 e2e 用例）win 侧 21 文件 > 12 上限，且去掉任一文件都会使 tsc/vitest 变红（详见 M6 §D865 P0-2 论证）→ 「三支拆分 + CI 真绿」在本卡硬边界（不可改 scripts/** 与 .github/**）下不可同时成立。 三支逐支实测（终态，本卡复核）：core 18 文件（15 win + 3 中性）/单域 win（15 > 12）；failclosed 24 文件（21 win + 3 中性）/单域 win（21 > 12）；docs 29 文件（21 win + 3 mac + 5 中性）/❌ 跨域；支间增量 failclosed vs core = 17（单域 win，> 12）、docs vs failclosed = 20（跨域，> 12；tip f66bc3f3 复算，旧文 16 为返工前口径，已由自验独立复算纠正）——三支**皆超预算**（旧文「均 ≤12」为不实，见 P0-2 evidence 的 F2 纠正）；更硬的根因——tests/sentinel/invariants.test.ts 判 mac 而被测主体 src/invariants/** 判 win，'测试与实现同 PR'在现 ownership.yaml 下必然跨域（铁律 48 与 D733 直接冲突）。"
   },
   "audit": {
     "k3_report": "docs/synova/audit-reports/2026-09-21-K3-D831.md",
