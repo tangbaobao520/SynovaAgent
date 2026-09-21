@@ -1,7 +1,7 @@
 {
   "task_id": "D862",
   "title": "P-1 收尾三项（D821 越界挂账）：connector 覆盖 src/connectors/ima.ts+ima-connector.ts ｜ 健康检查暴露 kind:'socks' 含值 ｜ 启动期 proxy-install/bootstrap",
-  "status": "claimed",
+  "status": "audited",
   "risk": "high",
   "spec": "D821 开工前冲突扫描发现：其原卡 3 条 acceptance_points 要求在派单写集之外改文件；(1) connector 直连（源卡反例正是 provider 走代理、connector 直连）(2) 健康检查只含变量名不含值，需改 src/routes/** 或 src/server.ts (3) src/deploy/bootstrap.ts 启动期安装。CTO 裁决：本卡承接三项，使 P-1 由『部分关闭』转为『关闭』。",
   "write_set": [
@@ -14,10 +14,22 @@
     "task-state/D862.json"
   ],
   "impl": null,
-  "audit": null,
+  "audit": {
+    "verdict": "CONDITIONAL PASS",
+    "auditor": "kimi-k3",
+    "at": "2026-09-21",
+    "report": "docs/synova/audit-reports/2026-09-21-K3-D862.md ｜ 报告分支 refs/heads/audit/k3-20260921-d862 @ 3b47edcc",
+    "p0": "无",
+    "p1": "P1-1 pr6 叠在 pr5 之上：git diff --name-only 717d67a1 origin/feat/d862-pr6-docs-state = 14 文件，含 pr5 的 6 个源码/测试文件（blob 全同，非漂移）。6 支按 6 个独立 PR 提交时 pr6 重复承载 pr5，且 14 > D734 上限 12 → 须声明 pr5→pr6 叠栈，或 pr6 以 pr5 为 base 重建 diff（只含 8 个 docs/state 文件）。归因 control-tower。",
+    "p2": "P2-1 .claude/bypass.log 在 6 支分支内容互异（7 个不同 blob），是唯一跨分支交集文件，按支挑拣/移植会冲突（M8）；P2-2 src/deploy/backup-scheduler.ts:182 第 3 条未登记 loopback 出站（http.request → localhost；根因＝收敛清单只扫 fetch(；D862 零改动该文件）；P2-3 watchdog 豁免表述宜收紧（HEALTH_URL 可被 WATCHDOG_TARGET_URL 覆盖，现网/docker-compose 恒 loopback，覆盖口未接线）；P2-4 healthz catch 拼 err.message 为潜在泄值口（当前 0 泄漏，src/routes/healthz.ts:335-336）；P2-5 healthz 测试只断言 detail 未断言整包 JSON（tests/routes/healthz.test.ts:133-151）；P2-6 mvp-server 在 src/ 内零 import（仅 package.json:14 npm run mvp 入口），勘误宜补接线说明；P2-7 派单称『D821 基线 8 个失败』，K3 顺序跑复算文件级 7 / 用例级 17（全归因 @modelcontextprotocol 未安装的环境依赖，零差集结论不受影响）；P2-8 测试夹具用 REPORT as never（生产代码 G1=0）。",
+    "evidence_summary": "必核 1-9 全数独立物理复现（本审计自建夹具非重跑交付方断言）：① grep 26 处分类逐条机械复核成立（22 浏览器内嵌按 <script>..</script> 区间验证 + 2 注释 + 2 loopback 豁免）+ 运行时 globalThis.fetch 计数器（7 条业务流）源码侧调用 = 0；② 假代理 18801 逐条收到 ima /v1/health、boss-mailbox webhook、/api/llm/test 上游；chat.tsx 同构 loopback 代理 delta=0 且本机目标收到；③ 注入 verify-user:super-secret-pass 后 /api/healthz 全文 grep 命中 = 0；④ 死端口 → PROXY_UNREACHABLE(phase=connect, retryable=true, degraded=true) 全链 + canary 93.184.215.14 直连超时 75s / 经代理 200 8ms（直连可达也不许偷走）；⑤ @deepseek-ai src/ packages/ = 0；⑥ 顺序跑（--no-file-parallelism）双轴零差集 + D862 自建 8 文件 120 例独立全绿；⑦ 勘误 2 扩入必要 + 2 豁免成立（mcp 桥 httpBase 硬编码 localhost，强于台账理由；watchdog 现网恒 loopback）；⑧ blob 级零漂移 + 六分支并集=终树零差集 + 实际三方合并模拟（D821 落 main 后 pr1→pr6）0 冲突且落完等于终树；⑨ preconditions.yaml P-1 blob 三处全同（dispatched 未被误改）+ 无 --no-verify + 无 D862 force push + 无 stash 使用。",
+    "known_backlog_ruling": "三项挂账（tool_choice:'none' 后收紧前缀豁免 / 探针认证未做 / Windows 实机未验）均判可登记不阻断；Windows 残余风险限运行期行为（静态面无平台分支/无 shell/无路径分隔符）。",
+    "merge_ruling": "技术面可合；6 支域 PR 落地形态须先满足 P1-1（叠栈声明或 pr6 重建 diff）。preconditions.yaml P-1 维持 dispatched，待 D821 合 main 后再标关闭并同步本卡（Card acceptance_points[4] 处于显式延后状态，属正确不作为）。",
+    "env_note": "审计机 macOS/Node v22.22.0（ABI 127，better-sqlite3 实跑通过）；node_modules 内 @modelcontextprotocol 未安装 → src/mcp/** 的 tsc/vitest 结论作环境依赖处理；全量回归必须 --no-file-parallelism（并发会把 8 个文件打成 hookTimeout 未执行即计失败，产生假失败）。"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-09-20",
-  "updated_by": "synova-cto",
+  "updated_at": "2026-09-21",
+  "updated_by": "k3-audit",
   "domain": "win",
   "owner": "mac-coding",
   "executor": "mac-coding",
