@@ -612,22 +612,35 @@ if [[ -f "$STAGING_GUARD" ]]; then
         # rc≠0: block 用 exit 1 + JSON（正常阻断）vs 崩溃（非 JSON）→ 区分显式降级
         GUARD_STATUS=$(echo "$GUARD_OUT" | "$PYBIN" -c "import json,sys; print(json.load(sys.stdin).get('status','degraded'))" 2>/dev/null || echo "degraded")
         if [[ "$GUARD_STATUS" != "block" ]]; then
-          echo -e "${YELLOW}⚠ staging-guard 执行异常 (rc=$GUARD_RC) — 降级放行，请检查其日志${NC}"
-          echo "$GUARD_OUT" | head -3
+          # D853 (CTO 授权): 旧行为 = 异常降级放行（fail-open）——把 "guard 不可用" 翻译成 "放行"，
+          #   与 staging_guard._fail_closed() 治的是同一族病（链断/异常 ≠ 没有认领）。
+          #   认领维度是**保护**维度 → 异常即 fail-closed：阻断 + 点名原因与原始输出（铁律 11/24/31），
+          #   绝不静默放行。口径与 staging_guard._fail_closed() 一致。
+          echo -e "${RED}❌ D853: staging-guard 执行异常 (rc=$GUARD_RC) — 认领判定不可用 → fail-closed 阻断${NC}"
+          echo -e "${YELLOW}   （旧行为是降级放行；异常不等于没有认领，故不再放行）${NC}"
+          echo "$GUARD_OUT" | head -5
           echo ""
+          echo -e "${RED}  可执行出路: 修好 guard 后重跑；或按实情移出暂存文件: git restore --staged <file>${NC}"
+          echo ""
+          exit 1
         fi
       else
         GUARD_STATUS=$(echo "$GUARD_OUT" | "$PYBIN" -c "import json,sys; print(json.load(sys.stdin).get('status','degraded'))" 2>/dev/null || echo "degraded")
       fi
     else
-      GUARD_STATUS="degraded"
-      echo -e "${YELLOW}⚠ staging-guard 跳过: python 不可用或损坏（fail-open 显式提示，不静默）${NC}"
+      # D853 (CTO 授权): 旧行为 = GUARD_STATUS=degraded → 跳过 guard → **放行**（fail-open）。
+      #   python 不可用 = 认领判定整条不可用 → 与 staging_guard._fail_closed() 及上面的
+      #   "guard 执行异常" 路径**同口径**：fail-closed 阻断 + 点名原因（铁律 11/24/31）。
+      #   理由: 认领维度是**保护**维度，"拿不到认领列表" ≠ "没有认领"。
+      echo -e "${RED}❌ D853: staging-guard 无法执行 — python3/python/py 试运行均不可用 → 认领判定不可用 → fail-closed 阻断${NC}"
+      echo -e "${YELLOW}   出路: 修复本机 python 后重跑；或按实情移出暂存文件: git restore --staged <file>${NC}"
+      echo ""
+      exit 1
     fi
     if [[ "$GUARD_STATUS" == "block" ]]; then
       # D535: 防跑偏信号接线 — block 事件自动沉淀到学习闭环（incident-loop）
       # fail-open: incident-loop 不可用 → 显式提示不阻断（铁律 24/31）
-      if [[ -n "$PYBIN" ]]; then
-        set +e
+      if [[ -n "$PYBIN" ]]; then        set +e
         INC_OUT=$("$PYBIN" "$PROJECT_ROOT/scripts/control-tower/incident-loop.py" record \
           --id "staging-block-$(date +%Y%m%d)" \
           --symptom "staging-guard block: 暂存区含他人文件" \
@@ -650,8 +663,36 @@ for f in d.get('foreign_files',[]):
     print(f\"  - {f['file']} (属于 session {f.get('owner_session','?')}, brief: {f.get('brief','?')})\")
 " 2>/dev/null || echo "$GUARD_OUT"
       echo ""
-      echo -e "${RED}  提交已阻断 — 请先与对应 session 协调或移出该文件${NC}"
+      # D839 ②: block 文案给**可执行**释放命令（不再只写"去协调"）。
+      # 分三种可执行出路，算子按实情选一条：
+      echo -e "${RED}  提交已阻断。三条可执行出路（按实情选一条）:${NC}"
+      echo "$GUARD_OUT" | python3 -c "
+import json,sys
+d=json.load(sys.stdin)
+cmd=d.get('release_cmd','')
+for f in d.get('foreign_files',[]):
+    t=f.get('owner_session','?')
+    if cmd: print('  ① 对方任务其实已完成 → 释放它的认领（持久化到台账）:\n     ' + cmd)
+print('  ② 对方任务仍在进行 → 让出该文件，或把文件登记进本任务写集后与对方协调串行')
+print('  ③ 只是本 session 未登记 → 移出该文件: git restore --staged <file>')
+" 2>/dev/null || echo -e "     ${RED}python 不可用，见上方 guard 原始输出${NC}"
+      echo ""
       exit 1
+    fi
+    # D839 ①: 完成即释放 — 有已释放的认领被跳过 → 放行但**显式**提示释放理由（谁被释放/依据），
+    # 让"降 warn 放行"可见、可核，不是静默放过（铁律 11 静默降级禁止）。
+    if [[ "$GUARD_STATUS" == "warn" ]] && [[ -n "$PYBIN" ]]; then
+      echo "$GUARD_OUT" | "$PYBIN" -c "
+import json,sys
+d=json.load(sys.stdin)
+r=d.get('release_reason','')
+if r:
+    print('  ℹ️  D839 完成即释放 — 以下认领已释放，不再阻塞本提交:')
+    print('     ' + r)
+    for c in d.get('released_claims',[]):
+        print(\"       - \" + c.get('task_id','?') + ' ← ' + c.get('brief','?'))
+" 2>/dev/null || true
+      echo ""
     fi
   fi
 fi

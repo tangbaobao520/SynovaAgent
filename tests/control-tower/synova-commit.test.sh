@@ -23,8 +23,11 @@ unset GIT_DIR GIT_WORK_TREE
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SC="$HERE/../../scripts/control-tower/synova-commit"
 PASS=0; FAIL=0
+FAILLOG=""
 ok()  { echo "  ✅ $1"; PASS=$((PASS+1)); }
-bad() { echo "  ❌ $1"; FAIL=$((FAIL+1)); }
+# D853: 失败断言名必须活到 CI 注解——注解只带 `tail -8`（ci.yml canary），而 ❌ 行在 ⑥⑦⑧ 之前
+#   就被后续 ✅ 挤出去了（32cc6a02 实测：ubuntu 红但注解里看不到是哪条）。故失败时在**末尾**重放。
+bad() { echo "  ❌ $1"; FAIL=$((FAIL+1)); FAILLOG="${FAILLOG}${1} ; "; }
 TMPD="$(mktemp -d)"; trap 'rm -rf "$TMPD"' EXIT
 
 # ① 接线: staging_guard 段存在（D508 后并行隔离的实际承载者）
@@ -32,7 +35,10 @@ grep -q 'STAGING_GUARD="\$PROJECT_ROOT/scripts/control-tower/staging_guard.py"' 
   && grep -q -- '--session-id "$SESSION_ID" --staged' "$SC" \
   && ok "① staging_guard 接线存在（D311 段）" || bad "① staging_guard 接线缺失"
 grep -q "暂存区隔离 (D311 M1b)" "$SC" && ok "① 阻断点名文案存在" || bad "① 阻断文案缺失"
-grep -q "降级放行，请检查其日志" "$SC" && ok "④ guard 崩溃显式降级提示（非静默）" || bad "④ 降级静默"
+# D853: ④ 语义升级（旧契约「文案含降级放行」= 异常放行，已被 CTO 授权的 fail-closed 取代）
+#   断言强度↑：既查"异常被显式命名"，也查"fail-closed 阻断"；行为面由 ⑨ 实测（不是只查文案）
+grep -q "staging-guard 执行异常" "$SC" && grep -q "fail-closed 阻断" "$SC" \
+  && ok "④ guard 异常路径显式命名 + fail-closed（D853 升级，旧为降级放行）" || bad "④ 异常路径未显式/fail-closed"
 
 # ── 沙箱: 复制 scripts（REPO_ROOT=沙箱 → registry/guard/bypass.log 全落沙箱内）──
 # 注意: staging_guard 从脚本位置解析 registry（不吃 SYNO_CT_DIR）——隔离靠整目录复制而非 env
@@ -47,15 +53,42 @@ touch "$SB/.claude/bypass.log"
 STUB="$TMPD/stub-precommit.sh"; printf '#!/bin/bash\nexit 0\n' > "$STUB"; chmod +x "$STUB"
 
 # 他人 session 登记写集 x.md
-python3 "$SB/scripts/control-tower/session_registry.py" register --session-id other-sess --brief "" --task-id D999 >/dev/null 2>&1
-python3 "$SB/scripts/control-tower/session_registry.py" write-set --session-id other-sess --add x.md >/dev/null 2>&1
+# D853: 准备步骤的输出**不再丢弃**（旧写法 `>/dev/null 2>&1`）——② 若以"没拦"形式失败，
+#   这两条输出是判「准备步骤失败」vs「门禁不拦」的唯一依据；只在失败时进 DIAG-②（有 150 字符预算）。
+D2_REGISTER_OUT=$(python3 "$SB/scripts/control-tower/session_registry.py" register --session-id other-sess --brief "" --task-id D999 2>&1)
+D2_WS_OUT=$(python3 "$SB/scripts/control-tower/session_registry.py" write-set --session-id other-sess --add x.md 2>&1)
+# D853: ② 前置断言 —— registry 必须**真的**登记上（旧写法 `>/dev/null 2>&1` 把准备步骤的失败也吞了，
+#   于是"准备失败"会以"② 没拦"的形式出现，把两类不同根因混成一个症状）。这条只做"前置可见"，不放宽 ②。
+D2_PRE=$(cd "$SB" && python3 scripts/control-tower/session_registry.py claimants x.md 2>&1 | head -1)
+if echo "$D2_PRE" | grep -q "other-sess"; then
+  ok "② 前置: registry 登记 other-sess→x.md 成功"
+else
+  bad "② 前置: registry 未登记上（claimants=$D2_PRE）"
+fi
 
 # ② 行为(拦): 他人写集文件 → exit 1 + 点名
 echo "foreign" > "$SB/x.md"
 git -C "$SB" -c user.name=t -c user.email=t@t add x.md
 OUT=$(cd "$SB" && SYNO_PRE_COMMIT="$STUB" SYNO_GATEKEEPER_ACK=1 \
   bash "$SB/scripts/control-tower/synova-commit" --task-id T-self --agent test --message "test: foreign file" 2>&1); rc=$?
-[ "$rc" -eq 1 ] && ok "② 他人写集 → exit 1（并行劫持阻断）" || bad "② 应拦, 实际 exit=$rc"
+if [ "$rc" -eq 1 ]; then
+  ok "② 他人写集 → exit 1（并行劫持阻断）"
+else
+  bad "② 应拦, 实际 exit=$rc"
+  # D853: ② 失败时的链路证据（CI 注解唯一可见区）——判"哪条分支被走了"：暂存区是否真的有文件 /
+  #   registry 是否登记到 other-sess / synova-commit 走了哪条放行文案 / 直调 guard 判什么
+  D2_STAGED=$(git -C "$SB" diff --cached --name-only 2>/dev/null | tr '\n' ',')
+  # synova-commit 在 guard 段打印的那行（判"崩了/跳了/降了/放了" —— 这是 ② 变 exit0 的直接证据）
+  D2_GL=$(printf '%s' "$OUT" | grep -aE "staging-guard|暂存区隔离|暂存区为空|他人文件" | head -2 | tr '\n' '/')
+  # 直调 guard：它自己判什么（block? warn? pass?）+ rc
+  D2_GRC=0; D2_G=$(cd "$SB" && python3 "$SB/scripts/control-tower/staging_guard.py" --session-id T-self --staged x.md 2>&1) || D2_GRC=$?
+  D2_ST=$(printf '%s' "$D2_G" | grep -oE '"status": "[a-z]+"' | head -1)
+  D2_PREP=""
+  # 只留可疑行（INFO 是 registry CLI 的正常日志，别占 150 字符预算）
+  D2_SUS=$(printf '%s\n%s' "$D2_REGISTER_OUT" "$D2_WS_OUT" | grep -aE "WARN|ERROR|⚠|❌|Traceback|Error|error" | head -1 | cut -c1-50)
+  [ -n "$D2_SUS" ] && D2_PREP=" prep=[$D2_SUS]"
+  DIAG2=$(printf 'staged=[%s] gl=[%s] grc=%s %s%s' "$D2_STAGED" "$(printf '%s' "$D2_GL" | cut -c1-40)" "$D2_GRC" "$D2_ST" "$D2_PREP")
+fi
 echo "$OUT" | grep -q "x.md" && echo "$OUT" | grep -q "other-sess" \
   && ok "② 点名文件与归属 session" || bad "② 未点名: $(echo "$OUT" | grep -a '❌' | head -2)"
 
@@ -155,5 +188,40 @@ echo "$OUT8" | grep -q "提交树与暂存声明不一致" && ok "⑧ 点名不�
 [ "$H8" = "$H8B" ] && ok "⑧ 假阻断防止: 提交已撤销（HEAD 未前移）" || bad "⑧ 提交仍留在历史"
 [ "$IDX8" = "$IDX8B" ] && ok "⑧ 暂存区已还原（暂存态未丢）" || bad "⑧ 索引未还原: '$IDX8' → '$IDX8B'"
 
+# ⑨ D853（行为面）: guard 异常 → **fail-closed**（旧行为 = 降级放行 → 该用例在旧实现上 exit 0）
+SBC="$TMPD/crash"; mkdir -p "$SBC/.claude" "$SBC/.codex/control-tower"
+cp -R "$HERE/../../scripts" "$SBC/scripts"
+# 注入"guard 不可用"：语法错误（编译期即失败 → 任何执行路径都到不了 main；比 append raise 可靠）
+printf '\nthis is not valid python((\n' >> "$SBC/scripts/control-tower/staging_guard.py"
+git -C "$SBC" init -q
+git -C "$SBC" config user.email "test@test.local"; git -C "$SBC" config user.name "test"
+touch "$SBC/.claude/bypass.log"
+echo "crash" > "$SBC/z.md"; git -C "$SBC" -c user.name=t -c user.email=t@t add z.md
+OUTC=$(cd "$SBC" && SYNO_PRE_COMMIT="$STUB" bash "$SBC/scripts/control-tower/synova-commit" \
+        --task-id T9 --agent test --message "test: guard crash probe" 2>&1); rcc=$?
+[ "$rcc" -eq 1 ] && ok "⑨ guard 异常 → exit 1（fail-closed；旧实现为降级放行 exit 0）" \
+  || bad "⑨ guard 异常未阻断 rc=$rcc"
+printf '%s' "$OUTC" | grep -q "staging-guard 执行异常" \
+  && ok "⑨ 异常显式点名（非静默）" || bad "⑨ 异常未点名"
+
+# ⑩ D853（行为面）: python 不可用 → guard 无法执行 → **fail-closed**（旧行为 = 跳过放行 → 该用例旧实现 rc=0）
+SHP="$TMPD/nopy"; mkdir -p "$SHP"
+printf '#!/bin/sh\nexit 1\n' > "$SHP/python3"; chmod +x "$SHP/python3"
+cp "$SHP/python3" "$SHP/python"; cp "$SHP/python3" "$SHP/py"
+echo "nopy" > "$SB/np.md"; git -C "$SB" -c user.name=t -c user.email=t@t add np.md
+OUTP=$(cd "$SB" && PATH="$SHP:$PATH" SYNO_PRE_COMMIT="$STUB" bash "$SB/scripts/control-tower/synova-commit" \
+        --task-id T10 --agent test --message "test: python unavailable probe" 2>&1); rcp=$?
+[ "$rcp" -eq 1 ] && ok "⑩ python 不可用 → exit 1（fail-closed；旧实现为跳过放行 rc=0）" \
+  || bad "⑩ python 不可用未阻断 rc=$rcp"
+printf '%s' "$OUTP" | grep -q "python3/python/py 试运行均不可用" \
+  && ok "⑩ 原因显式点名（非静默）" || bad "⑩ 原因未点名"
+git -C "$SB" restore --staged np.md 2>/dev/null || true; rm -f "$SB/np.md"
+
 echo "pass=$PASS fail=$FAIL"
+if [ "$FAIL" -ne 0 ]; then
+  # D853: 末尾两行 = CI 注解可见区（tail -8）。①失败断言名 ②关键环境事实（供判"链/工具/路径"哪层坏）
+  echo "DIAG-FAIL $(printf '%s' "$FAILLOG" | tr '\n' ' ' | cut -c1-150)"
+  echo "DIAG-② $(printf '%s' "${DIAG2:-无}" | cut -c1-150)"
+  echo "DIAG-ENV bash=$(command -v bash 2>/dev/null || echo NONE) py=$(command -v python3 2>/dev/null || echo NONE) git=$(command -v git 2>/dev/null || echo NONE) rc2=${rc2:-?} rc=${rc:-?}"
+fi
 [ "$FAIL" -eq 0 ]

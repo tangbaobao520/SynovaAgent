@@ -1,35 +1,54 @@
 {
   "task_id": "D853",
-  "title": "批十四条件闭环（『有条件通过』=未通过，创始人 2026-09-20 裁决）",
-  "status": "claimed",
+  "title": "Windows 认证制门禁静默 fail-open 根治：PYBIN 只探存在性 + MSYS 路径喂 native python + stderr 未 UTF-8",
+  "status": "impl_done",
   "risk": "high",
-  "spec": "批十四 CTO 验收退回态，条件逐条闭环：(1) M6 交回三件+自验结论未提交进分支；(2) PR #665 实测 51 文件/+5927-161 ≠ 汇报 30 文件/+3407-130；(3) K3 抽审提请（5 卡 + FTS5 折入项单列）；(4) D827/D828 重新定义后另派；(5) 台账追加；(6) 机制回灌：派单模板加『卡面前提实测』+『指令须过执行方复核』。",
+  "spec": "CI 实证（#657 Control Tower Gate Tests windows-latest 红）+ CTO 静态复核 + 编码 A 因果实证：Windows 上整条认领制门禁静默 fail-open（staging_guard 5 场景全 ec0/pass，DIAG 链 PROBE_RC=1 零输出）。三条根因：A) resolve-commit-brief.sh:52-55 PYBIN 只探存在性（WindowsApps 占位 shim 命中但跑不动）；B) claim_release.py 只 reconfigure stdout，stderr 中文在 cp1252 管道下被 backslashreplace 吃；C) $ROOT（MSYS 形）既被注入 python 代码串（os.listdir 读不到）又被 stdout 输出（下游 native python 读不到 brief 路径）。同类面：resolver 的 git rev-parse/branch 用未清洗环境（GIT_WORK_TREE 可换掉 ROOT）、claim_release._git 用裸 git（PATH 可伪造）。",
   "write_set": [
-    "docs/synova/coordination/批十四-收尾三件-20260920.md",
-    "docs/synova/coordination/批十四-自验结论-20260920.md",
-    "docs/synova/coordination/",
-    "task-state/D853.json"
+    "scripts/control-tower/synova-commit",
+    "tests/control-tower/synova-commit.test.sh",
+    "task-state/D853.json",
+    ".claude/task-briefs/2026-09-20-D853-Windows认领制fail-open根治.md",
+    "memory/notes/implemented/2026-09-20-D853-windows-claim-gate-failopen.md",
+    "memory/notes/proposed/2026-09-20-team-gates-closeout.md",
+    "docs/synova/coordination/小队交付-门禁加固三卡-20260920.md"
   ],
-  "impl": null,
+  "impl": {
+    "branch": "fix/d853-pr2",
+    "files": [
+      "scripts/control-tower/synova-commit",
+      "tests/control-tower/synova-commit.test.sh",
+      "task-state/D853.json",
+      ".claude/task-briefs/2026-09-20-D853-Windows认领制fail-open根治.md",
+      "memory/notes/implemented/2026-09-20-D853-windows-claim-gate-failopen.md",
+      "memory/notes/proposed/2026-09-20-team-gates-closeout.md",
+      "docs/synova/coordination/小队交付-门禁加固三卡-20260920.md"
+    ],
+    "note": "2026-09-21 裁决 B（#657 拆两台 PR）：本卡随 PR-2 交付 synova-commit 本体（释放文案 + 调用点 fail-closed，第四轮授权边界内）及其夹具；根因 A/B/C/D 的 resolver/claim_release/staging_guard 修复随 PR-1 文件版本合入（fix/d839-pr1，取自 96e40079 最终态）。合并顺序：先 PR-1 后 PR-2，合 PR-1 后本台 merge main。",
+    "verification": "claim_release PASS=33 FAIL=0（+组15/16）；staging_guard PASS=33 FAIL=0；先红原如：坏 shim→rc=1 零输出、cp1252→\\uXXXX、cygpath 别名判别、假 git→采信 FAKE-TRACKED-FILE.md；staging_guard PASS=38 FAIL=0（新场景 H 在基线红 3 断言）、claim_release 33/0、synova-commit 17/0、test-staging-guard.py OK",
+    "audit": "可提请独立审计（K3 队外）"
+  },
   "audit": null,
   "fix_task_id": null,
-  "updated_at": "2026-09-20",
-  "updated_by": "synova-cto",
-  "domain": "mac",
+  "updated_at": "2026-09-21",
+  "updated_by": "dsh-cto",
+  "domain": "win",
   "owner": "mac-coding",
-  "executor": "mac-coding",
+  "executor": "coding-a",
   "milestone": "M0 项目管理基建",
-  "depends_on": [],
+  "depends_on": [
+    "D839"
+  ],
   "blocked": null,
   "target": "2026-W38",
   "acceptance_points": [
-    "M6 两件在仓库内可读（git 追踪，给路径与行数）",
-    "PR #665 描述按实测 51 文件重写或拆至预算内",
-    "K3 抽审已开卡并回填 verdict（未出结论前不得转『通过』）",
-    "D827/D828 已重新定义或明确挂起并写明理由",
-    "台账 8+2+7 项已登记",
-    "派单模板 §〇-e 卡面前提实测 + 执行方复核条款已落 main"
+    "PYBIN 探测改试运行口径（存在且可运行），全候选失败显式告警",
+    "ROOT 统一为 cygpath -m 混合形：python 注入与 stdout 输出均为目标运行时命名空间",
+    "resolver 的 git 调用剥 GIT_* + git 试运行校验；claim_release._git 走校验过的绝对路径（假 git 不作证据）",
+    "claim_release.py stdout+stderr 双 UTF-8（cp1252 下中文可断言）",
+    "staging_guard.test.sh DIAG 两行 ≤68 字符 + PROBE 带 pyrun（找到但跑不动可判别）",
+    "CI Control Tower Gate Tests windows-latest 与 ubuntu-latest 双绿"
   ],
-  "next": "① 逐条闭环 ② CTO 复验 ③ K3 抽审",
-  "note": "退回态来源：CTO 物理复核（3 处不一致 + M6 缺失 + 升级①②）。"
+  "next": "PR-1（fix/d839-pr1）先合 → 本台 merge main → CI 双绿（windows-latest/ubuntu-latest）后合入；ci.yml 释放后 #682/D863 排队",
+  "note": "卡号 D853（原拟 D850 撞车作废）；写集含 resolve-commit-brief.sh —— CTO 显式授权偏离（D839 已 CONDITIONAL PASS 且它在 Windows 上是坏的）。"
 }
