@@ -2,7 +2,10 @@
  * tests/sentinel/invariants.test.ts — D831 P-2 运行期不变量机制（首批 3 条）
  *
  * 四组验收（派单 ⑤ + D831 卡 acceptance_points）:
- *   1. 负向：注入违约 → InvariantError（HTTP 层 5xx 语义），错误消息含 owner 名
+ *   1. 负向：注入违约 → InvariantError（**伴生层直调口径**——本组只证明伴生在自己的缝上抛错；
+ *      生产 HTTP 面「首轮违约 → 500 fail-closed」的证据不在本文件，见
+ *      tests/integration/invariant-failclosed.integration.test.ts（D865 e2e，穿真实 createServer），
+ *      旧文「HTTP 层 5xx 语义」为不实声称，已按 K3 §4.3 + D865 返工纠正），错误消息含 owner 名
  *   2. 正向：正常路径 → 无违约、lastFailure 为空、hitCount 增加
  *   3. 探针：registered ≥3；跑完正向用例后 ≥3 条 hitCount>0；registered==0 → 启动失败
  *   4. 原子回滚：第 3 条伴生 install 抛错 → 启动失败且已装第 1、2 条 wrap 撤销（无残留）

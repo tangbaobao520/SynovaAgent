@@ -21,7 +21,7 @@
     ".claude/task-briefs/2026-09-21-D865-D831-退回闭环.md"
   ],
   "impl": {
-    "branch_stack": "叠栈三支（全部以 origin/main=3643db6a 为祖先基线）：feat/p2-invariants-core（win：src/invariants 6 + src/deploy/bootstrap.ts + src/server.ts + 两份 task brief）→ feat/p2-invariants-failclosed（win：src/llm/retry-middleware.ts + src/agent/tool-loop-executor.ts + src/routes/conversations.ts + src/l1-interaction/web-adapter.ts + tests/routes/conversations.test.ts + tests/integration/invariant-failclosed.integration.test.ts）→ feat/p2-invariants-docs（mac+中性：tests/sentinel/invariants.test.ts + docs/synova/coordination/D831-squadB-自验与交付-20260921.md + task-state/D831.json + task-state/D865.json + .claude/bypass.log）。原分支 feat/p2-invariants 保留不动（未 force push）。",
+    "branch_stack": "【F5 自验返工·如实纠正】三支关系是**内容包含**，不是「叠栈祖先链」：feat/p2-invariants-core ⊂ feat/p2-invariants-failclosed ⊂ feat/p2-invariants-docs。git 事实（2026-09-21 复核）：① `git merge-base --is-ancestor` 三对全为 NO（core 非 failclosed/docs 祖先、failclosed 非 docs 祖先）——三支是各自重挂的平行历史，共同基线 origin/main=3643db6a；② 交付文件集严格嵌套（`comm -23` 逐层集合差为空集）；③ 同一路径内容差异仅 .claude/bypass.log（append-only 簿记，逐支追加），其余路径逐支字节相同 → 内容差集 0（除簿记）。逐支内容：core（18 文件 = win 15 + 中性 3：src/invariants 6 + src/deploy/bootstrap.ts + src/server.ts + tests/invariants 镜像 6 + tests/deploy/bootstrap.test.ts + 两份 task brief + .claude/bypass.log）→ failclosed（+6 路径：src/llm/retry-middleware.ts + src/agent/tool-loop-executor.ts + src/routes/conversations.ts + src/l1-interaction/web-adapter.ts + tests/routes/conversations.test.ts + tests/integration/invariant-failclosed.integration.test.ts）→ docs（+5 路径：tests/sentinel/invariants.test.ts + src/sentinel/sentinel-events.ts + docs/synova/coordination/D831-squadB-自验与交付-20260921.md + task-state/D831.json + task-state/D865.json）。原分支 feat/p2-invariants 保留不动（未 force push）。",
     "summary_p0_1": "① retry-middleware（callWithResilience + streamWithRetry）对 InvariantError 不吞不重试：沿 cause 链（≤6 层，provider 会包 DiagnosticAgentError）识别后 log.error（含 code/owner）→ 上抛链内 InvariantError 本体；② tool-loop-executor 四处 catch 穿透（不再降级为「抱歉，调用失败」文案）；③ web-adapter 新增 deferHeaders 延迟建流模式（头/心跳/open 帧缓冲到 ensureActive）+ conversations.ts 首个 token/首轮成功激活——首轮违约时 res.headersSent===false → 500 {code:'INVARIANT_VIOLATED', invariant, owner, message}；头已发出（中途违约）→ 流内 INVARIANT_VIOLATED 帧 + end 断流（行为声明）；④ e2e tests/integration/invariant-failclosed.integration.test.ts（真实 createServer + Phase 6 真装 + 假上游 + 摘/空 tools 注入，K3 PROBE-B 同法）断言 status 500 + body 含 owner + 探针 lastFailure；⑤ 旧「直调 provider.chat = 5xx 语义」声称为不实——已改写为「伴生层直调」口径（用例改名 + 卡/文档同步）",
     "summary_p1_p2": "P1-1 registered==0 用例改真 execute + 桩单例 installAll（K3 PROBE-D 做法）；P1-2 INV-DEGRADED-STICKY 分支 B 停止改写 store.lastDegraded（伴生内部记账 stickyDegradedSessions，G6 能力面约束）+ 双用例断言守卫不写 store 字段（conversations.ts:294 的 STORE_DEGRADED 消费方不再被误触发）；P1-3 登记 new-card D866 + pairing notChecked 增列「生产 message 双写路径不携带 tool_call_id（D866 前不检查）」；P2-3 fetch 回滚遇替换 → log.error + registry 条目级/注册表级 anomalies 标记（探针可见）+ 用例；P2-4 控制塔域（scripts/**）不可碰 → new-card D867；P2-5 Phase execute 改「已装数 vs 伴生清单数」一致性断言（守卫构造可达）+ commit 身份如实登记",
     "regression": "D865 本机串行复跑（npx vitest run tests/sentinel tests/agent）：分支 tip 1381 passed / 5 failed / 1 skipped（261 文件：1 failed | 259 passed | 1 skipped）；main 基线 74356ba6 同子集 1361 passed / 5 failed / 1 skipped（260 文件）；失败集 diff 逐条 IDENTICAL，5 条全为 tests/agent/expert-file-loader.integration.test.ts 预存失败（K3 §7 同口径）。本卡三文件定向复跑 37 passed（invariants 20 + integration 4 + routes 13）",
@@ -29,14 +29,19 @@
   },
   "findings_disposition": [
     {
+      "id": "F1",
+      "resolution": "fixed-in-this-card（自验返工，自验队员独立复现的 P0-1 引入缺陷）",
+      "evidence": "缺陷（F1，P1 级）：deferHeaders 下「首个 token 之前的非不变量错误」全链路无人写响应头 → 客户端永久挂死（自验队员实测 HANG elapsedMs=4010；本机复现 elapsedMs=3006 + AbortController abort）。链路：web-adapter writeRaw 在 deferred 时只 push 缓冲 / close() 在 deferred 时只清缓冲不 res.end() / conversations.ts 非不变量 catch 只 sendFrame(error+end)（全被缓冲）。修法：① src/routes/conversations.ts 非不变量 catch 未发头时先 adapter.ensureActive()（写头 + flush 缓冲帧）再发 error/end —— 保持改动前「200 + 流内 error 帧」对外契约（F1 本质是「挂了」非「状态码不对」），InvariantError 的 5xx 分支零改动；② src/l1-interaction/web-adapter.ts close() 兜底：deferred && !res.headersSent 时补建流 + 按序 flush 缓冲帧 + end（防任何未捕获路径挂死），头已发（路由 5xx JSON 接管）不重复 end；③ writeSseHeaders() 抽单源防头形态漂移。测试：tests/routes/conversations.test.ts 用例⑮（真实 express 路由 + 真实 SessionStore + BEFORE INSERT 触发器注入非不变量 SqliteError，命中 ⑧ addMessage 路径），AbortController 3000ms 预算内断言：有限时间返回 + 200 + text/event-stream + 流内 error{code:CONVERSATION_ERROR,degraded:true} + 终帧 end（超时即 abort 失败，禁 sleep 软通过）。实测：修复前 HANG（响应头未在 3000ms 内返回，elapsedMs=3006）；修复后 [D865-F1] elapsedMs=2 status=200 frames=[\"open\",\"error\",\"end\"]。定向回归 97 passed（基线 96 + 本用例），invariant-failclosed e2e 4 passed（P0-1 不回归）"
+    },
+    {
       "id": "P0-1",
       "resolution": "fixed-in-this-card",
       "evidence": "tests/integration/invariant-failclosed.integration.test.ts ①（原始输出：POST /api/conversations → status=500 content-type=application/json，body {ok:false,code:INVARIANT_VIOLATED,invariant:INV-TOOL-SCHEMA-SENT,owner:squad-b/coding}）+ ③ 中途违约=流内 INVARIANT_VIOLATED 帧 + end 断流 + ④ 健康路径不误伤；服务端三行日志链 registry→retry-middleware→routes/conversations 均含 code+owner（M6 §D865 P0-1 全文）"
     },
     {
       "id": "P0-2",
-      "resolution": "fixed-in-this-card（叠栈三支 + job 级回执）；结构性残余 → new-card（控制塔预算口径）",
-      "evidence": "叠栈三支各自 check-pr-budget.sh --base <其 base> 均 ≤12 文件 + 单域；CI job 级回执见 M6 §D865 P0-2。**结构性事实**：CI 的 D734 预算与 G12 域判定都以 origin/main...HEAD（三点）计算（.github/workflows/ci.yml:84 + check-pr-budget.sh 默认 base），故叠栈后支的 main 相对变更集 = 整栈并集（14 win 文件）> 12 上限 → 后支在 CI 上结构性必红。此口径属控制塔域（scripts/**，本卡硬边界不可碰）→ 建议另立卡修正（排除已在上游 base 的祖先文件 / 按 PR base 计算差异），并请 CTO 对 D734 上限与本卡最小自洽代码集（14 win 文件）作出书面裁决"
+      "resolution": "fixed-in-this-card（三支内容包含：core ⊂ failclosed ⊂ docs + job 级回执）；结构性残余 → new-card（控制塔预算口径）",
+      "evidence": "【F2 自验返工·如实纠正】旧文「叠栈三支各自 check-pr-budget.sh --base <其 base> 均 ≤12 文件 + 单域」**与实测矛盾，已撤**。逐支实测（2026-09-21 本机，`git diff --name-only --diff-filter=ACMR origin/main...<支>` + `bash scripts/control-tower/check-pr-budget.sh --base origin/main`）：core 18 文件（15 win + 3 中性豁免）= 单域 win，**18 > 12**；failclosed 24 文件（21 win + 3 中性）= 单域 win，**24 > 12**；docs 29 文件（21 win + 3 mac + 5 中性）= **❌ 跨域（mac + win）**。支间增量（同脚本 `--base <前一支>` 语义，三点 diff）：failclosed vs core = 17 文件（15 win + 2 中性，单域 win）**> 12**；docs vs failclosed = 16 文件（**跨域**）**> 12**。→ 事实口径：win 支**单域但超文件数上限**，docs 支**结构性跨域**；三支皆超 D734 预算，任何「均 ≤12」表述均不成立。CI job 级回执见 M6 §D865 P0-2。**结构性事实**：CI 的 D734 预算与 G12 域判定都以 origin/main...HEAD（三点）计算（.github/workflows/ci.yml:84 + check-pr-budget.sh 默认 base），故后支的 main 相对变更集 = 整栈并集（29 文件，其中 win 21）> 12 上限 → 后支在 CI 上结构性必红。此口径属控制塔域（scripts/**，本卡硬边界不可碰）→ 建议另立卡修正（排除已在上游 base 的祖先文件 / 按 PR base 计算差异），并请 CTO 对 D734 上限与本卡最小自洽代码集（win 21 文件）作出书面裁决"
     },
     {
       "id": "P1-1",
@@ -50,7 +55,7 @@
     },
     {
       "id": "P1-3",
-      "resolution": "new-card:D866",
+      "resolution": "new-card-suggested:D866（仅文档建议，**无 task-state 实体卡**——见 new_card_suggestions）",
       "evidence": "pairing notChecked 增列「生产 message 双写路径不携带 tool_call_id（D866 前不检查；当前生产触发面=0）」；D866 建议：小队 A 在 src/agent/conversation-engine.ts 的 message 双写点携带 tool_calls/tool_call_id（本卡硬边界不可碰该文件）"
     },
     {
@@ -70,7 +75,7 @@
     },
     {
       "id": "P2-4",
-      "resolution": "new-card:D867",
+      "resolution": "new-card-suggested:D867（仅文档建议，**无 task-state 实体卡**——见 new_card_suggestions）",
       "evidence": "check-architecture.sh 的 L3→L5 规则只扫 src/l3/（scripts/check-architecture.sh 硬边界不可碰）→ D867：扫描面按层声明表生成（K3 §15-G5 补法），本卡不动控制塔"
     },
     {
@@ -79,24 +84,30 @@
       "evidence": "src/invariants/index.ts execute 改断言 registered === RUNTIME_INVARIANT_COMPANIONS.length（installAll 被替身/空转时可达，真 Bootstrap 用例覆盖）+ 错误消息含 registered/expected 两数；commit 身份不可分身一事在 impl.commit_identity 如实登记"
     }
   ],
+  "new_card_suggestions": {
+    "status": "【F6 登记】D866 / D867 / D868 目前**仅为文档建议，无 task-state 实体卡**（`ls task-state/` 只有 D865.json）——是否建卡由 CTO 裁决，本卡不代建。",
+    "D866": "INV-TOOL-CALL-PAIRING 的生产触发面：src/agent/conversation-engine.ts 的 message 双写点携带 tool_calls/tool_call_id（该文件属本卡硬边界，不可碰；当前生产触发面=0）",
+    "D867": "scripts/check-architecture.sh 的 L3→L5 规则只扫 src/l3/ → 扫描面按层声明表生成（K3 §15-G5 补法；scripts/** 属本卡硬边界）",
+    "D868": "check-pr-budget.sh 计数口径：按 PR base 计算差异 / 排除上游 base 已含的祖先文件 / D773 代行任务按主域归并 / 治理产物（.claude/**、task-state/**、docs/**）不计入上限（根因证据见本卡 ci.structural_finding）"
+  },
   "path_deviations": [
     "派单写集写 src/agent/retry-middleware.ts，实物在 src/llm/retry-middleware.ts（按实物改）",
     "超写集：src/l1-interaction/web-adapter.ts（派单未列）——延迟建流必需：SSE 响应头写出的时机只能由 adapter 构造器决定，路由侧无法推迟；改动为纯增量可选参数（缺省行为不变），与小队的出站收敛无交集",
-    "派单预想拆两支 PR（win 主域 + mac 域）；ownership.yaml 实判：src/llm/**、src/agent/**、src/routes/**、src/l1-interaction/**、tests/integration/**、tests/routes/** 全部落 `**` 兜底 = **win**（mac 例外只有 src/sentinel/**、tests/sentinel/**、docs/synova/coordination/** 等）→ 按门禁硬判据（≤12 文件 + 单域）必须拆三支叠栈，已在 M6 §D865 记录实际归类",
+    "派单预想拆两支 PR（win 主域 + mac 域）；ownership.yaml 实判：src/llm/**、src/agent/**、src/routes/**、src/l1-interaction/**、tests/integration/**、tests/routes/** 全部落 `**` 兜底 = **win**（mac 例外只有 src/sentinel/**、tests/sentinel/**、docs/synova/coordination/** 等）→ 按门禁硬判据（≤12 文件 + 单域）必须拆三支（内容包含：core ⊂ failclosed ⊂ docs），已在 M6 §D865 记录实际归类",
     "tests/sentinel/invariants.test.ts 实判 mac 域 → 放入第三支（docs/mac 支），未按派单预想放 win 支"
   ],
   "cto_ruling": {
     "date": "2026-09-21",
     "scope": "P0-2「CI 真绿」验收口径",
-    "ruling": "B 口径——CI 真绿在本卡硬边界（不可改 scripts/** 与 .github/**）下结构性不可达（实测：变更集 win 15 / mac 3 / domain-neutral 5；check-pr-budget.sh base 硬编码 origin/main...HEAD，无 GITHUB_BASE_REF → 叠栈不降计数；win 支最小自洽代码集含 e2e 用例 = 14+ 文件 > 12 上限）。故 P0-2 闭环证据链改为：① job 级因果证明（Iron Laws 仅因 D734 预算红）+ ② 本地 CI 等价全量 vitest 双轴证据 + ③ Vitest job skip 因果链留痕。CI 红按裁决留痕，并把「D734 计数口径 vs D773 win→Mac 代行 + 新建子系统」登记为控制塔结构缺陷（另立卡）。",
+    "ruling": "B 口径——CI 真绿在本卡硬边界（不可改 scripts/** 与 .github/**）下结构性不可达（实测：变更集 win 21 / mac 3 / domain-neutral 5；check-pr-budget.sh base 硬编码 origin/main...HEAD，无 GITHUB_BASE_REF → 三支拆分不降计数，支间增量 17/16 亦 > 12；win 支最小自洽代码集 ≥ 15 文件 > 12 上限）。故 P0-2 闭环证据链改为：① job 级因果证明（Iron Laws 仅因 D734 预算红）+ ② 本地 CI 等价全量 vitest 双轴证据 + ③ Vitest job skip 因果链留痕。CI 红按裁决留痕，并把「D734 计数口径 vs D773 win→Mac 代行 + 新建子系统」登记为控制塔结构缺陷（另立卡）。",
     "also_authorized": "新增 tests/invariants/** 镜像测试文件（6 个），用于满足门禁组2「新文件配对」硬要求；已用 check-ownership.py 核实其域归属（win，与 src/invariants/** 同域）。",
     "source": "CTO 本次对话书面裁决（创始人会话，2026-09-21）；依据 K3 §18.2「CI 绿 或 CTO 对 D734 口径作出书面裁决」",
-    "structural_new_card_suggestion": "D868（建议）：check-pr-budget.sh 按 PR base 计算差异 / 排除上游 base 已含的祖先文件 / 对 D773 代行任务按主域归并 / 治理产物不计入上限"
+    "structural_new_card_suggestion": "D868（建议，仅文档建议、**无 task-state 实体卡**——见 new_card_suggestions）：check-pr-budget.sh 按 PR base 计算差异 / 排除上游 base 已含的祖先文件 / 对 D773 代行任务按主域归并 / 治理产物不计入上限"
   },
   "ci": {
     "verdict": "按 CTO 裁决 B 闭环：job 级因果证明（仅 D734 预算红）+ 本地 CI 等价全量 vitest 双轴 + Vitest skip 因果链；CI 红按裁决留痕并立卡 D868（控制塔计数口径）。",
     "runs": [],
-    "structural_finding": "CI 侧 D734 预算以 origin/main...HEAD 计算（.github/workflows/ci.yml:84 env SYNO_DIFF_BASE=origin/main；check-pr-budget.sh 默认基线与三点 diff）→ 叠栈后支的 main 相对变更集必为整栈并集。本卡最小自洽代码集（含 e2e 用例）为 14 个 win 文件 > 12 上限，且去掉任一文件都会使 tsc/vitest 变红（详见 M6 §D865 P0-2 论证）→ 「叠栈 + CI 真绿」在本卡硬边界（不可改 scripts/** 与 .github/**）下不可同时成立。 三支逐支实测（终态）：core 18 文件/单域 win（15>12）、failclosed 24 文件/单域 win（21>12）、docs 29 文件/跨域；更硬的根因——tests/sentinel/invariants.test.ts 判 mac 而被测主体 src/invariants/** 判 win，'测试与实现同 PR'在现 ownership.yaml 下必然跨域（铁律 48 与 D733 直接冲突）。"
+    "structural_finding": "CI 侧 D734 预算以 origin/main...HEAD 计算（.github/workflows/ci.yml:84 env SYNO_DIFF_BASE=origin/main；check-pr-budget.sh 默认基线与三点 diff）→ 后支的 main 相对变更集必为整栈并集。本卡最小自洽代码集（含 e2e 用例）win 侧 21 文件 > 12 上限，且去掉任一文件都会使 tsc/vitest 变红（详见 M6 §D865 P0-2 论证）→ 「三支拆分 + CI 真绿」在本卡硬边界（不可改 scripts/** 与 .github/**）下不可同时成立。 三支逐支实测（终态，本卡复核）：core 18 文件（15 win + 3 中性）/单域 win（15 > 12）；failclosed 24 文件（21 win + 3 中性）/单域 win（21 > 12）；docs 29 文件（21 win + 3 mac + 5 中性）/❌ 跨域；支间增量 failclosed vs core = 17（单域 win，> 12）、docs vs failclosed = 16（跨域，> 12）——三支**皆超预算**（旧文「均 ≤12」为不实，见 P0-2 evidence 的 F2 纠正）；更硬的根因——tests/sentinel/invariants.test.ts 判 mac 而被测主体 src/invariants/** 判 win，'测试与实现同 PR'在现 ownership.yaml 下必然跨域（铁律 48 与 D733 直接冲突）。"
   },
   "audit": {
     "k3_report": "docs/synova/audit-reports/2026-09-21-K3-D831.md",
@@ -113,7 +124,7 @@
   ],
   "acceptance_points": [
     "P0-1：注入违约（出站请求丢/空 tools）→ 真实 HTTP 入口 5xx + body/日志含 owner（不许 200+降级文案）——附端到端原始输出",
-    "P0-2：叠栈分支 CI job 级真绿（Vitest shard 非 SKIPPED 且 success）",
+    "P0-2：三支分支 CI job 级真绿（Vitest shard 非 SKIPPED 且 success）——【自验返工·如实】该判据在本卡硬边界下结构性不可达（三支均超 12 / docs 支跨域），已按 CTO 裁决 B 改为「job 级因果证明 + 本地 CI 等价双轴 + Vitest skip 因果链」，见 cto_ruling 与 ci 字段",
     "P1×3/P2×6 findings_disposition 逐条登记去向",
     "回归双轴：分支与 main 失败集逐条相同"
   ]
