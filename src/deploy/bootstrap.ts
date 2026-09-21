@@ -32,6 +32,9 @@ import '../store/retry-projection';
 import { PhaseStateMachine } from '../orchestrator/phase-state-machine';
 import { createOrchestrationWiring, type OrchestrationWiring } from '../orchestrator/wiring';
 import { ToolRegistry } from '../agent/tools';
+// D831 (P-2): 运行期不变量注册表——Phase 6 安装首批 3 条伴生（fail-closed）。
+// import 即获得 createRuntimeInvariantsPhase；伴生在模块内原型级/wrap 级接线。
+import { createRuntimeInvariantsPhase } from '../invariants';
 import { createLogger } from '@synova/logger';
 import type { Database } from 'better-sqlite3';
 
@@ -234,7 +237,9 @@ export class Bootstrap {
     this.results = [];
     this.ctx = new BootstrapContext();
 
-    const orderedIds = [0, 1, 2, 3, 4, 5];
+    // D831: Phase 6（runtime-invariants，fatal）——不变量在任何交互 Phase 之后、
+    // server 监听之前安装；registered==0 → execute 抛错 → 启动失败。
+    const orderedIds = [0, 1, 2, 3, 4, 5, 6];
     for (const phaseId of orderedIds) {
       if (this.aborted) break;
 
@@ -655,9 +660,12 @@ export class Bootstrap {
   }
 
   /**
-   * 注册默认 Phase 0-5。
+   * 注册默认 Phase 0-6（6 = D831 runtime-invariants）。
    */
   private registerDefaultPhases(): void {
+    // ─── Phase 6: 运行期不变量 (fatal + rollback, D831 P-2) ───
+    this.registerPhase(createRuntimeInvariantsPhase());
+
     // ─── Phase 0: 基础设施 (fatal) ───
     this.registerPhase({
       id: 0,
