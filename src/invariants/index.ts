@@ -3,6 +3,9 @@
  *
  * 汇出: 注册表（registry）+ 首批 3 条伴生（companions）+ 启动 Phase 工厂
  * （createRuntimeInvariantsPhase，由 src/deploy/bootstrap.ts 注册为 Phase 6）。
+ * D865 组4: installRuntimeInvariants 退回模块内部（无真实外部调用方，禁造假引用）——
+ * 探针经 RUNTIME_INVARIANT_COMPANIONS 校 expected（声明面 vs 运行面），
+ * 进程级安装唯一入口 = Phase 6。
  *
  * 首批 3 条（D831 卡）:
  *   ① INV-TOOL-SCHEMA-SENT   出站 LLM 请求工具对话已发生时必须带非空 tools schema
@@ -39,12 +42,18 @@ export const RUNTIME_INVARIANT_COMPANIONS = [onToolSchemaSent, onToolCallPairing
 
 /**
  * 安装全部运行期不变量（幂等：先 uninstallAll 再装，供 Phase 重跑/测试隔离）。
+ *
+ * D865 组4: **不导出**——grep 实证唯一调用方是本模块的 createRuntimeInvariantsPhase
+ * （src/ 其余位置零引用）。门禁组4 要求"新 export 有 src/ 调用方"，而为一个没有
+ * 真实调用方的内部工具函数伪造引用属明文禁止（禁为过门禁造假引用）；正确修法是
+ * 收敛能力面：进程级唯一安装入口 = Phase 6（bootstrap 侧真实消费），本函数退回内部。
+ * 外部消费者（探针/测试）经 invariantRegistry + Phase 走真实路径。
  * 契约:
- *   @input  — registry?: InvariantRegistry（默认单例）
+ *   @input  — registry: InvariantRegistry（默认单例）
  *   @output — void（同步完成；伴生 install 均 void，无"注册中"中间态）
  *   @error  — 任一伴生抛错 → 原子回滚已装 wrap 后重抛（fatal 语义）
  */
-export function installRuntimeInvariants(registry: InvariantRegistry = invariantRegistry): void {
+function installRuntimeInvariants(registry: InvariantRegistry = invariantRegistry): void {
   registry.uninstallAll();
   registry.installAll(RUNTIME_INVARIANT_COMPANIONS);
 }
