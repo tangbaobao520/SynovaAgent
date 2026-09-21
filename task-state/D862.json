@@ -13,11 +13,29 @@
     "tests/**",
     "task-state/D862.json"
   ],
-  "impl": "小队 A 分工执行。coder-b（本登记，worktree .synova-wt-p1b，分支 feat/p1-outbound-converge）：① src/routes/llm-config.ts 上游转发迁移 outboundFetch（错误语义对齐：AbortError/UPSTREAM_TIMEOUT→TIMEOUT，其余 OutboundHttpError→NETWORK，六值枚举不变）；② src/tui-v2/chat.tsx:248 loopback 出站迁移 outboundFetch（恒绕过，行为不变）；③ src/routes/healthz.ts 增第 7 项 outbound_proxy 检查（getProxyStatus 只含变量名，永不含值）+ tests/routes/healthz.test.ts 三路径（含带凭据反推不可能断言）。写集分类台账：docs/synova/coordination/D862-出站分类台账-20260921.md（基线 25 处：迁移 2 / 浏览器内嵌豁免 22 / 注释 1）。写集勘误附注：docs/synova/coordination/写集勘误附注-派单小队A-P1收尾-20260921.md。coder-a：connectors/tools/agent/l1 + 勘误扩入 deepseek-balance.ts、mvp-server.ts（另登记）。",
-  "audit": null,
-  "fix_task_id": null,
+  "impl": "小队 A 分工执行（worktree .synova-wt-p1b，分支 feat/p1-outbound-converge 叠 feat/d821-http-proxy，伞树 48aa8709 + D864 闭环提交）。coder-b：① src/routes/llm-config.ts 上游转发迁移 outboundFetch（错误语义对齐：AbortError/UPSTREAM_TIMEOUT→TIMEOUT，其余 OutboundHttpError→NETWORK，六值枚举不变）；② src/tui-v2/chat.tsx:248 loopback 出站迁移 outboundFetch（恒绕过，行为不变），后抽出 src/tui-v2/lib/ontology-probe.ts 并补守卫（F-1）；③ src/routes/healthz.ts 增第 7 项 outbound_proxy 检查（getProxyStatus 只含变量名，永不含值）+ tests/routes/healthz.test.ts。coder-a：connectors（ima.ts×5 + ima-connector）/tools×7/agent×4/l1/cli-manager 迁移 + 写集勘误扩入 deepseek-balance.ts、mvp-server.ts；bootstrap.ts 启动期 proxyStartupStatus + Phase 0a-exit addDegraded。产物：docs/synova/coordination/D862-出站分类台账-20260921.md、写集勘误附注-派单小队A-P1收尾-20260921.md、D862-自验记录-20260921.md。",
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-09-21-K3-D862.md（K3 独立审计，对象 48aa8709）",
+    "verdict": "CONDITIONAL PASS —— 按纪律＝未通过；必核 1-9 全数物理复现成立、无 P0，1 项 P1（pr6 叠 pr5 双计）+ 7 项 P2 + 3 项挂账（可登记不阻断）",
+    "p1": "P1-1：pr6 相对 D821 基线 14 文件（含 pr5 的 6 文件双计）→ D864 条件①闭环：pr6 以其自身 base=pr5 计 diff，≤12（原始输出见 docs/synova/coordination/D862-PR合并顺序说明-20260921.md）",
+    "p2_disposition": {
+      "P2-1_bypass.log 跨分支唯一交集": "登记 + 合并顺序说明（M8），D864 条件④闭环",
+      "P2-2_backup-scheduler.ts:182 未登记 loopback 出站": "D864 条件②闭环：台账 §七 豁免 C 登记 + 扩扫描口径命令与全量命中",
+      "P2-4_healthz catch 拼 err.message": "D864 条件③闭环：固定文案 + 日志收窄 name/code（commit 9aaca76e）",
+      "P2-5_断言只覆盖 detail": "D864 条件③闭环：升级为整包断言 + 反例（修前 1 failed → 修后 11/11 passed）",
+      "P2-3/6/7/8": "已由 K3 报告登记，去向见 D864-自验记录-20260921.md 判据表"
+    },
+    "pending_registered": [
+      "tool_choice:'none' 后收紧前缀豁免（D862 零涉及，后续卡）",
+      "watchdog 探针认证未做（探针语义，非代理收敛缺口）",
+      "Windows 实机未验（静态面无平台分支；禁止声称已验）",
+      "P-1 在 preconditions.yaml 标『关闭』：依赖 D821 合 main，属正确的不作为，保持 dispatched + 待办指针"
+    ],
+    "reaudit": "闭环完成后 CTO 复验 → K3 复审（本卡 audit 段在复审 PASS 前不得标 PASS）"
+  },
+  "fix_task_id": "D864",
   "updated_at": "2026-09-21",
-  "updated_by": "p1b-coder-b",
+  "updated_by": "synova-cto",
   "domain": "win",
   "owner": "mac-coding",
   "executor": "mac-coding",
@@ -25,13 +43,13 @@
   "depends_on": [
     "D821"
   ],
-  "blocked": null,
+  "blocked": "P-1 标『关闭』依赖 D821 合入 main（同出口文件先冻结）；编码面不阻塞",
   "target": "2026-W38",
   "acceptance_points": [
     "connector 出站一并走唯一出口：给 grep before/after 计数 + 穿真实入口证据（connector 真实调用经代理）",
-    "健康检查暴露代理配置时**只暴露是否存在/来源，不泄露值**（给输出样例；禁打印凭据）—— coder-b 已交付：healthz outbound_proxy + 台账 §五样例 + 反推不可能测试",
-    "启动期安装（bootstrap）走同一出口配置，代理不可达时 degraded 可见（给输出）",
-    "跑通后把 P-1 在 preconditions.yaml 标『关闭』并附证据指针",
+    "健康检查暴露代理配置时**只暴露是否存在/来源，不泄露值**（给输出样例；禁打印凭据）—— coder-b 已交付：healthz outbound_proxy + 台账 §五样例 + 反推不可能测试；D864 追加整包断言 + 反例",
+    "启动期安装（bootstrap）走同一出口配置，代理不可达时 degraded 可见（给输出）—— coder-a 已交付：proxyStartupStatus + Phase 0a-exit degraded",
+    "跑通后把 P-1 在 preconditions.yaml 标『关闭』并附证据指针 —— **未执行（正确的不作为：D821 未合 main）**，登记为挂账",
     "G1 守卫：grep -rn \"@deepseek-ai\" src/ packages/ = 0"
   ],
   "verification": {
@@ -43,8 +61,22 @@
         "npx tsc --noEmit  # 本卡 4 改动文件零错误"
       ],
       "result": "PASS（coder-b 写集内）；分支既有 src/server.ts:465 类型债与 coder-a WIP 缺 import 不属本卡"
+    },
+    "verifier": {
+      "record": "docs/synova/coordination/D862-自验记录-20260921.md",
+      "highlights": "反向验收（ima/bootstrap/chat.tsx 抽迁移必红；F-1 缺口已闭合）；假代理逐条日志；代理不可达无静默直连；健康检查含凭据反推不可能"
+    },
+    "d864_closeout": {
+      "record": "docs/synova/coordination/D864-自验记录-20260921.md",
+      "conditions": [
+        "① P1-1：pr6 以 pr5 为 base 计 diff ≤12（原始输出 + D860 口径）",
+        "② P2-a：backup-scheduler.ts:182 台账豁免 C + 扩扫描口径（37 行命中，唯一新增即该条）",
+        "③ P2-b：healthz catch 零回显 + 整包断言 + 反例红→绿",
+        "④ P2-c：bypass.log 唯一交集写入合并顺序说明（M8）",
+        "⑤ 回归：与 D821 基线双轴零差集（确定性失败集 8 例逐字相同，环境抖动已注记）"
+      ]
     }
   },
-  "next": "① coder-a 侧收尾（含 deepseek-balance/mvp-server 勘误迁移）② 全仓 grep 归零复核 ③ K3 复审 ④ P-1 在 preconditions.yaml 标关闭并附证据指针",
-  "note": "来源：D821 开工前冲突扫描（执行方正确拦下，属 CTO 派单写集疏漏的补救）；承接 3 项越界验收点。routes/server.ts 不存在，健康检查真实入口为 routes/healthz.ts（勘误附注第 5 条）。"
+  "next": "① CTO 复验 D864 五项闭环 ② K3 复审 D862（复审 PASS 前 cards.audit 不标 PASS）③ D821 合 main 后：P-1 标『关闭』+ 证据指针 + 同步本卡 audit 段 ④ 6 支域 PR 按合并顺序说明落 main",
+  "note": "来源：D821 开工前冲突扫描（执行方正确拦下，属 CTO 派单写集疏漏的补救）；承接 3 项越界验收点。routes/server.ts 不存在，健康检查真实入口为 routes/healthz.ts（勘误附注第 5 条）。D864 写集路径勘误：派单写 src/backup/backup-scheduler.ts，实为 src/deploy/backup-scheduler.ts；src/invariants/health-route.ts 不存在，实为 src/routes/healthz.ts。"
 }

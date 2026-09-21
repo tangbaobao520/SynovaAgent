@@ -3,7 +3,7 @@
  *
  * 覆盖: 6项检查状态 + 整体状态聚合 + server接线 + report-assembler注入
  */
-import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
 import * as http from 'http';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -88,32 +88,33 @@ describe('D49: healthz — HTTP 响应', () => {
   });
 });
 
-describe('D862: healthz — outbound_proxy 检查（三路径 + 不含值）', () => {
+describe('D862/D864: healthz — outbound_proxy 检查（三路径整包断言 + 不含值）', () => {
   const PROXY_ENV_NAMES = ['http_proxy', 'HTTP_PROXY', 'https_proxy', 'HTTPS_PROXY', 'all_proxy', 'ALL_PROXY'] as const;
   const saved: Record<string, string | undefined> = {};
 
-  async function getCheck(): Promise<{ status: string; detail: string }> {
-    const app = express();
-    const mod = await import('../../src/routes/healthz');
-    app.use(mod.default);
+  let app: express.Express;
+
+  async function getBody(): Promise<Record<string, unknown>> {
     const server = app.listen(0);
     await new Promise<void>((resolve) => server.once('listening', resolve));
     try {
       const addr = server.address();
       if (!addr || typeof addr === 'string') throw new Error('server not listening');
       const res = await fetch(`http://localhost:${addr.port}/api/healthz`);
-      const body = await res.json();
-      return body.checks.outbound_proxy;
+      return (await res.json()) as Record<string, unknown>;
     } finally {
       server.close();
     }
   }
 
-  beforeEach(() => {
+  beforeEach(async () => {
     for (const name of PROXY_ENV_NAMES) {
       saved[name] = process.env[name];
       delete process.env[name];
     }
+    const mod = await import('../../src/routes/healthz');
+    app = express();
+    app.use(mod.default);
   });
 
   afterEach(() => {
@@ -123,31 +124,61 @@ describe('D862: healthz — outbound_proxy 检查（三路径 + 不含值）', (
     }
   });
 
-  it('正常路径：未配置代理 → status=ok，detail 含「直连」且列出零变量', async () => {
-    const check = await getCheck();
-    expect(check.status).toBe('ok');
-    expect(check.detail).toContain('直连');
-    expect(check.detail).toContain('无');
+  it('正常路径：未配置代理 → 整包断言（K3 P2-5：不再只断言 detail 子串）', async () => {
+    const body = await getBody();
+    expect(body.checks).toEqual(
+      expect.objectContaining({
+        outbound_proxy: {
+          status: 'ok',
+          detail: '未设置代理环境变量（全量直连）；已配置变量: 无',
+        },
+      }),
+    );
   });
 
-  it('边界路径：配置带凭据的可用代理 → status=ok，响应不含代理值/凭据（反推不可能）', async () => {
+  it('边界路径：配置带凭据的可用代理 → 整包不含代理值/凭据（反推不可能）', async () => {
     process.env.https_proxy = 'http://user:super-secret-pass@127.0.0.1:3128';
-    const check = await getCheck();
+    const body = await getBody();
+    const check = (body.checks as Record<string, { status: string; detail: string }>).outbound_proxy;
     expect(check.status).toBe('ok');
     expect(check.detail).toContain('https_proxy');
-    // 不含值安全契约：整条 detail 不得出现代理 URL、host、端口、凭据
-    expect(check.detail).not.toContain('super-secret-pass');
-    expect(check.detail).not.toContain('3128');
-    expect(check.detail).not.toContain('user:');
+    // 不含值安全契约：整包响应不得出现代理 URL、host、端口、凭据
+    const whole = JSON.stringify(body);
+    expect(whole).not.toContain('super-secret-pass');
+    expect(whole).not.toContain('3128');
+    expect(whole).not.toContain('user:');
   });
 
-  it('降级路径：socks 代理值不可用 → status=degraded，detail 只含变量名与形态', async () => {
+  it('降级路径：socks 代理值不可用 → 整包断言只含变量名与形态', async () => {
     process.env.all_proxy = 'socks5://secret-cred@127.0.0.1:1080';
-    const check = await getCheck();
+    const body = await getBody();
+    const check = (body.checks as Record<string, { status: string; detail: string }>).outbound_proxy;
     expect(check.status).toBe('degraded');
     expect(check.detail).toContain('all_proxy');
-    expect(check.detail).not.toContain('secret-cred');
-    expect(check.detail).not.toContain('1080');
+    expect(JSON.stringify(body)).not.toContain('secret-cred');
+    expect(JSON.stringify(body)).not.toContain('1080');
+  });
+
+  it('反例（K3 P2-4/D864）：getProxyStatus 抛含凭据消息的异常 → 响应整包零回显（修前必红）', async () => {
+    const httpExit = await import('../../src/providers/http-exit');
+    const spy = vi.spyOn(httpExit, 'getProxyStatus').mockImplementation(() => {
+      throw new Error('代理状态读取失败: http://leak-user:k3-leak-pass@10.0.0.9:8080');
+    });
+    try {
+      const body = await getBody();
+      // 整包对象断言：固定文案，不含任何异常消息内容
+      expect((body.checks as Record<string, unknown>).outbound_proxy).toEqual({
+        status: 'degraded',
+        detail: '出站代理状态检查异常（详见服务端日志）',
+      });
+      const whole = JSON.stringify(body);
+      expect(whole).not.toContain('k3-leak-pass');
+      expect(whole).not.toContain('leak-user');
+      expect(whole).not.toContain('10.0.0.9');
+      expect(whole).not.toContain('8080');
+    } finally {
+      spy.mockRestore();
+    }
   });
 });
 

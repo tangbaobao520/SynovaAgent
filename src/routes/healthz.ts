@@ -332,8 +332,15 @@ async function checkOutboundProxy(): Promise<HealthCheck> {
       detail: `代理已配置但不可用（kind=${status.kind}）→ 出站降级直连；已配置变量: ${vars}${status.reason ? `；${status.reason}` : ''}`,
     };
   } catch (err: unknown) {
-    log.error({ err: err instanceof Error ? err.message : String(err) }, '出站代理状态检查异常');
-    return { status: 'degraded', detail: `出站代理状态检查异常: ${err instanceof Error ? err.message : String(err)}` };
+    // K3 P2-4（D864）：响应 detail 固定文案，不回显任何异常消息内容（潜在泄值口收口）；
+    // 日志侧同步收窄为结构化 { name, code } 字段——message 原文可能含 env 值片段（如代理 URL），
+    // 不进日志也不进响应。铁律 24 满足：log.error + degraded，零空吞。
+    const errName = err instanceof Error ? err.name : String(err);
+    const errCode = err !== null && typeof err === 'object' && 'code' in err
+      ? String((err as { code: unknown }).code)
+      : '';
+    log.error({ check: 'outbound_proxy', errName, errCode }, '出站代理状态检查异常');
+    return { status: 'degraded', detail: '出站代理状态检查异常（详见服务端日志）' };
   }
 }
 

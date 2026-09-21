@@ -1,0 +1,52 @@
+{
+  "task_id": "D864",
+  "title": "D862/P-1 收尾退回条件闭环（K3 CONDITIONAL PASS ⇒ 按纪律未通过）：P1-1 pr6 base 声明 ｜ P2-a 扩扫描口径+第 3 条 loopback 登记 ｜ P2-b healthz catch 零回显+整包断言 ｜ P2-c bypass.log 唯一交集（M8） ｜ 双轴回归零差集",
+  "status": "in_progress",
+  "risk": "high",
+  "spec": "派单件 docs/synova/coordination/派单-D864-D865-退回闭环-20260921.md §A（出件 2026-09-21 CTO，依据 K3 报告 docs/synova/audit-reports/2026-09-21-K3-D862.md）。纪律：有条件通过＝未通过。闭环后 CTO 复验 → K3 复审。",
+  "write_set": [
+    "src/deploy/backup-scheduler.ts",
+    "src/routes/healthz.ts",
+    "tests/**",
+    "task-state/D862.json",
+    "task-state/D864.json"
+  ],
+  "write_set_correction": "派单写 src/backup/backup-scheduler.ts 与 src/invariants/health-route.ts；实测归属为 src/deploy/backup-scheduler.ts（find 核）+ src/routes/healthz.ts（D862 已建）。本卡按实测路径执行，不改派单原件。",
+  "impl": "小队 A 原班（coder-a 扫描口径 / coder-b 代码+台账 / verifier 独立复现 / 队长并行 CTO 落判据件）。① P1-1：pr6 以 feat/d862-pr5-routes-tui 为 base 声明并计 diff（D860 口径剔除 .claude/bypass.log、.claude/reference-map.md）；② P2-a：src/deploy/backup-scheduler.ts:182 http.request → localhost:{PORT}/api/notifications/send 登记为第 3 条 loopback 豁免（台账 §七 豁免 C），扩扫描口径命令 + 全量命中（37 行 = 26 fetch + 11 非 fetch；唯一未登记 Node 侧出站即该条）；③ P2-b：src/routes/healthz.ts catch 固定文案 + 日志收窄 name/code，测试升级整包断言 + 反例（commit 9aaca76e）；④ P2-c：bypass.log 唯一交集写入合并顺序说明（M8）；⑤ 回归双轴；⑥ 3 项挂账保持登记。",
+  "impl_commits": [
+    "9aaca76e fix(D864): healthz outbound_proxy catch 收口固定文案+日志收窄 name/code（K3 P2-4）+ 整包断言与反例测试（P2-5）",
+    "e1f015a9 docs(D864): 台账新增「非 fetch API 族出站」章节——backup-scheduler.ts:182 第 3 条 loopback 豁免（K3 P2-a）"
+  ],
+  "evidence": {
+    "p1_1": "git diff --name-only feat/d862-pr5-routes-tui..feat/d862-pr6-docs-state（原始输出）+ 每支相对自身 base 文件数；合并顺序说明：docs/synova/coordination/D862-PR合并顺序说明-20260921.md",
+    "p2_a": "台账 §七（7.1 命令 / 7.2 权威命中）+ 台账 §七 豁免 C 行",
+    "p2_b": "src/routes/healthz.ts:334-345 + tests/routes/healthz.test.ts（整包断言 + 反例：修前 1 failed → 修后 11/11 passed）",
+    "p2_c": "docs/synova/coordination/D862-PR合并顺序说明-20260921.md §M8",
+    "regression": "docs/synova/coordination/D864-自验记录-20260921.md（文件级 + 用例级双轴，与 feat/d821-http-proxy 基线）"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-21",
+  "updated_by": "synova-cto",
+  "domain": "win",
+  "owner": "mac-coding",
+  "executor": "mac-coding",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [
+    "D862",
+    "D821"
+  ],
+  "blocked": null,
+  "target": "2026-W38",
+  "acceptance_points": [
+    "① P1-1 二选一：pr6 以 pr5 为 base 重建 diff 使每支 ≤12 —— 给 git diff --name-only <base>..<pr6> 原始输出 + 文件数说明",
+    "② P2-a：backup-scheduler.ts:182 第 3 条 loopback 出站登记台账 + 扩扫描口径（命令 + 命中）",
+    "③ P2-b：healthz catch 不得拼 err.message + 测试断言整包（给断言 diff）",
+    "④ P2-c：bypass.log 为 6 支唯一交集文件 → 合并顺序说明写明（M8）",
+    "⑤ 回归：与 D821 基线零差集（文件级 + 用例级双轴，给命令与输出）",
+    "⑥ 挂账 3 项（tool_choice 前缀豁免 / 探针认证 / Windows 实机）保持登记，不阻断",
+    "红线：http-exit.ts 契约零改动 ｜ 不碰控制塔/审计/CI ｜ 无 --no-verify/stash/force push ｜ PR ≤12（D860 口径）"
+  ],
+  "next": "① CTO 复验 ② K3 复审（本卡 audit=null，复审 PASS 前不得标 PASS）③ 复审 PASS 后按合并顺序说明落 6 支 PR ④ D821 合 main 后关闭 P-1",
+  "note": "来源：K3 D862 审计 CONDITIONAL PASS（按纪律＝未通过）→ CTO 退回闭环。P1-1 / P2-1~P2-8 均不涉及产品代码正确性（无 P0、无代码缺陷需改）；本卡为流程与口径闭环 + 一处潜在泄值口（P2-4/5）收口。"
+}
