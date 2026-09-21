@@ -132,10 +132,21 @@ def redeem(task_id: str, task: dict, evidence_dir: Path, k3_only_points: set) ->
         return {"written": 0, "skipped": [f"status={status} 不可兑换（需 {REDEEMABLE_STATUS}）"]}
 
     # impl commit 物理校验
-    impl = task.get("impl") or {}
+    # D861: task-state 存量卡 impl 为纯描述字符串（D840/D842/D843/D845/D774/D850/D852）
+    #   —— 旧 schema 惯例。此处降级跳过（显式 log，铁律 11），不再 AttributeError 崩链
+    #   （2026-09-21 main product-progress workflow「聚合→计算→页面」job 实证红根因）。
+    impl = task.get("impl")
+    if not isinstance(impl, dict):
+        log.warning(
+            "D861 降级: %s impl 为 %s（应为 {commit:...}）——按未登记 commit 跳过兑换",
+            task_id, type(impl).__name__)
+        return {"written": 0, "skipped": [
+            f"impl 类型异常（{type(impl).__name__} 非 dict，按 impl commit 未登记跳过）"]}
     commit = str(impl.get("commit", ""))
+    if not commit:
+        return {"written": 0, "skipped": ["impl commit 未登记: 空"]}
     if not git_commit_exists(commit):
-        return {"written": 0, "skipped": [f"impl commit 不存在/未登记: {commit or '空'}"]}
+        return {"written": 0, "skipped": [f"impl commit 不存在/未登记: {commit}"]}
 
     ok, ref = audit_ok(task)
     if not ok:
