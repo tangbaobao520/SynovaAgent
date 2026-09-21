@@ -1615,3 +1615,4 @@ Binary file .claude/bypass.log matches
 2026-09-21T14:53:56Z detected-bypass no-precommit-marker
 2026-09-21T22:54:03+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/p2-invariants-failclosed
 2026-09-21T22:54:04+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=8008cee84e0b62a781f4d98314aabe930a4e83f4
+2026-09-21T14:54:39Z | COMMITTED | cherry-pick（无 pre-commit marker；源 0b1c3937 已过 pre-commit 软门禁，本笔为同内容 cherry-pick） | HASH=fe8c5dd3f508f80fe7a9960569603bf11a62faf6
