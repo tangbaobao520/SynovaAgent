@@ -1,0 +1,36 @@
+{
+  "task_id": "D863",
+  "title": "ci.yml 小改：绿腿告警回捞 + canary 假覆盖传导（原 D858 队报的 CT-78）",
+  "status": "claimed",
+  "risk": "high",
+  "spec": "D858 交付反馈（CT-78）：ci.yml:277 的 `bash scripts/control-tower/check-canary-drift.sh || true` 吞掉 exit 1/2 → canary 假覆盖在 CI 层不阻断；同处 tests/project 循环 stdout 重定向且仅失败时 cat → 绿腿 ⚠ 不可见（K3 §5 P2 载体段）。D858 写集硬边界禁碰 ci.yml，故另立本卡。",
+  "write_set": [
+    ".github/workflows/ci.yml",
+    "tests/project/gen-project-board.test.sh",
+    "task-state/D863.json"
+  ],
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-21",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": "mac-coding",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [
+    "D858",
+    "D854"
+  ],
+  "blocked": "前置① ci.yml 单写者释放：PR #682（CT-70）与 #657（门禁加固）合并后才可动；② D858 K3 复审通过 → D854 改判通过 → #682 才可合",
+  "target": "2026-W38",
+  "acceptance_points": [
+    "check-canary-drift.sh 的退出码被接收：exit 1（漂移/假覆盖）/exit 2（canary-exec）传导为 **job 红**；**漂移 71 条存量保持 exit 0 不误伤**（给两次原始输出）",
+    "tests/project 循环在**成功路径也回捞 ⚠**（::warning 或直写 $GITHUB_STEP_SUMMARY），给绿腿可见证据",
+    "不重排既有清单：git diff 仅新增行（给 numstat）",
+    "一次真实 CI 运行证据：run/job id + **匿名可核命令** + 归档片段 + sha256（按 docs/synova/coordination/D858-证据包标准件-匿名取CI证据-20260921.md）",
+    "先红后绿两次原始输出"
+  ],
+  "next": "① 等 #682/#657 合并（ci.yml 单写者释放）② 改 ci.yml ③ 真实 CI 取证 ④ K3 复审 ⑤ 交回三件",
+  "note": "**撞号已纠正**：队伍原把本件叫 D862，但 D862 已用于『P-1 收尾三项』（D821 越界挂账）→ 本件改号 D863。这正是 F5『alloc-task-id.sh 盲区/撞号』的实例。"
+}
