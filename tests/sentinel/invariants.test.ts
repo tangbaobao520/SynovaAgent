@@ -28,7 +28,6 @@ import {
   getStickyDegradedSessions,
   RUNTIME_INVARIANT_COMPANIONS,
   createRuntimeInvariantsPhase,
-  installRuntimeInvariants,
   invariantRegistry,
   invariantHealthRoutes,
 } from '../../src/invariants';
@@ -476,7 +475,12 @@ describe('探针路由（GET /api/healthz/invariants，真实 HTTP）', () => {
   });
 
   it('install 3 条并跑一轮正向 → 200、registered=3、每条含 hitCount 字段', async () => {
-    installRuntimeInvariants(); // 装到探针路由同款单例（用例独立于其他 describe 的局部 registry）
+    // D865 组4: installRuntimeInvariants 已退回 src/invariants/index.ts 模块内部（无真实
+    // 外部调用方）——此处走**生产真路径**（bootstrap 注册的 Phase 6）装到探针路由同款单例。
+    const boot = new Bootstrap({ skipDefaultPhases: true });
+    boot.registerPhase(createRuntimeInvariantsPhase());
+    const booted = await boot.run();
+    expect(booted.ok).toBe(true);
     // 正向驱动三条检查点：配对 tool 序列（pairing，hit 在 role=tool 消息）、
     // addMessage（degraded-sticky）、chat/completions 出站（schema-sent）
     const sid = createRealSession();
