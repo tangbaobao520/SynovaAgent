@@ -8,6 +8,9 @@
  */
 
 import { createLogger } from '@synova/logger';
+// D862/P-1: LLM API 出站走唯一出口 outboundFetch（AbortSignal.timeout 原语义保留）
+import { outboundFetch, OutboundHttpError } from '../providers/http-exit';
+
 
 const log = createLogger('services/deepseek-balance');
 
@@ -33,7 +36,7 @@ export async function fetchDeepseekBalance(apiKey?: string): Promise<BalanceResu
   try {
     const baseUrl = process.env.LLM_BASE_URL || 'https://api.deepseek.com';
     const url = `${baseUrl.replace(/\/$/, '')}/user/balance`;
-    const res = await fetch(url, {
+    const res = await outboundFetch(url, {
       headers: { Authorization: `Bearer ${key}` },
       signal: AbortSignal.timeout(5000),
     });
@@ -57,7 +60,11 @@ export async function fetchDeepseekBalance(apiKey?: string): Promise<BalanceResu
     return cached;
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
-    log.warn({ err: msg }, '获取余额失败');
+    // 铁律 32：出站错误分类摘要（code/phase/retryable）随降级日志上报
+    const detail = err instanceof OutboundHttpError
+      ? { code: err.code, phase: err.phase, retryable: err.retryable, degraded: err.degraded }
+      : {};
+    log.warn({ err: msg, ...detail }, '获取余额失败 — 降级返回过期缓存');
     return cached; // 返回过期缓存作为降级
   }
 }

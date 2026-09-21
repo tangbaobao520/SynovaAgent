@@ -7,6 +7,8 @@
 import express from 'express';
 import cors from 'cors';
 import { createLogger } from '@synova/logger';
+// D862/P-1: LLM API 出站走唯一出口 outboundFetch
+import { outboundFetch } from './providers/http-exit';
 
 const log = createLogger('mvp-server');
 
@@ -122,7 +124,7 @@ ${dimList}
 - 每个维度独立提取。文档中无相关信息的，content写"未提及"，confidence为"low"，sufficient为false
 - 不要编造文档中没有的信息`;
 
-  const extractRes = await fetch(`${API_BASE}/v1/chat/completions`, {
+  const extractRes = await outboundFetch(`${API_BASE}/v1/chat/completions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
     body: JSON.stringify({
