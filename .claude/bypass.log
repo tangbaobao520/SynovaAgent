@@ -1610,3 +1610,5 @@ Binary file .claude/bypass.log matches
 2026-09-21T13:45:21+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=4f169821bce467f8a8b4f336ab1877499ccef26a
 2026-09-21T13:45:30+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/p1-outbound-converge
 2026-09-21T13:45:30+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=082c5740b94cd21dce902e87f8162dd66c2a2f35
+2026-09-21T13:45:46+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/p1-outbound-converge
+2026-09-21T13:45:46+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=44b83f3567d1599e4c68a9c9fdcc864bd4b2d8d4
