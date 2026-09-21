@@ -1,0 +1,34 @@
+{
+  "task_id": "D861",
+  "title": "main 红修复：Vitest (2/2) + generate + 聚合→计算→页面（cc4e4166 / 272dbd82）",
+  "status": "claimed",
+  "risk": "high",
+  "spec": "CTO 实测 check-runs：272dbd82 上 Vitest(2/2)=failure、generate=failure、聚合→计算→页面=failure（Vitest 1/2 cancelled）；团队报告 cc4e4166 仍红。**main 红期间一切『CI 绿』不可信**。",
+  "write_set": [
+    ".github/workflows/ci.yml",
+    "tests/**",
+    "scripts/**",
+    "src/**",
+    "task-state/D861.json"
+  ],
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-21",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": "mac-coding",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [],
+  "blocked": null,
+  "target": "2026-W38",
+  "acceptance_points": [
+    "定位三条失败真实根因：给 run/job id + 失败断言**完整原文**（禁 tail 截断，F13）",
+    "修复或回退到最近全绿提交（若为外部依赖抖动须给证据，不得『重跑就好』）",
+    "复绿证据：run id + 12/12 或对应 job 全绿",
+    "与在飞小队同文件冲突时先报 CTO 排期，不得硬抢"
+  ],
+  "next": "① 重新核行号 ② 先红后绿 ③ K3 复审 ④ 交回三件",
+  "note": "红线优先项：main 红＝验证能力失效。"
+}
