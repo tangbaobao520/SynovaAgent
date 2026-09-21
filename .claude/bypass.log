@@ -1599,5 +1599,27 @@ Binary file .claude/bypass.log matches
 2026-09-21T11:02:21+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D821 | AGENT=d821-lead
 2026-09-21T11:03:08+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=2d8100755c4302a215b6b331185fe2bcf16c0359
 2026-09-21T11:03:48+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=e34cc2b97693d1e476be9ae66b4c4bc009967cfb
-2026-09-21T14:14:14+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/d862-pr5-routes-tui
-2026-09-21T14:14:15+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=73b06fd479087fb1371db5b0f5a4d2813cac2c3e
+2026-09-21T13:39:05+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/p1-outbound-converge
+2026-09-21T13:39:06+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=03f9687fab1cbcd15297f55058a56cf3afbb0254
+2026-09-21T13:42:30+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/p1-outbound-converge
+2026-09-21T13:42:31+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=2e0458ca4f0bc528c4664502a3e0762b8f13ef6a
+2026-09-21T13:42:39+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/p1-outbound-converge
+2026-09-21T13:42:39+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=62609ed64f5a5dc5632c8122aba40ffc0b66331d
+2026-09-21T13:42:59+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=37348be5fcc8885da4daeb92b7f4d9e3b2b622a4
+2026-09-21T13:45:21+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/p1-outbound-converge
+2026-09-21T13:45:21+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=4f169821bce467f8a8b4f336ab1877499ccef26a
+2026-09-21T13:45:30+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/p1-outbound-converge
+2026-09-21T13:45:30+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=082c5740b94cd21dce902e87f8162dd66c2a2f35
+2026-09-21T13:45:46+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/p1-outbound-converge
+2026-09-21T13:45:46+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=44b83f3567d1599e4c68a9c9fdcc864bd4b2d8d4
+2026-09-21T13:45:51+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/p1-outbound-converge
+2026-09-21T13:45:52+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=6c9bf6dfc9dc52138cdb8c56cf86775cc5c1a609
+2026-09-21T13:46:01+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/p1-outbound-converge
+2026-09-21T13:46:01+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=f7471050740c20297697def5d735039c2183ed96
+2026-09-21T13:47:43+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/p1-outbound-converge
+2026-09-21T13:47:43+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=a86575b181030836616a0637948c4f553f5279dd
+2026-09-21T13:55:04+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/p1-outbound-converge
+2026-09-21T13:55:11+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/p1-outbound-converge
+2026-09-21T13:55:12+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=ae9c70a427a6e4f81e27ef2b09767af2f93607fe
+2026-09-21T14:09:25+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/p1-outbound-converge
+2026-09-21T14:09:26+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=f7e09e320898f462b41a4b8d648c59395aa1c4ed

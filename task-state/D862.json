@@ -1,0 +1,50 @@
+{
+  "task_id": "D862",
+  "title": "P-1 收尾三项（D821 越界挂账）：connector 覆盖 src/connectors/ima.ts+ima-connector.ts ｜ 健康检查暴露 kind:'socks' 含值 ｜ 启动期 proxy-install/bootstrap",
+  "status": "in_progress",
+  "risk": "high",
+  "spec": "D821 开工前冲突扫描发现：其原卡 3 条 acceptance_points 要求在派单写集之外改文件；(1) connector 直连（源卡反例正是 provider 走代理、connector 直连）(2) 健康检查只含变量名不含值，需改 src/routes/** 或 src/server.ts (3) src/deploy/bootstrap.ts 启动期安装。CTO 裁决：本卡承接三项，使 P-1 由『部分关闭』转为『关闭』。派单件（小队 A 形态）：docs/synova/coordination/派单-小队A-P1收尾出站收敛-20260921.md（main）。",
+  "write_set": [
+    "src/connectors/ima.ts",
+    "src/connectors/ima-connector.ts",
+    "src/routes/**",
+    "src/server.ts",
+    "src/deploy/bootstrap.ts",
+    "tests/**",
+    "task-state/D862.json"
+  ],
+  "impl": "小队 A 分工执行。coder-b（本登记，worktree .synova-wt-p1b，分支 feat/p1-outbound-converge）：① src/routes/llm-config.ts 上游转发迁移 outboundFetch（错误语义对齐：AbortError/UPSTREAM_TIMEOUT→TIMEOUT，其余 OutboundHttpError→NETWORK，六值枚举不变）；② src/tui-v2/chat.tsx:248 loopback 出站迁移 outboundFetch（恒绕过，行为不变）；③ src/routes/healthz.ts 增第 7 项 outbound_proxy 检查（getProxyStatus 只含变量名，永不含值）+ tests/routes/healthz.test.ts 三路径（含带凭据反推不可能断言）。写集分类台账：docs/synova/coordination/D862-出站分类台账-20260921.md（基线 25 处：迁移 2 / 浏览器内嵌豁免 22 / 注释 1）。写集勘误附注：docs/synova/coordination/写集勘误附注-派单小队A-P1收尾-20260921.md。coder-a：connectors/tools/agent/l1 + 勘误扩入 deepseek-balance.ts、mvp-server.ts（另登记）。",
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-21",
+  "updated_by": "p1b-coder-b",
+  "domain": "win",
+  "owner": "mac-coding",
+  "executor": "mac-coding",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [
+    "D821"
+  ],
+  "blocked": null,
+  "target": "2026-W38",
+  "acceptance_points": [
+    "connector 出站一并走唯一出口：给 grep before/after 计数 + 穿真实入口证据（connector 真实调用经代理）",
+    "健康检查暴露代理配置时**只暴露是否存在/来源，不泄露值**（给输出样例；禁打印凭据）—— coder-b 已交付：healthz outbound_proxy + 台账 §五样例 + 反推不可能测试",
+    "启动期安装（bootstrap）走同一出口配置，代理不可达时 degraded 可见（给输出）",
+    "跑通后把 P-1 在 preconditions.yaml 标『关闭』并附证据指针",
+    "G1 守卫：grep -rn \"@deepseek-ai\" src/ packages/ = 0"
+  ],
+  "verification": {
+    "coder_b": {
+      "commands": [
+        "git grep -n \"fetch(\" HEAD -- src/routes src/tui-v2 src/server.ts | grep -v \"\\.test\\.\" | wc -l  # 25",
+        "grep -rn \"fetch(\" src/routes src/tui-v2 src/server.ts --include=*.ts --include=*.tsx | grep -v \"\\.test\\.\" | wc -l  # 23（Node 侧真实出站=0）",
+        "npx vitest run tests/routes/llm-config.test.ts tests/routes/healthz.test.ts tests/providers/http-exit.test.ts  # 91/91 通过",
+        "npx tsc --noEmit  # 本卡 4 改动文件零错误"
+      ],
+      "result": "PASS（coder-b 写集内）；分支既有 src/server.ts:465 类型债与 coder-a WIP 缺 import 不属本卡"
+    }
+  },
+  "next": "① coder-a 侧收尾（含 deepseek-balance/mvp-server 勘误迁移）② 全仓 grep 归零复核 ③ K3 复审 ④ P-1 在 preconditions.yaml 标关闭并附证据指针",
+  "note": "来源：D821 开工前冲突扫描（执行方正确拦下，属 CTO 派单写集疏漏的补救）；承接 3 项越界验收点。routes/server.ts 不存在，健康检查真实入口为 routes/healthz.ts（勘误附注第 5 条）。"
+}
