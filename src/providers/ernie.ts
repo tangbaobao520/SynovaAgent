@@ -11,6 +11,7 @@
 import type { LLMProvider, LLMMessage, ChatOptions, ChatResult, StreamCallback, HealthCheckResult, ProviderConfig } from './types';
 import { DiagnosticAgentError, ErrorCode, isRetryable } from '../errors/types';
 import { createLogger } from '@synova/logger';
+import { outboundFetch, OutboundHttpError } from './http-exit';
 const log = createLogger('src.providers.ernie');
 
 const DEFAULT_BASE_URL = 'https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop/chat';
@@ -37,11 +38,33 @@ async function getAccessToken(apiKey: string, secretKey: string): Promise<string
     client_secret: secretKey,
   });
 
-  const res = await fetch(`${AUTH_URL}?${params}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    signal: AbortSignal.timeout(10_000),
-  });
+  // D821: 出站唯一出口 — token 获取也必须走代理（否则内网只有代理出网时 token 拿不到）
+  let res: Response;
+  try {
+    res = await outboundFetch(`${AUTH_URL}?${params}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: AbortSignal.timeout(10_000),
+    });
+  } catch (err) {
+    if (err instanceof OutboundHttpError) {
+      // 铁律 31: 降级信号必须传播到调用方（healthCheck 会把本错误的 message 回给运维）
+      log.warn(
+        { code: err.code, phase: err.phase, retryable: err.retryable, degraded: err.degraded, proxyKind: err.proxyKind },
+        '文心一言 token 出站失败（已分类）',
+      );
+      throw new DiagnosticAgentError({
+        code: err.code === 'PROXY_UNREACHABLE' || err.code === 'PROXY_TUNNEL_FAILED' || err.code === 'UPSTREAM_TIMEOUT'
+          ? ErrorCode.NETWORK : ErrorCode.INTERNAL,
+        phase: 0,
+        retryable: err.retryable,
+        shouldFallback: true,
+        cause: err,
+        message: `文心一言 token 出站失败 [${err.code}/${err.phase} retryable=${err.retryable} degraded=${err.degraded} proxyKind=${err.proxyKind}]: ${err.message}`,
+      });
+    }
+    throw err;
+  }
 
   if (!res.ok) {
     throw new DiagnosticAgentError({
@@ -107,12 +130,33 @@ export function createErnieProvider(config: ProviderConfig): LLMProvider {
         max_output_tokens: opts?.maxTokens ?? 4000,
       };
 
-      const res = await fetch(url, {
+      // D821: 出站失败分类传播（铁律 31）—— 出站错误保留原文并挂 cause
+      let res: Response;
+      try {
+        res = await outboundFetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
-        signal: opts?.signal ?? AbortSignal.timeout(120_000),
-      });
+          signal: opts?.signal ?? AbortSignal.timeout(120_000),
+        });
+      } catch (err) {
+        if (err instanceof OutboundHttpError) {
+          log.warn(
+            { code: err.code, phase: err.phase, retryable: err.retryable, degraded: err.degraded, proxyKind: err.proxyKind },
+            '文心一言出站失败（已分类）— 传播 code/phase/retryable/degraded',
+          );
+          throw new DiagnosticAgentError({
+            code: err.code === 'PROXY_UNREACHABLE' || err.code === 'PROXY_TUNNEL_FAILED' || err.code === 'UPSTREAM_TIMEOUT'
+              ? ErrorCode.NETWORK : ErrorCode.INTERNAL,
+            phase: 0,
+            retryable: err.retryable,
+            shouldFallback: true,
+            cause: err,
+            message: `文心一言出站失败 [${err.code}/${err.phase} retryable=${err.retryable} degraded=${err.degraded} proxyKind=${err.proxyKind}]: ${err.message}`,
+          });
+        }
+        throw err;
+      }
 
       if (!res.ok) {
         const text = await res.text().catch((err) => {

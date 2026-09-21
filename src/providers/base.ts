@@ -16,6 +16,7 @@ import type {
 } from './types';
 import { CircuitBreaker } from '../llm/circuit-breaker';
 import { createLogger } from '@synova/logger';
+import { outboundFetch, getProxyStatus, OutboundHttpError } from './http-exit';
 import { PromptInjectionDetector, PolicyDeniedError } from '../security/prompt-injection-detector';
 import { AuditService } from '../services/audit-service';
 import {
@@ -36,6 +37,21 @@ const log = createLogger('providers/base');
 function finalizeAdapterFailure(err: unknown, provider: string, context: string): Error {
   if (err instanceof DiagnosticAgentError) return err;
   if (err instanceof PolicyDeniedError) return err;
+  if (err instanceof OutboundHttpError) {
+    // D821 / 铁律 31+32: 出站已分类，此处**传播**降级信号而非重新解释。
+    // 代理不可达/隧道失败属连接层故障 → NETWORK + 可重试；
+    // URL 非法与上游不可达 → 保持不可重试；code/phase/degraded 原文带进文案。
+    const transient = err.code === 'PROXY_UNREACHABLE' || err.code === 'PROXY_TUNNEL_FAILED' || err.code === 'UPSTREAM_TIMEOUT';
+    return new DiagnosticAgentError({
+      code: transient ? ErrorCode.NETWORK : ErrorCode.INTERNAL,
+      message: `${provider} ${context}: ${describeOutboundFailure(err)}`,
+      phase: 0,
+      retryable: transient ? true : err.retryable,
+      shouldFallback: transient,
+      cause: err,
+      provider,
+    });
+  }
   const failure = normalizeLlmFailure(err);
   const errType = err instanceof Error ? err.name : '';
   const detail = [failure.code, errType, failure.message].filter(Boolean).join(' ');
@@ -59,6 +75,15 @@ function finalizeAdapterFailure(err: unknown, provider: string, context: string)
     code: ErrorCode.INTERNAL, message, phase: 0, retryable: true,
     cause: err, provider,
   });
+}
+
+/**
+ * D821: 出站错误 → 调用方可见的降级信号（铁律 31：调用方必须检查 `degraded`）。
+ * 出口已做分类（铁律 32），此处只做**传播**：把 code/phase/retryable/degraded 带进
+ * 错误文案交 下游分类器，并把原始错误挂在 `.cause` 上；不重新解释、不吞标志。
+ */
+function describeOutboundFailure(err: OutboundHttpError): string {
+  return `[${err.code}/${err.phase} retryable=${err.retryable} degraded=${err.degraded} proxyKind=${err.proxyKind}] ${err.message}`;
 }
 
 /** D43: 在 LLM 调用前检查用户消息是否包含提示注入攻击 */
@@ -151,7 +176,8 @@ export function createOpenAICompatibleProvider(cfg: ProviderAdapterConfig): LLMP
     // 空数组/未传 → 不写字段（与旧行为一致，provider 契约语义不变）。
     if (opts?.tools && opts.tools.length > 0) body.tools = opts.tools;
 
-    return fetch(`${baseUrl}${chatPath}`, {
+    // D821: 出站唯一出口 — 代理环境变量只由 providers/http-exit 读取（禁裸 fetch）
+    return outboundFetch(`${baseUrl}${chatPath}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...cfg.getHeaders() },
       body: JSON.stringify(body),
@@ -195,22 +221,48 @@ export function createOpenAICompatibleProvider(cfg: ProviderAdapterConfig): LLMP
 
   /** 共享健康检查 — 消除 33 行重复 (块 C) */
   async function healthCheck(): Promise<HealthCheckResult> {
+    // D821: 健康检查同时给出代理快照 —— 内网排障第一问是"到底走没走代理"。
+    // 只含变量名，绝不含值/凭据（凭据泄露红线）。
+    const proxySnapshot = (): HealthCheckResult['proxy'] => {
+      const s = getProxyStatus();
+      return {
+        configured: s.configured,
+        active: s.active,
+        kind: s.kind,
+        degraded: s.degraded,
+        variables: s.variables,
+        ...(s.reason !== undefined ? { reason: s.reason } : {}),
+      };
+    };
     if (cfg.apiKey !== undefined && !cfg.apiKey) {
-      return { healthy: false, error: 'API Key 未配置' };
+      return { healthy: false, error: 'API Key 未配置', proxy: proxySnapshot() };
     }
     const start = Date.now();
     try {
-      const res = await fetch(`${baseUrl}${modelsPath}`, {
+      // D821: 健康检查同走唯一出口（否则"代理生效但健康检查直连"会给出假绿）
+      const res = await outboundFetch(`${baseUrl}${modelsPath}`, {
         headers: cfg.getHeaders(),
         signal: AbortSignal.timeout(healthTimeout),
       });
       const lat = Date.now() - start;
-      if (res.ok) return { healthy: true, latencyMs: lat };
-      return { healthy: false, error: `${cfg.name} 返回 ${res.status}`, latencyMs: lat };
+      if (res.ok) return { healthy: true, latencyMs: lat, proxy: proxySnapshot() };
+      return { healthy: false, error: `${cfg.name} 返回 ${res.status}`, latencyMs: lat, proxy: proxySnapshot() };
     } catch (err: unknown) {
+      if (err instanceof OutboundHttpError) {
+        log.warn(
+          { provider: cfg.name, code: err.code, phase: err.phase, retryable: err.retryable, degraded: err.degraded, proxyKind: err.proxyKind },
+          '健康检查出站失败（已分类）',
+        );
+        return {
+          healthy: false,
+          error: `${cfg.name}: ${describeOutboundFailure(err)}`,
+          latencyMs: Date.now() - start,
+          proxy: proxySnapshot(),
+        };
+      }
       log.warn({ err: err instanceof Error ? err.message : String(err) }, "网络请求失败");
       const msg = err instanceof Error ? err.message : String(err);
-      return { healthy: false, error: `${cfg.name}: ${msg}`, latencyMs: Date.now() - start };
+      return { healthy: false, error: `${cfg.name}: ${msg}`, latencyMs: Date.now() - start, proxy: proxySnapshot() };
     }
   }
 
@@ -267,6 +319,13 @@ export function createOpenAICompatibleProvider(cfg: ProviderAdapterConfig): LLMP
         return { content, model: data.model || model, ...(toolCalls ? { toolCalls } : {}), ...extra };
       } catch (err) {
         breaker.recordFailure();
+        // D821: 出站降级信号必须可见（铁律 11/31）—— 调用方由此知道"是代理/网络问题"
+        if (err instanceof OutboundHttpError) {
+          log.warn(
+            { provider: cfg.name, code: err.code, phase: err.phase, retryable: err.retryable, degraded: err.degraded, proxyKind: err.proxyKind },
+            '出站失败（已分类）— 传播 code/phase/retryable/degraded',
+          );
+        }
         throw finalizeAdapterFailure(err, cfg.name, 'chat');
       }
     },
@@ -286,7 +345,14 @@ export function createOpenAICompatibleProvider(cfg: ProviderAdapterConfig): LLMP
         await handleStream(res, cb, opts?.model || model);
         breaker.recordSuccess();
       } catch (err: unknown) {
-        log.warn({ err: err instanceof Error ? err.message : String(err) }, "提示注入检测");
+        if (err instanceof OutboundHttpError) {
+          log.warn(
+            { provider: cfg.name, code: err.code, phase: err.phase, retryable: err.retryable, degraded: err.degraded, proxyKind: err.proxyKind },
+            '出站失败（已分类，流式路径）— 传播 code/phase/retryable/degraded',
+          );
+        } else {
+          log.warn({ err: err instanceof Error ? err.message : String(err) }, "提示注入检测");
+        }
         const e = err instanceof Error ? err : new Error(String(err));
         cb.onError?.(finalizeAdapterFailure(cfg.onError ? cfg.onError(e, 'stream') : e, cfg.name, 'stream'));
         breaker.recordFailure();

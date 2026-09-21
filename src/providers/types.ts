@@ -69,6 +69,21 @@ export interface HealthCheckResult {
   healthy: boolean;
   latencyMs?: number;
   error?: string;
+  /**
+   * D821: 出站代理快照（由 `getProxyStatus()` 填充）。
+   *
+   * **只含变量名，不含任何值/凭据**（`variables` 形如 `['https_proxy']`）。
+   * 用于回答企业内网最常问的一句："这次健康检查到底走代理还是直连、代理配置可用吗"。
+   * D862 再把本字段经 routes/server 暴露到 HTTP 健康检查响应（本卡只到 provider 层）。
+   */
+  proxy?: {
+    configured: boolean;
+    active: boolean;
+    kind: string;
+    degraded: boolean;
+    variables: string[];
+    reason?: string;
+  };
 }
 
 export interface ProviderConfig {
