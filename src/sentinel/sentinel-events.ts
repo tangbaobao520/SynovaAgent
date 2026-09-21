@@ -6,10 +6,14 @@
  * `records` Map 降级为事件流物化投影（启动重放重建，I1 可重建）；任一
  * finding 可经 `aggregate_id` 追溯其产生 run（I3 可审计）。
  *
- * 三条 invariant（K3 定）:
- *   I1 可重建 — kill -9 后重启，事件流重放重建状态与崩溃前等价
- *   I2 单源   — 状态只有 `appendSentinelEvent` 一个写入口，读路径全部从投影派生
- *   I3 可审计 — 任一 finding 能从事件流回答「由哪些输入事件产生」
+ * 三条 invariant（K3 定）——现状说明（D831 P-2 落地后更新）:
+ *   I1 可重建 — 仍属静态约定（kill -9 重放重建），无运行期断言；崩溃恢复
+ *     语义由 replaySentinelEvents + runner 启动重放承担
+ *   I2 单源   — appendSentinelEvent 仍是状态唯一写入口（单源已成立）；
+ *     运行期守门已上移至 P-2 注册表（src/invariants，bootstrap Phase 6 注册，
+ *     GET /api/healthz/invariants 探针），首批 3 条为工具域/降级域伴生
+ *   I3 可审计 — 仍属静态约定（aggregate_id 追溯），无运行期断言
+ *   后续新增哨兵域不变量按 src/invariants/companions/*.invariant.ts 伴生范式注册
  *
  * 参考: orchestrator/event-store.ts（append-only 模式复用，独立表）
  *
