@@ -1599,3 +1599,5 @@ Binary file .claude/bypass.log matches
 2026-09-21T11:02:21+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D821 | AGENT=d821-lead
 2026-09-21T11:03:08+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=2d8100755c4302a215b6b331185fe2bcf16c0359
 2026-09-21T11:03:48+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=e34cc2b97693d1e476be9ae66b4c4bc009967cfb
+2026-09-21T14:14:08+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/d862-pr4-services-deploy
+2026-09-21T14:14:09+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=dbd398de09f37fd0cda9cc9e174ed3568cbccd45
