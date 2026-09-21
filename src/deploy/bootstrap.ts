@@ -33,9 +33,42 @@ import { PhaseStateMachine } from '../orchestrator/phase-state-machine';
 import { createOrchestrationWiring, type OrchestrationWiring } from '../orchestrator/wiring';
 import { ToolRegistry } from '../agent/tools';
 import { createLogger } from '@synova/logger';
+// D862/P-1 第 3 项: 启动期登记出站 HTTP 唯一出口状态（getProxyStatus 只含变量名，永不含 env 值）
+import { getProxyStatus } from '../providers/http-exit';
 import type { Database } from 'better-sqlite3';
 
 const log = createLogger('deploy/bootstrap');
+
+/**
+ * D862 第 3 项：启动期出站出口状态检查。
+ *
+ * 契约：
+ * - 输入：无（内部读 `getProxyStatus()` 快照，调用时读取 env）。
+ * - 输出：`{ degraded, reason?, variables, kind }` — `variables` 只含变量名，永不含 env 值。
+ * - 降级：配置级不可用（socks / 畸形）→ `degraded=true` + log.warn（禁静默）。
+ *   运行期代理不可达由出口按请求抛 `OutboundHttpError(PROXY_UNREACHABLE)`，
+ *   出口契约物理禁止静默直连回退 — 本函数不做启动期真实外网探测。
+ */
+export function proxyStartupStatus(): {
+  degraded: boolean;
+  reason?: string;
+  variables: string[];
+  kind: string;
+} {
+  const status = getProxyStatus();
+  if (status.degraded) {
+    log.warn(
+      { variables: status.variables, kind: status.kind, reason: status.reason, degraded: true },
+      '出站代理配置不可用 — 降级直连（degraded 已登记，启动继续）',
+    );
+  }
+  return {
+    degraded: status.degraded,
+    reason: status.reason,
+    variables: status.variables,
+    kind: status.kind,
+  };
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // 类型定义
@@ -668,6 +701,18 @@ export class Bootstrap {
       execute: async (ctx: BootstrapContext) => {
         // 0a: 全局错误兜底在 server.ts app.listen 中注册
         // (因为需要 Server 实例)
+
+        // 0a-exit: 出站 HTTP 唯一出口状态检查（D862 第 3 项，详见 proxyStartupStatus 契约）
+        const proxyStatus = proxyStartupStatus();
+        ctx.set('proxyStatus', proxyStatus);
+        if (proxyStatus.degraded) {
+          ctx.addDegraded(0, 'outbound-exit', `出站代理配置不可用: ${proxyStatus.reason ?? 'unknown'}`);
+        } else {
+          log.info(
+            { configured: proxyStatus.variables.length > 0, kind: proxyStatus.kind, variables: proxyStatus.variables },
+            'Phase 0a-exit: 出站 HTTP 出口状态已登记（loopback 恒绕过代理）',
+          );
+        }
 
         // 0b: 配置加载
         const config = loadConfig();

@@ -29,7 +29,7 @@ export interface RetryOptions {
  * 延迟公式: min(baseDelay * 2^attempt, maxDelay)
  *
  * @example
- * const result = await withRetry(() => fetch(url), { label: 'connector-sync' });
+ * const result = await withRetry(() => outboundFetch(url), { label: 'connector-sync' });
  */
 export async function withRetry<T>(
   fn: () => Promise<T>,
