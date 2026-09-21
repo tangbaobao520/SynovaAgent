@@ -395,6 +395,11 @@ async function handleConversationMessage(req: Request, res: Response, pathSessio
     const msg = err instanceof Error ? err.message : String(err);
     log.error({ err, sessionId, disconnected }, '对话轮次失败 — 流内 error 帧');
     if (!disconnected) {
+      // D865 F1: 首个 token 之前的非不变量错误——延迟建流下响应头尚未写出，若只 sendFrame，
+      // 则帧全进 pendingFrames 且无人写头（close 亦不 end）→ 客户端无限等待。
+      // 此处先按既有对外契约建流（200 + 流内 error/end 帧，保持改动前形态），不改为 5xx
+      // （F1 的本质是"挂了"，不是"状态码不对"）。ensureActive 幂等——头已发出时 no-op。
+      adapter.ensureActive();
       adapter.sendFrame({ type: 'error', code: 'CONVERSATION_ERROR', message: msg, degraded: true });
       adapter.sendFrame({ type: 'end' });
     }

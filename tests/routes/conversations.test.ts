@@ -612,6 +612,57 @@ describe('D590: 对话 SSE 端点 + SessionStore 持久化 + 鉴权落地', () =
       db.exec('DROP TRIGGER d590_fail_event_insert');
     }
   });
+
+  // ── 用例 ⑮（D865 F1 回归）: 首个 token 之前的非不变量错误不得挂死 ──
+  it('⑮ F1 回归：首个 token 前 store.addMessage 抛非不变量错误 → 有限时间内返回 + 流内 error 帧 + 连接关闭', async () => {
+    // 注入 ⑧ 路径（src/routes/conversations.ts「持久化时序① addMessage」）——真实 SQLite
+    // 触发器抛普通 SqliteError（非 InvariantError），且发生在首个 token（ensureActive）之前，
+    // 即 deferHeaders 未激活窗口。等价真实故障面：磁盘满 / DB 锁 / 表损坏。
+    new SessionStore(db); // schema 就位（触发器挂在 agent_messages 上，-t 单跑时无前序用例建表）
+    db.exec("CREATE TRIGGER d865_f1_fail_message_insert BEFORE INSERT ON agent_messages BEGIN SELECT RAISE(ABORT, 'd865-f1-injected'); END");
+    const controller = new AbortController();
+    const budgetMs = 3000;
+    const timer = setTimeout(() => controller.abort(), budgetMs);
+    const startedAt = Date.now();
+    try {
+      let res: Response;
+      try {
+        res = await fetch(`${baseUrl}/api/conversations`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: 'F1 回归：首个 token 前的非不变量错误' }),
+          signal: controller.signal,
+        });
+      } catch (err) {
+        throw new Error(`F1 挂死：响应头未在 ${budgetMs}ms 内返回（elapsedMs=${Date.now() - startedAt}，${err instanceof Error ? err.message : String(err)}）`);
+      }
+      let text: string;
+      try {
+        text = await res.text();
+      } catch (err) {
+        throw new Error(`F1 挂死：响应体未收束（elapsedMs=${Date.now() - startedAt}，${err instanceof Error ? err.message : String(err)}）`);
+      }
+      const elapsedMs = Date.now() - startedAt;
+      const frames = parseSse(text);
+      const types = frames.map(f => f.data.type);
+      console.log(`[D865-F1] elapsedMs=${elapsedMs} status=${res.status} content-type=${res.headers.get('content-type')} frames=${JSON.stringify(types)}`);
+
+      // ① 有限时间内返回——挂死时上面的 abort 会在预算内抛错，不会走到这里软通过
+      expect(elapsedMs).toBeLessThan(budgetMs);
+      // ② 既有对外契约不变：200 + text/event-stream（F1 本质是"挂了"，不改成 5xx）
+      expect(res.status).toBe(200);
+      expect(res.headers.get('content-type')).toContain('text/event-stream');
+      // ③ 流内 error 帧（degraded:true）+ 终帧 end（= 连接被收束，close 真 end 了响应）
+      expect(types[0]).toBe('open');
+      const errFrame = frames.find(f => f.data.type === 'error')?.data as { code?: string; degraded?: boolean };
+      expect(errFrame.code).toBe('CONVERSATION_ERROR');
+      expect(errFrame.degraded).toBe(true);
+      expect(types[types.length - 1]).toBe('end');
+    } finally {
+      clearTimeout(timer);
+      db.exec('DROP TRIGGER d865_f1_fail_message_insert');
+    }
+  }, 15_000);
 });
 
 /** 等待 server 就绪并返回 baseUrl（沿 diagnosis-consult-events.test.ts 先例） */
