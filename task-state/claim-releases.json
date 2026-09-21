@@ -1,0 +1,124 @@
+{
+  "releases": {
+    "D404": {
+      "at": "2026-09-20T14:24:03+08:00",
+      "basis_at_release": "task-state:audited",
+      "by": "claim-release",
+      "reason": "批量释放（task-state:audited）",
+      "released": true
+    },
+    "D408": {
+      "at": "2026-09-20T14:24:03+08:00",
+      "basis_at_release": "task-state:audited",
+      "by": "claim-release",
+      "reason": "批量释放（task-state:audited）",
+      "released": true
+    },
+    "D410": {
+      "at": "2026-09-20T14:24:03+08:00",
+      "basis_at_release": "task-state:audited",
+      "by": "claim-release",
+      "reason": "批量释放（task-state:audited）",
+      "released": true
+    },
+    "D430": {
+      "at": "2026-09-20T14:24:03+08:00",
+      "basis_at_release": "task-state:audited",
+      "by": "claim-release",
+      "reason": "批量释放（task-state:audited）",
+      "released": true
+    },
+    "D572": {
+      "at": "2026-09-20T14:24:03+08:00",
+      "basis_at_release": "task-state:audited",
+      "by": "claim-release",
+      "reason": "批量释放（task-state:audited）",
+      "released": true
+    },
+    "D576": {
+      "at": "2026-09-20T14:24:03+08:00",
+      "basis_at_release": "task-state:audited",
+      "by": "claim-release",
+      "reason": "批量释放（task-state:audited）",
+      "released": true
+    },
+    "D589": {
+      "at": "2026-09-20T14:24:03+08:00",
+      "basis_at_release": "task-state:impl_done",
+      "by": "claim-release",
+      "reason": "批量释放（task-state:impl_done）",
+      "released": true
+    },
+    "D590": {
+      "at": "2026-09-20T14:24:03+08:00",
+      "basis_at_release": "task-state:audited",
+      "by": "claim-release",
+      "reason": "批量释放（task-state:audited）",
+      "released": true
+    },
+    "D592": {
+      "at": "2026-09-20T14:24:03+08:00",
+      "basis_at_release": "task-state:audited",
+      "by": "claim-release",
+      "reason": "批量释放（task-state:audited）",
+      "released": true
+    },
+    "D593": {
+      "at": "2026-09-20T14:24:03+08:00",
+      "basis_at_release": "task-state:audited",
+      "by": "claim-release",
+      "reason": "批量释放（task-state:audited）",
+      "released": true
+    },
+    "D712": {
+      "at": "2026-09-20T14:24:03+08:00",
+      "basis_at_release": "task-state:impl_done",
+      "by": "claim-release",
+      "reason": "批量释放（task-state:impl_done）",
+      "released": true
+    },
+    "D713": {
+      "at": "2026-09-20T14:24:03+08:00",
+      "basis_at_release": "task-state:impl_done",
+      "by": "claim-release",
+      "reason": "批量释放（task-state:impl_done）",
+      "released": true
+    },
+    "D714": {
+      "at": "2026-09-20T14:24:03+08:00",
+      "basis_at_release": "task-state:impl_done",
+      "by": "claim-release",
+      "reason": "批量释放（task-state:impl_done）",
+      "released": true
+    },
+    "D795": {
+      "at": "2026-09-20T14:24:03+08:00",
+      "basis_at_release": "task-state:impl_done",
+      "by": "claim-release",
+      "reason": "批量释放（task-state:impl_done）",
+      "released": true
+    },
+    "D809": {
+      "at": "2026-09-20T14:24:03+08:00",
+      "basis_at_release": "task-state:impl_done",
+      "by": "claim-release",
+      "reason": "批量释放（task-state:impl_done）",
+      "released": true
+    },
+    "D817": {
+      "at": "2026-09-20T14:24:03+08:00",
+      "basis_at_release": "task-state:impl_done",
+      "by": "claim-release",
+      "reason": "批量释放（task-state:impl_done）",
+      "released": true
+    },
+    "D839": {
+      "at": "2026-09-20T21:36:49+08:00",
+      "basis_at_release": "task-state:impl_done",
+      "by": "D853",
+      "reason": "D839 已 CONDITIONAL PASS 且 Windows 上不可用；D853 承接其 resolve-commit-brief.sh 修复",
+      "released": true
+    }
+  },
+  "version": 1
+}
