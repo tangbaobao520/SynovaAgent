@@ -3,7 +3,7 @@
  *
  * 覆盖: 6项检查状态 + 整体状态聚合 + server接线 + report-assembler注入
  */
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import * as http from 'http';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -65,14 +65,14 @@ describe('D49: healthz — HTTP 响应', () => {
     if (!addr || typeof addr === 'string') throw new Error('server not listening');
     const res = await fetch(`http://localhost:${addr.port}/api/healthz`);
     const body = await res.json();
-    const checkKeys = ['database', 'llm_connectivity', 'last_sentinel_run', 'disk_free_gb', 'data_freshness', 'watchdog_alive'];
+    const checkKeys = ['database', 'llm_connectivity', 'last_sentinel_run', 'disk_free_gb', 'data_freshness', 'watchdog_alive', 'outbound_proxy'];
     for (const key of checkKeys) {
       expect(body.checks).toHaveProperty(key);
       expect(body.checks[key]).toHaveProperty('status');
       expect(body.checks[key]).toHaveProperty('detail');
       expect(['ok', 'degraded', 'down']).toContain(body.checks[key].status);
     }
-    expect(Object.keys(body.checks).length).toBe(6);
+    expect(Object.keys(body.checks).length).toBe(7);
   });
 
   it('各项 checks.status 是合法枚举值', async () => {
@@ -85,6 +85,69 @@ describe('D49: healthz — HTTP 响应', () => {
       expect(['ok', 'degraded', 'down']).toContain(c.status);
       expect(typeof c.detail).toBe('string');
     }
+  });
+});
+
+describe('D862: healthz — outbound_proxy 检查（三路径 + 不含值）', () => {
+  const PROXY_ENV_NAMES = ['http_proxy', 'HTTP_PROXY', 'https_proxy', 'HTTPS_PROXY', 'all_proxy', 'ALL_PROXY'] as const;
+  const saved: Record<string, string | undefined> = {};
+
+  async function getCheck(): Promise<{ status: string; detail: string }> {
+    const app = express();
+    const mod = await import('../../src/routes/healthz');
+    app.use(mod.default);
+    const server = app.listen(0);
+    await new Promise<void>((resolve) => server.once('listening', resolve));
+    try {
+      const addr = server.address();
+      if (!addr || typeof addr === 'string') throw new Error('server not listening');
+      const res = await fetch(`http://localhost:${addr.port}/api/healthz`);
+      const body = await res.json();
+      return body.checks.outbound_proxy;
+    } finally {
+      server.close();
+    }
+  }
+
+  beforeEach(() => {
+    for (const name of PROXY_ENV_NAMES) {
+      saved[name] = process.env[name];
+      delete process.env[name];
+    }
+  });
+
+  afterEach(() => {
+    for (const name of PROXY_ENV_NAMES) {
+      if (saved[name] === undefined) delete process.env[name];
+      else process.env[name] = saved[name];
+    }
+  });
+
+  it('正常路径：未配置代理 → status=ok，detail 含「直连」且列出零变量', async () => {
+    const check = await getCheck();
+    expect(check.status).toBe('ok');
+    expect(check.detail).toContain('直连');
+    expect(check.detail).toContain('无');
+  });
+
+  it('边界路径：配置带凭据的可用代理 → status=ok，响应不含代理值/凭据（反推不可能）', async () => {
+    process.env.https_proxy = 'http://user:super-secret-pass@127.0.0.1:3128';
+    const check = await getCheck();
+    expect(check.status).toBe('ok');
+    expect(check.detail).toContain('https_proxy');
+    // 不含值安全契约：整条 detail 不得出现代理 URL、host、端口、凭据
+    expect(check.detail).not.toContain('super-secret-pass');
+    expect(check.detail).not.toContain('3128');
+    expect(check.detail).not.toContain('user:');
+  });
+
+  it('降级路径：socks 代理值不可用 → status=degraded，detail 只含变量名与形态', async () => {
+    process.env.all_proxy = 'socks5://secret-cred@127.0.0.1:1080';
+    const check = await getCheck();
+    expect(check.status).toBe('degraded');
+    expect(check.detail).toContain('all_proxy');
+    expect(check.detail).not.toContain('secret-cred');
+    expect(check.detail).not.toContain('1080');
   });
 });
 
