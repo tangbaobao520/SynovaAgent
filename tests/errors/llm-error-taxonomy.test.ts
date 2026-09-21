@@ -9,15 +9,43 @@
  *
  * 铁律 48: 非空壳 — 正常/降级/边界三路径，每用例 ≥3 断言。
  */
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   DiagnosticAgentError, ErrorCode, normalizeLlmFailure,
   isContextWindowExceededError, isQuotaExceededError,
 } from '../../src/errors/types';
 import { createOpenAICompatibleProvider } from '../../src/providers/base';
+import { outboundFetch } from '../../src/providers/http-exit';
 import type { LLMMessage } from '../../src/providers/types';
 
+/**
+ * D821 迁移（2026-09-21，CTO 授权纳入本卡写集）：
+ * `src/providers/base.ts` 的出站已从裸 `fetch` 收敛到唯一出口 `outboundFetch`
+ * （铁律 9 全仓传播）。原先用 `vi.stubGlobal('fetch', …)` 打桩**全局 fetch** 已打不着
+ * 真实调用点 —— 那会让这些用例退化为"打真网络（`https://unit.test`）"，
+ * 既不确定也不再验证分类路径。
+ *
+ * 因此改为对**真 seam** 打桩：`vi.mock` 只替换 `outboundFetch` 一个导出，
+ * 其余导出（`OutboundHttpError` / `getProxyStatus` 等）保持真实实现 ——
+ * `base.ts` 的 `err instanceof OutboundHttpError` 判定因此仍走真类。
+ * **断言一条未改**（分类结果 / `code` / `phase` / `retryable` / capability seam / stream onError）。
+ */
+vi.mock('../../src/providers/http-exit', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/providers/http-exit')>();
+  return { ...actual, outboundFetch: vi.fn() };
+});
+const mockOutboundFetch = vi.mocked(outboundFetch);
+
 const MSG: LLMMessage[] = [{ role: 'user', content: '诊断这家企业的增长瓶颈' }];
+
+/** 默认桩：200 + 空 content（需要别的响应/抛错的用例在用例内覆盖）。 */
+beforeEach(() => {
+  mockOutboundFetch.mockReset();
+  mockOutboundFetch.mockResolvedValue(new Response(
+    JSON.stringify({ choices: [{ message: { content: '' } }], model: 'm-1' }),
+    { status: 200 },
+  ));
+});
 
 // ═══ 1. normalizeLlmFailure — 归一化边界 ═══
 
@@ -173,10 +201,7 @@ describe('adapter 分类路径 — EMPTY_RESPONSE（assembler 侧）', () => {
   afterEach(() => { vi.unstubAllGlobals(); });
 
   it('Given 200 但 content 为空, When chat, Then EMPTY_RESPONSE（可安全重试）', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => new Response(
-      JSON.stringify({ choices: [{ message: { content: '' } }], model: 'm-1' }),
-      { status: 200 },
-    )));
+    // 默认桩（beforeEach）就是 200 + 空 content —— 即本用例的既有语义，断言不变
     const provider = createOpenAICompatibleProvider({
       name: 'unit-empty', baseUrl: 'https://unit.test', model: 'm-1',
       apiKey: 'k-1', getHeaders: () => ({}),
@@ -210,9 +235,9 @@ describe('adapter 最终 throw 边界 — normalizeLlmFailure + 合一分类接�
   afterEach(() => { vi.unstubAllGlobals(); });
 
   it('Given fetch 抛 context 超限错误, When chat, Then CONTEXT_OVERFLOW + compress + cause 保留', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => {
-      throw new Error("This model's maximum context length is 8192 tokens");
-    }));
+    mockOutboundFetch.mockRejectedValue(
+      new Error("This model's maximum context length is 8192 tokens"),
+    );
     const provider = createOpenAICompatibleProvider({
       name: 'unit-ctx', baseUrl: 'https://unit.test', model: 'm-1',
       apiKey: 'k-1', getHeaders: () => ({}),
@@ -227,9 +252,9 @@ describe('adapter 最终 throw 边界 — normalizeLlmFailure + 合一分类接�
   });
 
   it('Given fetch 抛配额耗尽错误, When chat, Then BILLING_EXCEEDED + 轮换 + 不重试', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => {
-      throw new Error('402 payment required: insufficient_quota');
-    }));
+    mockOutboundFetch.mockRejectedValue(
+      new Error('402 payment required: insufficient_quota'),
+    );
     const provider = createOpenAICompatibleProvider({
       name: 'unit-quota', baseUrl: 'https://unit.test', model: 'm-1',
       apiKey: 'k-1', getHeaders: () => ({}),
@@ -247,7 +272,7 @@ describe('adapter 最终 throw 边界 — normalizeLlmFailure + 合一分类接�
     const seam = new DiagnosticAgentError({
       code: ErrorCode.RATE_LIMITED, message: '429 slow down', phase: 2, retryable: true,
     });
-    vi.stubGlobal('fetch', vi.fn(async () => { throw seam; }));
+    mockOutboundFetch.mockRejectedValue(seam);
     const provider = createOpenAICompatibleProvider({
       name: 'unit-seam', baseUrl: 'https://unit.test', model: 'm-1',
       apiKey: 'k-1', getHeaders: () => ({}),
@@ -260,9 +285,9 @@ describe('adapter 最终 throw 边界 — normalizeLlmFailure + 合一分类接�
   });
 
   it('Given fetch 抛 context 超限错误, When stream, Then onError 收到 CONTEXT_OVERFLOW', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => {
-      throw new Error('prompt is too long for this model context');
-    }));
+    mockOutboundFetch.mockRejectedValue(
+      new Error('prompt is too long for this model context'),
+    );
     const provider = createOpenAICompatibleProvider({
       name: 'unit-stream', baseUrl: 'https://unit.test', model: 'm-1',
       apiKey: 'k-1', getHeaders: () => ({}),
