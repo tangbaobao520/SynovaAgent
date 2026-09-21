@@ -1,5 +1,7 @@
 /** tools/action-expert-tools.ts — 行动专家工具链 (Phase C5) */
 import type { ToolDefinition } from '../agent/tools';
+// D862/P-1: localhost 本机 API 出站也走唯一出口 outboundFetch（出口契约原生 loopback 恒绕过代理）
+import { outboundFetch } from '../providers/http-exit';
 import { createLogger } from '@synova/logger';
 const log = createLogger('tools/action-expert');
 
@@ -26,7 +28,7 @@ export const measureEffectivenessTool: ToolDefinition = {
     const orgId = p.orgId as string;
     try {
       const BASE = `http://localhost:${process.env.PORT||3000}`;
-      const r = await fetch(`${BASE}/api/sessions/search?q=${encodeURIComponent(orgId)}`);
+      const r = await outboundFetch(`${BASE}/api/sessions/search?q=${encodeURIComponent(orgId)}`);
       if (r.ok) {
         const d = await r.json() as { results?: unknown[] };
         return { orgId, previousDiagnoses: d.results?.length || 0, hasHistory: (d.results?.length ?? 0) > 0, recommendation: (d.results?.length ?? 0) > 0 ? `对比上次行动项效果，评估改善幅度。` : '首次诊断——无历史数据可对比。' };

@@ -15,6 +15,8 @@ interface GraphData {
  * 依赖: DataConnector + GraphStore + graph-query
  */
 import type { ToolDefinition } from '../agent/tools';
+// D862/P-1: localhost 本机 API 出站也走唯一出口 outboundFetch（出口契约原生 loopback 恒绕过代理）
+import { outboundFetch } from '../providers/http-exit';
 import { createLogger } from '@synova/logger';
 const log = createLogger('tools/org-expert');
 
@@ -77,7 +79,7 @@ export const scanCollaborationTool: ToolDefinition = {
     const orgId = params.orgId as string;
     try {
       const BASE = `http://localhost:${process.env.PORT || 3000}`;
-      const res = await fetch(`${BASE}/api/ontology/graph/${orgId}`);
+      const res = await outboundFetch(`${BASE}/api/ontology/graph/${orgId}`);
       if (res.ok) {
         const data = await res.json() as GraphData;
         const interactsEdges = (data.edges || []).filter((e: any) => e.type === EdgeType.INFORMATION_FLOW);
@@ -114,7 +116,7 @@ export const assessDecisionFlowTool: ToolDefinition = {
     const orgId = params.orgId as string;
     try {
       const BASE = `http://localhost:${process.env.PORT || 3000}`;
-      const res = await fetch(`${BASE}/api/ontology/graph/${orgId}`);
+      const res = await outboundFetch(`${BASE}/api/ontology/graph/${orgId}`);
       if (res.ok) {
         const data = await res.json() as GraphData;
         const belongsToEdges = (data.edges || []).filter((e: any) => e.type === EdgeType.TALENT_DEPLOYMENT);
@@ -153,7 +155,7 @@ export const identifyKeyPersonRiskTool: ToolDefinition = {
     const threshold = (params.threshold as number) || 0.7;
     try {
       const BASE = `http://localhost:${process.env.PORT || 3000}`;
-      const res = await fetch(`${BASE}/api/ontology/graph/${orgId}`);
+      const res = await outboundFetch(`${BASE}/api/ontology/graph/${orgId}`);
       if (res.ok) {
         const data = await res.json() as GraphData;
         const persons = (data.nodes || []).filter((n: any) => n.type === NodeType.RESOURCE_PERSON);
