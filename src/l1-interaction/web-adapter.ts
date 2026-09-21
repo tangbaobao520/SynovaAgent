@@ -110,14 +110,19 @@ export class WebViewAdapter implements ViewAdapter {
       return;
     }
     this.deferred = false;
-    this.res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
-    this.res.setHeader('Cache-Control', 'no-cache');
-    this.res.setHeader('Connection', 'keep-alive');
-    this.res.flushHeaders();
+    this.writeSseHeaders();
     this.heartbeat = setInterval(() => this.writeRaw(': ping\n\n'), HEARTBEAT_INTERVAL_MS);
     const buffered = [...this.pendingFrames];
     this.pendingFrames.length = 0;
     for (const frame of buffered) this.writeRaw(frame);
+  }
+
+  /** SSE 响应头（延迟建流激活 / close 兜底共用——单源防形态漂移） */
+  private writeSseHeaders(): void {
+    this.res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+    this.res.setHeader('Cache-Control', 'no-cache');
+    this.res.setHeader('Connection', 'keep-alive');
+    this.res.flushHeaders();
   }
 
   private clearHeartbeat(): void {
@@ -186,6 +191,21 @@ export class WebViewAdapter implements ViewAdapter {
   close(): void {
     this.clearHeartbeat();
     if (this.closed) return;
+    // D865 F1 兜底: 延迟建流且从未激活、且**无人写过响应头**（非不变量错误在首个 token 前抛出时，
+    // 路由若只 sendFrame 则帧进缓冲、无人写头、原实现又不 end → 客户端无限等待）。
+    // 此处补建流 + 按序 flush 缓冲帧，随后照常 end 收束；路由已接管响应（InvariantError → 5xx
+    // JSON 已发头）或已激活建流的情形不进本分支。
+    if (this.deferred && !this.res.headersSent) {
+      this.deferred = false; // writeRaw 转为直写
+      try {
+        this.writeSseHeaders();
+      } catch (err) {
+        log.warn({ err }, 'SSE 延迟建流兜底写头失败 — 继续 end 收束（禁挂死）');
+      }
+      const buffered = [...this.pendingFrames];
+      this.pendingFrames.length = 0;
+      for (const frame of buffered) this.writeRaw(frame);
+    }
     this.closed = true;
     // D865: 延迟建流且从未激活（如首轮违约路由直接 5xx JSON）——响应由路由终结束，
     // 此处不得再 end（json 已结束响应；重复 end 属协议错误）
