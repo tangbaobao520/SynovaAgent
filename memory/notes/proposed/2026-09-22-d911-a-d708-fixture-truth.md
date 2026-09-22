@@ -28,12 +28,18 @@
   `base_ref` 缺省即不回退）；`find_declaration_files` 改按 head 树定位（`ls-tree` 找候选 + `git show` 取内容，
   S2/S3 内容落系统临时目录再喂外部解析器）；`collect_declared`/`collect_explicit_exempt` 吃 head 树内容；
   `resolve_pr_body_text` 返回 `(文本, 通道状态)`；`_emit` 新增结论块内的豁免通道打印与替代路径指引。
-- `tests/control-tower/merge_writeset_gate.test.sh`：新增 ⑬–⑳ 共 27 条断言（密封沙箱自建地形，零网络），
+- `tests/control-tower/merge_writeset_gate.test.sh`：新增 ⑬-⑰c + ⑱⑲⑳ **共 29 条断言**（密封沙箱自建地形，零网络），
   并加 `SYNO_D708_GATE` 注入缝——**同一夹具**换修前 gate 二进制即可复现红侧（修前 39 通过/19 失败，
   修后 58 通过/0 失败；失败的 19 条全部落在新增判据 ⑬-⑰c，既有 ①-⑫ 两侧均通过），
   ⑲⑳ 两侧都绿（「该拦的仍拦」）。红侧**不修改任何交付文件**（不注入临时标记，故无残留可清）。
 - 契约（铁律 47）：三个被改函数的 `@input/@output/@degraded/@error` 已写进 docstring；
   判定三态（0 通过 / 1 夹带 / 2 无法判定）与豁免语义**逐条保持不变**。
+
+## 交付快照（N8 复扫口径）
+
+- 终态 rev：`1715df29`（真提交 `59ff445d`；其后 task-3 只改本 note 与 brief，**gate / test 零改动**）。
+- 本卡改动面（`git diff --stat $(git merge-base origin/main HEAD)..1715df29`）：5 件 = 4 件写集 + `.claude/bypass.log`（hook 自动追加）；
+  统计 `1010 insertions(+), 90 deletions(-)`；`git status --porcelain -b` = `[ahead 6, behind 3]`（未拉平 main，队长裁定）。
 
 ## 判据纪律（本卡的验收形态）
 

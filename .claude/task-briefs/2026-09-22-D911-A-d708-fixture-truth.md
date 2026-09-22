@@ -84,11 +84,11 @@
 - [x] A2 声明源改读 head 树（工作树不在该分支仍对账）；verify: bash tests/control-tower/merge_writeset_gate.test.sh（⑮⑯ 断言）
 - [x] A3 豁免通道不可用进结论块 + --json 且给替代路径；verify: bash tests/control-tower/merge_writeset_gate.test.sh（⑰⑰b⑰c⑱ 断言）
 - [x] 反例两条仍拦（卡不存在 exit 2 / 真夹带 exit 1）；verify: bash tests/control-tower/merge_writeset_gate.test.sh（⑲⑳ 断言）
-- [x] 回归只增不减（既有 29 条 → 终态 56 条）；verify: bash tests/control-tower/merge_writeset_gate.test.sh
+- [x] 回归只增不减（既有 29 条 → 终态 58 条）；verify: bash tests/control-tower/merge_writeset_gate.test.sh
 - [x] 全量夹具 exit 0；verify: bash tests/control-tower/merge_writeset_gate.test.sh
 - [x] gate 语法可编译；verify: python3 -c "compile(open('scripts/control-tower/merge_writeset_gate.py',encoding='utf-8').read(),'g','exec')"
 - [x] 测试脚本语法；verify: bash -n tests/control-tower/merge_writeset_gate.test.sh
-- [x] 红侧靠换 gate 二进制注入、交付文件零临时标记；verify: bash -c 'grep -c SYNO_D708_GATE tests/control-tower/merge_writeset_gate.test.sh'
+- [x] 红侧不修改交付文件（N9 强 verify：红侧跑前后 4 件产物逐件 hash 一致，且红侧确已跑出结果行）；verify: bash -c 'F="scripts/control-tower/merge_writeset_gate.py tests/control-tower/merge_writeset_gate.test.sh .claude/task-briefs/2026-09-22-D911-A-d708-fixture-truth.md memory/notes/proposed/2026-09-22-d911-a-d708-fixture-truth.md"; A=$(git hash-object $F | tr "\n" ":"); git show origin/main:scripts/control-tower/merge_writeset_gate.py > /tmp/d911-verify-pre.py; SYNO_D708_GATE=/tmp/d911-verify-pre.py bash tests/control-tower/merge_writeset_gate.test.sh > /tmp/d911-verify-red.log 2>&1; B=$(git hash-object $F | tr "\n" ":"); grep -qE "结果: [0-9]+ 通过, [0-9]+ 失败" /tmp/d911-verify-red.log && [ "$A" = "$B" ] && echo "RED-SIDE-RAN-AND-NO-MUTATION"'
 
 ## 写集
 
@@ -269,44 +269,64 @@ $ bash scripts/control-tower/synova-commit --task-id D911 --agent coder-a --mess
 旁证：同文件 L334-346 有 merge 快速通道（`FASTLANE_TRIGGER` 判定含 `MERGE_HEAD`，注释自陈 D537 #3「merge commit」）
 ⇒ merge 路径**设计上要走 synova-commit**，实际被自家 D706 检查压掉 = 真回归。
 证据采集方式声明：上述完整块由一次性 detached worktree（`/tmp/d911a-d706-repro`，`git worktree add --detach c42c563e`）
-跑**同一代码路径的四条命令**复现，**主线 worktree 未被触碰**（复现后 `git worktree remove --force`；主线 HEAD 仍 `c42c563e`）；
+跑**同一代码路径的四条命令**复现，**主线 worktree 未被触碰**（复现后 `git worktree remove --force`；复现当时主线 HEAD 为 `c42c563e`——那是当次快照，终态见 D8）；
 实跑现场我只保留了该块尾部（`> MM	.claude/bypass.log` / 根因族两行 / soft reset 行 / `❌ git commit 失败（exit 1）`），
 与本次复现**逐字一致**，故合并引用。原始捕获的截断是我自己的采集失误（用了 `tail`），特此声明。
 
 ### D8 交付回执与残留检查
+
+> 快照口径（N8 刷新）：本块全部输出**钉 rev `1715df29`**（其真提交 = `59ff445d`，字面返工后的终态）；
+> task-3 文档层提交会再推进 HEAD → 本块用 `..1715df29` / `rev-parse` 写法**保证可复跑、不随 HEAD 漂移**。
+
 ```
+$ git diff --stat $(git merge-base origin/main HEAD)..1715df29    # 本卡改动面（钉 rev 复跑命令）
+ .claude/bypass.log                                 |   3 +
+ .../2026-09-22-D911-A-d708-fixture-truth.md        | 348 ++++++++++++++++++
+ .../2026-09-22-d911-a-d708-fixture-truth.md        |  76 ++++
+ scripts/control-tower/merge_writeset_gate.py       | 388 ++++++++++++++++-----
+ tests/control-tower/merge_writeset_gate.test.sh    | 285 ++++++++++++++-
+ 5 files changed, 1010 insertions(+), 90 deletions(-)
+  # 4 件写集 + .claude/bypass.log（非写集；其行由 post-commit hook 按 D414 自动追加，非本卡手改）
+$ git diff --name-only $(git merge-base origin/main HEAD)..1715df29
+.claude/bypass.log
+.claude/task-briefs/2026-09-22-D911-A-d708-fixture-truth.md
+memory/notes/proposed/2026-09-22-d911-a-d708-fixture-truth.md
+scripts/control-tower/merge_writeset_gate.py
+tests/control-tower/merge_writeset_gate.test.sh
+$ git diff --name-only origin/main          # 相对 origin/main 视角 = 17 件（本卡 5 件 + main 领先本分支的 12 件），故不收窄口径
 $ git rev-parse origin/gate/ctrl-verify-batch2
 9e24daf515382968168b4c21d713262b32a7fae2
 $ git ls-remote --heads origin | grep D911
-c42c563e1e01be660c224b952ca064b536f1b14b	refs/heads/fix/D911-merge-writeset-gate
+039c5f8c4753b093a04ae1997b33ef2aed893bd7	refs/heads/feat/D911-ownership-standby      ← 切片 B（他人分支）
+141a3d6cbb37a8b6b5f15576505f0a4cda5a84da	refs/heads/fix/D911-g12-writeset             ← 切片 C（他人分支）
+1715df291980645f8ec621496a4b0cc2b63b6e8e	refs/heads/fix/D911-merge-writeset-gate      ← 本件
 $ git rev-parse HEAD ; git rev-parse origin/fix/D911-merge-writeset-gate
-c42c563e1e01be660c224b952ca064b536f1b14b
-c42c563e1e01be660c224b952ca064b536f1b14b      # 本地 == origin，零丢失
+1715df291980645f8ec621496a4b0cc2b63b6e8e
+1715df291980645f8ec621496a4b0cc2b63b6e8e      # 本地 == origin，零丢失
 $ git status --porcelain=v1 -b
-## fix/D911-merge-writeset-gate...origin/main [ahead 2, behind 3]      # 无 M/A 项（干净）
+## fix/D911-merge-writeset-gate...origin/main [ahead 6, behind 3]      # 无 M/A 项（干净）
 $ git rev-parse --verify -q MERGE_HEAD || echo "MERGE_HEAD 已清"
 MERGE_HEAD 已清
 $ git merge-base origin/main HEAD
 ee0c4eb146d9b931a3c27ba0c5118eef24b49d6a      # 未拉平（队长裁定），故 = 分支起点
-$ git diff --stat $(git merge-base origin/main HEAD)   # 本卡改动面（原始）
- .claude/bypass.log                                 |    1 +
- .claude/task-briefs/2026-09-22-D911-A-d708-fixture-truth.md  | 222 ++++++++++++
- memory/notes/proposed/2026-09-22-d911-a-d708-fixture-truth.md |  59 ++++
- scripts/control-tower/merge_writeset_gate.py       |  387 ++++++++++++++++-----
- tests/control-tower/merge_writeset_gate.test.sh    |  270 +++++++++++++-
- 5 files changed, 849 insertions(+), 90 deletions(-)
-  # 4 件写集 + .claude/bypass.log（① 非写集，且 ② 该行由 post-commit hook 按 D414 自动追加，非本卡手改）
-$ git diff --name-only origin/main    # 相对 origin/main 视角（含 main 领先本分支的 12 个文件，故不收窄口径）
 ```
 「临时注入红证」残留检查：**本卡红侧不修改任何交付文件**（靠 `SYNO_D708_GATE` 换 gate 二进制），
 故 4 件产物内该标记字面量的 `grep -c` 均为 **0 / 0 / 0 / 0**（字面量按派单口径由队长持有，此处不写进 brief，
-避免自指把计数污染成 1；复核命令由队长按其口径执行）。
+避免自指把计数污染成 1）。
+N9 更正：上面这条命题先前用 `grep -c SYNO_D708_GATE`（穷举子串型弱 verify）**不检验命题**；
+现改由 **Done 标准的强 verify** 控制——红侧跑前后对 4 件产物逐件 `git hash-object` 比对（前后一致）
+**且**红侧确已跑出结果行（证明 pre-fix 二进制真的被跑过，不是「没跑所以没改」）。
 
-### D9 提交
+### D9 提交（钉 rev `1715df29` 的完整链，最新在下）
 ```
 52267e9f  fix(D911): D708 合并级写集门禁三缺陷根治——取号限定 merge-base 范围/声明源改读 head 树/豁免通道升级为结论字段
-c42c563e  chore: bypass COMMITTED 登记 (auto hook, D521)      ← post-commit 影子提交（HEAD，已推送）
+c42c563e  chore: bypass COMMITTED 登记 (auto hook, D521)
+8edc997d  docs(D911): A 切片终态证据与遗留清单补录（不拉平 main 口径 + Done verify 规范化 + synova-commit D706 合并缺口登记）
+243d6427  chore: bypass COMMITTED 登记 (auto hook, D521)
+59ff445d  fix(D911): A3 结论块字面口径连续化（豁免通道不可用）+ 字面连续性行为断言
+1715df29  chore: bypass COMMITTED 登记 (auto hook, D521)      ← 影子提交 = 本块快照 rev（已推送）
 ```
+
 
 ### D10 字面口径返工（N3，队长指令 · 只改字面不改行为）
 队长转来 verifier-a 的 N3：验收判据第 3 条引用字面「**豁免通道不可用**」，而先前输出是 `⚠️ 豁免通道: 不可用`
