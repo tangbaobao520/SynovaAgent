@@ -1,0 +1,28 @@
+{
+  "status": "claimed",
+  "risk": "medium",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [],
+  "blocked": null,
+  "updated_at": "2026-09-22",
+  "updated_by": "synova-cto",
+  "target": "2026-W39",
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "executor": null,
+  "title": "D865 复审：两 P0 闭环（K3 PASS）",
+  "spec": "K3 复审 D865 判 PASS（两个 P0 已闭环）。本卡为**登记补齐**：D865 的交付与审计此前只存在于分支/coordination 文档，`task-state/` 无卡 → 取号器看不见它，是 D862/D850 撞号的同源风险。",
+  "write_set": [
+    "task-state/D865.json"
+  ],
+  "acceptance_points": [
+    "卡登记存在且与 K3 报告结论一致（PASS）",
+    "审计报告分支 `audit/k3-20260921-d865` @ 0e491875 已推送且报告落 main"
+  ],
+  "note": "登记补齐（登记缺口：D864/D865/D870 三张卡不在 task-state）。",
+  "next": "① 报告落 main",
+  "task_id": "D865"
+}
