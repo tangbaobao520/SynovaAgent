@@ -1602,6 +1602,11 @@ Binary file .claude/bypass.log matches
 2026-09-21T21:41:37+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=cecf4f0786cb7b52268976685db66748ba156044
 2026-09-22T00:44:52+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=7f39ef94c33b4ba7cc88f73ff83219e8f05d0f58
 2026-09-22T20:44:15+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=c7046c0707b2d3169dd7a1219ddbdb57592371ac
+2026-09-22T20:29:13+08:00 | GATE_FAIL_SOFT | exit=1 | branch=gate/d861-d860-mac
+2026-09-22T20:29:49+08:00 | GATE_FAIL_SOFT | exit=1 | branch=gate/d861-d860-mac
+2026-09-22T20:29:49+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=489717776b9ea8edb764ca3487daf78290aed0b9
+2026-09-22T20:36:27+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=4d962eda0318865cfb381ad999bc2f399e7cbf51
+2026-09-22T20:43:22+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=1292b65e11723ce5167e1bee02a1e8eecf8d2ec1
 2026-09-22T20:28:18+08:00 | GATE_FAIL_SOFT | exit=1 | branch=fix/d861-win-tests-red
 2026-09-22T20:28:19+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=3c8cf14cac115c2f7054c52b8231953355f8df88
 2026-09-22T20:35:58+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=f08f2e078dcf79cd81106b63981c2683b3007409
