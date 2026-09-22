@@ -1,0 +1,42 @@
+{
+  "task_id": "D912",
+  "title": "研究院材料升权威级 + 引用纪律 + 派单模板「旧信息漏洞自检」 + 补 4 卡 write_set（**原误标 D850，撞号重编号**）",
+  "status": "impl_done",
+  "risk": "high",
+  "spec": "创始人 2026-09-20 裁定：① 研究院材料**提高到权威级别**（与创始人裁定同级）；② 取消总完成度百分比，改离散健康计数；③ 官方任务板 Web 界面不管。触发事故：创始人 2026-09-18 一次交付 5 份正式文档，**CTO 只读 1 份即开工**，源目录另有 09-19 高危件从未读过 → 派单存在系统性跑偏风险。本卡把该裁定固化为可执行纪律（权威级别 / 引用纪律 / 未入库=视为未交办 / 派单必给回执 / 派单模板加「旧信息漏洞自检」段）。",
+  "write_set": [
+    "docs/authority/研究院材料权威级别与引用纪律-20260920.md",
+    "docs/synova/coordination/模板-小队派单-20260919.md",
+    "task-state/D826.json",
+    "task-state/D827.json",
+    "task-state/D828.json",
+    "task-state/D831.json",
+    "task-state/D912.json",
+    ".claude/task-briefs/"
+  ],
+  "impl": {
+    "summary": "落地创始人 2026-09-20 裁定：权威级别表（输入源 / 入库要求 / 冲突优先级「撤回清单 > 任何旧说法」/ 未入库=视为未交办 / 回执要求）+ 引用纪律（防基于旧信息）+ 派单模板新增 §〇-d 旧信息漏洞自检段；并把 D826/D827/D828/D831 四张存量卡的 write_set 补齐（原缺登导致派单写集口径不清）。",
+    "original_branch": "chore/authority-v2 @ 1e13997d（commit message 误标 D850）"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-22",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": "mac-coding",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [
+    "D849"
+  ],
+  "blocked": null,
+  "target": "2026-W39",
+  "acceptance_points": [
+    "权威件 `docs/authority/研究院材料权威级别与引用纪律-20260920.md` 落 main 且在 DOCS-REGISTRY 登记（下游派单 §〇-c 回执可解析）",
+    "派单模板新增「旧信息漏洞自检」段（§〇-d），且 D911 派单件已按该段实写",
+    "D826/D827/D828/D831 四卡 write_set 补齐（与各自在飞分支的实际变更集一致）",
+    "D849 前置已落 main：`git cat-file -e origin/main:docs/synova/research/研究院交接-20260918/任务书-数据与可观测层.md`（权威件引用的入库件必须真实存在）"
+  ],
+  "next": "① 落 main ② 后续派单一律按本纪律给 §〇-c 回执",
+  "note": "**重编号说明**：原分支 commit message 写 `docs(D850): 研究院材料升权威级…`，但 main 的 `task-state/D850.json` 是另一件（度量口径改造·小队编码 A，PR #683），**同一 D# 被两件占用**。本卡重编号 **D912**，原分支写作痕迹保留在 `original_branch` 字段。同类撞号另有 D862（采 main 版，绿腿/canary 由 D863 承接）。取号必须走 `scripts/control-tower/alloc-task-id.sh`；D864–D910 的预留见 D911 裁定记录。"
+}
