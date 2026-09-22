@@ -6,8 +6,10 @@
 import { describe, it, expect } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
 
 const ROOT = process.cwd();
+const HERE = path.dirname(fileURLToPath(import.meta.url));
 
 describe('No circular dependency: tools ↔ connectors', () => {
   it('Given tools.ts, When reading imports, Then does not import connectors/registry', () => {
@@ -24,7 +26,10 @@ describe('No circular dependency: tools ↔ connectors', () => {
   });
 
   it('Given @synova/connector-registry registry.ts, When reading imports, Then imports ToolRegistryInterface from ./types', () => {
-    const content = fs.readFileSync('../packages/connector-registry/src/registry.ts', 'utf-8');
+    // D861: 原 '../packages/...' 相对 cwd 解析到仓库外（任何机器 ENOENT，main 恒红实证）
+    //   ——改为从测试文件自身定位（HERE），与 cwd 解耦。
+    const content = fs.readFileSync(
+      path.resolve(HERE, '../../packages/connector-registry/src/registry.ts'), 'utf-8');
     expect(content).toMatch(/ToolRegistryInterface/);
     expect(content).toMatch(/from\s+['"]\.\/types['"]/);
   });
