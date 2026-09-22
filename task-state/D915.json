@@ -1,0 +1,33 @@
+{
+  "task_id": "D915",
+  "title": "创始人面板恢复落 main（bot 通道被 GitHub 平台机制永久阻断）",
+  "status": "impl_done",
+  "risk": "medium",
+  "domain": "win",
+  "owner": "synova-cto",
+  "executor": "synova-cto",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [],
+  "blocked": null,
+  "target": "2026-W39",
+  "spec": "创始人零信任控制台 `app/founder-dashboard.html` + `docs/synova/founder-console.html` 自 2026-09-07 起停更。bot 分支 `auto/dashboard` **每天在更新**（head 32cb6015 / 2026-09-22 12:44 UTC），但**从未合回 main**（上一个 bot PR #403 被 closed 未 merge）→ Pages 从 main 构建 → 创始人看到 09-07 的数据。**根因已用 API 物理钉死**：`PUT /pulls/707/merge` 返回 `405 12 of 12 required status checks are expected.` —— main 要求 12 项状态检查，而 bot 分支由 **`GITHUB_TOKEN`** 推送，GitHub 对 `GITHUB_TOKEN` 触发的事件**不再创建 workflow run**（防递归）→ bot PR 的 check-runs 恒为 **0** → **永远凑不齐 12 项** → 永久 blocked。这不是门禁被人绕过，是**门禁从未获得执行机会**。",
+  "write_set": [
+    "app/founder-dashboard.html",
+    "docs/synova/founder-console.html",
+    "task-state/D915.json"
+  ],
+  "impl": {
+    "summary": "把 bot 分支今日生成的 2 个产物用**人工分支**重推（本 session 提交走 SSH 凭据，非 GITHUB_TOKEN → CI 正常触发 → 可满足 12 项必需检查）。内容零改动，与 auto/dashboard @ 32cb6015 逐字节一致。"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-22",
+  "updated_by": "synova-cto",
+  "acceptance_points": [
+    "2 个产物与 `origin/auto/dashboard` @ 32cb6015 逐字节一致（给 diff --stat 输出）",
+    "CI 12 项必需检查全部通过（bot PR 做不到的那 12 项）",
+    "合并后 `git cat-file -e origin/main:app/founder-dashboard.html` 且其内容==自动分支版本"
+  ],
+  "next": "① 落 main ② D786（#584）做通道治本：bot 改用 PAT 推送，或改 channel 设计",
+  "note": "治本（D786 / PR #584）不在本卡：根治需要 bot 用 **PAT**（fine-grained，contents:write）而非 GITHUB_TOKEN 推送，否则每次都要人工捞一次。"
+}
