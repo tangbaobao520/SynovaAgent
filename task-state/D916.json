@@ -1,0 +1,45 @@
+{
+  "task_id": "D916",
+  "title": "D870 K3 审计 P2 收口（4 条 implement 侧）+ CTO 口径订正（P2-1）",
+  "status": "claimed",
+  "risk": "low",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": null,
+  "milestone": "M0 项目管理基建",
+  "depends_on": [
+    "D870"
+  ],
+  "blocked": null,
+  "target": "2026-W39",
+  "spec": "K3 对 D870 判 **PASS（0 P0 / 0 P1 / 5 P2）**。5 条 P2 不阻断合并且无需重审，但**必须闭环登记**（验收标准 §十一：闭环＝卡号＋责任人＋可验证证据）。本卡收 4 条 implement 侧 + 1 条 CTO 已当场订正。",
+  "write_set": [
+    "docs/synova/research/",
+    "docs/synova/product-lines/evidence/D870-diff-20260921.md",
+    "docs/synova/product-lines/evidence/D870-verify-20260921.md",
+    "docs/synova/product-lines/evidence/D870-leftovers-20260921.md",
+    "docs/synova/coordination/口径订正-D870-104与109-20260922.md",
+    "task-state/D870.json",
+    "task-state/D916.json"
+  ],
+  "impl": {
+    "P2-1": "**已当场收口（归因 control-tower/CTO）**：CTO 上一轮口头裁定写「总表行数 = 104（含那 5 条）」——不自洽。实测：104 = 口径 A 三分类合计（66 可直接复制 + 36 可参照 + 2 核心自研），**不含**那 5 条；含 5 条总数 = **109**；口径 B 再剔 C-23 = 103。产出件自身两套口径均列且注明差额由 C-23 解释 → **产出无需返修**。订正见 `docs/synova/coordination/口径订正-D870-104与109-20260922.md`。",
+    "P2-3": "**已随本批收口**：D870 卡 write_set 由 `D870-closeout-20260921.md` 改为实际交付的 `D870-diff-20260921.md` + `D870-leftovers-20260921.md`，并补入审计报告路径。",
+    "P2-2": "**待收口**：D 件 §4.2 #9 写「全树无此名」略过宽——官方 notes 有 14 处文字痕迹（非代码定义）。改法：把断言的**口径限定**为「官方树无该**包/代码定义**」（可复现判据：精确包名 0 命中），并在同句给出该判据命令，不写「全树无此名」这种更宽的措辞。",
+    "P2-4": "**待收口**：`exempt.log` 引用未入库 → 不可核验。改法：二选一——① 把该日志入库并登记路径；② 撤回该引用，改引可核验的等价证据。**不允许**留一条指向未入库物的引用。",
+    "P2-5": "**归 audit 线**：A-38 Tray 口径应限定「Electron 应用层」。官方 installer 里出现 Win32 `FLASHW_TRAY` 字样，**不构成反例**（那是任务栏闪烁 API，不是应用层托盘实现）。由 K3 在其口径文档/下轮报告内自行限定；本卡只登记归属，不代改 K3 产物。",
+    "landing": "**本卡同时是 D870 的落库载体**（D870 自己的 write_set 已按其实际交付路径更正，见 task-state/D870.json 的 note）。落库件与 K3 受审件 `audit/k3-20260922-d870` @ 28ec96e8 **逐字节一致**，唯一差异 = D870 卡内 `write_set` 字段（P2-3 收口）。 **审计报告 `docs/synova/audit-reports/2026-09-22-D870.md` 属 k3 域，不走本件**——由 K3 自有分支 `audit/k3-20260922-d870` 单独落 main（第二台 PR，D733 域门禁实测要求；审计红线：报告归 K3）。"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-22",
+  "updated_by": "synova-cto",
+  "acceptance_points": [
+    "P2-2：`official-borrowing-recheck.md` 中该条断言改为限定口径 + 附可复现命令（grep 精确包名 0 命中），不得再写「全树无此名」",
+    "P2-4：`exempt.log` 引用要么入库可核验、要么撤回换等价可核验证据（给二选一后的实际路径或 diff）",
+    "P2-5：K3 侧口径已限定（以 K3 下轮报告或口径说明为准），本卡只留指针",
+    "全卡：改动**只碰本卡 write_set**，不碰 D870 已受审六件的内容（受审件逐字节冻结于 28ec96e8）"
+  ],
+  "next": "① 派小卡（或并入下一批控制塔线）② 收口后交 K3 复核 P2-2/P2-4 两条",
+  "note": "来源：K3 D870 复审报告 docs/synova/audit-reports/2026-09-22-D870.md（105 行）。本卡不含 P2-1/P2-3（已当场/随批收口）。"
+}
