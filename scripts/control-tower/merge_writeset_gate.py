@@ -467,7 +467,12 @@ def _emit(result: dict, as_json: bool) -> None:
         print("   修复指引（三选一，禁止静默忽略）:")
         print("     ① 把该文件加入声明（S1 task-state write_set / S2 dev doc 写集表 / S3 brief Q2）")
         print("     ② 从本 PR 移出该文件（它可能属于另一个任务）")
-        print("     ③ 显式豁免: 在声明文件加 `## 写集豁免` 段落，每行 `- <路径> — <理由>`（无理由不生效）")
+        print("     ③ 显式豁免: 在 PR 正文/声明文件加 `## 写集豁免` 段落，每行 `- <路径> — <理由>`（无理由不生效）")
+        print("     ⚠ 豁免/声明条目必须逐条**精确路径**（或 `<dir>/**` glob）——")
+        print("        模糊描述（如「相关脚本」「治理文档若干」）不被匹配，直接判夹带。")
+        print("     可直接粘贴的精确豁免行（补全理由后放入 PR 正文 `## 写集豁免`）:")
+        for f in result["smuggled"]:
+            print(f"       - {f} — <理由：为何此文件属于本任务>")
     for w in result.get("warns", []):
         print(f"   ⚠️  {w}")
 
