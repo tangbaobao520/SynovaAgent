@@ -8,8 +8,11 @@
     "docs/synova/coordination/创始人裁定表-§6五项-20260920.md",
     "docs/synova/coordination/",
     "docs/authority/DOCS-REGISTRY.yaml",
-    "task-state/D856.json"
+    "task-state/D855.json",
+    "task-state/D856.json",
+    "task-state/D857.json"
   ],
+  "note": "CTO 2026-09-22 补：D855/D857 为同批立卡（D856 裁决同时产出三张卡），原 write_set 仅声明自身 → D708 判另两张「夹带」；补登后口径一致。",
   "impl": null,
   "audit": null,
   "fix_task_id": null,
