@@ -3,7 +3,7 @@
   "title": "控制塔门禁三缺陷根治：D708 误拦合法 PR / D733 无「代行」机制 / D749 判据漂移",
   "status": "claimed",
   "risk": "high",
-  "spec": "CTO 2026-09-22 实测（证据见 docs/synova/coordination/裁定记录-门禁三缺陷-20260922.md）：三条互补缺陷使**门禁开始阻止修复门禁** —— 队列 39 个未合 PR 中，至少 5 件（#674/#675/#685/#696/#687）因下列缺陷长期红，其中 #696 恰是修 main 恒红的 PR。判据：① D708 `infer_did` 扫到并入的 main 历史 → 取错 D# → 误判夹带（同类第 2 次，第 1 次 #694）；② D733/D734 域门禁无「代行」概念，而创始人 2026-09-20 已下令 win 离线期 domain:win 一律 Mac 代行 → 任何修 win 文件的 PR 恒红（ownership 兜底连带误判：D782/D793/D795 已各打一次补丁，本件为第 4 次）；③ D749 G12 只认 brief Q2 单一源、且「今日 brief」以 CI 运行日为准 → 与 D708 三源并集口径互斥（同一 PR 过一个必倒一个）+ 判据随运行日漂移。",
+  "spec": "CTO 2026-09-22 实测（证据见 docs/synova/coordination/裁定记录-门禁三缺陷-20260922.md）：三条互补缺陷使**门禁开始阻止修复门禁** —— 队列 39 个未合 PR 中，至少 5 件（#674/#675/#685/#696/#687）因下列缺陷长期红，其中 #696 恰是修 main 恒红的 PR。判据：① D708 `infer_did` 扫到并入的 main 历史 → 取错 D# → 误判夹带（同类第 2 次，第 1 次 #694）；② D733/D734 域门禁无「代行」概念，而创始人 2026-09-20 已下令 win 离线期 domain:win 一律 Mac 代行 → 任何修 win 文件的 PR 恒红（ownership 兜底连带误判：D782/D793/D795 已各打一次补丁，本件为第 4 次）；③ D749 G12 只认 brief Q2 单一源、且「今日 brief」以 CI 运行日为准 → 与 D708 三源并集口径互斥（同一 PR 过一个必倒一个）+ 判据随运行日漂移。 【2026-09-22 追补实测】缺陷② 同族**第 5 次**：`check-ownership.py` 实测 `docs/synova/dispatch/**`=win、`docs/authority/**`=win、`docs/synova/research/**`=win（兄弟路径 `docs/synova/coordination/**`/`docs/synova/product-lines/**` 早已明列 mac）→ 已实际卡住 #703/#705/#706；该次由 D914（PR #708）按「正确登记」先解，**机制仍须本卡承接**（否则下一次新目录照旧）。缺陷③ 同批又实测出两条更锋利的证据：(a) 写集口径不一致不止 D708↔G12 —— `merge_writeset_gate._clean_entry()` 会剥反引号与 ` —— ` 说明，而 G12 的解析器 `brief_parser.parse_q2()` **只剥 ` — `（单破折号）且不剥反引号** → 同一份 Q2 文本两道门禁读出两种结果；(b) G12 的失败提示只说「不在 Q2 范围内」，**不告诉执行方 D749 有 `## 写集` 机器块这条正解** → 执行方只能猜格式（本 CTO 亲自踩）；(c) `## Done 标准:` 内联写法被 `scripts/pre-commit-check.sh:886` 的 awk 判为空段（该 awk `next` 掉标题行后取不到内容），而 CLAUDE.md 模板与 `task-start.sh` 生成的模板**教的就是内联写法** → 模板与门禁互相矛盾。",
   "write_set": [
     "scripts/control-tower/merge_writeset_gate.py",
     "scripts/control-tower/check-ownership.py",
@@ -44,7 +44,9 @@
     "④ D749/G12：写集源口径与 D708 统一为**三源并集**（S1 task-state.write_set / S2 dev doc 写集表 / S3 brief Q2）；「今日 brief」的「今日」改为**以被检查提交的 commit date 为基准**（不是 CI 运行日）。夹具：跨日重跑同一提交 → 判据不变（当前实现会 fail-open）",
     "⑤ 三条判别性夹具全部先红后绿，且**每条都有反例夹具**（该拦的仍拦）——禁 grep 型判据（验收标准 §十二 第 5 条，L3 实测 grep 型 3/5=60%）",
     "⑥ 回归：本地 `bash scripts/pre-commit-check.sh` 与 `scripts/control-tower/check-pr-budget.sh` 在 main 上零新增红；`tests/control-tower/` 既有 3 个测试文件全绿",
-    "⑦ 反向验证：修完后把 #674 的原分支（`chore/ingest-institute`，无 D#）作为夹具跑一遍 → 必须 pass（当前 block）"
+    "⑦ 反向验证：修完后把 #674 的原分支（`chore/ingest-institute`，无 D#）作为夹具跑一遍 → 必须 pass（当前 block）",
+    "⑧ D749/G12 正解可达：G12 失败提示必须指明「补 `## 写集` 机器块（D749 单一事实源）」这条可操作路径；`## Done 标准` 的内联写法必须被接受（或模板改为换行块，两者取其一并同步）",
+    "⑨ 新增目录登记门禁：`docs/**` 或 `tests/**` 下出现**未在 ownership.yaml 登记的子目录**且该目录下有变更文件 → 门禁给出提示/拦（防第 6 次）"
   ],
   "next": "① 等 #702 合入 main ② 开工自检（见派单 §〇-h）③ 三切片并行实现 ④ 队内自验 ⑤ K3 复审 ⑥ 交回三件",
   "note": "不新增门禁机制：三条全是**去误拦 + 把判据钉死**。standby 是显式开关（单点、可逆、逐条打印），不是新的自动放行。**同类错误第 2/4 次 → 已升级创始人**（红线：同类错误第二次出现＝防线系统性失效）。"
