@@ -1,0 +1,34 @@
+{
+  "task_id": "D860",
+  "title": "PR 预算口径治本（F9/F12 一族）：治理产物（brief/卡/Note/规格/自验记录）不计入 ≤12 文件预算",
+  "status": "claimed",
+  "risk": "high",
+  "spec": "门禁加固小队实测：D839 brief 覆盖 10 件 + D853 brief 覆盖 synova-commit 与其夹具 → 两份 brief 都上枝 = 13 > 12，撞 D734；三种挪法各撞另一堵墙。D821 交付同理：14 件（其中 5 件为治理产物）。",
+  "write_set": [
+    "scripts/control-tower/check-pr-budget.sh",
+    "tests/control-tower/check-pr-budget.test.sh",
+    "task-state/D860.json"
+  ],
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-21",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": "mac-coding",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [
+    "D853"
+  ],
+  "blocked": null,
+  "target": "2026-W38",
+  "acceptance_points": [
+    "排除规则：.claude/task-briefs/**、task-state/**、memory/notes/**、docs/plans/**（规格）、自验记录类证据不计入",
+    "**反例夹具**：把代码文件伪装成治理产物路径必须**仍被计数**（先红后绿两次原始输出）",
+    "不动其它门禁语义；主路径零新增检查",
+    "**K3 复审**（门禁变更属审计面）"
+  ],
+  "next": "① 重新核行号 ② 先红后绿 ③ K3 复审 ④ 交回三件",
+  "note": "来源 F9/F12；裁决：A（一次性豁免）否决；**C 治本走本卡**；B（拆 PR）已用于 #657 解封。"
+}
