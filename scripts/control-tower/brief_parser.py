@@ -109,13 +109,28 @@ def parse_q2(text: str) -> dict:
                     r"^(修改|新增|新建|修复|扩展|实现|更新|重构|升级|创建|编写|增加|优化|调整|添加|改)\s*",
                     "", raw)
             # strip 后置分隔
-            path = re.split(r"[:：]| — ", raw, 1)[0].strip()
+            # D911/C4（剥壳与 D708 同规则）: 参考实现 =
+            #   scripts/control-tower/merge_writeset_gate.py::_clean_entry()
+            #   本函数按**同一规则文本**实现，不跨模块 import 私有函数（口径一致靠同一规则，
+            #   不靠耦合实现）。修的是 D911/D749 实测的两处差异：
+            #     ① 剥反引号 —— Q2 写「`path` —— 说明」时旧实现把**整条**（含反引号）
+            #        当模式 → 与实际改动路径永不匹配 → G12 全判「不在 Q2 范围内」（CTO 亲踩）
+            #     ② 说明分隔按 \s+[—–-]{1,2}\s+ 切 —— 旧实现只认单破折号 ` — `，
+            #        写 ` —— `（双破折号）时说明残留进模式 → 同样误判
+            # 有意**不搬**的两步（证据见 tests/control-tower/brief_parser.test.sh:50 /
+            #   brief-parser-strip.test.sh:67 —— 两处既有断言钉死 exclude 目录条目需保留
+            #   尾斜杠 `scripts/audit/`）：`_clean_entry` 的去尾斜杠与计数括号 `(N 修改)`。
+            #   目录条目的前缀语义由消费者（G12 matcher）按 rstrip('/') 归一化处理。
+            raw = raw.strip("`").strip()
+            path = re.split(r"[:：]|\s+[—–-]{1,2}\s+", raw, 1)[0].strip()
             # 剥括号描述（include/exclude 同规则）
             path = re.split(r"[（(]", path, 1)[0].strip()
             # D543: 剥行号后缀「path L750」——对齐 devdoc_writeset.py:76 同款正则。
             # 缺此步时 Q2 写「pre-commit-check.sh L750」整体当路径 → 与实际改动
             # 「pre-commit-check.sh」不匹配 → G12 误判越界（D541 CI 红第三处根因）。
             path = re.sub(r"\s+L\d+$", "", path)
+            # 与 _clean_entry 收尾一致：切说明后再剥一次反引号（`path` — `说明` 形态）
+            path = path.strip("`").strip()
             if path:
                 (exclude if in_exclude else include).append(path)
     ws = parse_write_set(text)
@@ -186,16 +201,34 @@ def parse_layer(text: str) -> Optional[str]:
 
 
 def parse_done(text: str) -> List[str]:
-    """Done 标准下的 - [ ] 项。"""
-    done = []
+    """Done 标准条目 —— **含内联写法**（D911/C6 口径统一）。
+
+    契约（铁律 47）:
+      @input  text — brief 全文
+      @output List[str] — Done 段的内容行（顺序: 标题行内联值在前，其余按出现顺序）
+              · `## Done 标准: <标准>` 标题行冒号/空格后的内联值
+              · 段内非空且非 HTML 占位的内容行（`- [ ]` / `- [x]` 复选框与普通 `- ` 项）
+      @degraded 空段 / 仅 `<!-- -->` 占位 → []（调用方按「0 行内容 → 红」判，
+              绝不放宽成「空也绿」——见 check-brief-parseable.sh ④ 与 pre-commit 组 6）
+
+    背景（D911/C6）: 旧实现 `next` 掉标题行且只收 `- [ ]`，而 brief-compose skill 教的正是
+      「`## Done 标准:` 冒号紧跟」的内联写法 → 内联写法被两个校验器同时判「无条目」。
+      D707 已就同一病根裁决「内联/body 两种写法等价」，本函数按同一裁决对齐。
+    """
+    done: List[str] = []
     in_done = False
     for line in text.splitlines():
+        line = line.rstrip("\r")
         if re.match(r"^## Done 标准", line):
             in_done = True
+            # C6: 标题行冒号后内容计入（`## Done 标准: X` / `## Done 标准：X` / `## Done 标准 X`）
+            inline = re.sub(r"^##\s*Done 标准\s*[:：]?\s*", "", line).strip()
+            if not _is_blank_or_placeholder(inline):
+                done.append(inline)
             continue
         if in_done and re.match(r"^## ", line):
             break
-        if in_done and re.match(r"^\s*- \[[ x]\]", line):
+        if in_done and not _is_blank_or_placeholder(line):
             done.append(line.strip())
     return done
 

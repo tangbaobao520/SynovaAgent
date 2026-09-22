@@ -883,10 +883,20 @@ if [ -n "$STAGED_SRC" ]; then
       fi
     fi
     # Done 标准专项: 至少一条完成标准
-    DONE_SECTION=$(awk "/^## Done 标准/{found=1; next} /^## /{if(found) exit} found" "$BRIEF" 2>/dev/null)
-    DONE_CHECKED=$(echo "$DONE_SECTION" | grep -cE '^\s*- \[x\]' || true)
-    DONE_EMPTY=$(echo "$DONE_SECTION" | grep -v "^##\|^<!--\|^$" | wc -l)
-    if [ "${DONE_CHECKED:-0}" -eq 0 ] && [ "${DONE_EMPTY:-0}" -le 1 ]; then
+    # D911/C6: 旧 awk 在 `next` 掉标题行后取不到**内联写法**的内容
+    #   （`## Done 标准: 跑 X 得 0`）→ 判「至少需定义一条完成标准」= 假红；
+    #   而 brief-compose skill 教的正是「冒号紧跟」的内联写法（模板-门禁互相矛盾）。
+    #   修复: 标题行冒号/空格后的内联值一并计入，口径与 brief_parser.py::parse_done() 一致
+    #   （单一事实源，D707 同裁决: 内联/body 两种写法等价）。
+    DONE_SECTION=$(awk '/^## Done 标准/{found=1; inline=$0; sub(/^##[[:space:]]*Done[[:space:]]*标准[[:space:]]*[:：]?[[:space:]]*/, "", inline); if (inline != "") print inline; next} /^## /{if(found) exit} found' "$BRIEF" 2>/dev/null)  # swallow-ok: brief 读不到 → 段空 → 判「未定义完成标准」（fail-closed，不假绿）
+    DONE_CHECKED=$(echo "$DONE_SECTION" | grep -cE '^\s*- \[x\]' | tr -d '\n\r' || true)
+    DONE_EMPTY=$(echo "$DONE_SECTION" | grep -vc "^##\|^<!--\|^$" | tr -d '\n\r' || true)
+    # 阈值（D911/C6 钉死）: 「内容 ≥1 行（含内联值）→ 绿；0 行内容 → 红」。
+    #   旧条件 `-eq 0 && -le 1` 实为「要求 ≥2 行正文」——与本行注释「至少一条」不符，
+    #   实测全仓 2 份 inline-only + 11 份单行 Done = 13 份现存 brief 因此假红。
+    #   不放宽成「空也绿」: 段空 / 仅 `<!-- -->` 占位 → DONE_EMPTY=0 → 仍红（fixture 见
+    #   tests/control-tower/task-scope-g12.test.sh §C6）。
+    if [ "${DONE_CHECKED:-0}" -eq 0 ] && [ "${DONE_EMPTY:-0}" -eq 0 ]; then
       TASK_BRIEF_EMPTY="${TASK_BRIEF_EMPTY}  Done 标准: 至少需定义一条完成标准\n"
     fi
   fi
@@ -1190,11 +1200,53 @@ else
   soft_pass "G10/G11: criteria-code-map.json 不存在(跳过)"
 fi
 
-# ═══ 组 12/12: Task Scope 一致性 — 暂存文件 vs Q2 范围 ═══
+# ═══ 组 12/12: Task Scope 一致性 — 暂存文件 vs 三源并集写集 (S1/S2/S3, D296/D749/D911) ═══
 echo ""
 echo -e "${CYAN}── 组 12/13: Task Scope 一致性 ──${RESET}"
 
-TODAY=$(date +%Y-%m-%d)
+# ── C2 (D911): 判据确定性 — 「今日」= **被检查提交的 commit date**，不是运行日 ──
+# 契约 (铁律 47):
+#   @input  G12_COMMIT_REF（缺省 HEAD）；注入缝 SYNO_G12_COMMIT / SYNO_G12_TODAY
+#           仅 SYNO_TEST_ARM=1 时武装（D390 武装守卫惯例；生产路径忽略，行为不变）
+#   @output G12_TODAY=YYYY-MM-DD + G12_DAY_SRC ∈ {commit-date, override, wall-clock}
+#   @degraded commit date 取不到 → 回退墙钟/注入缝 + **显式 ⚠️ 打印**（铁律 11，禁静默）
+#   @fail-closed 都取不到 → 空串，窗口正则回退单日 glob（不静默放行，见 DAY_WINDOW_RE 段）
+# 背景（裁定记录 §缺陷③ 3b）: 旧实现用 `date +%Y-%m-%d`（运行日）→ brief 掉出 ±1 天窗口
+#   → ALL_TODAY_BRIEFS 空 → G12 整段 soft_pass（假绿）→ 同一 commit 今天红、后天绿。
+G12_COMMIT_REF="HEAD"
+G12_DAY_OVERRIDE=""
+G12_DAY_OVERRIDE_BAD=""
+if [ "${SYNO_TEST_ARM:-0}" = "1" ]; then
+  [ -n "${SYNO_G12_COMMIT:-}" ] && G12_COMMIT_REF="${SYNO_G12_COMMIT}"
+  if [ -n "${SYNO_G12_TODAY:-}" ]; then
+    # 只接受 YYYY-MM-DD（该值会嵌入下方 python 源码 → 先做格式白名单，防注入/防脏值）
+    case "${SYNO_G12_TODAY}" in
+      [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]) G12_DAY_OVERRIDE="${SYNO_G12_TODAY}" ;;
+      *) G12_DAY_OVERRIDE_BAD="${SYNO_G12_TODAY}" ;;
+    esac
+  fi
+fi
+[ -n "$G12_DAY_OVERRIDE_BAD" ] && echo -e "  ${YELLOW}⚠️  G12: SYNO_G12_TODAY 格式非 YYYY-MM-DD（${G12_DAY_OVERRIDE_BAD}）— 已忽略（不静默采用脏值）${RESET}"
+G12_DAY_SRC=""
+G12_TODAY=""
+G12_COMMIT_DATE=$(git log -1 --format=%cI "$G12_COMMIT_REF" 2>/dev/null | head -1 || true)
+G12_COMMIT_DATE=$(printf '%s' "$G12_COMMIT_DATE" | tr -d '[:space:]')  # D520: CRLF 清洗（Windows 腿）
+case "$G12_COMMIT_DATE" in
+  [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T*)
+    G12_TODAY="${G12_COMMIT_DATE%%T*}"
+    G12_DAY_SRC="commit-date(${G12_COMMIT_REF})"
+    ;;
+esac
+if [ -z "$G12_TODAY" ]; then
+  # 降级路径: commit date 不可得（非 git 树/浅克隆/ref 不存在）→ 显式打印后回退
+  if [ -n "$G12_DAY_OVERRIDE" ]; then
+    G12_TODAY="$G12_DAY_OVERRIDE"; G12_DAY_SRC="override(commit-date 不可得)"
+  else
+    G12_TODAY="$(date +%Y-%m-%d)"; G12_DAY_SRC="wall-clock(降级)"
+  fi
+  echo -e "  ${YELLOW}⚠️  G12: 取不到提交 ${G12_COMMIT_REF} 的 commit date — 「今日」降级为 ${G12_DAY_SRC} = ${G12_TODAY}（判据不再确定，铁律 11 显式登记）${RESET}"
+fi
+TODAY="$G12_TODAY"
 # 修复 (D291): 组12 只用当前 session 的 brief, 避免并发 session 的 brief 干扰暂存文件匹配
 # D296 跨 session 污染根治 (认领制):
 #   - 范围 (做什么) 取今日全部 brief 的并集 — 每个 session 的文件由自己的 brief 认领,
@@ -1222,7 +1274,7 @@ fi
 # 用法: today_files_by_prefix <dir>   # brief: YYYY-MM-DD 文件名前缀 (扫描 *.md)
 # 性能: 纯 bash for+case 零子进程 — grep|head 每文件 3 spawn × 349 brief = Windows 分钟级 (实测回退)
 # 注意: glob 硬编码在函数内 — 变量中的 * 不会被路径名展开 (实测), 字面 glob 才展开
-TODAY_DASH=$(date +%Y-%m-%d)
+TODAY_DASH="$G12_TODAY"   # D911/C2: 与 G12_TODAY 同源（commit date），不再各自取墙钟
 # D503→D506: 时区容差 — brief 认领窗口扩到 ±1 天。Mac(UTC+8) 傍晚建的 brief 日期前缀
 # 对 CI runner(UTC) 是"明天"，单日过滤致 G12 在 CI 上无人认领 → 全部误报"不在 Q2 范围"
 # （D502 实证：本地 13 组全过、CI 红 7 处）；跨午夜连续作业同理。
@@ -1232,13 +1284,21 @@ TODAY_DASH=$(date +%Y-%m-%d)
 #   改用 [[ $b =~ $RE ]]：=~ 的 RHS 在 runtime 展开后按 ERE 解析，| 作为 alternation 生效
 #   （bash 3.x/5.x 一致，K3 审计实测 + CTO 本地独立复现）。
 # 一次 python3 算三天 ERE（G12 本就依赖 python3；python 不可用 → 回退单日本地 glob 行为）。
+# D911/C2: 三天窗口的**基准日** = G12_TODAY（commit date），不是 datetime.date.today()。
+#   基准日在上方已做 YYYY-MM-DD 白名单（格式不符的值不会进到这里）。
 DAY_WINDOW_RE=$(python3 -c "
 import datetime
-t = datetime.date.today()
+t = datetime.date.fromisoformat('${G12_TODAY}')
 print('^(' + '|'.join((t + datetime.timedelta(days=k)).isoformat() for k in (-1, 0, 1)) + ')-')" 2>/dev/null || true)
 [ -z "$DAY_WINDOW_RE" ] && DAY_WINDOW_RE="^${TODAY_DASH}-"
 today_files_by_prefix() {
   local dir="$1" f b
+  # D911/C2: 窗口正则缺省自持 —— tests/control-tower/today-by-name.test.sh:41 只提取
+  #   本函数体 eval（不 eval 顶层 DAY_WINDOW_RE）→ 旧实现读未设的全局 → set -u 下
+  #   "DAY_WINDOW_RE: unbound variable" 直接崩（该测试在 main 上预存红，实测见交付证据）。
+  #   生产行为不变: 顶层已设 → local 取到同一个值；仅未设时按单日 TODAY_DASH 回退。
+  local DAY_WINDOW_RE="${DAY_WINDOW_RE:-}"
+  [ -z "$DAY_WINDOW_RE" ] && DAY_WINDOW_RE="^${TODAY_DASH}-"
   dir="${dir%/}"
   [ -d "$dir" ] || return 0
   for f in "$dir"/*.md; do
@@ -1259,27 +1319,96 @@ if [ -n "$ALL_TODAY_BRIEFS" ] && [ -n "$STAGED_ALL" ]; then
   #   - 被 ≥1 个今日 brief 认领 → 通过 (除非认领者自身排除它)
   #   - 未被任何 brief 认领 → 阻断 (不在任何任务范围)
   #   - 他人 brief 的排除项不适用于本文件 (场景E: A认领+B排除 → 必须通过)
-  # 生成 per-brief TSV: "brief文件名\t路径"
+  # 生成 per-brief TSV: "brief文件名\t来源\t路径" (来源 ∈ S1|S2|S3，可审计)
   # 注意: 必须用仓库内路径 — Git Bash mktemp 的 /tmp 路径 Windows python3 无法打开
+  # ── C1 (D911): 认领源 = **三源并集**，与 D708 merge_writeset_gate.collect_declared() 同口径 ──
+  #   S1 `task-state/<D#>.json:write_set`      —— 结构化声明（复用 D708 同一读取口径）
+  #   S2 dev doc §写集表                        —— 复用 devdoc_writeset.py --extract
+  #   S3 brief Q2 / `## 写集` 机器块             —— 复用 brief_parser.py --q2-include
+  #   D# 取自 **brief 文件名**（brief 是认领锚点；D708 另有分支名/提交 subject 推断，
+  #   本组按 per-brief 认领语义，不做全局 D# 推断——那是 gate 的职责，不复制）。
+  #   #696 实证: `task-state/D861.json` 声明了 tests/**，而 brief Q2 只写文件短名
+  #   → 旧实现只吃 S3 → 8 处「不在 Q2 范围内」误拦（D708 同 PR 判 pass）。
   SCOPE_TSV="$ROOT/.claude/.g12-scope.tsv"
   EXCL_TSV="$ROOT/.claude/.g12-excl.tsv"
   rm -f "$SCOPE_TSV" "$EXCL_TSV"
+  G12_SRC_WARN=""
   while IFS= read -r BRIEF; do
     [ -z "$BRIEF" ] && continue
     BNAME=$(basename "$BRIEF")
-    # D313 M3 同源: G12 awk → brief_parser.py（消灭双副本，语义 = parse_q2）
+    # S3 (D313 M3 同源): G12 awk → brief_parser.py（消灭双副本，语义 = parse_q2/机器块优先）
     python3 "$ROOT/scripts/control-tower/brief_parser.py" --q2-include "$BRIEF" 2>/dev/null \
-      | sed "s|^|$BNAME\\t|" >> "$SCOPE_TSV" || true
+      | sed "s|^|$BNAME\\tS3\\t|" >> "$SCOPE_TSV" || true
     python3 "$ROOT/scripts/control-tower/brief_parser.py" --q2-exclude "$BRIEF" 2>/dev/null \
       | sed "s|^|$BNAME\\t|" >> "$EXCL_TSV" || true
+    BDID=$(printf '%s' "$BNAME" | grep -oE 'D[0-9]+' | head -1 || true)
+    [ -z "$BDID" ] && continue
+    # S1: task-state write_set。**声明源不可读 = 显式 ⚠️**（禁静默跳过：静默会让「源没读到」
+    #   与「源里没声明」在输出上不可区分 —— 与 C3 同一病根，铁律 11）。
+    if [ -f "$ROOT/task-state/$BDID.json" ]; then
+      _S1_OUT=$(python3 -c "
+import json, sys
+try:
+    d = json.load(open(sys.argv[1], encoding='utf-8'))
+except (OSError, ValueError):
+    sys.exit(3)
+for e in (d.get('write_set') or []):
+    e = str(e).strip()
+    if e:
+        print(e)
+" "$ROOT/task-state/$BDID.json" 2>/dev/null)   # swallow-ok: 解析失败由 _S1_RC=3 分支显式 ⚠️ 登记（非静默）
+      _S1_RC=$?
+      if [ "$_S1_RC" -eq 3 ]; then
+        G12_SRC_WARN="${G12_SRC_WARN}  ⚠️ S1 声明源不可读（${BDID}）: task-state/${BDID}.json 解析失败 → 该源未参与认领（显式登记，非静默）\n"
+      else
+        printf '%s\n' "$_S1_OUT" | sed "s|^|$BNAME\\tS1\\t|" >> "$SCOPE_TSV" || true
+      fi
+    fi
+    # S2: dev doc §写集表（glob 与 D708 find_declaration_files 同款）
+    DEV_DOC=$(ls -1 "$ROOT/docs/plans/codex/implementation/"SYNOVA-IMPL-*"$BDID"*.md 2>/dev/null | tail -1 || true)
+    if [ -n "$DEV_DOC" ]; then
+      _S2_OUT=$(python3 "$ROOT/scripts/control-tower/devdoc_writeset.py" --extract "$DEV_DOC" 2>/dev/null | python3 -c "
+import json, sys
+try:
+    d = json.load(sys.stdin)
+except ValueError:
+    sys.exit(3)
+for e in (d.get('cleaned') or []):
+    e = str(e).strip()
+    if e:
+        print(e)
+")
+      _S2_RC=$?
+      if [ "$_S2_RC" -eq 3 ]; then
+        G12_SRC_WARN="${G12_SRC_WARN}  ⚠️ S2 声明源解析失败（${BDID}）: ${DEV_DOC##*/} → 该源未参与认领（显式登记，非静默）\n"
+      else
+        printf '%s\n' "$_S2_OUT" | sed "s|^|$BNAME\\tS2\\t|" >> "$SCOPE_TSV" || true
+      fi
+    fi
   done <<< "$ALL_TODAY_BRIEFS"
+  [ -n "$G12_SRC_WARN" ] && echo -e "  ${YELLOW}⚠️  G12 声明源降级（D911）:${RESET}" && printf '%b' "$G12_SRC_WARN"
 
   # 检查每个暂存文件 — 修复 (D291): Python 单进程匹配, 替代 12321 次 grep 子进程 (Windows 10+ 分钟 → <1s)
   # D296 认领制 v2: 按 per-brief TSV 判定, 排除只来自认领该文件的 brief
+  # D911/C1: 匹配口径 = G12 既有 basename 后缀匹配 **∪** D708 merge_writeset_gate.matches()
+  #   （精确 / 目录前缀 / glob）——取并集而非替换: Q2 常写文件短名（check-pr-budget.sh），
+  #   S1 常写目录与通配（tests/**），任一形态都必须被认领，否则又制造新的误拦。
   SCOPE_VIOLATION=$(python3 -c "
-import re, sys
+import re, sys, fnmatch
 staged = '''$STAGED_ALL'''.split('\n')
-def load_tsv(path):
+def load_scope(path):
+    out = []
+    try:
+        with open(path, encoding='utf-8') as f:
+            for line in f:
+                line = line.rstrip('\n')
+                parts = line.split('\t')
+                if len(parts) >= 3 and parts[1] in ('S1', 'S2', 'S3') and parts[2]:
+                    out.append((parts[0], parts[1], parts[2]))
+    except OSError:
+        pass
+    return out
+def load_excl(path):
     out = []
     try:
         with open(path, encoding='utf-8') as f:
@@ -1292,9 +1421,17 @@ def load_tsv(path):
     except OSError:
         pass
     return out
-scope = load_tsv('''$SCOPE_TSV''')
-excl = load_tsv('''$EXCL_TSV''')
+scope = load_scope('''$SCOPE_TSV''')
+excl = load_excl('''$EXCL_TSV''')
 def matches(path, pat):
+    pat = pat.strip().rstrip('/')
+    if not pat:
+        return False
+    if path == pat or path.startswith(pat + '/'):
+        return True
+    if any(c in pat for c in '*?['):
+        if fnmatch.fnmatch(path, pat) or fnmatch.fnmatch(path, pat + '/**'):
+            return True
     return re.search(r'(^|/)' + re.escape(pat) + r'\$', path) is not None
 skip_re = re.compile(r'\.claude/|scripts/workflow/|\.codex/|memory/|docs/|task-state/.*\.(json|md)$|\.github/')
 code_re = re.compile(r'\.(ts|tsx|js|jsx|json|py|sh)\$')
@@ -1303,11 +1440,12 @@ for sf in staged:
     sf = sf.strip()
     if not sf or skip_re.search(sf) or not code_re.search(sf):
         continue
-    # 认领者 = 做什么 覆盖该文件的 brief
-    claimants = [b for b, p in scope if matches(sf, p)]
-    if not claimants:
-        viol.append(f'  {sf} (不在 Q2 范围内)')
+    # 认领者 = 三源并集（S1 task-state / S2 dev doc / S3 brief）覆盖该文件的 brief
+    claims = [(b, s) for b, s, p in scope if matches(sf, p)]
+    if not claims:
+        viol.append(f'  {sf} (不在 Q2 范围内 — 三源并集 S1 task-state.write_set / S2 dev doc 写集表 / S3 brief Q2 均未认领)')
         continue
+    claimants = set(b for b, _ in claims)
     # 排除只来自认领者自身 — 他人 brief 的排除不适用于本文件 (跨 session 根治)
     for b, ex in excl:
         if b in claimants and matches(sf, ex):
@@ -1322,8 +1460,24 @@ if [ -n "$SCOPE_VIOLATION" ]; then
   # D515 项10: 修复指引文案 — 改 scripts/ 需先认领 brief（Codex P5 曾被拦无文档说明）
   decl_check "G12: task brief Q2 范围一致性（写集单一事实源，D749）" "$SCOPE_VIOLATION"
   echo "     💡 改 scripts/ 需先认领 brief（Q2 写集声明）——见 docs/synova/coordination/版本管理规范-控制塔.md"
+  # D911/C5: 失败提示必须给出**正解**（D749 单一事实源），不再只给现象让执行方猜格式
+  echo "     💡 正解（D749 单一事实源）: 在 brief 里写 \`## 写集\` 机器块——Markdown 表格，每行 | \`path\` | task |"
+  echo "        机器块**优先于** Q2 散文（scripts/control-tower/brief_parser.py::parse_write_set）；"
+  echo "        或把 Q2 路径写成裸路径（不带反引号与后置说明）。"
+  echo "     💡 G12 认领源 = 三源并集: S1 task-state/<D#>.json:write_set ＋ S2 dev doc §写集表 ＋ S3 brief Q2。"
+elif [ -z "$STAGED_ALL" ]; then
+  soft_pass "G12: 无暂存文件(跳过)"
+elif [ -n "$ALL_TODAY_BRIEFS" ]; then
+  # D911/C2: 通过语带上**判定基准**（commit date + 来源）——K3/CTO 可据此核「判据是否随运行日漂移」
+  soft_pass "G12: 所有文件均在 Q2 范围内（认领基准 ${G12_DAY_SRC} = ${G12_TODAY}，窗口 ±1 天）"
 else
-  soft_pass "G12: 所有文件均在 Q2 范围内"
+  # ── C3 (D911): 禁止静默 fail-open ──
+  # 旧实现无 else 分支: 有暂存文件但无任何认领 brief 时「整段跳过」→ 落到下面 soft_pass
+  #   输出 ✅「所有文件均在 Q2 范围内」= **假绿**（未执行任何判定；裁定记录 §缺陷③ 3b 实测）。
+  # 现在: 必须打印 ⚠️ 并写明「无认领 brief → 本组未执行」；SYNO_CI=1 下 soft_check 转硬阻断
+  #   （D515/D516 分层: 本地软提示、CI 权威——与组 12 其余判定同一条通道）。
+  soft_check "G12: 无认领 brief → 本组未执行 (D911 fail-open 显式化)" \
+"⚠️ 无认领 brief → 本组未执行（暂存 $(printf '%s' "$STAGED_ALL" | grep -c . | tr -d '\n\r') 个文件未做写集对账；认领窗口 = 提交日 ${G12_TODAY} ±1 天，基准 src=${G12_DAY_SRC}）"
 fi
 
 # G12d (D458): 生成物单点生成门禁 — session 禁止提交 CI 单点生成的产物
