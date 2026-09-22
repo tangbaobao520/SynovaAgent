@@ -1,7 +1,7 @@
 {
   "task_id": "D860",
   "title": "PR 预算口径治本（F9/F12 一族）：治理产物（brief/卡/Note/规格/自验记录）不计入 ≤12 文件预算",
-  "status": "claimed",
+  "status": "impl_done",
   "risk": "high",
   "spec": "门禁加固小队实测：D839 brief 覆盖 10 件 + D853 brief 覆盖 synova-commit 与其夹具 → 两份 brief 都上枝 = 13 > 12，撞 D734；三种挪法各撞另一堵墙。D821 交付同理：14 件（其中 5 件为治理产物）。",
   "write_set": [
@@ -9,7 +9,10 @@
     "tests/control-tower/check-pr-budget.test.sh",
     "task-state/D860.json"
   ],
-  "impl": null,
+  "impl": {
+    "commit": "591d98f0",
+    "summary": "治理产物豁免口径落地: 5 前缀×治理扩展名不计 ≤12; 反例防线 task-state/evil.ts 仍计数; check-pr-budget.test.sh 32/32; 先红后绿: 原版 14>12 拦 → 新口径豁免 4 件放行。"
+  },
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-09-21",
