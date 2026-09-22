@@ -1,0 +1,51 @@
+{
+  "task_id": "D911",
+  "title": "控制塔门禁三缺陷根治：D708 误拦合法 PR / D733 无「代行」机制 / D749 判据漂移",
+  "status": "claimed",
+  "risk": "high",
+  "spec": "CTO 2026-09-22 实测（证据见 docs/synova/coordination/裁定记录-门禁三缺陷-20260922.md）：三条互补缺陷使**门禁开始阻止修复门禁** —— 队列 39 个未合 PR 中，至少 5 件（#674/#675/#685/#696/#687）因下列缺陷长期红，其中 #696 恰是修 main 恒红的 PR。判据：① D708 `infer_did` 扫到并入的 main 历史 → 取错 D# → 误判夹带（同类第 2 次，第 1 次 #694）；② D733/D734 域门禁无「代行」概念，而创始人 2026-09-20 已下令 win 离线期 domain:win 一律 Mac 代行 → 任何修 win 文件的 PR 恒红（ownership 兜底连带误判：D782/D793/D795 已各打一次补丁，本件为第 4 次）；③ D749 G12 只认 brief Q2 单一源、且「今日 brief」以 CI 运行日为准 → 与 D708 三源并集口径互斥（同一 PR 过一个必倒一个）+ 判据随运行日漂移。",
+  "write_set": [
+    "scripts/control-tower/merge_writeset_gate.py",
+    "scripts/control-tower/check-ownership.py",
+    "scripts/control-tower/check-pr-budget.sh",
+    "docs/synova/coordination/ownership.yaml",
+    ".github/CODEOWNERS",
+    "scripts/pre-commit-check.sh",
+    "tests/control-tower/merge_writeset_gate.test.sh",
+    "tests/control-tower/check-ownership.test.sh",
+    "tests/control-tower/check-pr-budget.test.sh",
+    "tests/control-tower/task-scope-g12.test.sh",
+    "docs/synova/dispatch/D911-门禁三缺陷根治-20260922.md",
+    "docs/synova/coordination/裁定记录-门禁三缺陷-20260922.md",
+    "memory/notes/",
+    ".claude/task-briefs/",
+    "task-state/D911.json"
+  ],
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-22",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": null,
+  "milestone": "M0 项目管理基建",
+  "depends_on": [
+    "D861",
+    "D860",
+    "D858"
+  ],
+  "blocked": "写集硬边界：`scripts/control-tower/merge_writeset_gate.py`、`scripts/control-tower/check-pr-budget.sh`、`tests/control-tower/merge_writeset_gate.test.sh`、`tests/control-tower/check-pr-budget.test.sh` 四件正被 **PR #702**（拆自 #696 的控制塔侧）在飞 → **必须先等 #702 合入 main**，本条开工以 main 已含 #702 为前置（开工自检命令见派单 §〇-h）。`scripts/pre-commit-check.sh` 与 **D869**（门禁组 7 死检查）同文件 → 两卡串行，D869 先行或本卡先行由 CTO 排期单点决定，不得并行。`.github/workflows/ci.yml` **不在本卡写集**（单写者：D862/D863 承接）。",
+  "target": "2026-W39",
+  "acceptance_points": [
+    "① D708-a：`infer_did` 的 commit-subject 回退只扫 `merge-base(base,head)..head`；并入的 main 历史不得提供 D#。判别性夹具：分支名无 D# + 合并过一次 main → 必须不取到 main 里的 D#（先红后绿，反例=仍能扫出 main 的 D# 即失败）",
+    "② D708-b：声明文件从未合入的 head 树读（`git show <head>:<path>`），不读本地工作树。夹具：工作树无 `task-state/Dxxx.json` 时仍能正确对账（当前实现会退化为「无声明」）",
+    "③ D733/D734：`ownership.yaml` 增 `standby:` 单点开关（当前仅 win 离线代行），`check-pr-budget.sh` ② 在 standby 生效时**允许 mac PR 携带被代行域文件**，但要求 PR 正文 `## 代行声明` 逐条列路径+理由，且门禁**逐条打印**放行理由（与 D708 豁免同风格）。反例：无 `## 代行声明` 时仍硬阻断；win 回归（删 standby 段）后立即恢复严格",
+    "④ D749/G12：写集源口径与 D708 统一为**三源并集**（S1 task-state.write_set / S2 dev doc 写集表 / S3 brief Q2）；「今日 brief」的「今日」改为**以被检查提交的 commit date 为基准**（不是 CI 运行日）。夹具：跨日重跑同一提交 → 判据不变（当前实现会 fail-open）",
+    "⑤ 三条判别性夹具全部先红后绿，且**每条都有反例夹具**（该拦的仍拦）——禁 grep 型判据（验收标准 §十二 第 5 条，L3 实测 grep 型 3/5=60%）",
+    "⑥ 回归：本地 `bash scripts/pre-commit-check.sh` 与 `scripts/control-tower/check-pr-budget.sh` 在 main 上零新增红；`tests/control-tower/` 既有 3 个测试文件全绿",
+    "⑦ 反向验证：修完后把 #674 的原分支（`chore/ingest-institute`，无 D#）作为夹具跑一遍 → 必须 pass（当前 block）"
+  ],
+  "next": "① 等 #702 合入 main ② 开工自检（见派单 §〇-h）③ 三切片并行实现 ④ 队内自验 ⑤ K3 复审 ⑥ 交回三件",
+  "note": "不新增门禁机制：三条全是**去误拦 + 把判据钉死**。standby 是显式开关（单点、可逆、逐条打印），不是新的自动放行。**同类错误第 2/4 次 → 已升级创始人**（红线：同类错误第二次出现＝防线系统性失效）。"
+}
