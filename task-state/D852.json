@@ -1,0 +1,42 @@
+{
+  "task_id": "D852",
+  "title": "§6-5 四项产品决定落地：线 8 出站/入站 webhook、线 4 spill 双阈值、线 3 时间窗粒度、线 25 live/restart（各新增验收点）",
+  "status": "impl_done",
+  "risk": "medium",
+  "spec": "依据 docs/synova/coordination/创始人裁定表-§6五项-20260920.md §6-5（四项产品决定）与 docs/authority/产品完成度定义与推进总纲-20260918.md §2.1（11 项 DSH 缺口『归线不新开』），把四项决定落成 product-lines.yaml 中可证伪的验收点（只加验收点、不新增线），并把 live/restart 清单成文 + 起草 V1 轻量变更单（冻结件 §六 路径）。",
+  "write_set": [
+    "docs/synova/product-lines/product-lines.yaml",
+    "docs/synova/product-lines/preconditions.yaml",
+    "docs/synova/coordination/D852-live-restart-清单-20260920.md",
+    "docs/synova/coordination/D852-V1-轻量变更单-20260920.md",
+    "docs/synova/coordination/D852-派单回执-20260920.md",
+    "memory/notes/proposed/2026-09-20-D852-product-decisions-6-points.md",
+    "task-state/D852.json",
+    ".claude/task-briefs/D852.md"
+  ],
+  "impl": "docs/synova/product-lines/product-lines.yaml（+6 验收点，28 线不变）+ preconditions.yaml（NA-D852 + CLC-1/CLC-2）+ 3 份 coordination 落地件；已合 main 25082884（PR #681）",
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-20",
+  "updated_by": "mac-dev-doc",
+  "domain": "mac",
+  "owner": "mac-dev-doc",
+  "executor": "mac-dev-doc",
+  "milestone": "产品完成度账目层",
+  "depends_on": [],
+  "blocked": null,
+  "target": "2026-W38",
+  "acceptance_points": [
+    "yaml 仍可被仓库自带解析器解析且线数不变：python3 -c \"...productline_yaml.load_file(...)\" → len(d['lines']) == 28",
+    "新增 6 个验收点（8-7 / 8-8 / 4-9 / 3-9 / 25-8 / 25-9）逐条三件齐全：判定式(desc) + verify 或证据类型(evidence) + fail_when(写进 note)；零删除行",
+    "四项决定逐字对照：① 出站为主 + 入站仅扩展点 ② 8,000/32,000 字符可配置 ③ 日粒度为主 + 周/月聚合（标 D828 依赖）④ 展示·阈值·文案=live / 连接·插件·数据源·鉴权=restart",
+    "live/restart 清单成文（四类归属 + 判定边界 + 每条可复现核验方式），落 docs/synova/coordination/",
+    "V1 轻量变更单起草：逐条来源 + 分母 128+6=134 算术 + 与 M1–M5 口径一致性自查；不改冻结件",
+    "preconditions.yaml 登记或明确写『不涉及，理由 X』（禁沉默）",
+    "派单 §〇-c 回执 + 仓库外 9 项撤回清单逐条对照（重点 #3 机制判据是 grep、#9 26 线不是完整完成度清单）",
+    "门禁：bash scripts/pre-commit-check.sh 自过 + check-pr-budget.sh ≤12 文件单域 mac；禁 --no-verify",
+    "交付标注『可提请独立审计』；队内只说自验，不称审计"
+  ],
+  "next": "① 复核基线行号（已做）② 落 6 点进 yaml ③ 三份成文件 ④ preconditions ⑤ 自验+提交+PR ⑥ 交回队长",
+  "note": "基线：origin/main dae40d96；工作树 .synova-wt-d852。实测 yaml lines:57 / 线3:158 / 线4:210 / 线8:403 / 线25:1101；附录A 线3表:169 线4表:183 线8表:241；冻结件 §五 sha256 前 8 位 c11841e6。分母：yaml points_total 174 → 180；FROZEN_V1_TOTAL=128（scripts/project/gen-project-board.py:105）→ backlog 46 → 52（中间态漂移 6 条，待创始人确认后回落 46）。**与任务卡不符一处**：裁定表 §6-5 在 origin/main 仍标『待签』且四项 ☐ 未勾选（§6-1/6-2/6-3 才是已签）——按任务卡 canonical 规格落地，签署状态列为遗留升级项。DSH 借鉴：(a) spill=@deepseek-ai/dsh-spill-policy maxInlineBytes（字节，单阈值，非法 throw / 未配置 no-op / 4 类 fail-soft 保留 inline）；(b) webhook=@deepseek-ai/dsh-webhook dispatch(delivery) 纯入站无出站；(c) live/restart=@deepseek-ai/dsh-settings SettingsApplies = 'live' | 'restart'（默认 live）。禁碰：冻结件、裁定表、scripts/audit/**、scripts/product-lines/**、scripts/project/**、scripts/control-tower/**、.github/workflows/ci.yml。"
+}

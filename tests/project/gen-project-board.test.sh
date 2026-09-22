@@ -11,12 +11,17 @@ export LC_ALL=C.UTF-8 2>/dev/null || true
 #   @degraded — 任一输入缺失/坏 → degraded:true + degraded_sources[]（默认 exit 0，--strict 非零）
 #
 # 覆盖矩阵（派单 §B.5 五组 + 真实仓库冒烟，全密封临时夹具，禁写真仓库）:
-#   ① 正常路径 — 手算数字对账（交付度/验证率/保鲜/backlog/两处证据来源）
+#   ① 正常路径 — 手算数字对账（点亮/独立核验/保鲜/backlog/两处证据来源/三档）
 #   ② 反向     — 删证据 → 该断言 ok 由 true 回退 false（证明非硬编码）
 #   ③ 降级     — 缺 yaml / 坏 JSON → degraded:true + degraded_sources 非空 + 退出码契约
-#   ④ 保鲜边界 — 7 天=🟢 / 8 天=🟡 / 14 天=🟡 / 15 天=🔴，且**不扣交付度**（口径红线）
+#   ④ 保鲜边界 — 7 天=🟢 / 8 天=🟡 / 14 天=🟡 / 15 天=🔴，且**不扣点亮数**（口径红线）
 #   ⑤ 幂等     — 连跑两次，除 generated_at/git_head 外逐键相等
-#   ⑥ 真实仓库 — 只读冒烟: v1_total=125 + lines=26（输出到临时文件，不污染仓库）
+#   ⑥ 真实仓库 — 只读冒烟: **只断言不变量与跨源自洽**（CT-67 修复），具体数值见组①/④/⑧/⑩
+#   ⑩ 三档口径 — D850: 恒等式闭合 / null+原因（禁猜 0）/ 每档 evidence_cmd 非空且实跑对账
+#
+# D850 口径变更（创始人 2026-09-20 裁定；权威 `docs/authority/产品完成度定义与推进总纲-20260918.md` §1.2
+# + `docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md` §二）:
+#   totals 不再有 delivery_pct / verify_pct；改 totals.buckets 三档离散计数（每档带可复现命令）
 #
 # 沙箱: mktemp 临时夹具 + 固定时钟 --today（零平台 date 差异，Win/CI 确定性）
 # ═══════════════════════════════════════════════════════════════
@@ -187,8 +192,24 @@ fi
 [ "$(jget "$OUT1" totals.v1_total)" = "4" ]       && ok "v1_total=4"        || no "v1_total 应 4，实 $(jget "$OUT1" totals.v1_total)"
 [ "$(jget "$OUT1" totals.v1_passed)" = "3" ]      && ok "v1_passed=3"       || no "v1_passed 应 3，实 $(jget "$OUT1" totals.v1_passed)"
 [ "$(jget "$OUT1" totals.v1_verified)" = "1" ]    && ok "v1_verified=1（仅 1-2 有 k3 PASS）" || no "v1_verified 应 1，实 $(jget "$OUT1" totals.v1_verified)"
-[ "$(jget "$OUT1" totals.delivery_pct)" = "75.0" ] && ok "delivery_pct=75.0" || no "delivery_pct 应 75.0，实 $(jget "$OUT1" totals.delivery_pct)"
-[ "$(jget "$OUT1" totals.verify_pct)" = "33.3" ]  && ok "verify_pct=33.3（1/3）" || no "verify_pct 应 33.3，实 $(jget "$OUT1" totals.verify_pct)"
+[ "$(jget "$OUT1" totals.delivery_pct)" = "None" ] && ok "totals 无 delivery_pct（百分比口径已取消）" || no "delivery_pct 仍在: $(jget "$OUT1" totals.delivery_pct)"
+[ "$(jget "$OUT1" totals.verify_pct)" = "None" ]   && ok "totals 无 verify_pct" || no "verify_pct 仍在: $(jget "$OUT1" totals.verify_pct)"
+# D850 三档（夹具手算: 点亮 3 [1-1 scenario, 1-2 k3, 2-1 test] / 独立核验 1 [1-2] / 撤回 0 /
+# 未判定 1 [2-2 声明的 founder-demo 无匹配证据]）；夹具数值是**密封**的，不随真实仓库漂移
+[ "$(jget "$OUT1" totals.buckets.healthy.count)" = "1" ] \
+  && ok "三档 healthy=1（点亮且另有 k3 独立 PASS）" || no "healthy 应 1，实 $(jget "$OUT1" totals.buckets.healthy.count)"
+[ "$(jget "$OUT1" totals.buckets.written_not_wired.count)" = "0" ] \
+  && ok "三档 written_not_wired=0" || no "written_not_wired 应 0，实 $(jget "$OUT1" totals.buckets.written_not_wired.count)"
+[ "$(jget "$OUT1" totals.buckets.missing.count)" = "None" ] \
+  && ok "三档 missing=null（无机器可读判定源 → 禁猜 0）" || no "missing 应 null，实 $(jget "$OUT1" totals.buckets.missing.count)"
+[ "$(jget "$OUT1" totals.buckets.other_states.live_unverified.count)" = "2" ] \
+  && ok "其它态 live_unverified=2（点亮但无独立核验 = 能跑未验证）" || no "live_unverified 应 2，实 $(jget "$OUT1" totals.buckets.other_states.live_unverified.count)"
+[ "$(jget "$OUT1" totals.buckets.other_states.wired_broken.count)" = "None" ] \
+  && ok "其它态 wired_broken=null（需冒烟启动，无源）" || no "wired_broken 应 null，实 $(jget "$OUT1" totals.buckets.other_states.wired_broken.count)"
+[ "$(jget "$OUT1" totals.buckets.other_states.state_unknown.count)" = "1" ] \
+  && ok "残余 state_unknown=1（未点亮且非撤回 → 归属不可判定，显式列出不丢点）" || no "state_unknown 应 1，实 $(jget "$OUT1" totals.buckets.other_states.state_unknown.count)"
+[ "$(jget "$OUT1" totals.buckets.identity.holds)" = "True" ] \
+  && ok "三档恒等式闭合：各档之和 + 显式其它态 = v1_total(4)" || no "恒等式未闭合: $(jget "$OUT1" totals.buckets.identity)"
 [ "$(jget "$OUT1" totals.freshness)" = '{"green": 1, "red": 1, "yellow": 1}' ] \
   && ok "freshness green1/yellow1/red1（龄 3/10/20）" || no "freshness 错: $(jget "$OUT1" totals.freshness)"
 [ "$(jget "$OUT1" totals.backlog_points)" = "3" ] && ok "backlog_points=3（yaml 7 点 - V1 4 条）" || no "backlog_points 应 3，实 $(jget "$OUT1" totals.backlog_points)"
@@ -303,9 +324,15 @@ OUT4="$TMPD/boundary.json"; run_sut "$F4" "$OUT4" >/dev/null 2>&1
 [ "$(jget "$OUT4" lines.0.assertions.3.freshness)" = "red" ]    && ok "15 天 → 🔴 red"    || no "15 天应 red，实 $(jget "$OUT4" lines.0.assertions.3.freshness)"
 [ "$(jget "$OUT4" totals.freshness)" = '{"green": 1, "red": 1, "yellow": 2}' ] \
   && ok "分桶 green1/yellow2/red1" || no "分桶错: $(jget "$OUT4" totals.freshness)"
-[ "$(jget "$OUT4" totals.v1_passed)" = "4" ] && ok "🟡🔴 仍计交付度: v1_passed=4（口径红线：保鲜不扣交付度）" \
-  || no "过期证据被扣交付度，违反 09-17 口径（实 v1_passed=$(jget "$OUT4" totals.v1_passed)）"
-[ "$(jget "$OUT4" totals.delivery_pct)" = "100.0" ] && ok "delivery_pct=100.0（龄 15 天不减分）" || no "delivery_pct 应 100.0"
+[ "$(jget "$OUT4" totals.v1_passed)" = "4" ] && ok "🟡🔴 仍计点亮数: v1_passed=4（口径红线：保鲜不扣点亮）" \
+  || no "过期证据被扣点亮数，违反 09-17 口径（实 v1_passed=$(jget "$OUT4" totals.v1_passed)）"
+[ "$(jget "$OUT4" totals.delivery_pct)" = "None" ] && ok "组④ 亦无 delivery_pct（口径单源，不留后门）" || no "delivery_pct 仍在"
+[ "$(jget "$OUT4" totals.buckets.other_states.live_unverified.count)" = "4" ] \
+  && ok "保鲜边界夹具三档: live_unverified=4（4 点全为 scenario 点亮，无 k3 独立核验）" \
+  || no "live_unverified 应 4，实 $(jget "$OUT4" totals.buckets.other_states.live_unverified.count)"
+[ "$(jget "$OUT4" totals.buckets.healthy.count)" = "0" ] \
+  && ok "保鲜边界夹具三档: healthy=0（无独立核验 → 不冒充健康）" || no "healthy 应 0，实 $(jget "$OUT4" totals.buckets.healthy.count)"
+[ "$(jget "$OUT4" totals.buckets.identity.holds)" = "True" ] && ok "组④ 恒等式闭合" || no "组④ 恒等式未闭合"
 
 # ═══ 组 ⑤ 幂等 — 连跑两次逐键相等 ═══
 echo "⑤ 幂等（连跑两次，除 generated_at/git_head 外逐键相等）"
@@ -337,36 +364,80 @@ print("\n".join(d[:20]))
 PY
 )"
 if [ -z "$DIFF" ]; then ok "两次运行逐键相等（generated_at/git_head 除外）"; else no "幂等失败: $DIFF"; fi
-[ "$(jget "$IA" generated_at)" = "$(jget "$IB" generated_at)" ] || ok "generated_at 可随运行变化（已豁免）"
+# 原实现为反条件断言（`|| ok`：相等时才计数 → 「通过」的判据与文案相反，且同秒运行会让总数漂移 116/117）。
+# 改为无条件计数 + 事实陈述：generated_at 是幂等豁免字段，相同或不同都合规。
+if [ "$(jget "$IA" generated_at)" != "$(jget "$IB" generated_at)" ]; then
+  ok "generated_at 随运行变化（幂等豁免契约：该字段允许不同）"
+else
+  ok "两次运行 generated_at 相同（同一秒内运行，豁免字段本就允许相同）"
+fi
 
 # ═══ 组 ⑥ 真实仓库冒烟（只读，输出到临时文件）═══
-echo "⑥ 真实仓库冒烟（只读）"
+# CT-67 修复（2026-09-20, D850）：本组**只断言不变量与跨源自洽**，不再写死 live 数值
+#   （旧版写死 backlog_points=36 / v1_passed=22 / lines=26 → 仓库数据一变即假红）。
+#   具体数值留给**密封夹具组**（①/④/⑧/⑩）与组⑩ 的 evidence_cmd 独立复算对账。
+echo "⑥ 真实仓库冒烟（只读；不变量 + 跨源自洽）"
 V1_REAL="$REPO/docs/synova/project/$V1_NAME"
 if [ -f "$V1_REAL" ]; then
   OUT6="$TMPD/real.json"
   run_sut "$REPO" "$OUT6" >/dev/null 2>&1; RC6=$?
   [ "$RC6" = "0" ] && ok "真实仓库 exit 0" || no "真实仓库 exit $RC6"
-  [ "$(jget "$OUT6" totals.v1_total)" = "128" ] && ok "真实仓库 v1_total=128（分母冻结，v0.2 §三）" \
-    || no "真实仓库 v1_total 应 128，实 $(jget "$OUT6" totals.v1_total)"
-  [ "$(jget "$OUT6" lines | "$PYBIN" -c 'import json,sys;print(len(json.load(sys.stdin)))')" = "26" ] \
-    && ok "真实仓库 lines=26" || no "真实仓库 lines 应 26"
-  [ "$(jget "$OUT6" totals.backlog_points)" = "36" ] && ok "真实仓库 backlog_points=36（164-128）" \
-    || no "backlog_points 应 36，实 $(jget "$OUT6" totals.backlog_points)"
-  # D809: 未接线三点必须判 pending_k3 且不计 passed（撤回生效的**真实仓库**读数）
-  PW_REAL="$("$PYBIN" - "$OUT6" <<'PY'
-import json,sys
-d=json.load(open(sys.argv[1],encoding='utf-8'))
-a={x['id']:x for l in d['lines'] for x in l['assertions']}
-print(",".join("%s:%s:%s" % (k,a[k]['status'],a[k]['ok']) for k in ('20-3','20-5','22-1')),
-      d['totals'].get('pending_k3'))
+  # 128 = **冻结分母**（v0.2 §三 变更单），不是 live 数据；漂移时派生器自身已告警（FROZEN_V1_TOTAL）
+  [ "$(jget "$OUT6" totals.v1_total)" = "128" ] && ok "真实仓库 v1_total=128（冻结分母，非 live 数据；v0.2 §三）" \
+    || no "真实仓库 v1_total 应 128（冻结分母），实 $(jget "$OUT6" totals.v1_total)"
+  INV6="$("$PYBIN" - "$OUT6" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1], encoding='utf-8')); t = d['totals']
+bad = []
+if not isinstance(t.get('v1_passed'), int) or t['v1_passed'] < 0: bad.append('v1_passed 非法: %r' % (t.get('v1_passed'),))
+elif t['v1_passed'] > t['v1_total']: bad.append('v1_passed > v1_total')
+if not isinstance(t.get('v1_verified'), int) or t['v1_verified'] < 0: bad.append('v1_verified 非法')
+elif isinstance(t.get('v1_passed'), int) and t['v1_verified'] > t['v1_passed']: bad.append('v1_verified > v1_passed')
+if not isinstance(t.get('pending_k3'), int) or t['pending_k3'] < 0: bad.append('pending_k3 非法')
+if not isinstance(t.get('backlog_points'), int) or t['backlog_points'] < 0: bad.append('backlog_points 非法: %r' % (t.get('backlog_points'),))
+if len(d.get('lines') or []) < 1: bad.append('lines 为空')
+for k in ('delivery_pct', 'verify_pct', 'product_progress_pct'):
+    if k in t: bad.append('百分比字段仍在 totals: ' + k)
+if not isinstance(d.get('degraded'), bool): bad.append('degraded 非布尔')
+print('OK' if not bad else ' | '.join(bad))
 PY
 )"
-  [ "$PW_REAL" = "20-3:pending_k3:False,20-5:pending_k3:False,22-1:pending_k3:False 3" ] \
-    && ok "真实仓库 20-3/20-5/22-1 = pending_k3 且不计 passed（pending_k3=3）" \
-    || no "真实仓库三点撤回读数错: $PW_REAL"
-  [ "$(jget "$OUT6" totals.v1_passed)" = "22" ] \
-    && ok "真实仓库 v1_passed=22（D809 撤回三点后；接线恢复即回 25）" \
-    || no "真实仓库 v1_passed 应 22，实 $(jget "$OUT6" totals.v1_passed)"
+  [ "$INV6" = "OK" ] && ok "组⑥ 不变量: 0≤v1_passed≤v1_total / v1_verified≤v1_passed / pending_k3,backlog_points≥0 / lines≥1 / 无百分比字段" \
+    || no "组⑥ 不变量被破坏: $INV6"
+  # 跨源自洽（独立于 SUT 重解析 V1 表 + yaml）: 撤回行数 == pending_k3、撤回点判 pending_k3/ok=false、
+  # backlog_points == 独立解析的 yaml 验收点总数 − v1_total。**不写死任何具体数值**。
+  XCHK6="$("$PYBIN" - "$REPO" "$OUT6" <<'PY'
+import glob, importlib.util, json, re, sys
+repo, out = sys.argv[1], sys.argv[2]
+d = json.load(open(out, encoding='utf-8')); t = d['totals']
+bad = []
+p = sorted(glob.glob(repo + '/docs/synova/project/26线-V1验收标准*.md'))[-1]
+rows = [[c.strip() for c in l.strip().strip('|').split('|')]
+        for l in open(p, encoding='utf-8') if re.match(r'^\|\s*\d+-\d+\s*\|', l)]
+pw = {r[0] for r in rows if len(r) >= 5 and r[3] == 'pending_wiring'}
+if len(pw) != t.get('pending_k3'):
+    bad.append('V1 表撤回行数 %d ≠ totals.pending_k3 %r' % (len(pw), t.get('pending_k3')))
+a = {x['id']: x for l in d['lines'] for x in l['assertions']}
+for pid in sorted(pw):
+    if pid not in a:
+        bad.append('撤回点未出现在账本: ' + pid)
+    elif a[pid]['status'] != 'pending_k3' or a[pid]['ok'] is not False:
+        bad.append('%s 应 pending_k3/ok=false，实 %s/%s' % (pid, a[pid]['status'], a[pid]['ok']))
+spec = importlib.util.spec_from_file_location('ply', repo + '/scripts/product-lines/productline_yaml.py')
+m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+y = m.load_file(repo + '/docs/synova/product-lines/product-lines.yaml')
+pts = sum(len(ln.get('acceptance_points') or []) for ln in y['lines'])
+if pts - t.get('v1_total') != t.get('backlog_points'):
+    bad.append('backlog_points %r ≠ yaml 点数 %d − v1_total %r' % (t.get('backlog_points'), pts, t.get('v1_total')))
+if len(a) != t.get('v1_total'):
+    bad.append('账本断言数 %d ≠ v1_total %r' % (len(a), t.get('v1_total')))
+print('OK' if not bad else ' | '.join(bad))
+PY
+)"
+  [ "$XCHK6" = "OK" ] && ok "组⑥ 跨源自洽: 撤回行数↔pending_k3 / 撤回点↔账本 status / backlog_points↔yaml 点数 / 断言数↔v1_total" \
+    || no "组⑥ 跨源自洽失败: $XCHK6"
+  [ "$(jget "$OUT6" totals.buckets.identity.holds)" = "True" ] \
+    && ok "真实仓库三档恒等式闭合（分母 $(jget "$OUT6" totals.v1_total)）" || no "真实仓库恒等式未闭合"
 else
   no "真实仓库缺 V1 断言表 ${V1_NAME}（上游 D793/PR#608 未并入）"
 fi
@@ -539,6 +610,156 @@ grep -q "先退役再开新 PR" "$TMPD/pq-out.txt" && ok "超限告警出现在�
 # 旁路不参与交付度：同一夹具下 v1_passed 与无快照时一致
 [ "$(jget "$OUT9C" totals.v1_passed)" = "$(jget "$OUT9A" totals.v1_passed)" ] \
   && ok "旁路段不改交付度分子（13 条超限 PR 不影响 v1_passed）" || no "旁路段污染了交付度"
+
+# ═══ 组 ⑩ D850 离散三档口径（恒等式 / 互斥完备 / null+原因 / evidence_cmd 实跑对账）═══
+# 权威:
+#   `docs/authority/产品完成度定义与推进总纲-20260918.md` §1.2（五态定义 + 「N 个健康 / M 个写了没接 /
+#   K 个缺 —— 离散计数，不是百分比」）+ `docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md` §二
+#   + `/Users/wane/山河研究院/99-综合/方案-项目度量-从声明驱动到事实驱动.md` §四（「每个数字必须带一条
+#   可复现的命令。不能复现的数字，不上看板」）/ §六（静态检测实测 3/5=60%，只能粗筛不能当判定源）
+# 口径（三档 = 五态的报告折叠；互斥且完备；无法判定显式 null + 原因，禁猜 0）:
+#   healthy            ← 点亮且另有 record_type=k3 的独立 PASS 裁决（「独立核验通过」口径）
+#   written_not_wired  ← V1 断言表「证据」列 = pending_wiring（D809 撤回标记 = 有实现未接线）
+#   missing            ← 总纲「缺」；判定手段 = 代码检索（本卡明令禁 grep 型静态判据）→ **null + 原因**
+#   其它态（显式列出，不丢点）: live_unverified（能跑未验证）/ wired_broken（接了跑不通 → null）
+#   state_unknown      ← 残余（未点亮且非撤回；五态归属不可判定）——显式列出以闭合恒等式
+echo "⑩ D850 三档（恒等式 / null+原因 / evidence_cmd 逐条实跑）"
+# ── ⑩-a 撤回夹具（F8: 1-1 撤回含存量证据 / 1-2 正常 / 1-3 撤回零证据）──
+[ "$(jget "$OUT8" totals.buckets.written_not_wired.count)" = "2" ] \
+  && ok "⑩ 撤回夹具 written_not_wired=2（V1 表 pending_wiring 行数，与存量 test 证据无关）" \
+  || no "written_not_wired 应 2，实 $(jget "$OUT8" totals.buckets.written_not_wired.count)"
+[ "$(jget "$OUT8" totals.buckets.healthy.count)" = "0" ] \
+  && ok "⑩ 撤回夹具 healthy=0（撤回点不冒充健康）" || no "healthy 应 0，实 $(jget "$OUT8" totals.buckets.healthy.count)"
+[ "$(jget "$OUT8" totals.buckets.other_states.live_unverified.count)" = "1" ] \
+  && ok "⑩ 撤回夹具 live_unverified=1（仅 1-2 点亮无独立核验）" || no "live_unverified 应 1"
+[ "$(jget "$OUT8" totals.buckets.other_states.state_unknown.count)" = "0" ] \
+  && ok "⑩ 撤回夹具 state_unknown=0（3 点全部归入可判定态）" || no "state_unknown 应 0"
+[ "$(jget "$OUT8" totals.buckets.identity.holds)" = "True" ] \
+  && ok "⑩ 撤回夹具恒等式闭合 0+2+1+0=3" || no "恒等式未闭合"
+# ⑧ 之后夹具已被「反向」改回 test（接线完成）→ OUT8B 的三档必须随源变化（证明非硬编码）
+[ "$(jget "$OUT8B" totals.buckets.written_not_wired.count)" = "1" ] \
+  && ok "⑩ 反向夹具 written_not_wired 2→1（撤回列改回 test 即随源变化，非硬编码）" \
+  || no "反向 written_not_wired 应 1，实 $(jget "$OUT8B" totals.buckets.written_not_wired.count)"
+[ "$(jget "$OUT8B" totals.buckets.other_states.live_unverified.count)" = "2" ] \
+  && ok "⑩ 反向夹具 live_unverified 1→2（1-1 恢复点亮，仍无 k3 独立核验 → 不并进健康）" \
+  || no "反向 live_unverified 应 2，实 $(jget "$OUT8B" totals.buckets.other_states.live_unverified.count)"
+[ "$(jget "$OUT8B" totals.buckets.healthy.count)" = "0" ] \
+  && ok "⑩ 反向夹具 healthy=0（点亮 ≠ 健康：无独立核验仍不冒充）" || no "反向 healthy 应 0"
+# ── ⑩-b 结构口径（互斥完备 / null+原因 / 零百分比 / 分母=点集）──
+BKT10="$("$PYBIN" - "$OUT8" "$OUT1" <<'PY'
+import json, sys
+bad = []
+for path in sys.argv[1:]:
+    d = json.load(open(path, encoding='utf-8')); b = d['totals']['buckets']; t = d['totals']
+    tag = path.rsplit('/', 1)[-1]
+    # ① 三档名字恰好正确（互斥档不含其它档）
+    if set(b) & {'healthy', 'written_not_wired', 'missing'} != {'healthy', 'written_not_wired', 'missing'}:
+        bad.append(tag + ': 缺三档之一')
+    # ② 每个可判定档的 count 是 int；每个不可判定档的 count 必须**是 null**（禁猜 0）且 reason 非空
+    for k in ('healthy', 'written_not_wired', 'missing'):
+        e = b[k]
+        if not isinstance(e.get('evidence_cmd'), str) or not e['evidence_cmd'].strip():
+            bad.append('%s/%s: evidence_cmd 空' % (tag, k))
+        c = e.get('count')
+        if c is None:
+            if not (e.get('reason') or '').strip(): bad.append('%s/%s: null 却无 reason' % (tag, k))
+        elif not isinstance(c, int):
+            bad.append('%s/%s: count 非 int/null: %r' % (tag, k, c))
+    for k in ('live_unverified', 'wired_broken', 'state_unknown'):
+        e = b['other_states'][k]
+        if not isinstance(e.get('evidence_cmd'), str) or not e['evidence_cmd'].strip():
+            bad.append('%s/other_states.%s: evidence_cmd 空' % (tag, k))
+        if e.get('count') is None and not (e.get('reason') or '').strip():
+            bad.append('%s/other_states.%s: null 却无 reason' % (tag, k))
+    # ③ 恒等式: 各档之和 + 显式其它态 = v1_total（null 项不参与求和，但必须显式登记在 null_terms）
+    terms = {'healthy': b['healthy']['count'], 'written_not_wired': b['written_not_wired']['count'],
+             'missing': b['missing']['count'],
+             'wired_broken': b['other_states']['wired_broken']['count'],
+             'live_unverified': b['other_states']['live_unverified']['count'],
+             'state_unknown': b['other_states']['state_unknown']['count']}
+    known = sum(v for v in terms.values() if v is not None)
+    if known != t['v1_total']:
+        bad.append('%s: 已知项之和 %d ≠ v1_total %r' % (tag, known, t['v1_total']))
+    if sorted(terms) != sorted(b['identity']['terms']):
+        bad.append(tag + ': identity.terms 未列全五个态+残余')
+    if sorted(x for x, v in terms.items() if v is None) != sorted(b['identity']['null_terms']):
+        bad.append(tag + ': identity.null_terms 与实测 null 档不一致')
+    if b['identity']['holds'] is not True:
+        bad.append(tag + ': identity.holds 非 True')
+    # ④ 零百分比: 三档结构内不得出现 *_pct 键；totals 不得有百分比字段
+    def keys(x):
+        if isinstance(x, dict):
+            for k, v in x.items():
+                yield k
+                for kk in keys(v): yield kk
+        elif isinstance(x, list):
+            for v in x:
+                for kk in keys(v): yield kk
+    pct = [k for k in keys(b) if k.endswith('_pct')]
+    if pct: bad.append('%s: 三档结构内出现百分比键 %s' % (tag, pct))
+    for k in ('delivery_pct', 'verify_pct', 'product_progress_pct'):
+        if k in t: bad.append('%s: totals 仍有 %s' % (tag, k))
+    # ⑤ 权威件全名 + 版本必须写在结构里（引用纪律）
+    if '产品完成度定义与推进总纲-20260918' not in json.dumps(b, ensure_ascii=False):
+        bad.append(tag + ': buckets 未写权威件全名')
+print('OK' if not bad else ' | '.join(bad))
+PY
+)"
+[ "$BKT10" = "OK" ] && ok "⑩ 结构: 三档齐全 / 不可判定档 null+reason / 恒等式五态+残余列全 / 零百分比 / 权威件全名" \
+  || no "⑩ 结构口径失败: $BKT10"
+# ── ⑩-c evidence_cmd 逐条实跑（密封夹具 cwd）并与账本数字对账 ──
+# 注意: 组⑧ 的「反向」步已把 $F8 夹具的 1-1 从 pending_wiring 改回 test →
+#       evidence_cmd 反映**当前**夹具状态，故与它同态对账的账本是 $OUT8B（不是 $OUT8）
+ev_get() { jget "$1" "totals.buckets.$2${3:-.count}"; }
+ev_run() { ( cd "$1" && bash -c "$2" 2>&1 ); }
+EV_FAIL=""
+for pair in "healthy:healthy" "written_not_wired:written_not_wired" "other_states.live_unverified:live_unverified" "other_states.state_unknown:state_unknown"; do
+  jp="${pair%%:*}"; field="${pair##*:}"
+  CMD="$(ev_get "$OUT8B" "$jp" ".evidence_cmd")"
+  [ -n "$CMD" ] || { EV_FAIL="$EV_FAIL $field:cmd空"; continue; }
+  GOT="$(ev_run "$F8" "$CMD")"
+  WANT="${field}=$(ev_get "$OUT8B" "$jp")"
+  [ "$GOT" = "$WANT" ] || EV_FAIL="$EV_FAIL $field:期望[$WANT]实得[$GOT]"
+done
+for pair in "missing:implemented" "other_states.wired_broken:wired"; do
+  jp="${pair%%:*}"; field="${pair##*:}"
+  CMD="$(ev_get "$OUT8B" "$jp" ".evidence_cmd")"
+  [ -n "$CMD" ] || { EV_FAIL="$EV_FAIL $field:cmd空"; continue; }
+  GOT="$(ev_run "$F8" "$CMD")"
+  [ "$GOT" = "${field}=SOURCE_ABSENT" ] || EV_FAIL="$EV_FAIL $field:期望判定源缺席实得[$GOT]"
+done
+[ -z "$EV_FAIL" ] && ok "⑩ 夹具: 六档 evidence_cmd 逐条实跑 exit 0 且与账本数字逐一对账一致" \
+  || no "⑩ 夹具 evidence_cmd 实跑对账失败:$EV_FAIL"
+# ── ⑩-d 真实仓库 evidence_cmd 逐条实跑（只读）与 ledger 对账；**不写死 live 数值** ──
+EV_REAL_FAIL=""
+if [ -f "$OUT6" ]; then
+  for pair in "healthy:healthy" "written_not_wired:written_not_wired" "other_states.live_unverified:live_unverified" "other_states.state_unknown:state_unknown"; do
+    jp="${pair%%:*}"; field="${pair##*:}"
+    CMD="$(ev_get "$OUT6" "$jp" ".evidence_cmd")"
+    GOT="$(ev_run "$REPO" "$CMD")"
+    WANT="${field}=$(ev_get "$OUT6" "$jp")"
+    [ "$GOT" = "$WANT" ] || EV_REAL_FAIL="$EV_REAL_FAIL $field:期望[$WANT]实得[$GOT]"
+  done
+  for pair in "missing:implemented" "other_states.wired_broken:wired"; do
+    jp="${pair%%:*}"; field="${pair##*:}"
+    CMD="$(ev_get "$OUT6" "$jp" ".evidence_cmd")"
+    GOT="$(ev_run "$REPO" "$CMD")"
+    [ "$GOT" = "${field}=SOURCE_ABSENT" ] || EV_REAL_FAIL="$EV_REAL_FAIL $field:[$GOT]"
+  done
+  [ -z "$EV_REAL_FAIL" ] && ok "⑩ 真实仓库: 六档 evidence_cmd 独立复算 == ledger 数字（源侧复算，非读回派生值）" \
+    || no "⑩ 真实仓库 evidence_cmd 对账失败:$EV_REAL_FAIL"
+else
+  no "⑩ 缺真实仓库账本（组⑥ 未产出）"
+fi
+# ── ⑩-e stdout 摘要行零百分比（创始人签字的形式判据之一）──
+run_sut "$F1" "$TMPD/stdout10.json" > "$TMPD/stdout10.txt" 2>/dev/null  # swallow-ok: 本组只验 stdout 的形态（零百分比 + 含三档离散计数），派生器 stderr 的 degraded 日志已在组③ 单独断言
+if grep -qE "[0-9]+(\.[0-9]+)?%" "$TMPD/stdout10.txt"; then
+  no "⑩ 派生器 stdout 仍含百分比: $(cat "$TMPD/stdout10.txt")"
+else
+  ok "⑩ 派生器 stdout 零百分比（摘要行改离散计数）"
+fi
+grep -q "written_not_wired=" "$TMPD/stdout10.txt" \
+  && ok "⑩ stdout 摘要含三档离散计数" || no "⑩ stdout 未见三档计数: $(cat "$TMPD/stdout10.txt")"
 
 echo
 echo "PASS=$PASS FAIL=$FAIL"
