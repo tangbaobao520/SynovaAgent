@@ -1617,3 +1617,4 @@ Binary file .claude/bypass.log matches
 2026-09-22T20:35:58+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=f08f2e078dcf79cd81106b63981c2683b3007409
 2026-09-22T22:14:18+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=f66ceb6f8321b8f27f067b929e09205cd4db30f6
 2026-09-22T22:36:28+08:00 | GATE_FAIL_SOFT | exit=141 | branch=docs/d917-quality-study-ingest
+2026-09-22T22:36:50+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=0bbfb97ae7545abf4bdeb449a414360b9fecf2f8
