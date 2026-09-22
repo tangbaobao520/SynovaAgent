@@ -224,3 +224,12 @@ documents:
     owner: CTO
     verified-by: scripts/control-tower/pre-dispatch-check.sh (planned)
 
+  # ---- 研究院材料权威级别（CTO 2026-09-22 登记，D912；原误标 D850 撞号）----
+  - id: DOC-0032
+    type: decision
+    path: docs/authority/研究院材料权威级别与引用纪律-20260920.md
+    status: active
+    owner: CTO
+    note: "创始人 2026-09-20 裁定：研究院材料＝与创始人裁定同级；撤回清单 > 任何旧说法；未入库＝视为未交办；派单必给权威件回执（§〇-c）"
+    verified-by: scripts/control-tower/pre-dispatch-check.sh (planned)
+
