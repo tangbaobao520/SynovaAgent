@@ -22,28 +22,30 @@ describe('ExpertFileLoader — 8段组装集成测试', () => {
     loader = new ExpertFileLoader();
   });
 
-  it('Given FileScanner 扫描, Then 发现 8 位专家', () => {
+  it('Given FileScanner 扫描, Then 发现 registry v3.0 的 6 位专家', () => {
+    // D861: 断言对齐 expert/expert-registry.yaml v3.0（D650 改名收尾后 7→6，
+    //   旧名 strategy/business_model/org/finance 已不存在；FileScanner 实测返回 6 位）。
     const names = scanner.listExpertNames();
-    expect(names.length).toBeGreaterThanOrEqual(8);
-    expect(names).toContain('strategy');
-    expect(names).toContain('business_model');
-    expect(names).toContain('org');
-    expect(names).toContain('finance');
+    expect(names.length).toBeGreaterThanOrEqual(6);
+    expect(names).toContain('competitive-strategy');
+    expect(names).toContain('customer-growth');
+    expect(names).toContain('host');
+    expect(names).toContain('organizational-capability');
   });
 
-  it('Given strategy 专家, Then 包含关键文件', () => {
-    const expert = scanner.getExpert('strategy');
+  it('Given competitive-strategy 专家, Then 包含关键文件', () => {
+    const expert = scanner.getExpert('competitive-strategy');
     expect(expert).toBeDefined();
     expect(expert!.files).toBeDefined();
     expect(Object.keys(expert!.files).length).toBeGreaterThanOrEqual(3);
   });
 
-  it('Given 完整索引, When loadFromIndex, Then 8 位专家全部加载成功', () => {
+  it('Given 完整索引, When loadFromIndex, Then 6 位专家全部加载成功', () => {
     const index = scanner.getIndex()!;
     expect(index).toBeDefined();
 
     const result = loader.loadFromIndex(index, {});
-    expect(result.fromFiles).toBeGreaterThanOrEqual(8);
+    expect(result.fromFiles).toBeGreaterThanOrEqual(6);
     expect(result.errors.length).toBe(0);
   });
 
@@ -51,7 +53,7 @@ describe('ExpertFileLoader — 8段组装集成测试', () => {
     const index = scanner.getIndex()!;
     loader.loadFromIndex(index, {});
 
-    const prompt = getExpertRegistry().getPrompt('strategy');
+    const prompt = getExpertRegistry().getPrompt('competitive-strategy');
     expect(prompt).toBeDefined();
     expect(prompt).toContain('角色');
     expect(prompt).toContain('规则');
@@ -62,14 +64,15 @@ describe('ExpertFileLoader — 8段组装集成测试', () => {
     const index = scanner.getIndex()!;
     loader.loadFromIndex(index, {});
 
-    const prompt = getExpertRegistry().getPrompt('strategy')!;
+    const prompt = getExpertRegistry().getPrompt('competitive-strategy')!;
     expect(prompt.length).toBeGreaterThan(100);
-    expect(prompt).toContain('身份');
+    // D861: v3.0 六段文件（IDENTITY→角色定义 / THEORY→理论），断言对齐实际章节
+    expect(prompt).toContain('角色定义');
     expect(prompt).toContain('角色');
-    expect(prompt).toContain('知识');
+    expect(prompt).toContain('理论');
   });
 
-  it('Given 所有 8 位专家, Then prompt 非空且包含 IDENTITY', () => {
+  it('Given 所有 6 位专家, Then prompt 非空且包含 IDENTITY', () => {
     const index = scanner.getIndex()!;
     loader.loadFromIndex(index, {});
 
