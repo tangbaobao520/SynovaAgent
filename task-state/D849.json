@@ -1,0 +1,31 @@
+{
+  "task_id": "D849",
+  "title": "研究院交接文档入库 + 未读事故固化（5 份正式文档只读 1 份）",
+  "status": "impl_done",
+  "risk": "high",
+  "spec": "创始人 2026-09-20：一起发来的 5 份正式文档（总纲+4 任务书）要求全部认真阅读，CTO 只读了总纲即开工；且源目录另有 09-19 高危件（官方 Agent Teams 能力清单 / 插件准入标准 / 9 项撤回清单）从未读过 → 派单存在系统性跑偏风险。",
+  "write_set": [
+    "docs/synova/research/研究院交接-20260918/",
+    "task-state/D849.json"
+  ],
+  "impl": "8 份优先级文档入库（4 任务书 + 官方 Agent Teams 能力清单 + 插件准入复盘 + 插件尽调 + 9 项撤回交接包）+ 入库说明与纪律",
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-20",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "owner": "synova-cto",
+  "executor": "synova-cto",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [],
+  "blocked": null,
+  "target": "2026-W38",
+  "acceptance_points": [
+    "8 份文档在仓库可读（git 追踪）",
+    "入库说明含原路径与为什么必须读",
+    "纪律写成明文：未入库=视为未交办，不得据此派单/不得声称已读",
+    "差异报告（冲突/缺失/9 项撤回）产出后回填本卡"
+  ],
+  "next": "① 8 份逐份精读 → 差异报告 ② DOCS-REGISTRY 登记 ③ 回填本卡",
+  "note": "本卡是失职的固化件：不以我记得为依据，以仓库内文件为依据。"
+}
