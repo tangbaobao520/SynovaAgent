@@ -198,3 +198,21 @@ rules:
 #   的运行产物，路径恰在 docs/authority/（兜底判 win）——同 D758 证据目录逻辑: 产物跟工具链走。
 domain_neutral: [".claude/bypass.log", ".claude/gate-hits.log", ".claude/task-briefs/**", "task-state/**", "memory/notes/**", ".codex/**", "docs/synova/product-lines/evidence/**", ".gitignore", "AGENTS.md", "CLAUDE.md", "LOOP.md", "knowledge/shared/README.md", "docs/authority/DRIFT-LEDGER.md", "docs/authority/system-registry.json"]
 
+# ═══ 代行开关 standby（D911 切片 B B1；单点、可逆、逐条打印）═══
+# 语义: 某域**离线**期间，其归属文件由 proxy 域代行处置（派单/PR 不再因该域被判「跨域」）。
+#       这是「事实状态登记」，不是权限授予 —— **本段缺失 = 严格模式（现状）**。
+#       **win 回归 = 删除本段 + 重跑 --emit-codeowners**，立即恢复严格（不改任何脚本）。
+# 判定: 只有命令行 `--proxy <域>=<代行域>` 显式声明、且与本段授权一致时才代行
+#       （check-ownership.py 逐条打印被代行文件的归属 + 理由）；
+#       未授权/不匹配的声明 → ⚠️ 打印「不代行」并按原始归属判定（不静默改判）。
+# 格式: 本段存在但结构非法（非映射/空映射/未知域/缺 proxy|authority/proxy=自身/
+#       domains 非非空列表或不含自身域）→ check-ownership.py exit 2（fail-closed，不静默放行）。
+# 授权: 原文**转抄**（非创始人原始消息）—— .claude/task-briefs/2026-09-22-D861-win测试修复-代行.md:5
+# 注意: 中文/特殊字符标量必须加双引号（YAML 子集解析器裸标量仅允许 ASCII 词）；domains 用单行内联列表。
+standby:
+  win:
+    offline_since: "2026-09-20"
+    proxy: "mac"
+    authority: "创始人 2026-09-20 口令（转抄: .claude/task-briefs/2026-09-22-D861-win测试修复-代行.md:5）: win 机器不在线，所有 domain:win 任务一律 Mac 代行，直到创始人说「win 回归」"
+    domains: ["win"]
+

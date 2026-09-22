@@ -190,6 +190,153 @@ else
 fi
 
 echo ""
+echo "── 10. D911 切片 B: standby 代行开关（B1/B2/B4）──"
+# 基线: 不传 --proxy → 严格（= 修前行为，与 D733 同款「跨域」）
+run_expect 1 "B4 严格模式: 不传 --proxy → 跨域 exit 1" \
+  tests/agent/x.ts tests/circular-dependency.test.ts scripts/control-tower/check-ownership.py
+if echo "$OUT" | grep -q "跨域"; then pass "严格模式输出点名「跨域」"; else fail "严格模式未点名跨域"; fi
+
+# B2: 代行断言命中 → 改判同域 + 逐条打印归属与理由
+run_expect 0 "B2 代行生效: --proxy win=mac → exit 0" --proxy win=mac \
+  tests/agent/x.ts tests/circular-dependency.test.ts scripts/control-tower/check-ownership.py
+if echo "$OUT" | grep -q "代行 win→mac"; then pass "代行逐条打印「代行 win→mac」"; else fail "代行未逐条打印"; fi
+if echo "$OUT" | grep -q "原始 owner=win"; then pass "代行行打印原始归属（win）"; else fail "代行行未打印原始归属"; fi
+if echo "$OUT" | grep -q "offline_since=2026-09-20"; then pass "代行行打印 offline_since（理由）"; else fail "代行行未打印理由"; fi
+if echo "$OUT" | grep -q "授权: 创始人 2026-09-20 口令"; then pass "代行行打印授权出处"; else fail "代行行未打印授权出处"; fi
+if echo "$OUT" | grep -q "转抄"; then pass "授权出处标注「转抄」（非创始人原始消息，如实标注）"; else fail "授权出处未标注转抄"; fi
+if echo "$OUT" | grep -q "代行 2"; then pass "结论行统计代行件数（代行 2）"; else fail "结论行未统计代行件数"; fi
+run_expect 0 "--owner mac + --proxy win=mac: 被代行文件计入 mac" --proxy win=mac tests/agent/x.ts --owner mac
+run_expect 1 "--owner win + --proxy win=mac: 代行后不再是 win → 越域 exit 1（不静默）" \
+  --proxy win=mac tests/agent/x.ts --owner win
+
+# 反例①: 代行断言未授权 / 与授权不一致 → 不代行 → 仍跨域 exit 1
+run_expect 1 "反例①-a: --proxy k3=mac 无 standby 授权 → 仍 exit 1" --proxy k3=mac \
+  tests/agent/x.ts scripts/control-tower/check-ownership.py
+if echo "$OUT" | grep -q "不生效"; then pass "未授权声明明示「不生效」（不静默）"; else fail "未授权声明未明示"; fi
+run_expect 1 "反例①-b: --proxy win=k3 与 standby[win].proxy 不一致 → 仍 exit 1" --proxy win=k3 \
+  tests/agent/x.ts scripts/control-tower/check-ownership.py
+if echo "$OUT" | grep -q "standby\[win\].proxy=mac"; then pass "不一致声明点名实际授权（mac）"; else fail "不一致声明未点名实际授权"; fi
+run_expect 2 "--proxy 语法非法（无 =）→ exit 2（fail-closed）" --proxy winmac tests/agent/x.ts
+run_expect 2 "--proxy 与 --emit-codeowners 互斥 → exit 2" --emit-codeowners --proxy win=mac
+
+# 返工 2（D328 三态分离）: --proxy **域值非法**（未知域）= 调用者给坏参数 → exit 2；
+#   合法域对但未授权（k3=mac / mac=win）→ 仍 exit 1 + ⚠️ 不生效（红线不动）。
+run_expect 2 "返工2-a: --proxy win=bogus（代行域未知）→ exit 2" --proxy win=bogus \
+  tests/agent/x.ts scripts/control-tower/check-ownership.py
+if echo "$OUT" | grep -q "坏参数"; then pass "坏参数明示分类（不与「越域」混同）"; else fail "坏参数未明示分类"; fi
+if echo "$OUT" | grep -q "Traceback"; then fail "坏参数走异常栈（应 fail-closed 受控退出）"; else pass "坏参数受控退出（无 Traceback）"; fi
+run_expect 2 "返工2-b: --proxy bogus=mac（域未知）→ exit 2" --proxy bogus=mac tests/agent/x.ts
+run_expect 1 "返工2-c 红线: --proxy mac=win（合法域对、未授权）→ 仍 exit 1" --proxy mac=win \
+  tests/agent/x.ts scripts/control-tower/check-ownership.py
+if echo "$OUT" | grep -q "不生效"; then pass "未授权合法域对仍明示「不生效」（红线不动）"; else fail "未授权合法域对未明示"; fi
+
+echo ""
+echo "── 10b. 反例②/③: 删 standby 段（win 回归）/ 段结构非法（fail-closed）──"
+"$PYBIN" - "$YAML" "$TMPD" <<'PYEOF'
+import pathlib, re, sys
+src, tmp = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2])
+t = src.read_text(encoding="utf-8")
+m = re.search(r"^standby:", t, re.M)
+if not m:
+    raise SystemExit("测试前置失败: 真实 ownership.yaml 无 standby 段")
+prefix = t[: m.start()]
+variants = {
+    "sb-nostandby.yaml": "",                                     # 删段 = win 回归（合法 → 严格模式）
+    "sb-nomap.yaml": 'standby: ["win"]\n',                       # 段非映射
+    "sb-selfproxy.yaml": 'standby:\n  win:\n    proxy: "win"\n    authority: "x"\n    domains: ["win"]\n',
+    "sb-noauthority.yaml": 'standby:\n  win:\n    proxy: "mac"\n    domains: ["win"]\n',
+    "sb-baddomains.yaml": 'standby:\n  win:\n    proxy: "mac"\n    authority: "x"\n    domains: ["mac"]\n',
+    "sb-unknowndomain.yaml": 'standby:\n  winx:\n    proxy: "mac"\n    authority: "x"\n    domains: ["winx"]\n',
+    "sb-baddate.yaml": 'standby:\n  win:\n    offline_since: "not-a-date"\n    proxy: "mac"\n    authority: "x"\n    domains: ["win"]\n',      # 返工1: 格式非法
+    "sb-badcal.yaml": 'standby:\n  win:\n    offline_since: "2026-13-45"\n    proxy: "mac"\n    authority: "x"\n    domains: ["win"]\n',      # 返工1: 日历越界
+    "sb-nodate.yaml": 'standby:\n  win:\n    proxy: "mac"\n    authority: "x"\n    domains: ["win"]\n',                                 # 可选字段缺省 = 合法
+}
+for name, block in variants.items():
+    (tmp / name).write_text(prefix + block, encoding="utf-8")
+PYEOF
+if [ -f "$TMPD/sb-nostandby.yaml" ] && ! grep -q '^standby:' "$TMPD/sb-nostandby.yaml"; then
+  pass "反例② 前置: standby 段已从临时 yaml 移除（真实文件零改动）"
+else
+  fail "反例② 前置: standby 段未移除"
+fi
+run_expect 1 "反例② 删 standby 段 → --proxy 不生效 → 恢复跨域 exit 1" --proxy win=mac \
+  tests/agent/x.ts scripts/control-tower/check-ownership.py --yaml "$TMPD/sb-nostandby.yaml"
+if echo "$OUT" | grep -q "standby 段无"; then pass "删段后 --proxy 明示「standby 段无 win 条目」"; else fail "删段后未明示原因"; fi
+run_expect 0 "反例② 删段 + 未传 --proxy 的同域集 → 仍严格单域 exit 0（删段不报错）" \
+  src/server.ts src/l3/expert-registry.ts --yaml "$TMPD/sb-nostandby.yaml"
+run_expect 2 "反例③-a standby 段非映射 → exit 2" --proxy win=mac tests/agent/x.ts --yaml "$TMPD/sb-nomap.yaml"
+run_expect 2 "反例③-b proxy=自身域 → exit 2" --proxy win=mac tests/agent/x.ts --yaml "$TMPD/sb-selfproxy.yaml"
+run_expect 2 "反例③-c 缺 authority（无授权出处）→ exit 2" --proxy win=mac tests/agent/x.ts --yaml "$TMPD/sb-noauthority.yaml"
+run_expect 2 "反例③-d domains 不含自身域 → exit 2" --proxy win=mac tests/agent/x.ts --yaml "$TMPD/sb-baddomains.yaml"
+run_expect 2 "反例③-e standby 未知域 → exit 2" --proxy win=mac tests/agent/x.ts --yaml "$TMPD/sb-unknowndomain.yaml"
+# 返工 1: offline_since **字段值**也钉死 —— 坏值会被 B2 原样织进「理由」串 = K3 审计链不可信
+run_expect 2 "返工1-a offline_since=not-a-date（格式非法）→ exit 2" --proxy win=mac \
+  tests/agent/x.ts --yaml "$TMPD/sb-baddate.yaml"
+if echo "$OUT" | grep -q "YYYY-MM-DD"; then pass "坏日期点名要求格式（YYYY-MM-DD）"; else fail "坏日期未点名格式要求"; fi
+if echo "$OUT" | grep -q "Traceback"; then fail "坏日期走异常栈（应 fail-closed 受控退出）"; else pass "坏日期受控退出（无 Traceback）"; fi
+run_expect 2 "返工1-b offline_since=2026-13-45（日历越界）→ exit 2" --proxy win=mac \
+  tests/agent/x.ts --yaml "$TMPD/sb-badcal.yaml"
+if echo "$OUT" | grep -q "Traceback"; then fail "越界日期走异常栈（应 fail-closed 受控退出）"; else pass "越界日期受控退出（无 Traceback）"; fi
+run_expect 0 "返工1-c offline_since 缺省（可选字段）→ 仍合法可代行" --proxy win=mac \
+  tests/agent/x.ts --owner mac --yaml "$TMPD/sb-nodate.yaml"
+if echo "$OUT" | grep -q "offline_since=未记录"; then pass "缺省 offline_since 在理由串显式标「未记录」（不编造）"; else fail "缺省 offline_since 未显式标注"; fi
+run_expect 0 "原 yaml 复测仍可代行（未污染真实文件）" --proxy win=mac tests/agent/x.ts --owner mac
+
+echo ""
+echo "── 11. D911 切片 B B5: 目录无显式规则 → 显式提示（不新增阻断）──"
+run_expect 1 "B5 无显式规则的目录 + 跨域 → exit 1" tests/agent/x.ts scripts/control-tower/check-ownership.py
+if echo "$OUT" | grep -q "B5 目录未登记"; then pass "B5 显式点名「B5 目录未登记」"; else fail "B5 未点名目录未登记"; fi
+if echo "$OUT" | grep -q "tests/agent"; then pass "B5 点名具体目录 tests/agent"; else fail "B5 未点名具体目录"; fi
+if echo "$OUT" | grep -q "没有显式规则"; then pass "B5 明说真错是「这些目录没有显式规则」（非「变更跨域」）"; else fail "B5 未明说真错"; fi
+if echo "$OUT" | grep -q "新目录没登记"; then fail "返工3 回归: 文案仍把既有目录称「新目录」"; else pass "返工3: 文案不再用「新目录」措辞（改「无显式规则的目录」）"; fi
+if echo "$OUT" | grep -q "子目录：无显式规则"; then pass "返工3: 子目录按层级标注"; else fail "返工3: 子目录未按层级标注"; fi
+if echo "$OUT" | grep -q "ownership.yaml"; then pass "B5 给出修复路径（ownership.yaml 补登记）"; else fail "B5 未给修复指引"; fi
+run_expect 1 "返工3 顶层目录（tests/ 散装文件）→ 标「顶层目录」不叫新目录" \
+  tests/circular-dependency.test.ts docs/README.md scripts/control-tower/check-ownership.py
+if echo "$OUT" | grep -q "顶层目录：无显式规则"; then pass "返工3: 顶层目录按层级标注"; else fail "返工3: 顶层目录未标注"; fi
+run_expect 0 "B5 不新增阻断: 目录未登记路径 + 同域文件 → 仍 exit 0" docs/foo/y.md src/server.ts
+if echo "$OUT" | grep -q "B5 目录未登记"; then pass "B5 在 exit 0 路径上也显式提示（不静默）"; else fail "B5 通过路径未提示"; fi
+run_expect 0 "B5 不误报已登记目录（docs/synova/dispatch → mac）" \
+  docs/synova/dispatch/D911-门禁三缺陷根治-20260922.md --owner mac
+if echo "$OUT" | grep -q "B5 目录未登记"; then fail "B5 对已登记目录误报"; else pass "B5 对已登记目录零误报"; fi
+run_expect 0 "B5 不误报 tests/control-tower/**（已登记）" tests/control-tower/check-ownership.test.sh --owner mac
+if echo "$OUT" | grep -q "B5 未登记目录"; then fail "B5 对 tests/control-tower 误报"; else pass "B5 对 tests/control-tower 零误报"; fi
+
+echo ""
+echo "── 12. D911 产物契约: standby 不是 CODEOWNERS 的输入（单点开关，无双写点）──"
+"$PYBIN" "$TOOL" --emit-codeowners > "$TMPD/co-real.txt" 2> "$TMPD/co-real.err"; EMIT_A=$?
+"$PYBIN" "$TOOL" --emit-codeowners --yaml "$TMPD/sb-nostandby.yaml" > "$TMPD/co-nostandby.txt" 2> "$TMPD/co-nostandby.err"; EMIT_B=$?
+if [ "$EMIT_A" = 0 ] && [ "$EMIT_B" = 0 ]; then
+  pass "两次 --emit-codeowners 均 exit 0（stderr 落文件，未吞错）"
+else
+  fail "二次生成失败（EMIT_A=$EMIT_A EMIT_B=$EMIT_B）: $(head -3 "$TMPD/co-real.err" "$TMPD/co-nostandby.err")"
+fi
+if grep -q "standby" "$TMPD/co-real.txt"; then
+  fail "CODEOWNERS 含 standby 字样（standby 成了双写点 → win 回归要改两处）"
+else
+  pass "CODEOWNERS 不含 standby 字样（standby 单一事实源只在 ownership.yaml）"
+fi
+if diff -q "$TMPD/co-real.txt" "$TMPD/co-nostandby.txt" >/dev/null 2>&1; then
+  pass "反证: 删 standby 段后 --emit-codeowners 输出逐字节不变（standby 不是生成输入）"
+else
+  fail "删 standby 段后 CODEOWNERS 生成结果变了（双写点）"
+  diff "$TMPD/co-real.txt" "$TMPD/co-nostandby.txt" | head -5 >&2
+fi
+# standby 段不参与 rules 求值: 同一文件的判定在「有/无 standby」两版 yaml 下必须逐字节一致
+OUT_A="$("$PYBIN" "$TOOL" --owner win tests/agent/x.ts --yaml "$YAML" 2>&1)"; EA=$?
+OUT_B="$("$PYBIN" "$TOOL" --owner win tests/agent/x.ts --yaml "$TMPD/sb-nostandby.yaml" 2>&1)"; EB=$?
+if [ "$EA" = 0 ] && [ "$EB" = 0 ] && [ "$OUT_A" = "$OUT_B" ]; then
+  pass "standby 段不参与 rules 求值（有/无该段 → 归属判定与输出逐字节一致）"
+else
+  fail "standby 段参与了 rules 求值（EA=$EA EB=$EB）"
+fi
+if grep -qE '^(mac|win|k3)' "$TMPD/co-real.txt" | grep -qE '代行|proxy'; then
+  fail "归属行混入代行语义"
+else
+  pass "归属行无代行语义（生成产物纯归属）"
+fi
+
+echo ""
 echo "═══════════════════════════════════════════════════════════"
 if [ "$FAIL" -eq 0 ]; then
   echo "  ✅ 全部通过: $PASS 项"
