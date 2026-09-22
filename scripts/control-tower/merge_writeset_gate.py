@@ -652,7 +652,8 @@ def _emit_exempt_channel(result: dict) -> None:
     if not chan:
         return
     if chan == "unavailable":
-        print(f"   ⚠️ 豁免通道: 不可用 — {result.get('exempt_channel_reason', PR_BODY_UNAVAILABLE_REASON)}")
+        # 字面口径（D911 验收 #3）: 「豁免通道不可用」必须是**连续**字面，不得被 `: ` 割裂
+        print(f"   ⚠️ 豁免通道不可用 — {result.get('exempt_channel_reason', PR_BODY_UNAVAILABLE_REASON)}")
         print(f"      修复指引: {result.get('exempt_channel_fix', EXEMPT_CHANNEL_FIX)}")
     elif chan == "empty":
         print("   ℹ️ 豁免通道: 可用但 PR 正文为空（无可读豁免声明）")

@@ -82,7 +82,7 @@
 
 - [x] A1 subject 回退只扫 merge-base 范围、扫不到即 None；verify: bash tests/control-tower/merge_writeset_gate.test.sh（⑬⑭ 断言）
 - [x] A2 声明源改读 head 树（工作树不在该分支仍对账）；verify: bash tests/control-tower/merge_writeset_gate.test.sh（⑮⑯ 断言）
-- [x] A3 豁免通道不可用进结论块 + --json 且给替代路径；verify: bash tests/control-tower/merge_writeset_gate.test.sh（⑰⑰b⑱ 断言）
+- [x] A3 豁免通道不可用进结论块 + --json 且给替代路径；verify: bash tests/control-tower/merge_writeset_gate.test.sh（⑰⑰b⑰c⑱ 断言）
 - [x] 反例两条仍拦（卡不存在 exit 2 / 真夹带 exit 1）；verify: bash tests/control-tower/merge_writeset_gate.test.sh（⑲⑳ 断言）
 - [x] 回归只增不减（既有 29 条 → 终态 56 条）；verify: bash tests/control-tower/merge_writeset_gate.test.sh
 - [x] 全量夹具 exit 0；verify: bash tests/control-tower/merge_writeset_gate.test.sh
@@ -168,7 +168,7 @@ EXIT=1
 修后版 gate（本次 blob 4a550437）:
 $ python3 scripts/control-tower/merge_writeset_gate.py --repo-root <wt> --base origin/main --head 9e24daf5 --branch gate/ctrl-verify-batch2
 ✅ 结论: pass — 提交文件集 ⊆ 声明写集（无夹带）
-   ⚠️ 豁免通道: 不可用 — PR 正文不可用（--pr-body 未给且无 GITHUB_EVENT_PATH）   ← 修后：结论块内
+   ⚠️ 豁免通道不可用 — PR 正文不可用（--pr-body 未给且无 GITHUB_EVENT_PATH）   ← 修后：结论块内（**连续**字面）
       修复指引: 改用声明文件内 `## 写集豁免`（S1 task-state / S2 dev doc / S3 brief 任一文件内该段落；不依赖 PR 正文）
    任务: D861 | 分支: gate/ctrl-verify-batch2
    变更集: 15 个文件（merge-base 3643db6a）
@@ -195,7 +195,8 @@ $ SYNO_D708_GATE=/tmp/d911a-gate-pre.py bash tests/control-tower/merge_writeset_
   ❌ ⑮ A2 sources.brief 异常: None
   ❌ ⑯ A2 期望 exit 2，实得 0（本地工作树被当成声明源 = 假绿）          ← 修前：未提交的本地文件也当声明
 === D911-A3: 豁免通道不可用 = 结论字段 + 替代路径 ===
-  ❌ ⑰ A3 结论块内无豁免通道字段（只在尾注）: '   任务: D849 | 分支: fix/D849-a3'
+  ❌ ⑰ A3 结论块内无「豁免通道不可用」（只在尾注或字面被割裂）: '   任务: D849 | 分支: fix/D849-a3'
+  ❌ ⑰c A3 字面位置不符（结论行=2 字面行= 首条 warns 行=18）
   ❌ ⑰ A3 缺替代路径指引
   ❌ ⑰ A3 ③ 指引未指向声明文件
   ❌ ⑰ A3 --json exempt_channel=None（期望 unavailable）
@@ -204,20 +205,20 @@ $ SYNO_D708_GATE=/tmp/d911a-gate-pre.py bash tests/control-tower/merge_writeset_
   ❌ ⑰b A3 GITHUB_EVENT_PATH 异常时通道状态异常
 === D911 反例: 该拦的仍须拦 ===
   ✅ ⑲×3  ✅ ⑳×2   （两侧全绿 = 该拦的仍拦；详见 D6）
-  结果: 38 通过, 18 失败
+  结果: 39 通过, 19 失败
 EXIT=1
 ```
 修后同一夹具：
 ```
 $ bash tests/control-tower/merge_writeset_gate.test.sh
-  结果: 56 通过, 0 失败
+  结果: 58 通过, 0 失败
 EXIT=0
 ```
 
 ### D5 回归只增不减
 ```
-修前 29 条 → 修后 56 条（既有 29 条断言逐条保留未改；新增 27 条 = ⑬⑭⑮⑯⑰⑰b⑱⑲⑳）
-红侧 38 通过 / 18 失败：失败的 18 条全部落在新增判据（⑬-⑰b），既有 ①-⑫ 在两侧均通过
+修前 29 条 → 修后 58 条（既有 29 条断言逐条保留未改；新增 29 条 = ⑬⑭⑮⑯⑰⑰b⑰c⑱⑲⑳）
+红侧 39 通过 / 19 失败：失败的 19 条全部落在新增判据（⑬-⑰c），既有 ①-⑫ 在两侧均通过
   → 证明新增判据**只在缺陷存在时红**，不是「把门禁改软」或「换个法子过」
 ```
 
@@ -305,6 +306,35 @@ $ git diff --name-only origin/main    # 相对 origin/main 视角（含 main 领
 ```
 52267e9f  fix(D911): D708 合并级写集门禁三缺陷根治——取号限定 merge-base 范围/声明源改读 head 树/豁免通道升级为结论字段
 c42c563e  chore: bypass COMMITTED 登记 (auto hook, D521)      ← post-commit 影子提交（HEAD，已推送）
+```
+
+### D10 字面口径返工（N3，队长指令 · 只改字面不改行为）
+队长转来 verifier-a 的 N3：验收判据第 3 条引用字面「**豁免通道不可用**」，而先前输出是 `⚠️ 豁免通道: 不可用`
+（多一个 `:` + 空格）→ 字面不连续。本次只改这一处字面（`_emit_exempt_channel` 的 unavailable 行去掉 `: `），
+**控制流 / 状态字段名 / 退出码语义 / 放行行为零改动**；`ℹ️ 豁免通道: 可用但 PR 正文为空`（另一状态）未动。
+并把「字面连续」变成**行为断言**（不靠人眼）：
+```
+$ bash tests/control-tower/merge_writeset_gate.test.sh
+  ✅ ⑰ A3 连续字面「豁免通道不可用」在结论块内（结论行下一行）
+  ✅ ⑰c A3 连续字面「豁免通道不可用」位于结论块内（结论行 2 → 字面行 3 → 首条 warns 行 无）
+  ✅ ⑰c A3 未使用旧字面「豁免通道: 」（字面连续）
+  ✅ ⑰ A3 --json: exempt_channel=unavailable（结论字段落 JSON）
+  结果: 58 通过, 0 失败
+EXIT=0
+$ SYNO_D708_GATE=/tmp/d911a-gate-pre.py bash tests/control-tower/merge_writeset_gate.test.sh
+  结果: 39 通过, 19 失败      # 19 条全部落在新增判据（⑬-⑰c），既有 ①-⑫ 两侧都绿
+EXIT=1
+```
+E2E 夹具（`--head 9e24daf5`）新结论块原文：
+```
+── merge-writeset-gate (D708) 合并级写集对账 ──
+✅ 结论: pass — 提交文件集 ⊆ 声明写集（无夹带）
+   ⚠️ 豁免通道不可用 — PR 正文不可用（--pr-body 未给且无 GITHUB_EVENT_PATH）
+      修复指引: 改用声明文件内 `## 写集豁免`（S1 task-state / S2 dev doc / S3 brief 任一文件内该段落；不依赖 PR 正文）
+   任务: D861 | 分支: gate/ctrl-verify-batch2
+   变更集: 15 个文件（merge-base 3643db6a）
+EXIT=0
+（同命令修前版：❌ block / 任务: D821 / EXIT=1）
 ```
 
 ### 遗留清单（文件:行 + 为什么不改）

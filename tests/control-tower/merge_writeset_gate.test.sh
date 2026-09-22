@@ -410,8 +410,23 @@ A3_OUT=$(sb_run "$DA3" "$A3_BASE" HEAD fix/D849-a3); A3_RC=$?
   || no "⑰ A3 期望 exit 1，实得 $A3_RC"
 A3_NEXT=$(echo "$A3_OUT" | grep -a -A1 '结论:' | tail -1)
 case "$A3_NEXT" in
-  *豁免通道*) ok "⑰ A3 「豁免通道不可用」在结论块内（结论行下一行）" ;;
-  *) no "⑰ A3 结论块内无豁免通道字段（只在尾注）: '$A3_NEXT'" ;;
+  *豁免通道不可用*) ok "⑰ A3 连续字面「豁免通道不可用」在结论块内（结论行下一行）" ;;
+  *) no "⑰ A3 结论块内无「豁免通道不可用」（只在尾注或字面被割裂）: '$A3_NEXT'" ;;
+esac
+# ⑰c 字面口径（D911 验收 #3，K3 字面可检）：连续字面必须落在**结论块内**（结论行之后、warns 之前），
+#     且不得退回旧写法「豁免通道: 不可用」（`:` + 空格 会把字面割裂）
+A3_CONC_NO=$(echo "$A3_OUT" | grep -a -n '结论:' | head -1 | cut -d: -f1)
+A3_LIT_NO=$(echo "$A3_OUT" | grep -a -n '豁免通道不可用' | head -1 | cut -d: -f1)
+A3_WARN_NO=$(echo "$A3_OUT" | grep -a -n '^   ⚠️  ' | head -1 | cut -d: -f1)
+if [ -n "$A3_LIT_NO" ] && [ -n "$A3_CONC_NO" ] && [ "$A3_LIT_NO" -gt "$A3_CONC_NO" ] \
+   && { [ -z "$A3_WARN_NO" ] || [ "$A3_LIT_NO" -lt "$A3_WARN_NO" ]; }; then
+  ok "⑰c A3 连续字面「豁免通道不可用」位于结论块内（结论行 $A3_CONC_NO → 字面行 $A3_LIT_NO → 首条 warns 行 ${A3_WARN_NO:-无}）"
+else
+  no "⑰c A3 字面位置不符（结论行=${A3_CONC_NO} 字面行=${A3_LIT_NO} 首条 warns 行=${A3_WARN_NO}）"
+fi
+case "$A3_NEXT" in
+  *豁免通道:*) no "⑰c A3 退回旧字面「豁免通道: 不可用」（字面被 '$A3_NEXT' 割裂）" ;;
+  *) ok "⑰c A3 未使用旧字面「豁免通道: 」（字面连续）" ;;
 esac
 echo "$A3_OUT" | grep -q '修复指引: 改用声明文件内' \
   && ok "⑰ A3 结论块给出替代路径（改用声明文件内 ## 写集豁免）" || no "⑰ A3 缺替代路径指引"
