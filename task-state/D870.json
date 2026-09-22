@@ -1,7 +1,7 @@
 {
   "task_id": "D870",
   "title": "官方参照系学习计划（Electron 封装 / UI / 模型切换 / 借鉴重核）—— 四份对照表 + 借鉴总表 + 改法卡建议清单",
-  "status": "claimed",
+  "status": "audited",
   "risk": "medium",
   "spec": "参照系 = /Users/wane/src/deepseek-harness/ @ tag dsh-v0.1.6-alpha.2 @ commit ddefc45fbc7f8e46dd73185e68295696d1297887（CTO 2026-09-21 裁定唯一）。四切片：A 内核在 Electron 内顺畅运行（9 面）/ B UI 美观流畅简洁（≥10 模式）/ C 模型选择与切换（≥8 必测用例，重点）/ D 借鉴重核（100% 覆盖）。复制边界：核心能力（诊断/哨兵/专家/本体/度量/参数库）自研；工程与体验（Electron 生命周期/打包更新/UI 模式/模型切换时序）可参照复制实现思路（在 Synova 重写）；G1 守卫生效（grep -rn \"@deepseek-ai\" src/ packages/ = 0）。UI 学模式、不抄开发者工具形态（撤回 8 仍有效）。",
   "write_set": [
@@ -16,10 +16,20 @@
     "docs/synova/product-lines/evidence/D870-closeout-20260921.md"
   ],
   "impl": null,
-  "audit": null,
+  "audit": {
+    "verdict": "PASS",
+    "auditor": "kimi-k3",
+    "at": "2026-09-22",
+    "report": "docs/synova/audit-reports/2026-09-22-D870.md ｜ 报告分支 refs/heads/audit/k3-20260922-d870（基于 feat/d870-official-baseline-study @ e1af78f0，只含报告 + 本回填）",
+    "p0": "无",
+    "p1": "无",
+    "p2": "P2-1 CTO 复审口径『总表行数=104（含那5条）』机械不自洽：104 为口径A三分类（不含5条），含5条总数=109；产出件 §2.0 双口径（104/103）准确可复算，产出无需返修（归因 control-tower）。P2-2 D件 §4.2 #9『全树无此名』略过宽：workspace 包名/目录口径成立（0命中），但官方内部文档有 14 处文字痕迹（invariants/README.md:69 表列该名而目录不存在 + .agents/notes 12 处）；结论不受影响（归因 implement）。P2-3 task-state write_set[8] D870-closeout-20260921.md 未按此名交付（实为 D870-diff + D870-leftovers），清单漂移（归因 implement）。P2-4 D870-diff §二 引用 .claude/exempt.log 已留痕，该文件未入库分支内不可核验（承重证据 bypass.log 已入库；归因 implement）。P2-5 A-38 Tray 0 处口径应限定 Electron 应用层：installer/window-frame.cpp:252 有 Win32 FLASHW_TRAY 字样（非 Tray 实现，注记；归因 audit）。",
+    "evidence_summary": "必核全绿：11文件/4847+/0- @e1af78f0 实测一致；六件 sha256 与自验件冻结值逐一吻合（验证的=交付的）；109=66/36/7(class字段)，官方无实现恰5条且双口径均剔除（K3 自解析JSON块复算 104/103）；D 14项+第15项单列（宿主不在main实测fatal、ingest分支9文件）；199@1062ba2f 与 198@3643db6a 均自跑复现；17/104=16.3%、112/199=56.3%、109/109 自算一致；表头五处钉 ddefc45/dsh-v0.1.6-alpha.2+四断面错配警示。对抗抽样 43/109=39.4%：路径 43/43 存在、行号 46/46 界内、内容级 spot-check ≥22 处全吻合；5条官方无实现负向声明逐条自跑反证（0命中）；失效清单抽复 4/4 成立；D871-D910 机械提取连续无缺。L3：4笔 chore:bypass 全为 pre-commit PASS 常规登记非绕过；远端=e1af78f0 且未合并（K3前不合并守约）；G1=0；禁改区 0。可合并。",
+    "merge_gate": "通过——可合并 feat/d870-official-baseline-study（P2 为措辞/登记精度项，不要求返修重审）"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-09-21",
-  "updated_by": "synova-squad-lead",
+  "updated_at": "2026-09-22",
+  "updated_by": "kimi-k3",
   "domain": "mac",
   "owner": "synova-squad-lead",
   "executor": "synova-squad-lead",
