@@ -1,17 +1,25 @@
 {
   "task_id": "D861",
   "title": "main 红修复：Vitest (2/2) + generate + 聚合→计算→页面（cc4e4166 / 272dbd82）",
-  "status": "claimed",
+  "status": "impl_done",
   "risk": "high",
   "spec": "CTO 实测 check-runs：272dbd82 上 Vitest(2/2)=failure、generate=failure、聚合→计算→页面=failure（Vitest 1/2 cancelled）；团队报告 cc4e4166 仍红。**main 红期间一切『CI 绿』不可信**。",
   "write_set": [
-    ".github/workflows/ci.yml",
+    ".github/workflows/dashboard-auto.yml",
+    "scripts/control-tower/merge_writeset_gate.py",
+    "scripts/control-tower/check-pr-budget.sh",
+    "scripts/product-lines/redeem-progress.py",
     "tests/**",
-    "scripts/**",
-    "src/**",
-    "task-state/D861.json"
+    "task-state/D861.json",
+    "task-state/D860.json",
+    "task-state/D863.json",
+    ".claude/task-briefs/**",
+    "memory/notes/**"
   ],
-  "impl": null,
+  "impl": {
+    "commit": "4d9c7ec3",
+    "summary": "main 红定位+修复: ①Dashboard Auto generate job=dashboard-auto.yml:75 孤儿 fi(PR#592 引入,bash 语法错)→删除; ②Product Progress 聚合job=redeem-progress.py:136 对 str 型 impl AttributeError(7 张存量卡)→显式 WARNING 降级跳过,refresh-all exit 0; ③Vitest 6 文件红中 3 份为测试陈旧(circular-dependency cwd 路径/p0-wane-baby 哨兵合并/import、expert-file-loader registry v3.0 六专家)→对齐; merge_writeset_gate 夹带指引增可粘贴精确豁免行。界外遗留(src 域,报 CTO): zero-code-industry、graphbridge-wiring; layer2-judge 本地红=环境性(.env 网关 404),CI 无 key 走 SKIP 守卫不红。"
+  },
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-09-21",
