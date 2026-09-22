@@ -92,6 +92,10 @@ OUT=$(run_gate); rc=$?
 echo "$OUT" | grep -q 'src/b_smuggled.ts' && ok "② 逐文件点名夹带文件" || no "② 未点名夹带文件"
 echo "$OUT" | grep -q '夹带文件 1 个' && ok "② 计数正确（1 个）" || no "② 计数不符: $(echo "$OUT" | grep -a 夹带 | head -1)"
 echo "$OUT" | grep -q '修复指引' && ok "② 输出修复指引（三选一）" || no "② 缺修复指引"
+# D861: 修复指引必须给得出**可执行**输出——逐文件精确路径豁免行可直接粘贴（CTO 实证踩坑：模糊描述不被接受）
+echo "$OUT" | grep -q '可直接粘贴的精确豁免行' && ok "② D861 指引含可粘贴豁免行标题" || no "② 缺可粘贴豁免行标题"
+echo "$OUT" | grep -q -- '- src/b_smuggled.ts — <理由' && ok "② D861 夹带文件逐条给出精确路径豁免行" || no "② 未逐条给出精确路径豁免行"
+echo "$OUT" | grep -q '模糊描述' && ok "② D861 明示模糊描述不被匹配" || no "② 未明示模糊描述风险"
 echo "$OUT" | grep -q 'S3:brief.Q2-include' && ok "② 输出声明源（可审计哪个源收录）" || no "② 未标注声明源"
 
 # 撤回夹带 → 转绿（T3 实证的本地等价）

@@ -72,4 +72,3 @@ jobs:
           echo "   后续由 CTO session 显式完成（链路文档 docs/synova/coordination/CI-诊断通道.md）:"
           echo "   1) 用 PAT 从 auto/dashboard 开 PR（真实凭据 → 必需检查正常报告）"
           echo "   2) CI 全绿后 API squash 合并（合并是 CTO 的工作，D570）"
-          fi
