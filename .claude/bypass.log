@@ -1633,3 +1633,4 @@ Binary file .claude/bypass.log matches
 2026-09-23T09:47:17+08:00 | COMMITTED | CTO merge 冲突解决提交（origin/main → audit/k3-d864-reaudit，解 task-state/D821.json union 冲突；merge 提交属 D331 --no-merges 豁免范围，显式登记备查） | TASK_ID=D712-merge | AGENT=dsh-cto | HASH=c513d0d0c31371d6be4688d0e23f4b58fa006d19
 2026-09-23T09:50:25+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=4f5f617a41e98903952344c8dd43ee8574e691f4
 2026-09-23T09:57:48+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=2480199a769cd086e50d2307ac88271d48a4c3be
+2026-09-23T10:25:21+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=ad3bc89924784d44b7d312fb6d96cb2e5518d4c8
