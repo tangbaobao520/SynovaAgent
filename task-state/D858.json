@@ -1,0 +1,67 @@
+{
+  "task_id": "D858",
+  "title": "D854/CT-70 审计条件闭环：canary 覆盖语义物理展开（glob）+ 绿腿告警可见 + 假覆盖 fail-closed + 证据包标准化",
+  "status": "audited",
+  "risk": "high",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": "d858-agent-team（编码 1 + 自验 1，队长=并行 CTO session）",
+  "branch": "gate/d858-canary-glob",
+  "worktree": ".synova-wt-d858",
+  "base": "origin/main cc4e4166",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [],
+  "blocked": null,
+  "target": "2026-W38",
+  "spec": "K3 审计 docs/synova/audit-reports/2026-09-20-K3-D854.md 结论 CONDITIONAL PASS（创始人 2026-09-20 纪律：有条件通过=未通过）→ 四条条件逐条闭环。派单件：docs/synova/coordination/派单-D858-CT70审计条件闭环-20260920.md。规格：.claude/task-briefs/2026-09-21-D858-canary-glob-coverage.md",
+  "impl": "scripts/control-tower/check-canary-drift.sh（最终 V4 = 冻结 sha256 ec7f49aa…，281 行）+ tests/control-tower/check-canary-drift.test.sh（addd1d69…，339 行，配对测试 70 通过 0 失败）：覆盖语义物理化（非注释行可执行项 + glob 文件系统展开 nullglob）/ 注释声明一致性 fail-closed（exit 1 + ::error canary-fake-coverage）/ 独立通道 GITHUB_STEP_SUMMARY / awk 缺失 fail-closed（exit 2 + ::error canary-exec）/ 注释词法对齐真实 shell（; | & ( ) 词边界 + 引号转义感知）/ SYNO_AWK_BIN 注入缝（T7 修 CI windows 真红 run 35528922575 job 106125920439）。回归：main 729|41|71|exit 0 stdout sha256 b12210c4… MATCH；#682 预演 729|44|68|0|exit 0 stdout sha256 78b5a299… MATCH。",
+  "audit": {
+    "verdict": "PASS",
+    "auditor": "kimi-k3",
+    "report": "docs/synova/audit-reports/2026-09-21-K3-D858-复审.md",
+    "date": "2026-09-21",
+    "summary": "D854 四条条件逐条物理闭环（K3 自建夹具独立复现，非重跑交付方断言）：P1 物理展开（删 glob 行→exit 1）/ P2 绿腿告警（匿名 API 取 run 35529862520 双腿 success + canary-drift 正文）/ L4-1 假覆盖报红 / L4-3 匿名通道（本次审计即用其完成）。冻结件哈希一致、冻结后零代码漂移、未碰 scripts/audit/**。已知边界三项判可登记不阻断；ci.yml:277 || true 吞码（CT-78/D862）不阻断 #687。main Vitest (2/2) 红为存量（CT-81，D858 零 TS 改动）。",
+    "merge_ruling": "PR #687 可合并（合并前更新本卡 impl 字段 V3 滞后口径已完成）。PR #682 暂缓：owner rebase + 与 D862（去 || true）同批或其后合并。"
+  },
+  "fix_task_id": null,
+  "write_set": [
+    "scripts/control-tower/check-canary-drift.sh",
+    "tests/control-tower/check-canary-drift.test.sh",
+    "task-state/D858.json",
+    ".claude/task-briefs/2026-09-21-D858-canary-glob-coverage.md",
+    "docs/synova/product-lines/evidence/D858-*",
+    "docs/synova/coordination/收口-D858-*",
+    "docs/synova/coordination/D858-*",
+    "memory/notes/proposed/2026-09-21-D858-*"
+  ],
+  "write_set_hard_boundary": [
+    ".github/workflows/ci.yml（CT-70/PR #682 独占，本卡不碰；`|| true` 吞退出码 + 成功路径回捞 ⚠ 两处 → D862 排期）",
+    "tests/project/**（#682 写集）",
+    "scripts/audit/**（审计红线）"
+  ],
+  "acceptance_points": [
+    "P1：物理展开承载覆盖语义 — K3 复审闭环（自建夹具：删 glob 执行行留注释 → exit 1；glob 零命中 → exit 1）",
+    "P2：独立通道 GITHUB_STEP_SUMMARY + 匿名 API 双腿正文 — K3 复审闭环（run 35529862520 job 106128436921/106128436902 success + canary-drift annotation）",
+    "L4-1：注释声明未覆盖 → exit 1 + ::error canary-fake-coverage — K3 复审闭环",
+    "L4-3：匿名取证据通道标准化 — K3 复审闭环（全程零 token 复核成功）",
+    "回归：main 41/71/exit 0 sha b12210c4 MATCH；#682 预演 44/68/0/exit 0 sha 78b5a299 MATCH — K3 复审闭环",
+    "M6 三件 + PR #687 + K3 复审 — 完成（verdict PASS）"
+  ],
+  "next": "① CTO 按 K3 裁决合并 PR #687 ② PR #682：owner rebase + 与 D862 同批或其后 ③ D862：移除 ci.yml:277 || true（+ 绿腿 ⚠ 回捞），等 #682/#657 ④ CT-80/CT-81 各自轨道",
+  "authority": [
+    "docs/synova/audit-reports/2026-09-20-K3-D854.md",
+    "docs/synova/audit-reports/2026-09-21-K3-D858-复审.md（本次 PASS）",
+    "docs/synova/coordination/派单-D858-CT70审计条件闭环-20260920.md",
+    "docs/synova/coordination/AUDIT-FINDINGS-LEDGER.md CT-70/CT-78/CT-79/CT-80"
+  ],
+  "evidence": [
+    "docs/synova/product-lines/evidence/D858-evidence-20260921.md",
+    "docs/synova/product-lines/evidence/D858-verify-20260921.md",
+    "docs/synova/coordination/收口-D858-canary-glob-20260921.md",
+    "docs/synova/coordination/D858-证据包标准件-匿名取CI证据-20260921.md",
+    "docs/synova/coordination/D858-开工前冲突扫描-20260921.md"
+  ],
+  "updated_at": "2026-09-21T12:00:00+08:00",
+  "updated_by": "kimi-k3",
+  "note": "K3 复审 PASS（2026-09-21）。四条条件独立物理复现闭环；已知边界三项判可登记；impl 字段 V3 滞后口径已在本次回填中修正为 V4 终态。"
+}

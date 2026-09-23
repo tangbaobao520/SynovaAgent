@@ -1,0 +1,43 @@
+{
+  "task_id": "D913",
+  "title": "卡登记补齐：D864/D865/D866–D870 入 task-state + D870 K3 复审派单",
+  "status": "impl_done",
+  "risk": "medium",
+  "domain": "mac",
+  "owner": "synova-cto",
+  "executor": "synova-cto",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [
+    "D849"
+  ],
+  "blocked": null,
+  "target": "2026-W39",
+  "spec": "登记缺口实证：`task-state/` 里 D864/D865/D870 三张卡**不存在**（其交付只活在分支与 coordination 文档里）→ `alloc-task-id.sh` 取号器看不见它们。这是 **D850 撞号（研究院材料权威级 vs 度量口径改造）** 与 **D862 撞号（绿腿/canary vs P-1 收尾）** 的同源风险。补齐后取号器才有完整占用表。",
+  "write_set": [
+    "task-state/D864.json",
+    "task-state/D865.json",
+    "task-state/D866.json",
+    "task-state/D867.json",
+    "task-state/D868.json",
+    "task-state/D869.json",
+    "task-state/D870.json",
+    "task-state/D913.json",
+    "docs/synova/dispatch/D870-K3复审派单-20260922.md",
+    ".claude/task-briefs/"
+  ],
+  "impl": {
+    "summary": "补登 7 张卡（D864 复审 P1-2 闭环 / D865 PASS 登记 / D866 首 token 心跳 / D867 合并回退防护 / D868 已并入 D911 / D869 门禁组 7 死检查 / D870 官方参照系学习）+ D870 K3 复审派单件（含 103/104 双口径裁定）。"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-22",
+  "updated_by": "synova-cto",
+  "acceptance_points": [
+    "七张卡在 main 上 JSON 合法且 task_id 与文件名一致",
+    "`scripts/control-tower/alloc-task-id.sh` 再次分配时不会给出这些号",
+    "D870 K3 复审派单件在 main 可读（§〇-h：派单件先落 main 才算发出）",
+    "D868 明标 superseded_by=D911，不重复派工"
+  ],
+  "next": "① 落 main ② D870 交 K3 复审",
+  "note": "CTO 自有登记工作（不派工）。D871–D910 预留给 D870 改法卡（见 D911 裁定记录 §裁定 7）。"
+}
