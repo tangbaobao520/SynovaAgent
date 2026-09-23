@@ -267,3 +267,15 @@ documents:
     path: .dsh/skills/dev-doc-spec/SKILL.md
     status: active
     owner: DSH
+
+  - id: DOC-0117
+    type: knowledge
+    path: .claude/skills/squad-discipline/SKILL.md
+    status: active
+    owner: DSH
+
+  - id: DOC-0118
+    type: knowledge
+    path: .dsh/skills/squad-discipline/SKILL.md
+    status: active
+    owner: DSH
