@@ -19,7 +19,26 @@ m=re.search(r'(- id: persona\n\s+name: \'@deepseek-ai/dsh-persona\'\n\s+config:\
 assert m, '未定位 persona prefix 块'
 body='\n'.join('      '+l if l.strip() else l for l in persona.rstrip().splitlines())
 new=m.group(1)+'\n'+body+'\n'
-open(out,'w',encoding='utf-8').write(src[:m.start()]+new+src[m.end():])
+txt=src[:m.start()]+new+src[m.end():]
+
+# D931 修复（创始人 2026-09-23 指出「小队是摆设」）：CTO 预设挂的是 **legacy delegation（子代理）**，
+#   而 Agent Teams 需要 @deepseek-ai/dsh-experimental-tool-agent-team（README 原文：it replaces
+#   legacy subagent controls with the same tool names → 两者同名，须移除 legacy）。不换 = 队长
+#   物理上只会开子代理，小队只是面板摆设。
+_m=re.search(r'\n- id: delegation\n[\s\S]*?(?=\n- id: |\Z)', txt)
+if _m:
+    team_blocks = ("\n- id: agent-team\n  name: '@deepseek-ai/dsh-experimental-agent-team'\n"
+                   "  config:\n    maxMembers: 4        # 纪律物理化：成员 ≤4（队长 + ≤2 编码 + 1 自验）\n"
+                   "    maxTasks: 256\n    maxPendingMessagesPerMember: 64\n"
+                   "    maxMessageBytes: 65536\n    disposalTimeoutMs: 5000\n"
+                   "\n- id: tool-agent-team\n  name: '@deepseek-ai/dsh-experimental-tool-agent-team'\n"
+                   "  config:\n    freshProvider: spawn\n    forkProvider: fork\n"
+                   "\n- id: ui-agent-team\n  name: '@deepseek-ai/dsh-experimental-client-ui-agent-team'\n")
+    txt = txt[:_m.start()] + team_blocks + txt[_m.end():]
+    print('已替换 delegation → agent-team + tool-agent-team')
+else:
+    print('⚠️ 未定位 delegation 块（组成模板可能已变）— 未替换')
+open(out,'w',encoding='utf-8').write(txt)
 print('已生成', out)
 PY
-echo "✅ 安装完成：$DST（重启 DSH 后在选择器里选 🎽 Synova 小队队长）"
+echo "✅ 安装完成：${DST}（重启 DSH 后在选择器里选 🎽 Synova 小队队长）"

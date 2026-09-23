@@ -1,0 +1,36 @@
+{
+  "task_id": "D935",
+  "title": "M1 ownership presets 域修正（窄卡）",
+  "status": "claimed",
+  "risk": "medium",
+  "spec": "CTO 2026-09-24 派单「Mac 侧 WIP=1 第 1 单 — 修 ownership.yaml 域判定」，经前提实测与 CTO 裁定收窄为 A 方案（最小可变更）。缺陷：`docs/synova/presets/**` 未在 ownership.yaml 登记 → 落 `**` 兜底判 `win` → 与同 PR 的 mac 文件混装触发 D734「变更跨域」硬拦 → 实际卡住 PR #727（D931 小队预设接线）。归属权威源 = TASK-ROUTING.md:37「… + coordination + DSH 预设与技能 → Mac DSH」；兄弟路径 .claude/skills/**、.dsh/** 同源同归属，presets 是唯一漏登兄弟。",
+  "write_set": [
+    "docs/synova/coordination/ownership.yaml",
+    ".github/CODEOWNERS",
+    "tests/control-tower/check-ownership.test.sh",
+    ".claude/task-briefs/2026-09-24-D935-M1-ownership-presets-域修正.md",
+    "memory/notes/proposed/2026-09-24-d935-ownership-presets-domain.md",
+    "docs/synova/product-lines/evidence/D935-20260924/",
+    "task-state/D935.json"
+  ],
+  "impl": "4015ab66",
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-24",
+  "updated_by": "synova-squad-lead",
+  "domain": "mac",
+  "owner": "synova-squad-lead",
+  "executor": "d935-encoder",
+  "milestone": "M1 控制塔域判定",
+  "depends_on": [],
+  "blocked": "已解除。开工前 M2 扫描发现本卡 3 文件与在飞卡 **D911**（claimed/high/5 工作树）write_set 100% 重叠；依 TASK-ROUTING §串行点「写集重叠 → 停手问创始人」上报，**CTO 裁定 A**：M1 先合、令 D911 暂停这 3 文件。",
+  "target": "2026-W39",
+  "acceptance_points": [
+    "① 判别性夹具：正常 presets→mac（exit 0）+ 沙箱删该规则后同一路径必红（exit 1）—— 证明判据真读数据，非 grep 型静态判据",
+    "② 变基预演（D931 真实写集 8 件）：修复前 exit 1（❌ ② 变更跨域 mac/win）→ 修复后 exit 0（✅ ② 变更单域 mac）",
+    "③ 本地 D733/D734 两组全绿：check-ownership.test.sh 58/58、check-pr-budget.test.sh 32/32",
+    "④ 未引入兜底放行：ownership.yaml 改 8 插入 / 0 删除；`**` 兜底块与 domain_neutral 段对 origin/main 逐字节相同"
+  ],
+  "next": "① 队长 push + ls-remote 回执 ② CTO 收件闸 ③ K3 终审（门禁变更必过）④ 合并后由 CTO 触发 D931 分支 rebase 验证",
+  "note": "前提纠正（实测，非转述）：派单件称「四处误判（dispatch/authority/research/presets）」实测**仅 1 处成立**；前三条已由 D914（c7046c07，PR #708，2026-09-22 21:18 合入）修掉。错误转述链三跳：task-state/D911.json 缺陷② 追补实测(09-22) → docs/synova/coordination/模块归属-MacWin-20260923.md:13（#730 于 09-24 04:36 合入，照抄旧结论）→ CTO 派单件。另：M1b（生成式映射 + 最长前缀 + fail-closed + #730 新基线全量重写）已立卡 **D936**，必过 K3。"
+}
