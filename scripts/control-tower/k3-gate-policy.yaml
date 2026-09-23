@@ -94,12 +94,23 @@ rules:
       - "src/store/**"
       - "**/*migrat*"
     pickaxe:
-      reason: "只认本次 diff 增删 DDL 行；静态含 DDL 的 98 文件（生产口径 29）无法表达「本次变更」"
+      reason: >
+        只认本次 diff 增删 DDL 行；而「静态含 DDL 的**文件数**」（`git grep -IlE 'CREATE TABLE|ALTER TABLE'`）
+        无法表达「本次是否改了 DDL」——该数本身也随树变化，实测两值：
+        主工作区 @ `9631098c` = **98**；本分支树 @ `bc418ad7` = **104**
+        （差 6 = 本卡自身的文档/判据文件以「数据」形式含该字面量，见本节 `exclude_globs_reason`）。
       evidence:
         - cmd: "git log --first-parent --format='%h' -G'CREATE TABLE|ALTER TABLE' main | wc -l"
-          out: "99（全历史，本卡 2026-09-23 复算；#723 证据记 60，配方差异见文档「口径钉死」节）"
+          out: "60（全历史）"
         - cmd: "git log --first-parent --since='30 days ago' --format='%h' -G'CREATE TABLE|ALTER TABLE' main | wc -l"
-          out: "28（近 30 天）"
+          out: "20（近 30 天）"
+        - cmd: "截至 2026-09-23T20:50+0800，在工作树 .synova-wt-d923 @ bc418ad7 按上面两条命令实跑"
+          out: "60 / 20（与 #723 证据记的 60 一致）"
+      evidence_note: >
+        自验修复（F-1，2026-09-23）：本段原写「99 / 28」并注「配方差异见文档『口径钉死』节」——
+        两个问题：① 按上面两条命令**复跑不出来**（实跑 60 / 20）；② 该注引用的说明文档「口径钉死」节
+        **不存在**（`grep -c 口径钉死` 对说明文档 = 0），属**悬空引用**，已删除。
+        **纪律**：改本段任何数字，必须重跑上面两条命令并把输出原样写入（CTO 纪律⑥「理由也必须可核」）。
       # ── pickaxe 扫描面排除（D923 收尾任务 0 · 缺陷 A 修复）────────────────────
       # 门禁自身产物以「数据」形式承载 DDL 模式字面量，且**无 DB 执行能力** ⇒ 不可能是真 DDL 变更。
       # 不排除时：任何触碰门禁文件的 PR 都会被 pickaxe 误红（长期运营缺陷；收尾实测 three_category_hits=2 全来自自身）。
@@ -107,19 +118,23 @@ rules:
         - "scripts/control-tower/k3-*"
       exclude_globs_reason: >
         排除面 = 本门禁命名空间 `scripts/control-tower/k3-*`（实测仅 2 个文件：判定器 + 本 policy）。
-        两者正文共 5 处 DDL 关键字出现，**逐处都是数据/散文，不是 DDL 语句**：
-        ① k3-gate-policy.yaml:93 / :95 —— YAML `cmd:` 证据串里嵌套的 `-G'CREATE TABLE|ALTER TABLE'`；
-        ② k3-gate-policy.yaml:97 —— `pattern:` 常量本身；
-        ③ k3-gate-policy.yaml:105 —— `reason:` 中文散文（讲"哪些 DDL 形态未覆盖"）；
-        ④ k3-merge-gate.sh —— shell 注释里引用的同一字面量。
-        且两者**无任何 DB/DDL 执行能力**（见下方 evidence ②）⇒ 不可能产生真 DDL 变更。
-        **这不是"为让本分支变绿而加白名单"**：条目须满足「文件不执行 DDL」这一可核条件，
+        两者正文共 **7 处** DDL 关键字出现（**全部在 policy；判定器 0 处**）—— 计数含本节自身说明行与
+        evidence 命令（属**自指**，无法避免），命中行实测 =
+        `k3-gate-policy.yaml:98 / :103 / :105 / :132 / :134 / :140 / :148`，
+        **逐处都是数据/散文，不是 DDL 语句**（YAML `cmd:` 证据串 ×3、`pattern:` 常量、`known_misses` 散文、本节说明）。
+        且两者**无任何真实 DB/DDL 执行能力**（见下方 evidence 第三条：DB 探测命中 2 处，**均为本判据文本自指**）
+        ⇒ 不可能产生真 DDL 变更。
+        **这不是"为让本分支变绿而加白名单"**：条目须满足「无真实 DB 调用」这一可核条件，
         新增条目必须同时补 `exclude_globs_evidence` 的命令输出；不满足则不得加入。
+        **自验修复 F-3**：原记「共 5 处 / policy:4 / checker:1」，实测为 **policy:7 / checker:0**；原点行号
+        :93/:95/:97/:105 与实测**全不符**，已改为上面的实测行号。**改动本文件后须重跑下面两条 `-n` 命令并原样更新。**
       exclude_globs_evidence:
         - cmd: "git grep -cE 'CREATE TABLE|ALTER TABLE|CREATE INDEX|DROP TABLE|ALTER INDEX' -- 'scripts/control-tower/k3-*'"
-          out: "k3-gate-policy.yaml:4 / k3-merge-gate.sh:1（共 5 处，全为数据/注释，非 DDL 语句）"
+          out: "k3-gate-policy.yaml:7 / k3-merge-gate.sh:0 —— 共 7 处，全在 policy 内（`grep -c` 不列出零命中文件）"
+        - cmd: "git grep -nE 'CREATE TABLE|ALTER TABLE|CREATE INDEX|DROP TABLE|ALTER INDEX' -- 'scripts/control-tower/k3-*'"
+          out: "命中行 = k3-gate-policy.yaml:98 / :103 / :105 / :132 / :134 / :140 / :148（全为数据/注释，非 DDL 语句）"
         - cmd: "git grep -nE 'sqlite3|better-sqlite3|\\.prepare\\(|\\.exec\\(|new Database|Database\\(' -- 'scripts/control-tower/k3-*' | wc -l"
-          out: "0 ⇒ 无 DB 执行能力（不可能产生真 DDL 变更）"
+          out: "2 —— **两处均为此判据自身的文本（自指）**：k3-gate-policy.yaml:136（该 cmd 串本身）、k3-merge-gate.sh:159（描述本判据的注释）。**无任何真实 DB 调用** ⇒ 语义结论（不可能是真 DDL 变更）不变"
         - cmd: "git ls-files 'scripts/control-tower/k3-*'"
           out: "scripts/control-tower/k3-gate-policy.yaml / scripts/control-tower/k3-merge-gate.sh（仅此两个）"
       pattern: "CREATE TABLE|ALTER TABLE|CREATE INDEX|DROP TABLE|ALTER INDEX"
@@ -203,21 +218,35 @@ verdict_normalization:
     exit_hint: "等 K3 出结论；或由 CTO 具名豁免（写入卡/PR，可核）"
 
 # ── 存量面（D923 上线时的已知后果）─────────────────────────────────────────
-# 命令（配方 B：报告文件名取【首个 D#】派生，与 gen-cto-health.py resolve_audit_report 同源语义）：
-#   for p in docs/synova/audit-reports/*.md: re.search(r'D\d+', basename) → D#
-#   与 task-state/*.json 中 audit is None 的 task_id 取交集
+# 截至 2026-09-23T20:50+0800（工作树 `.synova-wt-d923` @ `bc418ad7`；主工作区 `9631098c` 同值）。
+# 命令（逐条可复跑；**改任一数字必须连口径一起改**）：
+#   C1 卡数:      ls task-state/*.json | wc -l                       → 347（含 TEMPLATE.json）
+#                 剔除模板: ls task-state/*.json | grep -vc TEMPLATE   → 346
+#   C2 无结论:    python3 -c "…'audit' not in d → 键缺失；d['audit'] is None → null…"  → 键缺失 2 / null 181 / 合计 183
+#   C3 有报告(B): 报告文件名 re.search(r'D(\d+)', basename) 首个 D#  ∩  无结论卡的 **task_id**  → 8
+#   C4 配方C:     报告文件名 re.findall(r'D(\d+)', basename) 任意位置  ∩  同上                → 9
 backlog:
   task_state_cards: 347
   no_conclusion_total: 183
   audit_key_missing: 2
   audit_null_with_report: 8
-  audit_null_without_report: 175
+  audit_null_without_report: 173
   reason: >
-    183 = 2（键缺失）+ 8（null 但有 K3 报告文件）+ 175（null 且无报告）。
-    ⚠️ **口径钉死实证**：同一问题三种配方给三个数 ——
-    配方A（文件名破折号锚定 `*-D#-*.md`）= 7；
-    配方B（文件名**首个 D#**）= **8 ← 本 policy 采用**；
-    配方C（任意位置含 D#）= 9（把复合报告 `2026-09-20-K3-D850D852.md` 的 D852 也算上）。
-    采用 B 的理由：与既有唯一约定 `scripts/control-tower/gen-cto-health.py:320` 的
+    183 = 2（键缺失）+ 8（null 但有 K3 报告文件）+ 173（null 且无报告）。**校验：2+8+173 = 183 ✓**
+    （自验修复 F-2：原写 `175`，而 `2+8+175 = 185 ≠ 183` —— 算术不闭合，已按实跑改正为 173。）
+    ⚠️ **口径敏感性实证（本卡最重要的方法论产出之一）**：同一问题在**三个维度**换口径就会得到不同数 ——
+    （a）**卡口径**：含 `TEMPLATE.json` = **347 / 183**（与键名 `task_state_cards` 字面一致，本 policy 采用）；
+        剔除模板文件 = **346 / 182**（`ls task-state/*.json | grep -vc TEMPLATE` → 346）。
+    （b）**卡号来源口径**：卡号取 `task-state/*.json` 的 **`task_id`** = **8**（本 policy 采用，且与门禁实现一致：
+        `k3-merge-gate.sh` 的 `read_verdict()` 先按 `task-state/{did}.json`、再按 `task_id` 兜底）；
+        取**文件名**则 = **7**（差 1 的来源：`task-state/D559.json` 的 `task_id` 是 **D558**，文件名与 task_id 不一致）。
+    （c）**报告 D# 匹配口径**：B（首个 D#）= **8 ← 规范口径**；C（任意位置 D#）= **9**
+        （多出的 1 来自复合报告名 `2026-09-20-K3-D850D852.md` 的 D852）。
+    ⇒ **凡此类计数必须连口径一起写**，否则同一集合可以合法地报出 7 / 8 / 9 三个数
+      （独立自验方按「文件名口径 + 剔除模板」报 `346/182/2/7/173` 与 `2/7/8`，**不是算错，是口径不同**；
+       根因就是上面 (a)(b) 两项，已逐条留痕）。
+    采用 B + `task_id` 的理由：与既有唯一约定 `scripts/control-tower/gen-cto-health.py:320` 的
     `resolve_audit_report` 同源语义（文件名派生），**且与 #723 证据 §六 的 8 张逐张一致**。
+    配方A（文件名破折号锚定 `*-D#-*`）**已删除**：三方实跑得 3 / 7 / 2 三个不同值 ⇒ 该配方本身不稳定，
+    且实现不使用它；**不复现的数不写进 policy**。
   self_note: "本卡自身 task-state/D923.json = audit:null ⇒ 门禁注册后**本卡也判③红**（已登记于说明文档）"

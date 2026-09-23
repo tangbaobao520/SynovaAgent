@@ -26,7 +26,10 @@ export LC_ALL=C.UTF-8 2>/dev/null || true
 #              ::notice / ::warning 注解（可归因）
 #   @exit    — 0 = 通过（绿）；1 = 拒绝（红）；2 = 检查执行失败/降级（fail-closed，绝不等同通过）
 #              ⚠️ 裁定 3：**三类路径命中时，即使整体降级也必须是红（非 0）**——
-#                 实现方式：降级路径若已判定三类命中，则 exit 1（先红后降级提示）
+#                 实现方式：**降级恒 `exit 2`**（本脚本 11 个 `degrade` 调用点**全部**立即 `exit 2`；2 非 0 ⇒ fail-closed）。
+#                 更正（自验修复 F-5）：原注写「降级路径若已判定三类命中，则 exit 1（先红后降级提示）」——
+#                 **该分支不可达**：所有降级判定都发生在「取变更集 / 读 policy / 读 task-state」阶段，
+#                 早于三类命中判定，不可能"已知三类命中"再降级。已改为与实际行为一致的表述，**未改代码行为**。
 #   @degraded— 结论源/仓库/policy 不可读 → stderr "degraded: <原因>" + ::warning
 #              + 追加 <state-dir>/.codex/control-tower/logs/degraded-events.log（铁律 11）
 #   @error   — .code = K3_GATE_SCAN_UNAVAILABLE | K3_GATE_POLICY_UNREADABLE | K3_GATE_STATE_UNREADABLE
@@ -153,7 +156,8 @@ fi
 #   ② policy C_storage.pickaxe.exclude_globs —— **门禁自身产物**（判定器 + policy）。
 #      理由与可核命令在 policy 的 exclude_globs_reason / exclude_globs_evidence：两者以"数据"形式
 #      承载 DDL 模式字面量（YAML cmd 证据串 / pattern 常量 / reason 散文 / shell 注释），
-#      且无任何 DB 执行能力（sqlite3|.prepare(|.exec(|new Database 命中=0）⇒ 不可能产生真 DDL 变更。
+#      且无任何真实 DB 执行能力（探测 `sqlite3|.prepare(|.exec(|new Database` 命中 **2** 处，
+#      两处**均为本判据自身的文本（自指）**：policy 的 cmd 串 + 本行注释）⇒ 不可能产生真 DDL 变更。
 #      不加此排除时，任何触碰门禁文件的 PR 都会被 pickaxe 误红（长期运营缺陷）。
 PICK_EXCLUDES=( ':(exclude)docs/**' ':(exclude)tests/**' ':(exclude)*.md' )
 while IFS= read -r pex; do
