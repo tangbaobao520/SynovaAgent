@@ -243,4 +243,5 @@ B-09 卡面让抄的正是这个目录范式（`agent.cordis.yml` 组合行 + `p
 | 日期 | 版本 | 变更 |
 |---|---|---|
 | 2026-09-23 | v1.0 | 首版。**断面错误**（用了 Desktop 打包运行时 `0.1.6-alpha.2`），三档结论作废 |
-| 2026-09-23 | **v2.0** | **按 `0.1.7-alpha.2` 源码树全部重锚**。断面改为 `/Users/wane/src/deepseek-harness-017`；锚点由 npm 包 + `lib/*.js` 改为 `packages/<组>/<包>/src/*.ts`；三档重出（8/11/1）；撤回"spec.js 自始不成立"（浅克隆不可证）；新增 B-09 范式作废、B-10 `patchNode` 消失两项发现 |
+| 2026-09-23 | v2.0 | **按 `0.1.7-alpha.2` 源码树全部重锚**。断面改为 `/Users/wane/src/deepseek-harness-017`；锚点由 npm 包 + `lib/*.js` 改为 `packages/<组>/<包>/src/*.ts`；三档重出（**7/12/1**，B-18 由仍成立改判需改法）；撤回"spec.js 自始不成立"（浅克隆不可证）；新增 B-09 范式作废、B-10 `patchNode` 消失两项发现 |
+| 2026-09-23 | **v2.1** | **复核退回补正**（5 条补证 + 1 条口径对齐；其余通过）。① **B-12 口径瑕疵修正**：`createHmac`/`timingSafeEqual` 的"零命中"补足分层口径（生产源码 0 / 含 tests 4 / `timingSafeEqual` 全口径 0），**"须自研"降级为选型建议**（产品/依赖政策决定）；② 补齐 B-09 / B-11 / B-10 **完整路径**（`packages/<组>/<包>/…` 两层，故 `packages/*/skills/`、`packages/<包>/src/` 均未命中）；③ **B-18 五处 bundle 逐一挂载证据**（`base`/`web-app`/`headless`/`acp-app`/`sdk-app` 全无，仅 `sdk-minimal:106-107` 有，且它同时是唯一挂载 invariant 族的 bundle）；④ **`lib/index.js` 计数口径**（307 vs 710/711，差额 404 明细）；⑤ 新增 `§〇二 路径约定与计数口径`。**新增纪律**：负面断言必须写明搜索范围（是否含 `tests/`、`node_modules/`） |
