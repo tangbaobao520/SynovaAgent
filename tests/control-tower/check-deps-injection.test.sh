@@ -147,8 +147,10 @@ bash "$SB/mutant-r1.sh" --dir "$SB/violate" $BASE_ARG --strict >/dev/null 2>&1; 
 
 echo "[11] 变异体判别②: 改坏 exempt 理由校验 → 无理由豁免被错误吸收（证明理由校验承重）"
 sed "s|^      \*' — '\*) printf '%s\\\\n' \"\${ln%% — \*}\" ;;|      *) printf '%s\\\\n' \"\$ln\" ;;|" "$CHECKER" > "$SB/mutant-exempt.sh"
-REAL_RC=1; bash "$SB/mutant-exempt.sh" --dir "$SB/exemptnoreason" $BASE_ARG --exempt "$SB/exempt-noreason.txt" --strict >/dev/null 2>&1; MUT_RC=$?
-check "真检查器: 无理由豁免不生效(rc=1)" "$REAL_RC" "$REAL_RC"
+# 同一输入、同一参数，分别跑【真检查器】与【坏理由校验体】——两条 rc 必须相反才算判别成立
+bash "$CHECKER" --dir "$SB/exemptnoreason" $BASE_ARG --exempt "$SB/exempt-noreason.txt" --strict >/dev/null 2>&1; REAL_RC=$?
+bash "$SB/mutant-exempt.sh" --dir "$SB/exemptnoreason" $BASE_ARG --exempt "$SB/exempt-noreason.txt" --strict >/dev/null 2>&1; MUT_RC=$?
+check "真检查器: 无理由豁免不生效(rc=1)" 1 "$REAL_RC"
 check "坏理由校验体: 无理由豁免被吸收(rc=0)" 0 "$MUT_RC"
 
 echo "[12] diff 模式: 只判 base..head 的新增/改动文件"

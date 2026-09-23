@@ -55,13 +55,21 @@ export (async )?function [A-Za-z_]*(Handler|Runner|Coordinator|Dispatcher)\(
 | `getRegistry(` | 1 |
 | `getScheduler(` | 3 |
 
-**有意排除 `getDatabase(` / `getDb(`** —— 两条硬理由：
+**为何排除 `getDatabase(` / `getDb(`（实测口径，非估计）**：
 
-1. **面过大**：`git grep -l 'getDatabase(' -- src | wc -l` → **34 文件**（纳入即 34 处噪声，ratchet 失去意义）。
-2. **会把合规代码判违规**（"禁 grep 型静态判据"要防的正是这个形态）：
-   `src/agent/loop-handlers.ts:471` 的
-   `const getDb = deps?.getDatabase ?? (await import('../init/engine-context')).getDatabase;`
-   是**标准的惰性生产默认 fallback 写法**，完全符合本规范。
+- **纳入后全仓新增命中 = `0`**：把 `getDatabase` 并入闭集后，空 baseline 下全仓 `HIT` **仍为 2**，与正规判据完全相同；
+  再把真实 `src/agent/loop-handlers.ts` 复制进沙箱单独跑：正规判据 `hits=0`、含 `getDatabase` 的变异体同样 `hits=0`
+  （该文件导出 **5 条** `setXxxDeps` ⇒ R1 条件③不成立，**天然免疫**）。**故排除的理由不是"噪声"。**
+- **真实理由是语义范围**：本标准的对象是 **5 个编排单例**（collector / registry / scheduler）的**活单例耦合**；
+  而 DB 访问在本仓有既成的**合规写法** ——
+  `src/agent/loop-handlers.ts:471` 的
+  `const getDb = deps?.getDatabase ?? (await import('../init/engine-context')).getDatabase;`
+  （惰性生产默认 fallback），属**另一关注点，不在本标准的适用面内**。
+- 原始面参考（**口径 = "含该调用的文件数"，不是噪声量、也不是命中量**）：
+  `git grep -l 'getDatabase(' -- src | wc -l` → **34 文件**。
+
+> **修订留痕**（2026-09-23，独立自验 verify-d922 指出）：本条初版把上述 34 文件面写成"纳入即 34 处噪声"，
+> 属**未实测的推断**；实测反证新增命中为 0。**排除结论不变，理由已按实测口径重写。**
 
 ---
 

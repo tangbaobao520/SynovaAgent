@@ -2,7 +2,8 @@
 
 > 卡号: D925 | 分支: `feat/d925-deps-interface` | 工作树: `.synova-wt-d925` | 域: mac
 > **base**: `feat/d924-subprocess-protocol`（栈式，已声明；技术理由见 brief Q0）
-> 测量时刻: **截至 2026-09-23T19:0x+0800**（各处另注） | 标准: [标准-deps接口与setter注入-20260923.md](../../coordination/标准-deps接口与setter注入-20260923.md)
+> 测量时刻: **截至 2026-09-23T19:11:06+0800**（= CI 全部 check-run settle 时刻；各处另注自身时点） | 标准: [标准-deps接口与setter注入-20260923.md](../../coordination/标准-deps接口与setter注入-20260923.md)
+> 修订: 2026-09-23 自验退回项修复（F-1 闭集排除理由改实测口径 / F-2 夹具恒真断言改实跑 / F-3 本时刻占位补精确值）
 
 ---
 
@@ -21,6 +22,8 @@
 | S9 | 新 .sh 有 UTF-8 头块 | `check-silent-swallow.sh --utf8 <两文件>` | 两条 `✅ 带头块` `exit=0` |
 | S10 | 裁定 5：**5 组** setXxxDeps | `grep -nE 'set[A-Za-z]+Deps' src/agent/loop-handlers.ts` | `:105/:294/:444/:560/:617` = **5 组**（文档一律写 5） |
 | S11 | 本卡不触产品代码 | `git diff --cached --name-only \| grep -c '^src/'` | `0` |
+| **S13** | **闭集排除 `getDatabase` 的理由（实测口径）** — 纳入后**新增命中 = 0** | 变异体（把 `getDatabase` 并入 `SINGLETON_GETTERS_RE`）+ 空 baseline 全扫：`bash <变异体> --dir . --baseline <空>` | 正规判据 `HIT` ×2；变异体 `HIT` ×**2**（同 `expert-dispatcher.ts:307` / `runner.ts:697`）⇒ **新增 0**。另：真实 `loop-handlers.ts` 复制进沙箱单跑 → 正规 `hits=0`、变异体亦 `hits=0`（该文件导出 **5 条**缝 ⇒ R1 条件③不成立，天然免疫） |
+| **S14** | **夹具用例 11 为实跑断言（非恒真）** | `sed -n '148,156p' tests/control-tower/check-deps-injection.test.sh` | 真检查器与坏校验体**两次独立调用**，`REAL_RC`/`MUT_RC` 分别对常量 1/0 断言；实测输出 `真检查器…(=1)` + `坏理由校验体…(=0)` |
 | S12 | 判据与闭集均为**具名单一常量** | `grep -n '^SINGLETON_GETTERS_RE=\|^ENTRY_FN_RE=\|^SEAM_RE=\|^SEAM_SIG_RE=' …check-deps-injection.sh` | 4 条具名常量，各带命令 + 命中数注释 |
 
 ---
