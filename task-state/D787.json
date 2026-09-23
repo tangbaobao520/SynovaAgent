@@ -1,0 +1,11 @@
+{
+  "task_id": "D787",
+  "title": "CT 最高优先三机制：提交级写集对账 + 合并 diff 白名单核验 + task-state 载体存在性检查；并附 D595 载体修复",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-16",
+  "updated_by": "alloc-task-id"
+}

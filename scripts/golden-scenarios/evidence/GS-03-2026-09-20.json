@@ -1,0 +1,105 @@
+{
+  "schema": 1,
+  "record_type": "scenario",
+  "scenario_id": "GS-03",
+  "source": "scripts/golden-scenarios/GS-03-capital-cycle/expect.runtime.json",
+  "date": "2026-09-20",
+  "verdict": "pass",
+  "verdicts": [
+    {
+      "acceptance_point": "4-5",
+      "verdict": "pass",
+      "quote": "erp-upload-ok pass: erp-standard 数据经 field-mapping 写入本体 Financial 节点（符合预期）"
+    },
+    {
+      "acceptance_point": "5-2",
+      "verdict": "pass",
+      "quote": "cash-runway-critical-triggered pass: 低现金数据触发 cash-runway critical 阈值告警「现金流危急」（符合预期）"
+    },
+    {
+      "acceptance_point": "4-7",
+      "verdict": "pass",
+      "quote": "no-false-critical-zero-runway pass: 降级时不误报「跑道0.0个月」假 critical（负向断言）（符合预期）"
+    },
+    {
+      "acceptance_point": "10-1",
+      "verdict": "pass",
+      "quote": "erp-upload-ok pass: erp-standard 数据经 field-mapping 写入本体 Financial 节点（符合预期） | financial-node-created pass: sqlite graph_nodes 实存 type='Financial' 且 props.cash=30000 的行（上传落库物证）（符合预期）"
+    },
+    {
+      "acceptance_point": "10-3",
+      "verdict": "pass",
+      "quote": "cash-runway-critical-triggered pass: 低现金数据触发 cash-runway critical 阈值告警「现金流危急」（符合预期） | threshold-provenance pass: critical 告警文案含「低于critical阈值6个月」——数字 6 来自 manifest.thresholds 而非硬编码（符合预期）"
+    },
+    {
+      "acceptance_point": "10-6",
+      "verdict": "pass",
+      "quote": "no-false-critical-zero-runway pass: 降级时不误报「跑道0.0个月」假 critical（负向断言）（符合预期） | no-data-degraded-warning pass: 空库（未注入）触发 cash-runway → 响应含降级 finding「现金流数据不完整」（符合预期） | no-data-no-critical pass: 空库响应不含「现金流危急」critical 告警（负向断言）（符合预期） | no-cash-missing-degraded pass: 现金未上报（属性不存在，非值为 0）→ 降级 finding「现金流数据不完整」可见（符合预期） | no-cash-missing-no-critical pass: 现金未上报时不产「现金流危急」critical（S4 行2 误报根因，负向断言）（符合预期）"
+    }
+  ],
+  "assertions": [
+    {
+      "id": "erp-upload-ok",
+      "desc": "erp-standard 数据经 field-mapping 写入本体 Financial 节点",
+      "purpose": "证明 ERP 连接器 erp-standard 契约可注入数据（验收点 4-5）",
+      "verdict": "pass",
+      "detail": "符合预期"
+    },
+    {
+      "id": "cash-runway-critical-triggered",
+      "desc": "低现金数据触发 cash-runway critical 阈值告警「现金流危急」",
+      "purpose": "证明 cashBalance↔cash 对齐后低现金触发阈值（验收点 5-2 / 10-3 触发侧）",
+      "verdict": "pass",
+      "detail": "符合预期"
+    },
+    {
+      "id": "threshold-provenance",
+      "desc": "critical 告警文案含「低于critical阈值6个月」——数字 6 来自 manifest.thresholds 而非硬编码",
+      "purpose": "证明阈值告警真实由 manifest 配置驱动（验收点 10-3：manifest 挂载 + 阈值真实生效——D356 挂载回归时本文案随 this.manifest=null 一并消失，故本断言同时是挂载回归守卫）",
+      "verdict": "pass",
+      "detail": "符合预期"
+    },
+    {
+      "id": "no-false-critical-zero-runway",
+      "desc": "降级时不误报「跑道0.0个月」假 critical（负向断言）",
+      "purpose": "证明数据不足时 fail-closed 降级而非误报（验收点 4-7 / 10-6，D356 守卫）",
+      "verdict": "pass",
+      "detail": "符合预期"
+    },
+    {
+      "id": "financial-node-created",
+      "desc": "sqlite graph_nodes 实存 type='Financial' 且 props.cash=30000 的行（上传落库物证）",
+      "purpose": "证明 ERP 上传真的在 L5 存储层落成 Financial 节点（验收点 10-1：断在进口则 DB 无行；只认 DB 物理行，不认 HTTP 响应自述——K3 P0-3 假绿教训）",
+      "verdict": "pass",
+      "detail": "符合预期"
+    },
+    {
+      "id": "no-data-degraded-warning",
+      "desc": "空库（未注入）触发 cash-runway → 响应含降级 finding「现金流数据不完整」",
+      "purpose": "证明无数据时降级信号对调用方可见、不静默（验收点 10-6；同时是 S4 行5 manifest 挂载回归守卫——该 finding 只在 this.manifest 挂载后产出，挂载回归则本断言必红）",
+      "verdict": "pass",
+      "detail": "符合预期"
+    },
+    {
+      "id": "no-data-no-critical",
+      "desc": "空库响应不含「现金流危急」critical 告警（负向断言）",
+      "purpose": "证明无数据不误报 critical 越阈告警（验收点 10-6：P1-1 短路 + 切片③ 存在性守卫——禁止把「没上报现金」当成「公司没钱」）",
+      "verdict": "pass",
+      "detail": "符合预期"
+    },
+    {
+      "id": "no-cash-missing-degraded",
+      "desc": "现金未上报（属性不存在，非值为 0）→ 降级 finding「现金流数据不完整」可见",
+      "purpose": "证明 compute 按属性存在性守卫：现金属性缺失时诚实降级而非把「没上报」当「公司没钱」（验收点 10-6 / S4 行2；同时是 PR-1 win 修复存在性的物理探测器——修复缺失时本断言必红）",
+      "verdict": "pass",
+      "detail": "符合预期"
+    },
+    {
+      "id": "no-cash-missing-no-critical",
+      "desc": "现金未上报时不产「现金流危急」critical（S4 行2 误报根因，负向断言）",
+      "purpose": "证明修复前「runway=0 ≤ critical 6 → 误报现金流危急」的路径已封闭（验收点 10-6；跨分支守卫：PR-1 win 的 pickPresentNumber 存在性守卫不在场时，本断言必红——防「只合 mac」产出假绿证据）",
+      "verdict": "pass",
+      "detail": "符合预期"
+    }
+  ]
+}

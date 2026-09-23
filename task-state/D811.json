@@ -1,19 +1,45 @@
 {
   "task_id": "D811",
-  "title": "队列收口：39 个未合 PR → 「有主 + behind=0」清单 + 可签字关闭清单",
-  "status": "claimed",
+  "title": "队列收口：未合 PR 台账扫描器 + 可签字关闭清单 + 上限=12 提示层 + 旁路派生指标",
+  "status": "impl_done",
   "risk": "medium",
   "spec": "派单即规格：docs/synova/coordination/派单-批八-20260918.md §B/D811",
   "write_set": [
     "docs/synova/coordination/队列收口-20260918.md",
     "task-state/D811.json",
     ".claude/task-briefs/2026-09-18-D811-队列收口.md",
-    "memory/notes/proposed/2026-09-18-D811-queue-closeout.md"
+    "memory/notes/proposed/2026-09-18-D811-queue-closeout.md",
+    "scripts/project/",
+    "docs/synova/coordination/小队派单-D811-队列收口-20260920.md",
+    "docs/synova/project/",
+    ".claude/task-briefs/2026-09-20-D811-队列收口.md",
+    "scripts/project/pr-queue-scan.py",
+    "scripts/project/gen-project-board.py",
+    "tests/project/pr-queue-scan.test.sh",
+    "tests/project/gen-project-board.test.sh",
+    "docs/synova/project/pr-queue.json",
+    "docs/synova/project/ledger.json",
+    "docs/synova/coordination/队列收口-D811-20260920.md",
+    "docs/synova/coordination/AUDIT-FINDINGS-LEDGER.md",
+    "memory/notes/proposed/2026-09-20-D811-queue-closeout.md"
   ],
-  "impl": null,
+  "impl": {
+    "pr": 673,
+    "branch": "chore/d811-queue-closeout-v2",
+    "commit": "3f8476bb",
+    "evidence": [
+      "bash tests/project/pr-queue-scan.test.sh → PASS=46 FAIL=0",
+      "bash tests/project/gen-project-board.test.sh → PASS=93 FAIL=2（组⑥ 两条为存量数据漂移，已 A/B 对照排除）",
+      "bash scripts/pre-commit-check.sh → 13 组全过",
+      "docs/synova/coordination/队列收口-D811-20260920.md"
+    ],
+    "self_verified": true,
+    "audit_status": "可提请独立审计",
+    "superseded_pr": 672
+  },
   "audit": null,
   "fix_task_id": null,
-  "updated_at": "2026-09-18",
+  "updated_at": "2026-09-20",
   "updated_by": "synova-cto",
   "domain": "mac",
   "owner": "mac-coding",
@@ -22,12 +48,13 @@
   "blocked": null,
   "target": "2026-W38",
   "acceptance_points": [
-    "报告表行数 == 当时 open PR 数（API 实测，命令+输出落报告）",
-    "标记「保留并已刷新」的每个分支 git rev-list --count origin/<b>..origin/main == 0（逐个贴输出）",
-    "R1（自身文件已被 main 取代）清单逐 PR 列出比对命令与结果，供创始人签字",
-    "每条冲突：文件 + 处理方式 + 依据；语义冲突标「待 CTO 裁决」",
-    "禁 force push / 禁 rebase 压平（git reflog 无 reset --hard）"
+    "扫描器对实测未合 PR 出完整台账（编号/标题/主人/behind/CI/age/可否关闭），命令+原始输出落报告",
+    "可签字关闭清单按退役优先排序，**每条给理由码 + 证据**（红在哪个 job / behind=N / age=N）",
+    "上限告警夹具先红后绿：13>12 出告警、12=12 无告警，**两次退出码均 0**（只提示不拦死）",
+    "旁路指标（队列长度/最老 PR 年龄/behind 分布）出现在 ledger.json.pr_queue（派生链已接线）",
+    "证明主提交路径零新增检查：scripts/pre-commit-check.sh、.git/hooks/{pre-commit,pre-push} 对 pr-queue-scan 零引用",
+    "禁 force push / 禁 stash / 禁 --no-verify（git reflog 无 reset --hard）"
   ],
-  "next": "① 取全量 open PR 列表（curl API）② 逐 PR 算 ahead/behind + 自身文件是否已被取代 ③ R3 分支 merge origin/main 刷新并推送 ④ 出报告 + 关闭清单 ⑤ 汇报给 CTO（含 mergeable 实测值）",
-  "note": "跨分支动作：会对多个在途 PR 分支推送 merge-main 提交（非 force）。排除 K3 审计域（audit/k3-* 分支、scripts/audit/**）。本卡不关闭任何 PR（需创始人签字或 token）。"
+  "next": "① 创始人签字 §三（13 条退役）后由 CTO 批量关闭 ② L1 另起卡：D794 插件渲染 pr_queue ③ L2 另起 FIX 卡：组⑥ 假红改不变量断言",
+  "note": "跨分支动作：会对多个在途 PR 分支推送 merge-main 提交（非 force）。排除 K3 审计域（audit/k3-* 分支、scripts/audit/**）。本卡不关闭任何 PR（需创始人签字或 token）。\n\n【2026-09-20 CTO 扩范围（创始人同意先派②）】按《DSH 决策镜头》先修瓶颈：① 队列台账扫描器（机器算，人只看）② 可签字关闭清单（每条给理由）③ 队列上限=12 的**提示层**（不拦死）④ 旁路派生指标。硬边界：不碰 D839 地盘的四个文件（PR #657 待 K3 审计）。派单件：docs/synova/coordination/小队派单-D811-队列收口-20260920.md\n\n【2026-09-20 执行登记】派单件随 PR #664 合入 main；执行按四件交付物完成（PR #673；#672 因分支重锚 origin/main 已关闭并给理由码）。写集并入 tests/project/{pr-queue-scan.test.sh,gen-project-board.test.sh}（铁律 48 要求的配对测试；G12 只认显式路径）。硬边界未越。"
 }

@@ -1,0 +1,34 @@
+{
+  "task_id": "D848",
+  "title": "账本漂移门禁：证据/状态变更合并后必须重算 ledger 派生器（K3 D815 P1 归因）",
+  "status": "claimed",
+  "risk": "high",
+  "spec": "K3 审计 D815（docs/synova/audit-reports/2026-09-18-K3-line10.md）P1：main 已提交的 ledger.json（5b1df207）停留在线10=1/6，而 D803 证据 09-17 已合入 → 派单背景数字靠人转述而非账本自证。CTO 独立复算：跑派生器后线10 = 6/6、全局 v1_passed 25→27（degraded=false）——即账本可由机器重算，只是**没人/没机制在证据合并后重跑**。",
+  "write_set": [
+    "scripts/project/gen-project-board.py",
+    "tests/project/gen-project-board.test.sh",
+    ".github/workflows/ci.yml",
+    "task-state/D848.json"
+  ],
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-20",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": "mac-coding",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [],
+  "blocked": null,
+  "target": "2026-W38",
+  "acceptance_points": [
+    "夹具先红后绿：模拟『证据合入把线10 从 1/6 推到 6/6，但不重算 ledger』→ 门禁必须报红（给出两次原始输出）",
+    "把重算做成**一步可执行**（例如派生器 --check 模式：输出与磁盘 ledger 的差异 + 非零退出），不复用『人记得跑』",
+    "接线：CI（PR 或 push 到 main）在**证据/标准类路径**变更时调用该检查；主提交路径不新增全量检查负担",
+    "反向：无证据变更的普通 PR 不得因此门禁变红（防误伤，给夹具）",
+    "禁改 scripts/audit/**；不写审计标准；交付标注可提请独立审计"
+  ],
+  "next": "① 重新核行号 ② 先红后绿夹具 ③ 接线 CI（低冲突：追加调用，不重排既有清单）④ 交回三件",
+  "note": "来源：K3 D815 P1『账本漂移』。CTO 复算证据：main 线10=1/6 → 重算 6/6、全局 25→27、verified 16、delivery 21.1%、degraded=false。本卡不新增主路径门禁，走 CI 旁路。"
+}

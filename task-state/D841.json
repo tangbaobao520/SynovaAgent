@@ -1,7 +1,7 @@
 {
   "task_id": "D841",
   "title": "K3 独立审计：D839 认领门禁变更（完成即释放/批量释放/持久化）——门禁变更属审计面",
-  "status": "claimed",
+  "status": "audited",
   "risk": "high",
   "spec": "D839 改的是认领门禁自身（staging_guard/resolve-commit-brief/synova-commit）→ 属审计面，合并前须独立结论。派单：docs/synova/coordination/K3审计派单-20260920.md §①",
   "write_set": [
@@ -9,10 +9,20 @@
     "task-state/D841.json"
   ],
   "impl": null,
-  "audit": null,
+  "audit": {
+    "verdict": "CONDITIONAL_PASS",
+    "by": "k3",
+    "at": "2026-09-20",
+    "report": "docs/synova/audit-reports/2026-09-20-K3-D839.md",
+    "p0": 0,
+    "p1": 3,
+    "p2": 5,
+    "summary": "四条必改物理落地，夹具先红(origin/main)后绿(HEAD)；fail-closed 全反向用例成立，进行中任务并发保护未放松。P1：①释放证据无防伪（工作树 task-state 可无痕伪造解锁他人认领）②两个新夹具未接入 CI ③台账并发丢写可复现。建议 P1-2（一行 CI 接线）随 PR #657 补上后合并；P1-1/P1-3 可随后续卡。",
+    "branch": "audit/k3-20260920-d841"
+  },
   "fix_task_id": null,
   "updated_at": "2026-09-20",
-  "updated_by": "synova-cto",
+  "updated_by": "k3",
   "domain": "k3",
   "owner": "k3",
   "executor": "k3",

@@ -1,0 +1,11 @@
+{
+  "task_id": "D783",
+  "title": "文档一致性批：P1/P2 逐条「改文档 or 改事实」收敛（27 条）",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-15",
+  "updated_by": "alloc-task-id"
+}

@@ -1,0 +1,36 @@
+{
+  "task_id": "D842",
+  "title": "归档恢复 1/3：task-state 记账卡（D769/D770/D771/D772/D779/D780/D781）",
+  "status": "impl_done",
+  "risk": "low",
+  "spec": "归档恢复：2026-09-20 主工作区清理时，这些文件被保全进归档（当时全仓唯一、main 里没有）。经逐项核对：与 main 无冲突、看板影响实测为零 → 走正常 PR 捡回仓库。",
+  "write_set": [
+    "task-state/D842.json",
+    "task-state/D769.json",
+    "task-state/D770.json",
+    "task-state/D771.json",
+    "task-state/D772.json",
+    "task-state/D779.json",
+    "task-state/D780.json",
+    "task-state/D781.json"
+  ],
+  "impl": "从 .synova-archive-20260920/moved*/ 按原路径恢复；未经修改（内容与归档一致）",
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-20",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "owner": "synova-cto",
+  "executor": "synova-cto",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [],
+  "blocked": null,
+  "target": "2026-W38",
+  "acceptance_points": [
+    "恢复后文件内容与归档一致（sha256 逐一比对）",
+    "看板派生器 gen-project-board.py 仍 degraded=false 且数字不变",
+    "PR 走 CI 全绿后合并"
+  ],
+  "next": "—",
+  "note": "7 张历史记账卡（2026-09-15 的 DSH 借鉴卡登记/收口系列），main 从未收录；状态原样保留（claimed），不美化。"
+}

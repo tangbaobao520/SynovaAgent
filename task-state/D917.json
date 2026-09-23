@@ -1,0 +1,51 @@
+{
+  "task_id": "D917",
+  "title": "双 DSH 提升清单（10 条）落地：入库 + 裁定 + 分档派工",
+  "status": "claimed",
+  "risk": "medium",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": null,
+  "milestone": "M0 项目管理基建",
+  "depends_on": [
+    "D911"
+  ],
+  "blocked": null,
+  "target": "2026-W39",
+  "spec": "来源：研究院交办件 `双DSH执行提升清单.md`（121 行）+ 依据研究 `DSH-agent-team与Win侧Claude-Code质量对比.md`（161 行，独立评估 ρ=0.727）。**研究本体头号结论 = 两组质量同一量级、换工具不带来质量跃升**；其自陈护城河是**共享工程体系**（spec 文化 + 双机同门禁 + 事故进流程），非工具。故本卡落点一律是体系（门禁/规格/审计）。",
+  "write_set": [
+    "docs/synova/research/研究院交接-20260922/",
+    "docs/synova/coordination/裁定-双DSH提升清单-20260922.md",
+    "docs/authority/DOCS-REGISTRY.yaml",
+    "task-state/D917.json"
+  ],
+  "impl": {
+    "ingested": [
+      "DSH-agent-team与Win侧Claude-Code质量对比.md（sha256 e7d45e0f…9aa243，161 行）",
+      "双DSH执行提升清单.md（sha256 662d9968…a9baa，121 行）"
+    ],
+    "verified_by_cto": "逐条复现 8 条证据：7 条实锤（活代码）、3 处证据指针需修正（detect.ts 实为 archive 件；财务 guard 引的是 _extinct 件、CTO 补核活件后结论成立；as 密度 15.7 vs CTO 实测 19.2 口径不同）。",
+    "three_rulings": [
+      "P2-8 提到 P1 并与第 2 客户鉴权并批",
+      "补第 9 条：门禁自己的质量（门禁变更必配先红后绿+反例夹具，受 K3 审计）",
+      "补第 10 条：每条规则必须写失效条件"
+    ],
+    "timing_corrections": [
+      "P0-6 依赖 win 机器在线（当前离线）→ 改「机器回归后第一件事」，验证脚本先写好",
+      "P0-5 前置 = 先让 5 份 K3 报告入库 + verdict 回填（#712/#713），再谈门禁化"
+    ]
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-22",
+  "updated_by": "synova-cto",
+  "acceptance_points": [
+    "入库件 sha256 与源侧一致（README-入库说明 §四 给复核命令）",
+    "裁定件含**逐条失效条件**（第 10 条自身示范）",
+    "分档表（A/B/C/D 四档）×（谁做 / 依赖 / 失效条件）齐备，且每条都能映射到具体派单件",
+    "第 9 条已写入 D911 验收（门禁类变更通则），本卡只作引用",
+    "**派工前置检查**：凡开工项必须满足其『依赖』列（B1←D911 切片 B；D1←5 份报告入库；D2←win 机器回归；B3←计数配方钉死；C1←先观测）"
+  ],
+  "next": "① 立卡落 main ② 本批派 B4（子进程协议，半天）+ C2（deps-interface 模板，半天）③ 下一批派 B1/B2/D1",
+  "note": "CTO 复现结论与清单**不完全一致**处已逐条记录（3 处证据指针修正）；清单的量级为估计值非测量值，开工以 task brief 重估为准。研究本体 6 项反例与失效条件随入库件一并保留，引用时不得省略。"
+}

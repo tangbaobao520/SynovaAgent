@@ -1,17 +1,43 @@
 {
   "task_id": "D830",
   "title": "T-D1/T-D10 复核：D810 是否真覆盖（对着已合入 main 独立复核）",
-  "status": "claimed",
+  "status": "audited",
   "risk": "medium",
   "spec": "派单即规格：docs/synova/coordination/批十三-断线补卡与固化-20260918.md",
   "write_set": [
     "task-state/D830.json"
   ],
   "impl": null,
-  "audit": null,
+  "audit": {
+    "verdict": "PASS",
+    "audited_at": "2026-09-20",
+    "audited_by": "k3",
+    "audit_base": "origin/main a04af01e（独立 worktree，行号以该提交为准）",
+    "summary": "T-D1（韧性层零生产调用）与 T-D10（重试事件从不落盘）按『穿真实入口』口径复核：主对话链韧性层已真实接线（非测试专用），重试事件已真实落盘，端到端复现成功。两项均可标 closed。",
+    "closed_items": ["T-D1", "T-D10"],
+    "p0p1p2": {
+      "p0": [],
+      "p1": [],
+      "p2": [
+        "P2-1 链式 provider 下上游 503 在重试事件中归类为 code=UNKNOWN（chain 聚合错误丢失 HTTP 状态码，deepseek onError 的 (503) 正则提取失效）→ byCode 统计粒度退化。证据：实测 session_events 载荷 {kind:llm_retry, code:UNKNOWN}，但原始失败为脚本化 503。归因: implement。非阻断（重试行为正确，仅可观测性粒度）。",
+        "P2-2 重试投影派生态（llm_retry_stats）在主链无常驻消费者，需 stateOf 按需读；checkpoint() 零消费者为 D827 已派单范围，不重复计。"
+      ]
+    },
+    "evidence": [
+      "①生产调用点（file:line @ a04af01e）：src/agent/tool-loop-executor.ts:19(import callWithResilience/appendRetryEvent)、:98-103(callLlm→callWithResilience)、调用点 :142/:257/:285/:407（非流式+流式+两处最终轮）；上游链 src/agent/conversation-engine.ts:465(sessionStore 注入 engineCtx)→:466(new ToolLoopExecutor)→:868/:872(引擎主循环消费)；落盘缝 src/agent/engine-context.ts(sessionStore 字段) + src/deploy/bootstrap.ts:31(retry-projection 副作用导入)；四个生产入口均传 sessionStore：src/cli.ts:120-125、src/routes/conversations.ts:234/:239、src/mcp/tool-definitions.ts:440、src/l1/im-inbound.ts:184-187。复现命令：grep -rn 'callWithResilience' src/ --include='*.ts' | grep -v .test.",
+      "②事件落盘：sqlite3 <db> 'SELECT * FROM session_events' → 行 {event_type:system, payload:{kind:llm_retry, provider:chain(deepseek→deepseek), code:UNKNOWN, attempt:0, delayMs:535, mode:chat, at:2026-09-20T11:36:05.298Z}}；写入侧 src/agent/tool-loop-executor.ts:110-128(onLlmRetry→appendRetryEvent)，投影 src/store/retry-projection.ts(读 RETRY_EVENT_KIND 单源，src/llm/retry-middleware.ts:177)。",
+      "③端到端（Mac 实测，未 mock 管线）：本地脚本化假上游（首 2 次 503 → 200）；真实入口 npx tsx src/cli.ts + LLM_BASE_URL 指假上游 + SYNOVA_DB_PATH=/tmp/d830-e2e.db；观察到：假上游 3 次命中（重试发生）、llm/retry-middleware 日志『LLM 调用失败，535ms 后重试』attempt=0、重试成功后正常回复、session_events 出现 llm_retry 事件（seq 1）+ assistant message（seq 2）。",
+      "④裁决：T-D1/T-D10 closed（主链覆盖成立）。"
+    ],
+    "uncovered": [
+      "诊断链/辅助 LLM 调用点仍直连 provider.chat，未经韧性层（D810 自述 PR-2/2 待推，本复核证实待推属实）：src/expert-platform/extractor.ts:67/:119/:170、src/agent/context-compaction.ts:161、src/routes/conversations.ts:124、src/routes/diagnosis.ts:283、src/services/background-review.ts:130/:146、src/orchestrator/context-engine.ts:308。这些不属于 T-D1『主对话链』口径，但属于韧性层全面覆盖的剩余面——建议 CTO 在 PR-2/2 合入后再派一次增量复核（或并入 D832 固化验收）。",
+      "Windows 实机行为未验（本复核仅 Mac；铁律环境注记）——CLI/路由装配为纯 Node 逻辑，Win 风险低，仍按卡口径挂账。"
+    ],
+    "l4_gap": "本次无 P0/P1。防线观察：D810 当时靠 K3 专项审计发现『机制建成未接线』，控制塔接线门禁（组4）只查『export 有引用』，拦不住『引用只在测试』——正是本卡『穿真实入口』判定式要固化的点（D832 范围）。"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-09-18",
-  "updated_by": "synova-cto",
+  "updated_at": "2026-09-20",
+  "updated_by": "k3",
   "domain": "k3",
   "owner": "k3",
   "milestone": "M1 产品可用",
@@ -26,7 +52,7 @@
     "复核口径按『穿真实入口』：跑一次真实对话并制造一次可重试失败（或假上游脚本化 503）→ 观察重试与落盘",
     "结论若为『已覆盖』→ 在 task-state 里把 T-D1/T-D10 标 closed 并在台账登记；若『未覆盖』→ 给出缺口清单（文件:行 + 缺口）"
   ],
-  "next": "见派单文档对应小节；开工第一步重新核行号（会漂移）",
+  "next": "审计完成（PASS，T-D1/T-D10 closed）；剩余面见 audit.uncovered，建议随 D810 PR-2/2 增量复核",
   "note": "背景：D810 PR-1/2 core 已合（6 生产文件 9 处接线 + 重试事件落盘），PR-2/2 待推。任务书 T-D1/T-D10 写于 D810 之前 → 需按最新 main 复核，避免重复劳动或误判。判据 C。归属：K3（独立复核）。",
   "executor": "k3",
   "acceptance_level": "代码级可验（Mac 必须验）；若涉及 Windows 实机行为 → 挂账，Win 回归后补验，禁止声称"

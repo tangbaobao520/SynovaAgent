@@ -1,0 +1,11 @@
+{
+  "task_id": "D772",
+  "title": "收口登记：D769 卡 + D770/D771 自身台账（拆单后续）",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-15",
+  "updated_by": "alloc-task-id"
+}

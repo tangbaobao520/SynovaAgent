@@ -1,0 +1,27 @@
+{
+  "task_id": "D850",
+  "title": "度量口径改造：取消整体完成度百分数 → 离散三档 + evidenceCmd（小队 D850 编码 A）",
+  "status": "impl_done",
+  "risk": "high",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "branch": "team/d850-discrete-health",
+  "worktree": ".synova-wt-d850",
+  "base": "origin/main dae40d96",
+  "spec": "task-1（小队 D850 任务卡，canonical）",
+  "impl": "scripts/project/gen-project-board.py + scripts/product-lines/calc-progress.py + scripts/product-lines/gen-progress-page.py + tests/project/gen-project-board.test.sh + 3 派生件重生成 +【退回返工 V-1/V-2 闭环】calc-progress evidence_cmd 逐段下钻+线 id 定位（203/203 rc=0 且值对账）；新增 tests/project/calc-progress-panel.test.sh（面板契约，可进 CI）；两件 identity.note 补完备性边界；D852 合并后派生件按新 main 重生成（backlog 46→52） +【第二轮退回 ⓐ 闭环】evidence_cmd 恢复源侧重算（compare 形态 + fail-closed）/ artifact_selfcheck_cmd 改名并声明不承担可证伪职责 / 件内 cmd_semantics 披露/ 线级补独立判据（reconciliation + bound）/ 测试加 git 闸显式 SKIP",
+  "audit": null,
+  "fix_task_id": null,
+  "authority": [
+    "docs/authority/产品完成度定义与推进总纲-20260918.md §1.2",
+    "docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md §二",
+    "/Users/wane/山河研究院/99-综合/方案-项目度量-从声明驱动到事实驱动.md §四/§六"
+  ],
+  "updated_at": "2026-09-20T23:30:40+08:00",
+  "updated_by": "coding",
+  "rework": {
+    "rounds": 2,
+    "reason": "第1轮: V-1 面板 144/203 条 evidence_cmd 不可跑 + V-2 无测试覆盖；第2轮: ⓐ 语义不达标 —— evidence_cmd 被降级为「读回派生物」= 自证，非复现",
+    "closed_by": "team/d850-discrete-health 追加提交（同一 PR #683）"
+  }
+}

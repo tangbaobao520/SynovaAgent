@@ -1,0 +1,36 @@
+{
+  "task_id": "D843",
+  "title": "归档恢复 2/3：task-state 记账卡（D783/D784/D785/D787/D788/D789/D792）",
+  "status": "impl_done",
+  "risk": "low",
+  "spec": "归档恢复：2026-09-20 主工作区清理时，这些文件被保全进归档（当时全仓唯一、main 里没有）。经逐项核对：与 main 无冲突、看板影响实测为零 → 走正常 PR 捡回仓库。",
+  "write_set": [
+    "task-state/D843.json",
+    "task-state/D783.json",
+    "task-state/D784.json",
+    "task-state/D785.json",
+    "task-state/D787.json",
+    "task-state/D788.json",
+    "task-state/D789.json",
+    "task-state/D792.json"
+  ],
+  "impl": "从 .synova-archive-20260920/moved*/ 按原路径恢复；未经修改（内容与归档一致）",
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-20",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "owner": "synova-cto",
+  "executor": "synova-cto",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [],
+  "blocked": null,
+  "target": "2026-W38",
+  "acceptance_points": [
+    "恢复后文件内容与归档一致（sha256 逐一比对）",
+    "看板派生器 gen-project-board.py 仍 degraded=false 且数字不变",
+    "PR 走 CI 全绿后合并"
+  ],
+  "next": "—",
+  "note": "7 张历史记账卡（文档一致性批/审计侧免疫细胞/CT 三机制/预算口径/审计批次五/main 存量红定位）。"
+}

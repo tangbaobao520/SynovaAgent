@@ -1,0 +1,33 @@
+{
+  "task_id": "D845",
+  "title": "固化 DSH 决策六原则为纪律件（skill：dsh-decision-lens）——创始人 2026-09-20 定'以后遇到需要决策的用 DSH 的思维'",
+  "status": "impl_done",
+  "risk": "low",
+  "spec": "创始人裁定：DSH 源码可核的六条原则（上限即纪律 / 归属自有可归因 / 只协调不干活 / 机械与业务语义分离 / 诊断不污染主路径 / 权威账本在 Lead）要变成决策纪律与工作纪律。",
+  "write_set": [
+    ".claude/skills/dsh-decision-lens/SKILL.md",
+    ".dsh/skills/dsh-decision-lens/SKILL.md",
+    ".claude/task-briefs/2026-09-20-D845-DSH决策纪律skill.md",
+    "task-state/D845.json"
+  ],
+  "impl": "新增 skill（双份，过 D370 技能同步门禁）：六原则表 + file:line 证据 + 决策四步 + 复核命令 + 借鉴边界 + 反模式清单",
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-20",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "owner": "synova-cto",
+  "executor": "synova-cto",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [],
+  "blocked": null,
+  "target": "2026-W38",
+  "acceptance_points": [
+    "skill 在 .claude/skills 与 .dsh/skills 双份一致（D370 门禁过）",
+    "六条原则每条带 DSH file:line 证据 + 一段可复制的复核命令",
+    "含借鉴边界（单包 vs 单仓 ⇒ advisory 不足，必须文件级互斥）",
+    "含决策四步与反模式清单，可直接用于派单/裁决"
+  ],
+  "next": "—",
+  "note": "本件为纪律固化；后续所有需要取舍的决策（队列/并发/要不要加机制）先过本 skill 六条。"
+}

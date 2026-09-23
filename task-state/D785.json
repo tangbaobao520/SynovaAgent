@@ -1,0 +1,11 @@
+{
+  "task_id": "D785",
+  "title": "因果链 22 条 ↔ cycles/*.cycle.json 对应关系取证（供 §8#5 裁定）",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-15",
+  "updated_by": "alloc-task-id"
+}

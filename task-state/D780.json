@@ -1,0 +1,11 @@
+{
+  "task_id": "D780",
+  "title": "K3 审计批次四：33 个 impl 无 audit 任务 + 本批新交付（D751/D752/D754/D757/D758/D759）",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-15",
+  "updated_by": "alloc-task-id"
+}

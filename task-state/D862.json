@@ -1,0 +1,39 @@
+{
+  "task_id": "D862",
+  "title": "P-1 收尾三项（D821 越界挂账）：connector 覆盖 src/connectors/ima.ts+ima-connector.ts ｜ 健康检查暴露 kind:'socks' 含值 ｜ 启动期 proxy-install/bootstrap",
+  "status": "claimed",
+  "risk": "high",
+  "spec": "D821 开工前冲突扫描发现：其原卡 3 条 acceptance_points 要求在派单写集之外改文件；(1) connector 直连（源卡反例正是 provider 走代理、connector 直连）(2) 健康检查只含变量名不含值，需改 src/routes/** 或 src/server.ts (3) src/deploy/bootstrap.ts 启动期安装。CTO 裁决：本卡承接三项，使 P-1 由『部分关闭』转为『关闭』。",
+  "write_set": [
+    "src/connectors/ima.ts",
+    "src/connectors/ima-connector.ts",
+    "src/routes/**",
+    "src/server.ts",
+    "src/deploy/bootstrap.ts",
+    "tests/**",
+    "task-state/D862.json"
+  ],
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-20",
+  "updated_by": "synova-cto",
+  "domain": "win",
+  "owner": "mac-coding",
+  "executor": "mac-coding",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [
+    "D821"
+  ],
+  "blocked": "前置：D821 合入（同出口文件 src/providers/http-exit.ts 先冻结）",
+  "target": "2026-W38",
+  "acceptance_points": [
+    "connector 出站一并走唯一出口：给 grep before/after 计数 + 穿真实入口证据（connector 真实调用经代理）",
+    "健康检查暴露代理配置时**只暴露是否存在/来源，不泄露值**（给输出样例；禁打印凭据）",
+    "启动期安装（bootstrap）走同一出口配置，代理不可达时 degraded 可见（给输出）",
+    "跑通后把 P-1 在 preconditions.yaml 标『关闭』并附证据指针",
+    "G1 守卫：grep -rn \"@deepseek-ai\" src/ packages/ = 0"
+  ],
+  "next": "① 等 D821 合入（同出口先冻结）② 三项逐条闭环 ③ K3 复审 ④ 交回三件",
+  "note": "来源：D821 开工前冲突扫描（执行方正确拦下，属 CTO 派单写集疏漏的补救）；承接 3 项越界验收点。"
+}

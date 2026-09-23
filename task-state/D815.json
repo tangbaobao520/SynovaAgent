@@ -1,7 +1,7 @@
 {
   "task_id": "D815",
   "title": "线10 资本循环全链路独立复核（第一条 100% 线收官，10-8 门槛）",
-  "status": "claimed",
+  "status": "audited",
   "risk": "medium",
   "spec": "派单即规格：docs/synova/coordination/派单-批九-20260918.md §A/D815",
   "write_set": [
@@ -11,10 +11,16 @@
     "task-state/D815.json"
   ],
   "impl": null,
-  "audit": null,
+  "audit": {
+    "verdict": "pass",
+    "date": "2026-09-20",
+    "report": "docs/synova/audit-reports/2026-09-18-K3-line10.md",
+    "evidence": "docs/synova/product-lines/evidence/k3-line10-2026-09-18.json",
+    "result": "10-1/10-2/10-3/10-4/10-6/10-8 全 PASS；10-5/10-7 V1 外（10-5 接线已确认有生产调用点）；线10 重算 6/6"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-09-18",
-  "updated_by": "synova-cto",
+  "updated_at": "2026-09-20",
+  "updated_by": "synova-k3",
   "domain": "k3",
   "owner": "k3",
   "milestone": "M1 产品可用",

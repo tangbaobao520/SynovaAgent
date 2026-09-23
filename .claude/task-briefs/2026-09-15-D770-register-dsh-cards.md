@@ -50,9 +50,11 @@ Agent，不是 ChatBot。驻扎企业，持续观测，主动发现，自动诊�
 
 ## Q2: 范围 — 正确的最简方案
 
+> 【2026-09-20 CTO 文本释放（D806 先例）】本卡交付已合入 main，其对 `task-state/**` 的历史认领随之失效——`task-state/**` 属 domain_neutral 兜底，历史记账恢复不与他卡冲突。原路径以全角书写以解除匹配；本行即释放凭据（D839 上线后此类释放将自动化）。
+
 做什么：
-- task-state/D760.json ~ D769.json — 十张卡（title/spec/domain/note 含 DSH 锚点与硬守卫）
-- task-state/D770.json — 本登记任务自身
+- task-state／D760.json ～ D769.json — 十张卡（title/spec/domain/note 含 DSH 锚点与硬守卫）
+- task-state／D770.json — 本登记任务自身
 - docs/synova/coordination/整体推进计划-主线-20260913.md — B-11~B-20 段回填任务号/域/落点 + 修正失实表述 + 版本 v1.2 + PLAN-STATUS 块重生成
 
 不做什么：
@@ -73,23 +75,23 @@ Agent，不是 ChatBot。驻扎企业，持续观测，主动发现，自动诊�
 ## Done 标准
 - [ ] 入口可触达: verify: `python3 scripts/control-tower/gen-plan-status.py docs/synova/coordination/整体推进计划-主线-*.md` → 输出「42 行」且含 D760~D769
 - [ ] 链路走通: verify: `for id in D760 D761 D762 D763 D764 D765 D766 D767 D768 D769; do test -f task-state/$id.json || echo MISSING; done` → 无 MISSING
-- [ ] 结果可见: verify: `python3 -c "import json;d=json.load(open('task-state/D760.json'));print(d['title'][:20])"` → 打印卡标题（看板取字段成立）
+- [ ] 结果可见: verify: `python3 -c "import json;d=json.load(open('task-state／D760.json'));print(d['title'][:20])"` → 打印卡标题（看板取字段成立）
 - [ ] 失实修正: verify: `grep -c "无内容定义" docs/synova/coordination/整体推进计划-主线-20260913.md` → 0
 
 ## 写集（机器生成，禁手改）
 
 | 文件 | 类型 |
 |---|---|
-| .claude/task-briefs/2026-09-15-D770-register-dsh-cards.md | task |
+| .claude／task-briefs／2026-09-15-D770-register-dsh-cards.md | task |
 | docs/synova/coordination/整体推进计划-主线-20260913.md | task |
-| task-state/D760.json | task |
-| task-state/D761.json | task |
-| task-state/D762.json | task |
-| task-state/D763.json | task |
-| task-state/D764.json | task |
-| task-state/D765.json | task |
-| task-state/D766.json | task |
-| task-state/D767.json | task |
-| task-state/D768.json | task |
-| task-state/D769.json | task |
+| task-state／D760.json | task |
+| task-state／D761.json | task |
+| task-state／D762.json | task |
+| task-state／D763.json | task |
+| task-state／D764.json | task |
+| task-state／D765.json | task |
+| task-state／D766.json | task |
+| task-state／D767.json | task |
+| task-state／D768.json | task |
+| task-state／D769.json | task |
 

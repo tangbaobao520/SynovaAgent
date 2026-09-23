@@ -1,0 +1,35 @@
+{
+  "task_id": "D914",
+  "title": "ownership 补齐：CTO 治理文档三目录（dispatch/authority/research）落 win 兜底 → 归 mac",
+  "status": "impl_done",
+  "risk": "medium",
+  "domain": "mac",
+  "owner": "synova-cto",
+  "executor": "synova-cto",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [],
+  "blocked": null,
+  "target": "2026-W39",
+  "spec": "实测（`python3 scripts/control-tower/check-ownership.py`）：`docs/synova/dispatch/**`、`docs/authority/**`、`docs/synova/research/**` 三个 CTO/研究线文档目录**均落 `**` 兜底 = win**，而兄弟路径 `docs/synova/coordination/**`、`docs/synova/product-lines/**` 早已明列 mac。同批 PR 混装即触发 D733「变更跨域」，已实际卡住 #703/#705/#706 三件。这是缺陷②（ownership 兜底连带误判）在 **docs 侧的第 5 次**（前四次：D782 tests/doc-system、D793/#D795 tests/project、D861 tests/agent+e2e）。本卡只做**正确登记**（不改任何既有归属），机制（新目录登记门禁 + 代行开关）由 D911 切片 B 承接。",
+  "write_set": [
+    "docs/synova/coordination/ownership.yaml",
+    ".github/CODEOWNERS",
+    "task-state/D914.json",
+    ".claude/task-briefs/"
+  ],
+  "impl": {
+    "summary": "ownership.yaml 补三条 mac 规则（dispatch/** / authority/** / research/**），`--emit-codeowners` 重生成 .github/CODEOWNERS；`tests/control-tower/check-ownership.test.sh` 51/51 通过。"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-22",
+  "updated_by": "synova-cto",
+  "acceptance_points": [
+    "`check-ownership.py` 对上述三类路径判 mac（给原始输出）",
+    "`tests/control-tower/check-ownership.test.sh` 51/51 通过（CODEOWNERS 逐字节 drift 断言不破）",
+    "不改任何既有归属（git diff 只新增行）",
+    "#703/#705/#706 re-merge main 后 D734 ② 不再判跨域"
+  ],
+  "next": "① 落 main ② re-merge 进 #703/#705/#706 ③ D911 切片 B 做治本（新目录登记门禁）",
+  "note": "只登记，不加机制。治本（standby 代行 + 新目录登记门禁）在 D911。"
+}
