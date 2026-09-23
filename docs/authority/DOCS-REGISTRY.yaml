@@ -224,3 +224,29 @@ documents:
     owner: CTO
     verified-by: scripts/control-tower/pre-dispatch-check.sh (planned)
 
+  # ---- 代码质量对比专项（CTO 2026-09-22 登记，D917）----
+  - id: DOC-0033
+    type: research
+    path: docs/synova/research/研究院交接-20260922/DSH-agent-team与Win侧Claude-Code质量对比.md
+    status: active
+    owner: CTO
+    note: "独立评估（ρ=0.727）；结论=两组质量同一量级、护城河是共享工程体系。sha256 e7d45e0f…9aa243"
+    verified-by: docs/synova/research/研究院交接-20260922/README-入库说明.md (哈希与逐字节一致)
+
+  - id: DOC-0034
+    type: research
+    path: docs/synova/research/研究院交接-20260922/双DSH执行提升清单.md
+    status: active
+    owner: CTO
+    note: "由 DOC-0033 推导的 8 项提升 + 4 项固化；CTO 逐条复现见 裁定-双DSH提升清单-20260922.md。sha256 662d9968…a9baa"
+    verified-by: docs/synova/coordination/裁定-双DSH提升清单-20260922.md (逐条复现结果)
+
+  # ---- 研究院材料权威级别（CTO 2026-09-22 登记，D912；原误标 D850 撞号）----
+  - id: DOC-0032
+    type: decision
+    path: docs/authority/研究院材料权威级别与引用纪律-20260920.md
+    status: active
+    owner: CTO
+    note: "创始人 2026-09-20 裁定：研究院材料＝与创始人裁定同级；撤回清单 > 任何旧说法；未入库＝视为未交办；派单必给权威件回执（§〇-c）"
+    verified-by: scripts/control-tower/pre-dispatch-check.sh (planned)
+

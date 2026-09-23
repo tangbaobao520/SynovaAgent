@@ -1603,6 +1603,15 @@ Binary file .claude/bypass.log matches
 2026-09-21T21:41:37+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=cecf4f0786cb7b52268976685db66748ba156044
 2026-09-22T00:44:52+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=7f39ef94c33b4ba7cc88f73ff83219e8f05d0f58
 2026-09-22T20:37:32+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=305d7a96ef8753de8a4e1d1c0aeb34456126fefd
+2026-09-22T20:47:56+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=667b355ab0808ac65e7120fad5143cdd9f22aa9c
+2026-09-22T20:50:16+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=53d46db40dff75111f7fb3ff82c4df4fb1cc0b3d
+2026-09-22T20:55:09+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=8a5ccc49d1a79dc6443e7e983f1a4c4816e4239a
+2026-09-22T20:45:52+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=6f6eea981f56c7f84c0eab79391107582fdaec72
+2026-09-22T20:48:40+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=18c3b672f7e5520eaa869ee76dfc5043b14f8051
+2026-09-22T20:39:04+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=3f656874ec9a6bbc6e60abab06ef20fa9d49fc04
+2026-09-22T20:34:11+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=f94a86f5aa22f6d81d4b1f2e06d4d483b95ac411
+2026-09-22T20:51:32+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=1d93780f74f655c066e89a02ff91f3e3f679c352
+2026-09-22T20:44:15+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=c7046c0707b2d3169dd7a1219ddbdb57592371ac
 2026-09-22T20:29:13+08:00 | GATE_FAIL_SOFT | exit=1 | branch=gate/d861-d860-mac
 2026-09-22T20:29:49+08:00 | GATE_FAIL_SOFT | exit=1 | branch=gate/d861-d860-mac
 2026-09-22T20:29:49+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=489717776b9ea8edb764ca3487daf78290aed0b9
@@ -1611,3 +1620,6 @@ Binary file .claude/bypass.log matches
 2026-09-22T20:28:18+08:00 | GATE_FAIL_SOFT | exit=1 | branch=fix/d861-win-tests-red
 2026-09-22T20:28:19+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=3c8cf14cac115c2f7054c52b8231953355f8df88
 2026-09-22T20:35:58+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=f08f2e078dcf79cd81106b63981c2683b3007409
+2026-09-22T22:14:18+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=f66ceb6f8321b8f27f067b929e09205cd4db30f6
+2026-09-22T22:36:28+08:00 | GATE_FAIL_SOFT | exit=141 | branch=docs/d917-quality-study-ingest
+2026-09-22T22:36:50+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=0bbfb97ae7545abf4bdeb449a414360b9fecf2f8
