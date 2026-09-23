@@ -42,13 +42,29 @@ while read -r p; do
   else echo "  ⚠️ 不存在: $p"; FIND=1; fi
 done < "$tmp"
 
-echo "── ⑥ 引用 file:line 抽查（行号会漂移）──"
-grep -oE '[A-Za-z0-9_./-]+\.(ts|cjs|mjs|sh|py|json|yml):[0-9]+' "$DOC" | sort -u | head -25 | while IFS=: read -r f l; do
-  if [ ! -f "$ROOT/$f" ]; then echo "  ⚠️ 文件不存在: $f"
-  elif [ "$(wc -l < "$ROOT/$f" | tr -d ' ')" -lt "$l" ]; then echo "  ⚠️ $f 仅 $(wc -l < "$ROOT/$f" | tr -d ' ') 行，引用 :$l 越界"
-  else echo "  ✅ $f:$l"; fi
-done > "$tmp.line"
-cat "$tmp.line"; grep -q '⚠️' "$tmp.line" && FIND=1
+echo "── ⑥ 引用可核验（D919: 全量不截断 + 含 .md/.html/.txt + 仓外根 + 错误码可归因）──"
+# D919 修复三缺口（原实现 `grep ... | head -25`）:
+#   ① 截断 → 第 26 条引用起永不校验（M1: 检查未执行 == 检查通过）
+#   ② 扩展名白名单不含 .md/.html/.txt → 「docs/**.md:行号」这类权威引用整体漏检（上一任翻车形态）
+#   ③ 无仓外根 → DSH 源码引用无处解析；无错误码 → 违规不可归因
+CITE_PY="$ROOT/scripts/control-tower/check-citations.py"
+if [ ! -f "$CITE_PY" ]; then
+  echo "  ⚠️ degraded: 引用核验器缺失（$CITE_PY）— 本项跳过（显式，不静默）"
+else
+  # 仓外权威源：DSH 安装目录（可经 SYNO_DSH_SRC 覆盖；不存在则记录为尝试根，不误报为通过）
+  DSH_SRC="${SYNO_DSH_SRC:-$(ls -d "$HOME"/.nvm/versions/node/*/lib/node_modules/@deepseek-ai/dsh 2>/dev/null | head -1)}"  # swallow-ok: 未装 nvm/DSH 时目录不存在属预期 → 空值即不启用仓外根（显式降级，下方有分支提示）
+  CITE_ARGS=("$DOC" --repo "$ROOT" --owner "pre-dispatch")
+  [ -n "$DSH_SRC" ] && CITE_ARGS+=(--external-root "$DSH_SRC")
+  CITE_RC=0
+  python3 "$CITE_PY" "${CITE_ARGS[@]}" > "$tmp.cite" 2>&1 || CITE_RC=$?
+  if [ "$CITE_RC" -eq 0 ]; then
+    echo "  ✅ 引用全部可核验（$(grep -oE '[0-9]+ 条' "$tmp.cite" | head -1)）"
+  else
+    sed 's/^/  /' "$tmp.cite"
+    if [ "$CITE_RC" -eq 2 ]; then echo "  ❌ 引用核验执行失败（fail-closed，不当作通过）"; else echo "  ❌ 存在不可核验引用——修正后再派单"; fi
+    FIND=1
+  fi
+fi
 
 echo "── ⑩ 主线计划锚定（CTO 必读：整体推进计划）──"
 PLAN=$(ls "$ROOT"/docs/synova/coordination/整体推进计划-主线-*.md 2>/dev/null | head -1)

@@ -1,0 +1,43 @@
+{
+  "task_id": "D919",
+  "title": "引用可核验门禁（check-citations fail-closed + 可归因；pre-dispatch ⑥ 接线 + CI 密封）",
+  "status": "impl_done",
+  "risk": "high",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": "dsh-cto",
+  "branch": "fix/d919-citation-gate",
+  "worktree": ".synova-wt-d919",
+  "base": "origin/main 18e8652c",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [
+    "D732",
+    "D749"
+  ],
+  "blocked": null,
+  "target": "2026-W39",
+  "spec": ".claude/task-briefs/2026-09-23-D919-citation-gate.md",
+  "impl": "新增 scripts/control-tower/check-citations.py（file:line / 区间 / 反引号裸路径；仓内+仓外根含 DSH node_modules/@deepseek-ai 布局；Unicode 路径；三态退出 0/1/2；5 种错误码 + owner 可归因；## 引用豁免 无理由不生效）；pre-dispatch-check.sh 第⑥步由 `grep|head -25` 截断实现改为调用核验器（fail-closed，缺失显式 degraded）；新增 tests/control-tower/check-citations.test.sh（13 断言）；本测试入 ci.yml 密封清单；决策 Note memory/notes/proposed/2026-09-23-d919-citation-gate-mechanism.md。",
+  "audit": null,
+  "fix_task_id": null,
+  "write_set": [
+    "scripts/control-tower/check-citations.py",
+    "scripts/control-tower/pre-dispatch-check.sh",
+    "tests/control-tower/check-citations.test.sh",
+    ".github/workflows/ci.yml",
+    "memory/notes/proposed/2026-09-23-d919-citation-gate-mechanism.md",
+    "task-state/D919.json",
+    ".claude/task-briefs/2026-09-23-D919-citation-gate.md",
+    ".claude/bypass.log"
+  ],
+  "evidence": {
+    "before": "pre-dispatch-check.sh:45-51 第⑥步 = `grep -oE '...(ts|cjs|mjs|sh|py|json|yml):[0-9]+' | sort -u | head -25`：截断（第 26 条起不查）/ 扩展名缺 .md（权威引用形态整体漏检）/ 无仓外根 / 无错误码",
+    "after": "bash tests/control-tower/check-citations.test.sh → 13 通过 0 失败；bash tests/control-tower/pre-dispatch-check.test.sh → 8 通过 0 失败（无回归）",
+    "real_doc_check": "docs/synova/coordination/整体推进计划-主线-20260913.md → 2 条引用 / 0 违规（噪声率 0）",
+    "regression_guards": "40 条违规全量报出（防 head -25 回归）；中文名文档 .md:3 不存在 → CITE_FILE_NOT_FOUND（防 ASCII 字符集漏检回归）；dsh-不存在包/lib/index.js:12 → exit 1（防伪造外部权威）",
+    "decision_ref": "参考：Anthropic（机器可验契约/fail-closed）+ DeepSeek/DSH（InvariantError 可归因、注册即校验声明）+ 第一性原理（不可复现的引用与不存在等价）"
+  },
+  "note": "创始人 2026-09-22 质问「我写了一份不存在的权威引用」的机制化落地——原会话给了结论未落机制，本卡补机制。红线：不碰 scripts/audit/**；本机制自身受 K3 独立审计（无豁免）。",
+  "updated_at": "2026-09-23",
+  "updated_by": "synova-cto"
+}
