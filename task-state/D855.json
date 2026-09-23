@@ -1,0 +1,33 @@
+{
+  "task_id": "D855",
+  "title": "「未知档」成分分解 + 实现态机器可读源（DSH 原则④：未知是第一等公民，禁静态凑数）",
+  "status": "claimed",
+  "risk": "high",
+  "spec": "创始人 2026-09-20 按 DSH 逻辑定性：接受「缺=不可判定」。当前读数 16 健康/3 写了没接/0 缺/98 未知（16+3+11+98=128 闭合，11 为 live_unverified）。",
+  "write_set": [
+    "scripts/project/gen-project-board.py",
+    "docs/synova/project/ledger.json",
+    "docs/synova/coordination/",
+    "task-state/D855.json"
+  ],
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-20",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": "mac-coding",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [],
+  "blocked": null,
+  "target": "2026-W38",
+  "acceptance_points": [
+    "台账/面板对 98「未知」给出**成分分解**（各自为什么不可判定：无实现态源 / 无接线证据 / 无穿入口证据 等），且每类可复现",
+    "**禁止**用静态判据（grep 型 L3，实测 3/5=60%）把「未知」折成「缺」或「健康」——给 grep 证据证明无此类合流",
+    "给出补『实现态』数据源的**最小方案**（一行说明 + 落点），本卡只需方案不需要实现",
+    "主路径零新增检查（对比 pre-commit 组数/耗时）"
+  ],
+  "next": "① 重新核行号 ② 先红后绿（如适用）③ 交回三件",
+  "note": "来源：D850/D852 收口件「呈创始人裁定」项；创始人按 DSH 逻辑裁定。"
+}

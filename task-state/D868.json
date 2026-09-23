@@ -1,0 +1,27 @@
+{
+  "status": "closed",
+  "risk": "medium",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [],
+  "blocked": null,
+  "updated_at": "2026-09-22",
+  "updated_by": "synova-cto",
+  "target": "2026-W39",
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "executor": null,
+  "title": "D868 CI 预算 + 跨域结构性根因（**已并入 D911 切片 B**）",
+  "spec": "原判：D734 PR 预算与 D733 域门禁在 win 离线期结构性失效。CTO 2026-09-22 裁定：**并入 D911 切片 B**（ownership standby 代行开关 + 预算口径与域判定同源）。本卡保留为来源登记，不再单独派工。",
+  "write_set": [
+    "task-state/D868.json"
+  ],
+  "acceptance_points": [
+    "本卡状态标记 superseded_by=D911（防止重复派工）"
+  ],
+  "note": "superseded_by: D911。来源：D865 复审/门禁观察；实测证据见 docs/synova/coordination/裁定记录-门禁三缺陷-20260922.md §缺陷②。",
+  "next": "无（并入 D911）",
+  "task_id": "D868"
+}

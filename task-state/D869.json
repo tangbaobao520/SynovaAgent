@@ -1,0 +1,31 @@
+{
+  "status": "claimed",
+  "risk": "medium",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [],
+  "blocked": null,
+  "updated_at": "2026-09-22",
+  "updated_by": "synova-cto",
+  "target": "2026-W39",
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "executor": null,
+  "title": "门禁组 7 死检查：`^+++` 使 grep -Ev exit 2 被 `|| true` 吞",
+  "spec": "`scripts/pre-commit-check.sh:991` 附近，组 7 用 `grep -Ev '^+++'` 过滤 diff 行；无匹配时 grep 退出码 2 被 `|| true` 吞掉 → 该检查组实际**从未执行**（静默降级，铁律 11 违规）。",
+  "write_set": [
+    "scripts/pre-commit-check.sh",
+    "tests/control-tower/",
+    "task-state/D869.json"
+  ],
+  "acceptance_points": [
+    "判别性夹具：构造必然命中/必然不命中的两种输入，证明组 7 不再静默跳过（先红后绿）",
+    "该组在 CI（SYNO_CI=1）下真失败时 job 判红（不得 `|| true` 吞退出码）",
+    "与 D911 切片 C 串行（同文件 pre-commit-check.sh 单写者）"
+  ],
+  "note": "与 D911 切片 C 同文件 → **串行**，先后由 CTO 排期决定。",
+  "next": "① 等 D911 切片 C 排期",
+  "task_id": "D869"
+}

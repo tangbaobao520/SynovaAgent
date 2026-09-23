@@ -1,0 +1,32 @@
+{
+  "task_id": "D921",
+  "title": "K3 独立审计派单（D919 引用可核验门禁 + D920 合并队列推进器）",
+  "status": "impl_done",
+  "risk": "medium",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": "dsh-cto",
+  "branch": "docs/d921-audit-dispatch",
+  "worktree": ".synova-wt-d921",
+  "base": "origin/main b6e46caa",
+  "milestone": "M0 项目管理基建",
+  "depends_on": ["D919", "D920"],
+  "blocked": null,
+  "target": "2026-W39",
+  "spec": ".claude/task-briefs/2026-09-23-D921-K3-audit-dispatch.md",
+  "impl": "派单件 docs/synova/coordination/派单-K3审计-D919D920-20260923.md：八项必答题（判据可复现/fail-closed 真伪/截断回归/归因完整性/根因1防线/根因2二义/审计红线/夹带）+ 写集 + 验收标准 + 内部一致性自检 + 引用豁免（跨 PR 产物显式声明）。本件已用 D919 核验器自检：22 条引用 / 0 违规 / 2 条待建声明。",
+  "audit": null,
+  "fix_task_id": null,
+  "write_set": [
+    "docs/synova/coordination/派单-K3审计-D919D920-20260923.md",
+    ".claude/task-briefs/2026-09-23-D921-K3-audit-dispatch.md",
+    "task-state/D921.json",
+    ".claude/bypass.log"
+  ],
+  "evidence": {
+    "self_check": "python3 scripts/control-tower/check-citations.py <派单件> → 引用核验: 22 条 / 通过 20 / 待建声明 2 / 违规 0"
+  },
+  "note": "派单件自身的登记卡：取号走 alloc-task-id.sh（D921），兑现创始人「派单前复核」硬流程（skill: pre-dispatch-check 的机械项部分）。",
+  "updated_at": "2026-09-23",
+  "updated_by": "synova-cto"
+}

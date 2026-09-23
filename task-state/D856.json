@@ -1,0 +1,36 @@
+{
+  "task_id": "D856",
+  "title": "签署态单一权威源 + 派生表 + 不一致检查；重做 #677（0 字节空 blob 拒绝）",
+  "status": "claimed",
+  "risk": "high",
+  "spec": "DSH 原则②⑥：状态必须机器可核验且只有一个权威源；PR #677 把创始人裁定表落成 0 字节空 blob（main 版 4243B）→ 损坏产物不得进 main。",
+  "write_set": [
+    "docs/synova/coordination/创始人裁定表-§6五项-20260920.md",
+    "docs/synova/coordination/",
+    "docs/authority/DOCS-REGISTRY.yaml",
+    "task-state/D855.json",
+    "task-state/D856.json",
+    "task-state/D857.json"
+  ],
+  "note": "CTO 2026-09-22 补：D855/D857 为同批立卡（D856 裁决同时产出三张卡），原 write_set 仅声明自身 → D708 判另两张「夹带」；补登后口径一致。",
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-20",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": "mac-coding",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [],
+  "blocked": null,
+  "target": "2026-W38",
+  "acceptance_points": [
+    "签署态落**单一权威件**（含签署日期）；人读表标注『由权威件派生』",
+    "新增检查：表状态 ≠ 权威件 → **报红**（给先红后绿夹具）",
+    "裁定表以最新 main 重做（内容完整、**非空**，含 ☑ 与签署日期），PR 重开",
+    "文档真相防线（D2 登记门禁）增加**非空/骨架字段**校验，证明空 blob 类不可再进 main"
+  ],
+  "next": "① 重新核行号 ② 先红后绿（如适用）③ 交回三件",
+  "note": "来源：创始人 2026-09-20「四项按 DSH 逻辑」；#677 现象由队伍如实上报。"
+}
