@@ -1,0 +1,31 @@
+{
+  "status": "claimed",
+  "risk": "medium",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [],
+  "blocked": null,
+  "updated_at": "2026-09-22",
+  "updated_by": "synova-cto",
+  "target": "2026-W39",
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "executor": null,
+  "title": "首 token 窗口心跳/超时（N3）",
+  "spec": "N3 观察项：首个 token 到达前缺心跳/超时保护 → 长等待期不可观测、无法区分「慢」与「死」。落地为显式心跳事件 + 首 token 超时（超时须 degraded 可见，不静默）。",
+  "write_set": [
+    "src/",
+    "tests/",
+    "task-state/D866.json"
+  ],
+  "acceptance_points": [
+    "首 token 超时阈值可配置且默认值有出处",
+    "超时路径 degraded=true 并有 log.warn（铁律 24/31）",
+    "夹具：注入永不返回的 provider → 超时事件按时出现（先红后绿）"
+  ],
+  "note": "来源：N3 文档观察项（K3 复审批）。src 域 = win；win 离线期由 Mac 代行（走 `## 代行声明`，见 D911 切片 B）。",
+  "next": "① 规格 ② 派单",
+  "task_id": "D866"
+}
