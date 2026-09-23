@@ -1,0 +1,40 @@
+{
+  "task_id": "D920",
+  "title": "合并队列推进器入库（serialmerge 两根因机器化 + 密封测试）+ CTO 台账登记",
+  "status": "impl_done",
+  "risk": "high",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": "dsh-cto",
+  "branch": "fix/d920-merge-queue-tool",
+  "worktree": ".synova-wt-d920",
+  "base": "origin/main 18e8652c",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [
+    "D918"
+  ],
+  "blocked": null,
+  "target": "2026-W39",
+  "spec": ".claude/task-briefs/2026-09-23-D920-merge-queue-tool.md",
+  "impl": "scripts/control-tower/merge-pr-queue.py：纯函数 classify / dir_dirty_kind / conflict_files_from_mergetree / resolve_worktree（夹具可注入、零网络）+ 副作用层（rerun-failed-jobs / DIRTY_STALE 推 re-merge 强制重算 / merge / 合并后同步主工作区）；--dry-run + --fixture-* 注入缝。tests/control-tower/merge-pr-queue.test.sh 11 断言密封。台账追加本批 6 项实测发现。",
+  "audit": null,
+  "fix_task_id": null,
+  "write_set": [
+    "scripts/control-tower/merge-pr-queue.py",
+    "tests/control-tower/merge-pr-queue.test.sh",
+    "docs/synova/coordination/审计发现台账-DSH-CTO.md",
+    "memory/notes/proposed/2026-09-23-d920-merge-queue-tool.md",
+    "task-state/D920.json",
+    ".claude/task-briefs/2026-09-23-D920-merge-queue-tool.md",
+    ".claude/bypass.log"
+  ],
+  "evidence": {
+    "root_cause_1": "工作树参数缺失/为空 → cwd 落主工作区 → `git merge origin/main` 恒 'Already up to date' → 判成「等 GitHub 重算」空转 22 轮。物证: /tmp/serial5.log `[23:02:52] #712 === 开始（工作树 ）===`。修正=resolve_worktree 强校验，空分支名直接 error（回归断言已入库）",
+    "root_cause_2": "DIRTY 二义：真冲突 vs 平台合并性缓存过期。实测 #704 GitHub 判 dirty（base.sha 停在旧 main 08af2a65），本地 `git merge origin/main` rc=0 干净 → 缓存过期。修正=dir_dirty_kind 本地 merge-tree 分流，DIRTY_STALE → 推 re-merge 强制重算（实测 dirty→clean）",
+    "test": "bash tests/control-tower/merge-pr-queue.test.sh → 11 通过 0 失败",
+    "battle_tested": "#715 合并（日期炸弹修复落地 main=b6e46caa）；#704 re-merge 强制重算推送 07cefa47..503df169；#712 re-merge 换 head c8cc3dbb..312be9f4"
+  },
+  "note": "本批接手实测登记（全部物理复现）: ① gate-stats 日期边界定时炸弹（D918 已修并入 main）② K3 审计提交跨工作区无 COMMITTED 记录 → D331 拒推（本次按先例一次性补记）③ G12 写集一致性在 merge commit 上误拦（merge 无新声明，暂存集含 main 全量文件）④ alloc-task-id.sh 中文任务名触发 `BRIEF_FILE�: unbound variable`（ctrl-tower 模式2 全角紧贴变量）⑤ golden-case F1 门禁在环境失败时报「诊断质量退化」（M5+错误归因，台账 2026-09-17 已记同型第 2 次 → 本次第 3 次，升级创始人）⑥ CTO-HEALTH.md/DASHBOARD-CN.md 自动区滞后（08-29/08-28 产物 vs 当日事实）。",
+  "updated_at": "2026-09-23",
+  "updated_by": "synova-cto"
+}
