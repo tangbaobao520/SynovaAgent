@@ -37,6 +37,9 @@ docs/synova/product-lines/**             @tangbaobao520
 scripts/project/**                       @tangbaobao520
 tests/project/**                         @tangbaobao520
 docs/synova/project/**                   @tangbaobao520
+docs/synova/dispatch/**                  @tangbaobao520
+docs/authority/**                        @tangbaobao520
+docs/synova/research/**                  @tangbaobao520
 .github/workflows/**                     @tangbaobao520
 .github/CODEOWNERS                       @tangbaobao520
 VERSION.md                               @tangbaobao520

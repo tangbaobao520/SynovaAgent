@@ -14,7 +14,9 @@ import { describe, it, expect } from 'vitest';
 import { createMockGraphStoreReader } from '../../packages/test-kit/fixtures/test-doubles';
 import { computeKzIndex } from '../../extensions/sentinels/financing-constraint/computes/kz-index';
 import { computeCashRunway } from '../../extensions/sentinels/financing-constraint/computes/cash-runway';
-import { computeCashConversionCycle } from '../../extensions/sentinels/capital-turnover/computes/cash-conversion-cycle';
+// D861: capital-turnover 哨兵已合并入 capital-health（D15a 合并 + D358 _extinct 归档）
+//   ——import 路径随之更新，指向存活实现。
+import { computeCashConversionCycle } from '../../extensions/sentinels/capital-health/computes/cash-conversion-cycle';
 import { computeVariableCosts } from '../../extensions/sentinels/unit-economics/computes/variable-costs';
 import { computeMarginalContribution } from '../../extensions/sentinels/unit-economics/computes/marginal-contribution';
 import { computeFixedCostRigidity } from '../../extensions/sentinels/unit-economics/computes/fixed-cost-rigidity';

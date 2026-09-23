@@ -96,8 +96,32 @@ else
   BEHIND="$(_clean_num "$BEHIND")"
 fi
 FILES="$(printf '%s' "$FILES" | sed '/^$/d')"
+
+# ── D860 治理产物豁免口径（F9/F12 治本）──
+# 规则: 治理前缀（brief/卡/Note/规格/自验证据）且扩展名属治理产物（md/json/yaml/yml/txt）
+#        → 不计入 ≤12 文件预算（交付文件才计数）。
+# 反例防线: 同前缀下的**代码文件**（.ts/.sh/.py 等）不豁免——伪装成治理产物的代码仍被计数。
+GOV_PREFIX_RE='^(\.claude/task-briefs/|task-state/|memory/notes/|docs/plans/|docs/synova/product-lines/evidence/)'
+GOV_EXT_RE='\.(md|json|ya?ml|txt)$'
+COUNTED=""
+EXEMPT_N=0
+while IFS= read -r _f; do
+  [ -z "$_f" ] && continue
+  if printf '%s' "$_f" | grep -qE "$GOV_PREFIX_RE" && printf '%s' "$_f" | grep -qE "$GOV_EXT_RE"; then
+    EXEMPT_N=$((EXEMPT_N + 1))
+  else
+    COUNTED="${COUNTED}${_f}
+"
+  fi
+done <<EOF
+$FILES
+EOF
+COUNTED="$(printf '%s' "$COUNTED" | sed '/^$/d')"
+if [ "$EXEMPT_N" -gt 0 ]; then
+  echo "  ℹ️  D860 治理产物豁免: ${EXEMPT_N} 件不计预算（brief/卡/Note/规格/自验证据，代码文件仍计数）"
+fi
 N_FILES=0
-[ -n "$FILES" ] && N_FILES="$(printf '%s\n' "$FILES" | grep -c . | tr -d '\r\n')"
+[ -n "$COUNTED" ] && N_FILES="$(printf '%s\n' "$COUNTED" | grep -c . | tr -d '\r\n')"
 N_FILES="$(_clean_num "$N_FILES")"; N_FILES="${N_FILES:-0}"
 
 FAILED=0
@@ -122,7 +146,7 @@ fi
 if [ "$N_FILES" -eq 0 ]; then
   echo "  ✅ ② 无变更文件 → 域校验跳过"
 else
-  DOMAIN_OUT="$("$PYBIN" "$OWNERSHIP" $FILES 2>&1)"; DOMAIN_EXIT=$?
+  DOMAIN_OUT="$("$PYBIN" "$OWNERSHIP" $COUNTED 2>&1)"; DOMAIN_EXIT=$?
   if [ "$DOMAIN_EXIT" -eq 0 ]; then
     echo "  ✅ ② 变更单域: $(printf '%s\n' "$DOMAIN_OUT" | grep -E '^✅ PASS' | head -1)"
   elif [ "$DOMAIN_EXIT" -eq 1 ]; then

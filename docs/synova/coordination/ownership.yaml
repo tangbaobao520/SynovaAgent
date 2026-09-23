@@ -126,6 +126,20 @@ rules:
   - glob: "docs/synova/project/**"
     owner: "mac"
     source: "DIVISION-CHARTER-v4 §四（26 线 V1 验收标准 + ledger.json + 可视版 = D793/D795 产物）"
+  # D914 增补（2026-09-22）: CTO 治理文档三目录漏登记 → 落 `**` 兜底被判 win。
+  #   实测（`check-ownership.py`）: docs/synova/dispatch/** = win、docs/authority/** = win、
+  #   docs/synova/research/** = win —— 而兄弟路径 docs/synova/coordination/**、
+  #   docs/synova/product-lines/** 均已明列 mac。同批 PR 混装即触发 D733「变更跨域」，
+  #   已实际卡住 PR #703/#705/#706。三类文档全部是 CTO/研究线产出，归 mac（不改任何既有归属）。
+  - glob: "docs/synova/dispatch/**"
+    owner: "mac"
+    source: "CTO 派单件规范路径（2026-09-21 起）；同 docs/synova/coordination/** 惯例"
+  - glob: "docs/authority/**"
+    owner: "mac"
+    source: "CTO 权威层（DOCS-REGISTRY.yaml + 创始人裁定/总纲）；TASK-ROUTING.md L37"
+  - glob: "docs/synova/research/**"
+    owner: "mac"
+    source: "研究院交办件入库路径（D849/D912）；研究线=Mac DSH"
   - glob: ".github/workflows/**"
     owner: "mac"
     source: "TASK-ROUTING.md L34 场景回归 CI、产品进度 CI"

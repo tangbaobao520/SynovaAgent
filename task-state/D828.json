@@ -5,6 +5,9 @@
   "risk": "medium",
   "spec": "派单即规格：docs/synova/coordination/批十三-断线补卡与固化-20260918.md",
   "write_set": [
+    "src/l4/temporal-baseline.ts",
+    "src/sentinel/trend-wiring.ts",
+    "tests/sentinel/trend-wiring.test.ts",
     "task-state/D828.json"
   ],
   "impl": null,
@@ -25,7 +28,7 @@
     "验收按 docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md（禁 grep；三问自查；命令+原始输出）"
   ],
   "next": "见派单文档对应小节；开工第一步重新核行号（会漂移）",
-  "note": "CTO 已核：src/l4/temporal-baseline.ts:31 是 computeTemporalBaseline 的唯一命中（定义处），生产零调用方。它是『提前预警』这类卖点的地基；与指标时序（线 27-1）配对，但本卡先接线（历史可为测试注入）。判据 B。",
+  "note": "CTO 已核：src/l4/temporal-baseline.ts:31 是 computeTemporalBaseline 的唯一命中（定义处），生产零调用方。它是『提前预警』这类卖点的地基；与指标时序（线 27-1）配对，但本卡先接线（历史可为测试注入）。判据 B。\n\n【2026-09-20 补登记（M2 自违约修复 + 旧信息漏洞）】原 write_set 只写了自身卡 → 已补逐文件声明。",
   "executor": "mac-coding",
   "delegation": "Mac 代行 win（D773 规约；创始人 2026-09-18 重申『涉及 win 线的一并先给 Mac 执行』）",
   "cross_domain_note": "src/l4/temporal-baseline.ts（win）+ src/sentinel/**（mac）→ **拆两个 PR**（算法与接线=win，哨兵侧调用=mac）",
