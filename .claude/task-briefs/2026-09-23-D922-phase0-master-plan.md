@@ -38,8 +38,10 @@ Synova = AI 诊断 Agent。本任务在**治理层（scripts/control-tower + 规
 
 - `docs/synova/coordination/总计划-双DSH提升-W1波-20260923.md` — 总计划（依赖图 / 方案骨架 / 冻结清单 / 风险上限）
 - `docs/synova/product-lines/evidence/D922-phase0-recon-20260923.md` — 侦察证据（三域基础设施 + 冲突扫描）
-- `docs/synova/product-lines/evidence/D922-phase0-verify-20260923.md` — 独立自验记录（两轮）
+- `docs/synova/product-lines/evidence/D922-phase0-verify-20260923.md` — 独立自验记录（多轮）
 - `docs/synova/product-lines/evidence/D922-phase0-lead-probes-20260923.md` — 队长探针与门禁实跑原始输出（附录 B）
+- `.claude/task-briefs/2026-09-23-D922-phase0-master-plan.md` — 本 brief 自身（D708 合并级写集对账要求逐条精确路径；CI 实测曾因本文件与下条 Note 未声明而判「夹带 2 个」）
+- `memory/notes/proposed/2026-09-23-d922-w1-master-plan.md` — 决策 Note（铁律 49：治理类变更须引四态 Note）
 
 不做什么：
 
