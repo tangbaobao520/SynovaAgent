@@ -20,6 +20,7 @@
  *   - 场景判定 = 机器判定（exit 0/1），禁止"人工看看差不多"
  */
 import * as fs from 'fs';
+import * as os from 'os';
 import * as path from 'path';
 import * as childProcess from 'child_process';
 import { createRequire } from 'module';
@@ -95,19 +96,35 @@ export function validateExpectDoc(doc: unknown): ExpectDoc {
 }
 
 // ─── check 执行器（三态: pass/fail/error） ───
+// D924 子进程输出协议: 负载与元数据**分流**——body 落临时文件（curl -o），stdout 只留状态码（curl -w）。
+// 禁止把状态码以哨兵标记追加进 stdout 再字符串分割: 响应体含该标记即解析错乱。
+// 规范: docs/synova/coordination/规范-子进程输出协议-20260923.md
 function runHttp(check: Record<string, unknown>): { status: number; body: string } {
   // 同步执行: 用子进程 curl 保证零异步依赖（Windows Git Bash 自带 curl）
   const url = String(check.url);
-  const r = childProcess.spawnSync('curl', ['-sS', '-w', '\n__STATUS__:%{http_code}', url], {
-    encoding: 'utf-8', timeout: Number(check.timeoutMs || 30000),
-  });
-  if (r.error) {
-    const err = new Error(`HTTP 请求失败: ${r.error.message}`);
-    (err as Error & { code: string }).code = 'ASSERT_HTTP_ERROR';
-    throw err;
+  // 临时文件走 os.tmpdir()（Windows 兼容，不硬编码 /tmp）
+  const bodyPath = path.join(os.tmpdir(), `synova-http-body-${process.pid}-${Date.now()}.tmp`);
+  try {
+    const r = childProcess.spawnSync('curl', ['-sS', '-o', bodyPath, '-w', '%{http_code}', url], {
+      encoding: 'utf-8', timeout: Number(check.timeoutMs || 30000),
+    });
+    if (r.error) {
+      const err = new Error(`HTTP 请求失败: ${r.error.message}`);
+      (err as Error & { code: string }).code = 'ASSERT_HTTP_ERROR';
+      throw err;
+    }
+    // 分流后 stdout 只含状态码；连接失败时 curl 仍写 %{http_code}=000（实测）
+    const raw = r.stdout || '';
+    const status = Number(raw.trim() || 0);
+    const fileBody = fs.existsSync(bodyPath) ? fs.readFileSync(bodyPath, 'utf-8') : '';
+    // D924 字节级兼容: 旧形态下 -w 模板的 '\n' 前缀残留在 body 尾部，故旧 body = 原文 + '\n'；
+    // stdout 为空（curl 未产出状态码）时旧 body 为空串。保留此语义以维持对外 {status, body} 逐位一致。
+    // 失效条件见规范 §5（待全部 expect.json 重新基线后可撤掉这个 '\n'）。
+    return { status, body: raw === '' ? '' : fileBody + '\n' };
+  } finally {
+    // force: true —— 文件不存在不抛（curl 未产出负载是正常路径，非异常）
+    fs.rmSync(bodyPath, { force: true });
   }
-  const parts = r.stdout.split('__STATUS__:');
-  return { status: Number(parts[1]?.trim() || 0), body: parts[0] || '' };
 }
 
 function runSqlite(check: Record<string, unknown>): { rows: number; firstRow: Record<string, unknown> | null } {
