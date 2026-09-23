@@ -40,6 +40,117 @@ $ ls …/packages | grep -c '^dsh-'
 
 ---
 
+## 〇二 路径约定与计数口径（v2 补正 · 每条附完整路径 + 命令 + 原始输出）
+
+> 本节为回应 D927 v2 复核的 5 条补证 + 1 条计数口径对齐。**全部命令以 `R=/Users/wane/src/deepseek-harness-017` 为前缀。**
+
+### ① 路径约定：`packages/<组>/<包>/…` —— **两层，不是一层**
+
+**这是复核方按 `packages/settings/src/`、`packages/mcp-client/src/`、`packages/*/skills/` 未命中的唯一原因。**
+
+```
+$ ls -d "$R/packages/mcp-client" "$R/packages/settings/src/index.ts"
+ls: /Users/wane/src/deepseek-harness-017/packages/mcp-client: No such file or directory
+ls: /Users/wane/src/deepseek-harness-017/packages/settings/src/index.ts: No such file or directory
+$ ls -d "$R/packages"/*/skills | wc -l
+       0
+$ ls -d "$R/packages"/*/*/skills | sed "s|$R/||"
+packages/preset/agent-preset/skills
+```
+
+**正确完整路径（逐条复核通过）**：
+
+| 项 | 完整路径 | 命令 + 原始输出 |
+|---|---|---|
+| **B-09** | `/Users/wane/src/deepseek-harness-017/packages/preset/agent-preset/skills/editing-cordis-compositions/SKILL.md`（5739 B, mtime 09-22 23:45） | `sed -n '70p' <path>` → `Before declaration rows, a user preset was a directory $DSH_HOME/.agent-presets/<id>/ holding preset.yml … and agent.cordis.yml … **Nothing reads that directory any more.** …` |
+| **B-11** | `…/packages/mcp/mcp-client/src/transport.ts`（1594 B）<br>`…/packages/mcp/mcp-client/package.json`（2308 B, mtime 09-23 14:27） | `sed -n '9,11p' transport.ts` → `import type { Transport } from '@modelcontextprotocol/client'` / `import { StdioClientTransport } from '@modelcontextprotocol/client/stdio'` / `import { StreamableHTTPClientTransport } from '@modelcontextprotocol/client'`<br>`sed -n '42p' package.json` → `"@modelcontextprotocol/client": "2.0.0",` |
+| **B-10** | `…/packages/settings/settings/src/index.ts`（20807 B） | `sed -n '175,176p'` → `function mergeLayers(under: unknown, over: unknown): unknown {` / `  if (!isPlainObject(under) \|\| !isPlainObject(over)) return over` |
+
+**规律**：包名在**组目录之下**，故
+- `src` 路径 = `packages/<组>/<包>/src/`
+- `skills` 路径 = `packages/<组>/<包>/skills/`
+- 三份「`packages/<包>/src`」形态的**全都不存在**。
+
+### ② 计数口径：`lib/index.js` = **307**；复核方 **710/711** 是**另一种口径**
+
+```
+$ find packages -path '*/lib/index.js'                                  → 307   ← 本件口径
+$ find packages -name 'index.js' -not -path '*/node_modules/*'          → 711   ← 复核方近似口径
+$ find packages -path '*/lib/*.js' -not -path '*/node_modules/*'        → 2644
+$ find packages -name 'index.js'                                        → 711
+$ git ls-files '*/lib/index.js'                                         → 0     ← 全部未入 git
+$ git check-ignore -v packages/util/atomic-write/lib/index.js
+  .gitignore:7:lib/	packages/util/atomic-write/lib/index.js
+```
+
+**差额 711 − 307 = 404 的来源**（逐条分布）：
+```
+307 个 …/lib/types/index.js          ← 差额主体
+ 70 个 …/lib/types/client/index.js
+其余 27 个 …/lib/{cdp,runtime,host,text,sources,sidebar-chat}/index.js
+```
+即：**307 是"构建产物入口文件 `lib/index.js`"；710/711 是"`lib/` 树下所有叫 `index.js` 的文件"**（含 `lib/types/**`）。两者都正确，**但必须写明是哪一个**。
+
+**三条排除项声明**：
+1. **`node_modules` 不影响计数**：3349 个 `packages/**/node_modules/@deepseek-ai/*` 是**符号链接**（如 `packages/webhook/webhook/node_modules/@deepseek-ai/dsh-util-values -> ../../../../util/values`），`find` 默认**不跟随软链**、`grep -r` 亦然 → 含/不含 `node_modules` 排除项结果相同（307 = 307，711 = 711）。
+2. **`lib/` 是 gitignored 构建产物**（`.gitignore:7`），`git ls-files '*/lib/index.js'` = **0** → **判断面必须用 `git ls-files`，不能用 `ls`/`find`**。
+3. **`bash` 是 macOS 自带 3.2.57，无 `globstar`** → `shopt -s globstar` 报 `invalid shell option name`；`zsh 5.9` 下 `packages/**/lib/index.js` 展开 = **307**（与本件一致）。所谓"`packages/**/lib/index.js` = 710"**在本机任一 shell 均不可复现**。
+
+### ③ B-12 分层口径（**本项为 v2 初版的口径瑕疵，已修正**）
+
+```
+$ grep -rn "createHmac\|timingSafeEqual" "$R/packages/webhook" --include="*.ts" | grep -v node_modules | grep -v "/tests/"
+  → 0 命中                                              ← 生产源码侧
+$ grep -rn "createHmac\|timingSafeEqual" "$R/packages/webhook" | grep -v node_modules
+  → 4 命中（全部为 createHmac，全部在 tests/*.spec.ts）  ← 复核方所见
+$ grep -rn "timingSafeEqual" "$R/packages/webhook"
+  → 0 命中                                              ← 全口径零命中
+```
+
+4 行明细（**均为测试自己"签发"签名喂被测代码，非验签实现**）：
+```
+packages/webhook/webhook-github/tests/handler.spec.ts:1              import { createHmac } from 'node:crypto'
+packages/webhook/webhook-github/tests/handler.spec.ts:55             return `sha256=${createHmac('sha256', secret).update(body).digest('hex')}`
+packages/webhook/webhook-github/tests/loader-composition.spec.ts:1   import { createHmac } from 'node:crypto'
+packages/webhook/webhook-github/tests/loader-composition.spec.ts:76  const signature = `sha256=${createHmac('sha256','loader-secret').update(body).digest('hex')}`
+```
+唯一生产实现点：`packages/webhook/webhook-github/src/handler.ts:101` `verified = await new Webhooks({ secret: credential.value }).verify(body, signature)`。
+
+**修正后的结论**：
+- "DHS 自己不实现 HMAC 验签" **成立**（生产源码零命中 + 单点委托）。
+- ~~"我们须自研"~~ → **"自研是建议，不是技术被迫"**：① 自研 `crypto.createHmac` + `crypto.timingSafeEqual`（零新依赖，约 20 行，**建议**）；② 跟随 DSH 引 `@octokit/webhooks`（新增运行时依赖，与 G5 冲突）。**属产品/依赖政策决定。**
+- **纪律教训**：负面断言（"零命中"）**必须写明搜索范围**（是否含 `tests/`、`node_modules/`）——这与本件主张的"判断面用 `git ls-files`"是同一条纪律。
+
+### ④ B-18 五处 bundle 的 invariants 挂载点（逐一证据）
+
+```
+$ for b in base web-app headless acp-app sdk-app sdk-minimal; do
+    f="$R/packages/bundle/$b/cordis.patch.yml"
+    grep -q "dsh-invariants" "$f" && echo "$b 有" || echo "$b 无"
+  done
+```
+
+| bundle | patch 行数 | 是否挂载 `dsh-invariants` | 证据 |
+|---|---|---|---|
+| `base` | 525 | **❌ 无** | patch 内无 `dsh-invariants` 行 |
+| `web-app` | 544 | **❌ 无** | 同上（含其 `presets/*.patch.yml` 4 份也无） |
+| `headless` | 34 | **❌ 无** | 同上 |
+| `acp-app` | 24 | **❌ 无** | 同上 |
+| `sdk-app` | 40 | **❌ 无** | 同上 |
+| **`sdk-minimal`** | 158 | **✅ 有** | `packages/bundle/sdk-minimal/cordis.patch.yml:106` `- id: invariants` / `:107` `name: '@deepseek-ai/dsh-invariants'` |
+
+**全 bundle 组 `grep -rn "invariants"` 命中仅 4 处**：
+```
+packages/bundle/sdk-minimal/cordis.patch.yml:106-107   ← 唯一挂载
+packages/bundle/sdk-minimal/tests/sdk-minimal.spec.ts:52   ['invariants', '@deepseek-ai/dsh-invariants'],
+packages/bundle/sdk-minimal/package.json:41               "@deepseek-ai/dsh-invariants": "workspace:*",
+packages/bundle/base/README.md:80/96/101                  ← 散文：声明 base 自身不发布 invariant companion（≠ 挂载 dsh-invariants）
+```
+**且 `sdk-minimal` 是唯一挂载整个 invariant 族的 bundle**——除 `invariants` 外，它还挂了 4 个 companion 行：`:109` `session-invariant`、`:112` `agent-invariant`、`:115` `scope-invariant`、`:118` `agent-loop-invariant`。
+→ **"只被 sdk-minimal 挂载"结论成立**（比 v2 初版更强：连 companion 行也只此一处）。
+
+---
+
 ## 结论先行：回答创始人三句
 
 ### 第一句：哪些不用做了

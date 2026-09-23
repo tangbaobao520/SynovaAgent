@@ -68,7 +68,20 @@
       "「D769 未登记」已过期（D769.json 在 main，e418cddc）；board-backlog PLAN-d808-b20-unregistered 与物理矛盾",
       "M3 存量缺口 4 文件锚点注释（Win 路径 + 0.1.1-rc.2）→ 立编码卡",
       "B-08 开卡前置：scripts/control-tower/ 零线归属（M2）"
-    ]
+    ],
+    "corrections": {
+      "date": "2026-09-23",
+      "trigger": "D927 v2 复核退回：5 条补证 + 1 条计数口径对齐（其余全部通过）",
+      "items": [
+        "①口径瑕疵（必纠）B-12：v2 初版把 createHmac|timingSafeEqual 的『零命中』写成无限定词。分层口径：生产源码 src/（排除 tests/node_modules）= 0 命中；含 tests = 4 命中（全在 webhook-github/tests/*.spec.ts，均为测试自签自验）；timingSafeEqual 全口径 = 0 命中。结论方向不变（DHS 生产侧不实现验签，唯一实现点 handler.ts:101 委托 @octokit/webhooks），但『我们须自研』降级为选型建议（①自研 crypto 零依赖 ②跟随 DSH 引 octokit），属产品/依赖政策决定。",
+        "②B-09 完整路径：packages/preset/agent-preset/skills/editing-cordis-compositions/SKILL.md:70（复核方按 packages/*/skills/ 未命中，因包名在组目录之下）",
+        "③B-11 完整路径：packages/mcp/mcp-client/src/transport.ts:9-11 与 packages/mcp/mcp-client/package.json:42",
+        "④B-10 完整路径：packages/settings/settings/src/index.ts:175-176",
+        "⑤B-18 五处 bundle 挂载证据：base(525行)/web-app(544)/headless(34)/acp-app(24)/sdk-app(40) 全部无 dsh-invariants 行；仅 sdk-minimal/cordis.patch.yml:106-107 有，且它同时是唯一挂载 invariant 族的 bundle（另挂 :109/:112/:115/:118 四个 companion 行）",
+        "⑥计数口径对齐：lib/index.js = 307（find packages -path '*/lib/index.js'，本件口径）；710/711 = find packages -name 'index.js' -not -path '*/node_modules/*'（另一种口径，差额 404 = lib/types/index.js 307 + lib/types/client/index.js 70 + 其余 27）。node_modules 不影响计数（3349 个软链，find/grep 默认不跟随）；git ls-files '*/lib/index.js' = 0；本机 bash 3.2.57 无 globstar，zsh 5.9 下 packages/**/lib/index.js = 307。",
+        "新增纪律（复核方已采纳）：判断面用 git ls-files、grep 限定 src/；负面断言必须写明搜索范围（是否含 tests/node_modules）。"
+      ]
+    }
   },
   "audit": null,
   "fix_task_id": null,
