@@ -279,21 +279,3 @@ documents:
     path: .dsh/skills/squad-discipline/SKILL.md
     status: active
     owner: DSH
-
-  # ---- D924: 子进程输出协议（规范 + 证据）----
-  # 写集越界声明: 本卡派单写集未含本文件；此处登记为本卡两份新文档的**例行台账登记**
-  # （每卡新增文档均登记，见 D926/D922 先例）。CI 以 SYNO_CI=1 跑 pre-commit，
-  # D2 登记门禁在 CI 转硬阻断 → 不登记则 PR 必红。已上报 CTO 追认。
-  - id: DOC-0119
-    type: knowledge
-    path: docs/synova/coordination/规范-子进程输出协议-20260923.md
-    status: active
-    owner: DSH
-    note: "D924 子进程输出协议规范（禁哨兵混流；R1/R2 判据 + 排除面 + 失效条件）"
-
-  - id: DOC-0120
-    type: registry
-    path: docs/synova/product-lines/evidence/D924-子进程输出协议-20260923.md
-    status: active
-    owner: DSH
-    note: "D924 证据（M6 三件 + 声称↔证据表 + 裁定 4 红绿实跑）"
