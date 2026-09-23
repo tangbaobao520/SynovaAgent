@@ -1621,4 +1621,11 @@ Binary file .claude/bypass.log matches
 2026-09-22T22:14:18+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=f66ceb6f8321b8f27f067b929e09205cd4db30f6
 2026-09-22T22:36:28+08:00 | GATE_FAIL_SOFT | exit=141 | branch=docs/d917-quality-study-ingest
 2026-09-22T22:36:50+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=0bbfb97ae7545abf4bdeb449a414360b9fecf2f8
+2026-09-23T09:43:34+08:00 | GATE_FAIL_SOFT | exit=1 | branch=audit/k3-d864-reaudit
+2026-09-23T09:47:17+08:00 | COMMITTED | CTO 一次性补记（跨工作区；先例 2026-09-13T14:51:04）— K3 审计线提交，auto-hook 记录未随分支推送；CTO 解 #712 冲突时按 D331 对账指引补记 | TASK_ID=D821 | AGENT=k3-audit | HASH=ba3d72ba0f6a342ea0a4cc0db6a23fc2cacf2aaa
+2026-09-23T09:47:17+08:00 | COMMITTED | CTO 一次性补记（跨工作区）— K3 审计线提交 D858 复审 | TASK_ID=D858 | AGENT=k3-audit | HASH=7be1ff867bcee68b2689c57fb7fa83e690cb88d7
+2026-09-23T09:47:17+08:00 | COMMITTED | CTO 一次性补记（跨工作区）— K3 审计线提交 D862 | TASK_ID=D862 | AGENT=k3-audit | HASH=3b47edccde816223eb873b15084753cab9fecbfd
+2026-09-23T09:47:17+08:00 | COMMITTED | CTO 一次性补记（跨工作区）— K3 审计线提交 D864 复审 | TASK_ID=D864 | AGENT=k3-audit | HASH=6d4e76cba41dd522301cc68885caa34b444776b2
+2026-09-23T09:47:17+08:00 | COMMITTED | CTO merge 冲突解决提交（origin/main → audit/k3-d864-reaudit，解 task-state/D821.json union 冲突；merge 提交属 D331 --no-merges 豁免范围，显式登记备查） | TASK_ID=D712-merge | AGENT=dsh-cto | HASH=c513d0d0c31371d6be4688d0e23f4b58fa006d19
+2026-09-23T09:50:25+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=4f5f617a41e98903952344c8dd43ee8574e691f4
 2026-09-23T09:57:48+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=2480199a769cd086e50d2307ac88271d48a4c3be
