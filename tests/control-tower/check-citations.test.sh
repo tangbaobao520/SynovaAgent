@@ -122,6 +122,14 @@ for i in $(seq 1 40); do echo "假引用 docs/synova/coordination/不存在-$i.m
 N=$("$PY" -c "import json,sys;print(json.load(open(sys.argv[1]))['summary']['violations'])" "$TMPD/e4.json" 2>/dev/null) || N=0
 [ "${N:-0}" -eq 40 ] && ok "边界: 40 条违规全量报出（不截断，原 head -25 漏洞）" || no "边界: 违规数 ${N:-0} ≠ 40（截断回归）"
 
+# D919 自测修正回归：行内标注「新建」的交付物 = 声明，非违规（防合法派单件被误拦）
+cat > "$TMPD/e5.md" <<'MD'
+待建交付物: `docs/synova/audit-reports/2026-09-23-K3-示例.md`（新建）
+MD
+OUT=$("$PY" "$C" "$TMPD/e5.md" --repo "$REPO" 2>&1); RC=$?
+if [ "$RC" -eq 0 ] && echo "$OUT" | grep -q "待建声明 1"; then ok "边界: 行内「新建」→ 待建声明（不计违规，防误拦合法派单件）"
+else no "边界: 「新建」未识别为声明（rc=${RC}, out=${OUT}）"; fi
+
 echo ""
 echo "结果: $PASS 通过, $FAIL 失败"
 [ "$FAIL" -eq 0 ] && exit 0 || exit 1

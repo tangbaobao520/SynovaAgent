@@ -22,6 +22,7 @@
                   --json                   机器可读输出
                   --quiet                  仅输出汇总
   @output — 违规逐条（code / artifact / line / citation / owner / roots_tried）+ 汇总行
+            （含「待建声明」计数：行内标注『新建』的交付物路径不计违规 —— 本仓既有约定，防误拦）
             `--json` → {"artifacts": [...], "violations": [...], "summary": {...}}
   @exit   — 0 = 全部引用可核验；1 = 存在不可核验引用（fail-closed 业务阻断）；
             2 = 检查本身失败（artifact 不可读 / 无有效输入 / repo 非法）
@@ -66,6 +67,11 @@ REPO_PREFIXES = ("src/", "scripts/", "tests/", "docs/", "packages/", "extensions
                  ".claude/", "task-state/", "memory/", "electron/", "electron-renderer/",
                  "expert/", "knowledge/", "theory/", "skills/", "security/", "providers/")
 EXEMPT_HEADING_RE = re.compile(r"^#{2,4}\s*引用豁免")
+# D919 自测修正（狗粮实测 2026-09-23）：派单件会合法引用**待建交付物**（审计报告/新脚本等）
+#   ——本仓库既有约定「不存在须显式标注『新建』」（pre-dispatch-check ④）。若不豁免，
+#   合法派单件被误拦 → 误报产生噪音 → 门禁被绕（V4.x 教训）。故：行内含下列标记 → 计为
+#   declaration（非违规），除非文件已存在（存在时仍照常核行号）。
+NEW_MARKERS = ("新建", "待建", "将新建", "新建文件", "新建目录", "（新）", "(新)")
 
 
 def is_placeholder(p: str) -> bool:
@@ -143,12 +149,13 @@ def scan(artifact: str, roots, external_prefixes, verify_quote: bool, owner: str
     except OSError as e:
         return None, f"artifact 不可读: {e}"
     exempt = parse_exemptions(text)
-    violations, total, resolved_n = [], 0, 0
+    violations, total, resolved_n, decl_n = [], 0, 0, 0
     for lineno, line in enumerate(text.splitlines(), 1):
         seen = set()
+        is_decl = any(m in line for m in NEW_MARKERS)
 
         def handle(cite: str, path_str: str, start, end, rule: str):
-            nonlocal total, resolved_n
+            nonlocal total, resolved_n, decl_n
             if cite in seen or is_placeholder(path_str):
                 return
             seen.add(cite)
@@ -164,6 +171,9 @@ def scan(artifact: str, roots, external_prefixes, verify_quote: bool, owner: str
                     return
             abs_p, tried = resolve(path_str, roots)
             if abs_p is None:
+                if is_decl:   # 显式标注「新建」→ 交付物声明，非可核验声称（本仓既有约定）
+                    decl_n += 1
+                    return
                 violations.append({"code": "CITE_FILE_NOT_FOUND", "artifact": artifact,
                                    "line": lineno, "citation": cite, "owner": owner,
                                    "roots_tried": tried, "detail": "文件不存在于任何已知根"})
@@ -196,7 +206,7 @@ def scan(artifact: str, roots, external_prefixes, verify_quote: bool, owner: str
         for m in BARE_RE.finditer(line):
             handle(m.group("path"), m.group("path"), None, None, "bare")
     return {"artifact": artifact, "citations": total, "resolved": resolved_n,
-            "violations": violations}, None
+            "declarations": decl_n, "violations": violations}, None
 
 
 def main() -> int:
@@ -240,8 +250,9 @@ def main() -> int:
 
     total = sum(r["citations"] for r in reports)
     resolved = sum(r["resolved"] for r in reports)
-    summary = {"citations": total, "resolved": resolved, "violations": len(all_v),
-               "roots": roots, "owner": owner}
+    declared = sum(r.get("declarations", 0) for r in reports)
+    summary = {"citations": total, "resolved": resolved, "declarations": declared,
+               "violations": len(all_v), "roots": roots, "owner": owner}
 
     if args.json:
         print(json.dumps({"artifacts": reports, "violations": all_v, "summary": summary},
@@ -250,10 +261,10 @@ def main() -> int:
         for v in all_v:
             print(f"  ⚠️ [{v['code']}] {v['artifact']}:{v['line']} → {v['citation']} "
                   f"（owner={v['owner']}；{v['detail']}；尝试根: {', '.join(v['roots_tried']) or '无'}）")
-        print(f"  引用核验: {total} 条 / 通过 {resolved} / 违规 {len(all_v)}（owner={owner}）")
+        print(f"  引用核验: {total} 条 / 通过 {resolved} / 待建声明 {declared} / 违规 {len(all_v)}（owner={owner}）")
 
     if args.quiet:
-        print(f"引用核验: {total} 条 / 通过 {resolved} / 违规 {len(all_v)}")
+        print(f"引用核验: {total} 条 / 通过 {resolved} / 待建声明 {declared} / 违规 {len(all_v)}")
     return 1 if all_v else 0
 
 
