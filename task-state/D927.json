@@ -1,0 +1,55 @@
+{
+  "task_id": "D927",
+  "title": "DSH 借鉴卡 B-01…B-20 重新对比审计（现状矩阵 + 锚点重核 + 过时判定 + 处置建议）",
+  "status": "impl_done",
+  "spec": "docs/synova/coordination/派单-DSH借鉴重新对比审计-20260923.md（依据计划 v1.2@4e46603f）",
+  "write_set": [
+    "docs/synova/research/D927-DSH借鉴卡重新对比审计-20260923.md",
+    "docs/synova/research/D927-DSH锚点重核-0.1.6-alpha.2.md",
+    "task-state/D927.json"
+  ],
+  "impl": {
+    "by": "山河研究院（技术线 · 原对比研究作者）",
+    "date": "2026-09-23",
+    "files": [
+      "docs/synova/research/D927-DSH借鉴卡重新对比审计-20260923.md",
+      "docs/synova/research/D927-DSH锚点重核-0.1.6-alpha.2.md"
+    ],
+    "deliverables": {
+      "①现状矩阵": "B-01…B-20 全覆盖；代码在 main 用 git … HEAD 口径；审计 verdict 取 task-state 原字段；证据回写；冒烟实跑",
+      "②锚点重核表": "判定分布 命中38/位移9/被上游取代4/已消失1；每锚点附 file:line + 复现命令",
+      "③过时判定": "仍成立 10 / 需改法 10 / 已无必要（卡级）0；锚点级『已无必要』5 处",
+      "④处置建议": "B-08 锚点全活按原方案（1天）；B-11 改用官方 MCP SDK 蓝本（3-5天）；B-12…B-20 按原方案 + 三处微调"
+    },
+    "verify": {
+      "版本断面": "活跃 = dependencies/dsh → wrapper deepseek-harness-pkg@0.1.6-alpha.1 / inner @deepseek-ai/dsh@0.1.6-alpha.2（261 包，250 个 dsh-* 全同版本）；目录 mtime 2026-09-23 01:06",
+      "今日变动真相": "0.1.7-alpha.1 → 0.1.6-alpha.2 回滚（.store.dat.before-kernel-rollback 01:05 dsh_pkg_tag=dsh-0.1.7-alpha.1-35696077623 vs .store.dat 01:12 dsh_pkg_tag=dsh-0.1.6-alpha.2-35295560626）",
+      "研究期锚点": "0.1.2-alpha.2（借鉴指引 v2 09-04）/ 0.1.2-rc.1（锚点映射 09-07，224 包）——非 CTO 记的 0.1.6-alpha.2；且旧基线物理断面已不在磁盘",
+      "冒烟": "cd /Users/wane/SynovaAgent && npx vitest run <10 个 B 卡测试文件> → Test Files 10 passed (10) / Tests 112 passed (112) / 6.20s",
+      "G1": "src+packages 的 @deepseek-ai = 0 命中；全仓 0 条真实 import；全仓引用计数 227（CTO 基线 199 系 2026-09-22 commit 1062ba2f 快照，已 +28）",
+      "红线": "未改 src/ scripts/ tests/；未改 DSH 安装目录；未 npm install；未 copy 代码"
+    },
+    "findings": [
+      "今日『再次更新』实为回滚（0.1.7-alpha.1 → 0.1.6-alpha.2），非升级",
+      "B-06 旧定位 dsh-agent-loop 错误（1950 行、timeout 零命中、abort 98）；承担者 dsh-timeout + dsh-tool-call-timeout-policy",
+      "B-14 lib/types/spec.js 自始不成立（今日断面与源码 checkout 均无）",
+      "B-05 归属 dsh-compaction → dsh-compaction-basic（前者已退化为抽象 seam）",
+      "B-19 dsh-jobs 仅 65 行且构造即抛错；内存实体在 dsh-jobs-local",
+      "B-11 transport 层无需借：dsh-mcp-client 本身是 @modelcontextprotocol/client v2.0.0 的封装壳",
+      "B-01 守卫族收窄：isEmptyResponseError / isInvalidCredentialError 全 261 包零命中",
+      "B-05 编号撞车：task-state/D594.json 是另一张卡（closed，被 D602 取代），B-05 零审计承载",
+      "实际零审计 4 张（B-03/B-05/B-09/B-10），不止 CTO 所述的 D598/D599 两张",
+      "B-07 仍 CONDITIONAL PASS，修复卡 D597 自 2026-09-08 停在 impl_done 未收口",
+      "G3 真借鉴卡绑定证据仅 1 个（D806-borrow-cards-20260918.json，覆盖 8 张卡）",
+      "task-state/D769.json 已在 main（e418cddc，09-20），『B-20 未登记』结论已过期"
+    ],
+    "no_fix_card_reason": "已动手的 B-01…B-10 十张全部『今日仍能运行』（10 files / 112 tests 全绿），派单规定的 FIX 卡触发条件未成立"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-23",
+  "updated_by": "institute-tech",
+  "domain": "mac",
+  "owner": "founder",
+  "milestone": "DSH 借鉴序列（B-01…B-20）"
+}
