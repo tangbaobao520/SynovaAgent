@@ -251,19 +251,31 @@ documents:
     verified-by: scripts/control-tower/pre-dispatch-check.sh (planned)
 
   - id: DOC-0114
-    type: knowledge
-    path: .claude/skills/squad-discipline/SKILL.md
+    type: governance
+    path: docs/synova/coordination/派单-W1-双DSH提升-20260923.md
     status: active
     owner: DSH
 
   - id: DOC-0115
     type: knowledge
-    path: .dsh/skills/squad-discipline/SKILL.md
+    path: .claude/skills/dev-doc-spec/SKILL.md
     status: active
     owner: DSH
 
   - id: DOC-0116
     type: knowledge
-    path: docs/synova/presets/synova-squad-lead/SYSTEM-PROMPT.md
+    path: .dsh/skills/dev-doc-spec/SKILL.md
+    status: active
+    owner: DSH
+
+  - id: DOC-0117
+    type: knowledge
+    path: .claude/skills/squad-discipline/SKILL.md
+    status: active
+    owner: DSH
+
+  - id: DOC-0118
+    type: knowledge
+    path: .dsh/skills/squad-discipline/SKILL.md
     status: active
     owner: DSH

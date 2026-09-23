@@ -1,0 +1,46 @@
+{
+  "task_id": "D922",
+  "title": "程序：双 DSH 提升方案落地（9 子卡 / 3 Wave / 程序级长任务）",
+  "status": "spec_done",
+  "risk": "high",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": "synova-squad-lead（小队队长）+ 成员（≤2 编码 + 1 自验）",
+  "branch": "docs/d922-w1-dispatch",
+  "worktree": ".synova-wt-d922",
+  "base": "origin/main 6c23006a",
+  "milestone": "M0 项目管理基建",
+  "depends_on": ["D917"],
+  "blocked": null,
+  "target": "2026-W40",
+  "spec": "docs/synova/coordination/派单-W1-双DSH提升-20260923.md（含程序定义 + Wave 划分 + W1 三项详细规格）",
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "write_set": [
+    "docs/synova/coordination/派单-W1-双DSH提升-20260923.md",
+    "task-state/D922.json",
+    "task-state/D923.json",
+    "task-state/D924.json",
+    "task-state/D925.json",
+    ".claude/task-briefs/2026-09-23-D922-W1-dispatch.md",
+    "memory/notes/proposed/2026-09-23-devdoc-to-skill-and-w1-program.md",
+    ".claude/skills/dev-doc-spec/SKILL.md",
+    ".dsh/skills/dev-doc-spec/SKILL.md",
+    "scripts/control-tower/install-dsh-preset.sh",
+    "docs/synova/coordination/TASK-ROUTING.md"
+  ],
+  "program": {
+    "source": "docs/synova/research/研究院交接-20260922/双DSH执行提升清单.md（121 行）+ docs/synova/coordination/裁定-双DSH提升清单-20260922.md（99 行，含创始人三项裁决）",
+    "shape": "1 程序卡 + 9 子卡 + 3 Wave；Wave 门 = K3 审 + CTO 收件闸，未过不得开下一 Wave",
+    "waves": {
+      "W1": ["D923 = D1 K3 必经合并门禁", "D924 = B4 子进程输出协议", "D925 = C2 deps-interface 立标准"],
+      "W2": ["B1 路由自卫 + 财务负值 guard（前置 D911 切片 B）", "B2 边界值清单进 dev doc 模板"],
+      "W3": ["B3 as/! 门禁（先钉计数配方）", "C1 编排层第二抽象（先观测一轮）", "D2 Win 环境标准化（等机器）", "D3 Win 长处固化"]
+    },
+    "done_definition": "9 子卡全 merged + 每卡含先红后绿夹具与反例夹具（裁定 A2）+ 写明失效条件（裁定 A3）+ K3 报告在库 + 程序卡状态与证据链闭合",
+    "prerequisite_unlocked_by_cto": "D1 前置（5 份 K3 报告入 main + verdict 回填）已于 2026-09-23 由 CTO 完成（PR #712 / #713 合并，D821/D858/D865 卡 audited/PASS）"
+  },
+  "updated_at": "2026-09-23",
+  "updated_by": "synova-cto"
+}
