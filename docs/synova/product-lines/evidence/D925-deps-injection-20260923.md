@@ -142,7 +142,7 @@ $ git diff --cached --numstat
 | L1 | **R1 为文件级判定** ⇒ 抓不到"有注入缝文件内部"的直连（典型：`src/agent/loop-handlers.ts:374 defaultEvolutionHandler` → `:377 getFeedbackCollector()`）。该文件已有 5 条缝，故整文件放行 | **已知边界**，标准文档 §6-F1 登记「文件级 → 函数级」的收紧触发条件（出现第一例实际漏拦即收紧）。**刻意不在夹具里断言其存在**（不把缺陷固化成契约）。本卡不改 `src/**`（CTO 裁定 5） |
 | L2 | `check-silent-swallow.sh --utf8` 全量 **16 个 .sh 缺 UTF-8 头块**（存量，非本卡引入） | 已有独立立项；pre-commit 只跑 `--diff`，不阻断 CI |
 | L3 | **`packages/**` 未纳入扫描范围** | **显式范围决定，非遗漏**；标准文档 §6-F2 登记纳入触发条件 |
-| L4 | 闭集**排除 `getDatabase`/`getDb`**（34 文件面 + `loop-handlers.ts:471` 合规 fallback） | 标准文档 §6-F3：若日后要求 DB 也走注入 → 扩闭集 + 一次性补 baseline |
+| L4 | 闭集**排除 `getDatabase`/`getDb`** —— **纳入后全仓新增命中实测 = 0**（正规判据 `HIT ×2`，并入后仍 `HIT ×2`；见标准 **§3** 与本文 **S13**）；**真实理由是语义范围**（本标准对象是 **5 个编排单例**的活单例耦合；DB 有既成合规 fallback 写法 `loop-handlers.ts:471`，属**另一关注点**）。原始面 **34 = "含该调用的文件数"口径，非噪声量**。 | 标准文档 §6-F3：若日后要求 DB 也走注入 → 扩闭集 + 一次性补 baseline |
 | L5 | 入口函数命名清单（`*Handler/*Runner/*Coordinator/*Dispatcher`）可能漏新命名 | 标准文档 §6-F4：出现第一例新命名入口直连 → 扩 `ENTRY_FN_RE` + 补夹具 |
 | L6 | **逐条对齐**：`sync-dsh-skills.sh` 输出「16 个技能已同步」，但 `git status` 显示**仅 dev-doc-spec 两文件变化** | 已实读核验（其余 15 个技能内容本就一致，sync 幂等）；无需动作 |
 | L7 | **基线存量 2 条尚未改造**（`expert-dispatcher.ts` / `runner.ts` 补注入缝） | 属后续卡；baseline 只可缩短——补缝后删行。**翻转 `--strict` 进 CI 的门槛**见标准文档 §6-F5（baseline 归零 + 连续 N≥5 PR 零新增） |
