@@ -108,57 +108,91 @@ def exact(block):
 def extra(block):
     m = re.search(r"^    extra_globs:\n(.*?)(?=^    [a-z_]+:|\Z)", block, re.M | re.S)
     return globs("  X:\n" + m.group(1).replace("      globs:", "    globs:")) if m else []
+def pick_excl(block):
+    # C_storage.pickaxe.exclude_globs —— pickaxe 扫描面排除（6 空格键 / 8 空格条目）
+    m = re.search(r"^      exclude_globs:\n((?:        - .*\n)+)", block, re.M)
+    return [l.strip()[2:].strip().strip('"') for l in m.group(1).splitlines()] if m else []
 A, B, C = sect("A_security"), sect("B_finance"), sect("C_storage")
 pat = ""
 m = re.search(r"^      pattern:\s*\"?([^\"\n]+)\"?", C, re.M)
 if m: pat = m.group(1).strip()
-pats = []
-for g in globs(A) + exact(A) + extra(A) + globs(B) + globs(C):
-    print("RULE\t" + g)
+# 规则标签随 pattern 一并输出 —— 缺陷 B（红必须可归因）：命中的是「哪条规则」要能写出来
+def emit(label, pats):
+    for g in pats:
+        print("RULE\t" + label + "|" + g)
+emit("A_security.globs", globs(A))
+emit("A_security.exact_files", exact(A))
+emit("A_security.extra_globs", extra(A))
+emit("B_finance.globs", globs(B))
+emit("C_storage.globs", globs(C))
+for g in pick_excl(C):
+    print("PICKEXCL\t" + g)
 if pat: print("PICKAXE\t" + pat)
 sys.exit(0)
 PY
 )"
 RULE_PATTERNS="$(printf '%s\n' "$POLICY_OUT" | "$GREP_BIN" '^RULE' | cut -f2- || true)"
 PICKAXE_PAT="$(printf '%s\n' "$POLICY_OUT" | "$GREP_BIN" '^PICKAXE' | cut -f2- || true)"
+PICK_EXCL_POLICY="$(printf '%s\n' "$POLICY_OUT" | "$GREP_BIN" '^PICKEXCL' | cut -f2- || true)"
 if [ -z "$RULE_PATTERNS" ]; then
   degrade K3_GATE_POLICY_UNREADABLE "policy 未抽出任何类目规则（文件损坏或格式变更）: $POLICY_FILE" policy
   echo "K3-GATE: DEGRADED"; exit 2
 fi
 
+# pickaxe 扫描面排除（缺陷 A 修复 · D923 收尾任务 0）:
+#   ① docs/** tests/** *.md —— 文档/证据正文含 DDL 字面量（本卡首轮实测，非真 DDL 变更）
+#   ② policy C_storage.pickaxe.exclude_globs —— **门禁自身产物**（判定器 + policy）。
+#      理由与可核命令在 policy 的 exclude_globs_reason / exclude_globs_evidence：两者以"数据"形式
+#      承载 DDL 模式字面量（YAML cmd 证据串 / pattern 常量 / reason 散文 / shell 注释），
+#      且无任何 DB 执行能力（sqlite3|.prepare(|.exec(|new Database 命中=0）⇒ 不可能产生真 DDL 变更。
+#      不加此排除时，任何触碰门禁文件的 PR 都会被 pickaxe 误红（长期运营缺陷）。
+PICK_EXCLUDES=( ':(exclude)docs/**' ':(exclude)tests/**' ':(exclude)*.md' )
+while IFS= read -r pex; do
+  [ -z "$pex" ] && continue
+  PICK_EXCLUDES[${#PICK_EXCLUDES[@]}]=":(exclude)${pex}"
+done <<< "$PICK_EXCL_POLICY"
+
 # 三类匹配：把 policy 的 glob 转成 git-pathspec 语义的 shell 匹配（`**` → 任意层级）
-match3() { # <相对路径> → 0=命中三类
-  local f="$1"
+# RULE_PATTERNS 每行形如 `<规则标签>|<pattern>`；命中时把标签写入 MATCH_RULE（缺陷 B：可归因）
+match3() { # <相对路径> → 0=命中三类（MATCH_RULE=规则标签）
+  local f="$1" rule
+  MATCH_RULE=""
   while IFS= read -r pat; do
     [ -z "$pat" ] && continue
+    rule="${pat%%|*}"; pat="${pat#*|}"
     case "$pat" in
-      *"/**") case "$f" in "$(printf '%s' "${pat%/**}")"/*) return 0 ;; esac ;;
+      *"/**") case "$f" in "$(printf '%s' "${pat%/**}")"/*) MATCH_RULE="$rule"; return 0 ;; esac ;;
       *\**)
         local core="${pat#\*\*\/}"; core="${core#\*}"
-        case "$f" in *"${core%\*}"*) return 0 ;; esac ;;
-      *) [ "$f" = "$pat" ] && return 0 ;;
+        case "$f" in *"${core%\*}"*) MATCH_RULE="$rule"; return 0 ;; esac ;;
+      *) [ "$f" = "$pat" ] && { MATCH_RULE="$rule"; return 0; } ;;
     esac
   done <<< "$RULE_PATTERNS"
   return 1
 }
 
-HIT3=""
+HIT3=""   # 逐行 `<规则标签>|<路径>`（只含 glob/exact 命中；pickaxe 命中另存，缺陷 B）
 while IFS= read -r f; do
   [ -z "$f" ] && continue
-  match3 "$f" && HIT3="${HIT3}${f}"$'\n'
+  MATCH_RULE=""
+  if match3 "$f"; then HIT3="${HIT3}${MATCH_RULE}|${f}"$'\n'; fi
 done < "$FILES_LIST"
 
-HIT3_N=0
-[ -n "$HIT3" ] && HIT3_N=$(printf '%s' "$HIT3" | "$GREP_BIN" -c . | tr -d ' \n\r')
+HIT3_GLOB_N=0
+[ -n "$HIT3" ] && HIT3_GLOB_N=$(printf '%s' "$HIT3" | "$GREP_BIN" -c . | tr -d ' \n\r' || true)
+[ -z "$HIT3_GLOB_N" ] && HIT3_GLOB_N=0
 
 # pickaxe：本次 diff 是否增删 DDL 行（只认"本次变更"语义）
-PICK_HIT=0
+# 缺陷 A 修复（任务 0）: 扫描面在 docs/tests/md 之外**再排除门禁自身产物**（policy exclude_globs）
+# 缺陷 B 修复（任务 0）: 保留命中文件清单（PICK_HIT_LIST）以便逐条归因，不再只留计数
+PICK_HIT_LIST=""
 if [ "$MODE" = "diff" ] && [ -n "$PICKAXE_PAT" ]; then
-  # 生产口径限定（实测必要）: 不加排除时，D923 证据文档正文含 `CREATE TABLE` 字面量即被误命中
-  n=$("$GIT_BIN" -C "$TARGET_DIR" diff -G"$PICKAXE_PAT" --name-only "$BASE_REF".."$HEAD_REF" -- . ':!docs/**' ':!tests/**' ':!*.md' 2>/dev/null | "$GREP_BIN" -c . | tr -d ' \n\r' || true)
-  [ -z "$n" ] && n=0; PICK_HIT="$n"
+  PICK_HIT_LIST="$("$GIT_BIN" -C "$TARGET_DIR" -c core.quotepath=false diff -G"$PICKAXE_PAT" --name-only "$BASE_REF".."$HEAD_REF" -- . "${PICK_EXCLUDES[@]}" 2>/dev/null || true)"
 fi
-[ "$PICK_HIT" -gt 0 ] && HIT3_N=$((HIT3_N + PICK_HIT))
+PICK_HIT=0
+[ -n "$PICK_HIT_LIST" ] && PICK_HIT=$(printf '%s' "$PICK_HIT_LIST" | "$GREP_BIN" -c . | tr -d ' \n\r' || true)
+[ -z "$PICK_HIT" ] && PICK_HIT=0
+HIT3_N=$((HIT3_GLOB_N + PICK_HIT))
 
 # ── D# 解析（三路，**必须可归因**）────────────────────────────────────────
 BRANCH="$("$GIT_BIN" -C "$TARGET_DIR" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")"
@@ -229,9 +263,29 @@ print('NO_VERDICT')
 PY
 }
 
-echo "[k3-gate] mode=$MODE changed=$CHANGED three_category_hits=$HIT3_N"
+echo "[k3-gate] mode=$MODE changed=$CHANGED three_category_hits=$HIT3_N (glob=$HIT3_GLOB_N pickaxe=$PICK_HIT)"
 echo "[k3-gate] D# 归因 → ①分支名(${BRANCH_ARG})：[${SRC1:-无}] ②brief 文件名：[${SRC2:-无}] ③PR 正文：[${SRC3:-无}] ⇒ 采用：[${DS:-无}]"
-[ "$VERBOSE" = "1" ] && [ -n "$HIT3" ] && printf '  三类命中: %s\n' "$(printf '%s' "$HIT3" | tr '\n' ' ')"
+
+# 缺陷 B 修复（任务 0 · CTO「红必须可归因」）：glob 与 pickaxe 两类命中**逐条列出**并标明规则来源
+print_hits() {
+  echo "[k3-gate] 三类命中清单（glob ${HIT3_GLOB_N} 项 / pickaxe ${PICK_HIT} 项）："
+  if [ "$HIT3_GLOB_N" -gt 0 ]; then
+    printf '%s' "$HIT3" | while IFS= read -r h; do
+      [ -z "$h" ] && continue
+      echo "  - (glob) ${h#*|}   ← 规则 ${h%%|*}"
+    done
+  fi
+  if [ "$PICK_HIT" -gt 0 ]; then
+    printf '%s\n' "$PICK_HIT_LIST" | while IFS= read -r h; do
+      [ -z "$h" ] && continue
+      echo "  - (pickaxe) $h   ← 规则 C_storage.pickaxe（本次 diff 增删 DDL 行）"
+    done
+  fi
+}
+if [ "$HIT3_N" -gt 0 ]; then print_hits; fi
+if [ "$VERBOSE" = "1" ]; then
+  echo "[k3-gate] verbose: pickaxe 排除面 = ${PICK_EXCLUDES[*]}"
+fi
 
 if [ "$HIT3_N" -eq 0 ]; then
   # 非三类 → 20% 抽样，**永不阻断，只记录**
@@ -290,7 +344,6 @@ done
 
 if [ "$WORST" = "REJECT" ]; then
   echo "::error title=K3门禁::三类路径命中（${HIT3_N} 项）且卡内无通过级 K3 结论：$REASONS"
-  echo "[k3-gate] 三类命中清单：$(printf '%s' "$HIT3" | tr '\n' ' ')"
   echo "K3-GATE: REJECT($REASONS)"
   exit 1
 fi

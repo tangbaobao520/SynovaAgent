@@ -26,6 +26,8 @@ export LC_ALL=C.UTF-8 2>/dev/null || true
 #  12  多 D#       — 两卡，任一非 PASS → 1
 #  13  报告兜底    — 无 verdict 但有报告正文 PASS → 0
 #  14  变异体判别  — 把三类匹配改成恒不命中 → 同一红样例**必须漏判**（证明判据承重）
+#  15  缺陷A回归  — 门禁自身产物(k3-*)含 DDL 字面量 → **不自命中**（去掉 policy exclude_globs 即失败）
+#  16  缺陷B回归  — pickaxe 命中**可归因**：出现在「三类命中清单」并标明规则名
 # ═══════════════════════════════════════════════════════════════════════════════
 set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -150,6 +152,35 @@ echo "[13] 无 verdict 但有报告正文 PASS → 绿（既有兜底约定）";
 sed 's|^  while IFS= read -r pat; do|  return 1; while IFS= read -r pat; do|' "$GATE" > "$SB/mutant-nomatch.sh"
 bash "$SB/mutant-nomatch.sh" --dir "$R3" --state-dir "$R3" >/dev/null 2>&1
 echo "[14] 变异体判别: 坏三类匹配 → 同一红样例必须漏判"; check "坏判据体必须漏判" 0 "$?"
+
+# ── 15 缺陷 A 回归（D923 收尾任务 0）: 门禁自身产物含 DDL 字面量 → 不得自命中 ──
+# diff 模式沙箱：判定器 + policy 复制进沙箱仓（diff 模式扫的是 SCRIPT_DIR 所在的仓）。
+# 判别性：去掉 policy 的 exclude_globs 后同一 diff 必红（本用例即失败）——排除是承重的，不是装饰。
+R15="$SB/r15"; mkdir -p "$R15/scripts/control-tower" "$R15/task-state"
+cp "$GATE" "$R15/scripts/control-tower/"
+cp "$REPO_ROOT/scripts/control-tower/k3-gate-policy.yaml" "$R15/scripts/control-tower/"
+( cd "$R15" && git init -q && git -c user.email=t@t -c user.name=t commit -q --allow-empty -m base )
+printf '{"task_id":"D115","audit":{"verdict":"PASS"}}' > "$R15/task-state/D115.json"
+printf '\n# 注释里出现 CREATE TABLE 字面量（模拟门禁自身产物）\n' >> "$R15/scripts/control-tower/k3-gate-policy.yaml"
+( cd "$R15" && git add -A && git -c user.email=t@t -c user.name=t commit -q -m head )
+bash "$R15/scripts/control-tower/k3-merge-gate.sh" --base HEAD~1 --head HEAD --pr 3 --state-dir "$R15" > "$SB/o15" 2>&1
+RC=$?
+echo "[15] 缺陷A回归: k3-* 自身含 DDL 字面量 → 不自命中"; check "exit" 0 "$RC"
+
+# ── 16 缺陷 B 回归: pickaxe 命中必须**出现在清单里并标明规则**（红可归因）────────
+R16="$SB/r16"; mkdir -p "$R16/src/adapters" "$R16/task-state" "$R16/scripts/control-tower"
+cp "$GATE" "$R16/scripts/control-tower/"
+cp "$REPO_ROOT/scripts/control-tower/k3-gate-policy.yaml" "$R16/scripts/control-tower/"
+( cd "$R16" && git init -q && git -c user.email=t@t -c user.name=t commit -q --allow-empty -m base )
+printf '{"task_id":"D116","audit":{"verdict":"PASS"}}' > "$R16/task-state/D116.json"
+printf '// stub\n' > "$R16/src/adapters/real-ddl.ts"
+( cd "$R16" && git add -A && git -c user.email=t@t -c user.name=t commit -q -m base2 )
+printf '// stub\nCREATE TABLE t16 (id INT);\n' > "$R16/src/adapters/real-ddl.ts"
+( cd "$R16" && git add -A && git -c user.email=t@t -c user.name=t commit -q -m head )
+bash "$R16/scripts/control-tower/k3-merge-gate.sh" --base HEAD~1 --head HEAD --pr 7 --state-dir "$R16" > "$SB/o16" 2>&1
+RC=$?
+echo "[16] 缺陷B回归: pickaxe 命中可归因（清单逐条 + 规则名）"; check "exit" 1 "$RC"
+gcheck "清单含 pickaxe 逐条 + 规则名" "$SB/o16" '\(pickaxe\).*src/adapters/real-ddl\.ts.*规则 C_storage\.pickaxe' yes
 
 echo ""
 if [ "$FAIL" -gt 0 ]; then echo "D923-FIXTURE: FAIL ($PASS/$TOTAL 通过)"; exit 1; fi

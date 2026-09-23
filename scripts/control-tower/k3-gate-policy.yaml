@@ -94,6 +94,28 @@ rules:
           out: "99（全历史，本卡 2026-09-23 复算；#723 证据记 60，配方差异见文档「口径钉死」节）"
         - cmd: "git log --first-parent --since='30 days ago' --format='%h' -G'CREATE TABLE|ALTER TABLE' main | wc -l"
           out: "28（近 30 天）"
+      # ── pickaxe 扫描面排除（D923 收尾任务 0 · 缺陷 A 修复）────────────────────
+      # 门禁自身产物以「数据」形式承载 DDL 模式字面量，且**无 DB 执行能力** ⇒ 不可能是真 DDL 变更。
+      # 不排除时：任何触碰门禁文件的 PR 都会被 pickaxe 误红（长期运营缺陷；收尾实测 three_category_hits=2 全来自自身）。
+      exclude_globs:
+        - "scripts/control-tower/k3-*"
+      exclude_globs_reason: >
+        排除面 = 本门禁命名空间 `scripts/control-tower/k3-*`（实测仅 2 个文件：判定器 + 本 policy）。
+        两者正文共 5 处 DDL 关键字出现，**逐处都是数据/散文，不是 DDL 语句**：
+        ① k3-gate-policy.yaml:93 / :95 —— YAML `cmd:` 证据串里嵌套的 `-G'CREATE TABLE|ALTER TABLE'`；
+        ② k3-gate-policy.yaml:97 —— `pattern:` 常量本身；
+        ③ k3-gate-policy.yaml:105 —— `reason:` 中文散文（讲"哪些 DDL 形态未覆盖"）；
+        ④ k3-merge-gate.sh —— shell 注释里引用的同一字面量。
+        且两者**无任何 DB/DDL 执行能力**（见下方 evidence ②）⇒ 不可能产生真 DDL 变更。
+        **这不是"为让本分支变绿而加白名单"**：条目须满足「文件不执行 DDL」这一可核条件，
+        新增条目必须同时补 `exclude_globs_evidence` 的命令输出；不满足则不得加入。
+      exclude_globs_evidence:
+        - cmd: "git grep -cE 'CREATE TABLE|ALTER TABLE|CREATE INDEX|DROP TABLE|ALTER INDEX' -- 'scripts/control-tower/k3-*'"
+          out: "k3-gate-policy.yaml:4 / k3-merge-gate.sh:1（共 5 处，全为数据/注释，非 DDL 语句）"
+        - cmd: "git grep -nE 'sqlite3|better-sqlite3|\\.prepare\\(|\\.exec\\(|new Database|Database\\(' -- 'scripts/control-tower/k3-*' | wc -l"
+          out: "0 ⇒ 无 DB 执行能力（不可能产生真 DDL 变更）"
+        - cmd: "git ls-files 'scripts/control-tower/k3-*'"
+          out: "scripts/control-tower/k3-gate-policy.yaml / scripts/control-tower/k3-merge-gate.sh（仅此两个）"
       pattern: "CREATE TABLE|ALTER TABLE|CREATE INDEX|DROP TABLE|ALTER INDEX"
 
 # ── 已知漏报（显式登记，不隐藏）────────────────────────────────────────────
