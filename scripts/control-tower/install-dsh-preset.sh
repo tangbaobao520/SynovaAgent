@@ -33,7 +33,10 @@ REPO_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 # ── 预设注册表: <id>|<草稿目录(相对仓库根)> — 新增预设在此加一行 ──
 PRESET_REGISTRY="
 synova-dsh|docs/synova/coordination/dsh-preset-draft
-synova-devdoc|docs/synova/coordination/dsh-devdoc-draft
+# synova-devdoc|docs/synova/coordination/dsh-devdoc-draft   ← 2026-09-23 退役（创始人批准 B 案）:
+#   常驻 dev-doc session 近 7 天产物 0 变更；职责已被「CTO 派单件（派单即规格）」+「K3 审计协议」吸收。
+#   能力保留为 skill: .claude/skills/dev-doc-spec（触发式独立规格：跨层/新产品线/超预算）。
+#   恢复方式：取消本行注释即回到常驻模式（退役可逆，留痕在案）。
 "
 
 MODE=""
@@ -67,7 +70,9 @@ trap cleanup EXIT
 # ── 解析选中的预设列表: 输出 "id|draft_dir" 每行 ──
 selected_presets() {
   while IFS='|' read -r pid pdraft; do
-    [ -z "$pid" ] && continue
+    # D922: 跳过空行与注释行 —— 使「注释掉注册表行」成为一等退役机制
+    #   （2026-09-23 synova-devdoc 退役即用此法；注释前本函数会把注释行当预设去装 → exit 2）
+    case "$pid" in ''|'#'*) continue;; esac
     if [ -z "$IDS" ]; then
       echo "$pid|$pdraft"
     else

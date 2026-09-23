@@ -1,0 +1,20 @@
+{
+  "task_id": "D925",
+  "title": "W1-3·C2：deps-interface + setter 注入立为标准模式",
+  "status": "spec_done",
+  "risk": "medium",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": "synova-squad-lead",
+  "milestone": "M0 项目管理基建",
+  "depends_on": ["D922"],
+  "blocked": null,
+  "target": "2026-W40",
+  "spec": "docs/synova/coordination/派单-W1-双DSH提升-20260923.md",
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "note": "参考 双DSH执行提升清单 §一.3（Win loop-handlers.ts 范式）",
+  "updated_at": "2026-09-23",
+  "updated_by": "synova-cto"
+}

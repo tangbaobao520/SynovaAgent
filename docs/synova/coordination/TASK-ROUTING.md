@@ -125,3 +125,17 @@
 ---
 
 > 完整章程（编码切片细节/监控指标/终态）：见 [dsh-division-draft/DIVISION-CHARTER-v4.md](dsh-division-draft/DIVISION-CHARTER-v4.md)。
+
+---
+
+## 修订 — 2026-09-23（组织形态变更，创始人批准）
+
+> 本次修订取代本文档中「dev doc 线 = 📋 synova-devdoc 常驻 session」与「编码 = 独立线」的旧表述。**规格与门禁职责不变，仅载体与形态变更。**
+
+1. **`synova-devdoc` 预设退役**（B 案：降级为技能 + 触发式独立）
+   - 实测依据：近 7 天 dev doc 产物 0 变更；`synova-squad-lead` 成员编制（队长 + ≤2 编码 + 1 自验）无该位。
+   - 规格来源：**CTO 派单件 = 规格**（"派单即规格"口径，D821 起）；复杂任务触发式启用 skill `dev-doc-spec`。
+   - **独立性硬要求不变**：写了规格的成员不得实现该规格；队长不得兼任规格撰写。
+2. **执行形态 = 小队（🎽 synova-squad-lead）**：队长 + ≤2 编码（走 🛠 synova-dsh 纪律模式）+ 1 自验；自验不得由编码兼任。
+3. **制衡提示（承重墙）**：规格与协调同归 CTO 后，独立环节只剩 K3 → **K3 必经合并门禁（D923）不是可选项**，是该形态的制衡承重墙。
+4. **长任务形状**：程序卡（1）+ 子卡（N）+ Wave 门（K3 审 + CTO 收件闸），见 `docs/synova/coordination/派单-W1-双DSH提升-20260923.md`。
