@@ -1,0 +1,33 @@
+{
+  "status": "claimed",
+  "risk": "medium",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [],
+  "blocked": null,
+  "updated_at": "2026-09-22",
+  "updated_by": "synova-cto",
+  "target": "2026-W39",
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "executor": null,
+  "title": "D864 复审 P1-2 闭环：`.claude/reference-map.md` 生成物不入库",
+  "spec": "K3 对 D864 复审维持 CONDITIONAL PASS，唯一遗留 P1-2：`.claude/reference-map.md` 由 `scripts/workflow/grep-refs.sh:18` 生成，却在 `docs/synova/coordination/ownership.yaml` 归 win 域 → 与 mac 侧控制塔改动同 PR 即触发 D733 预算/域冲突。CTO 裁定：**生成物不入库**（`git rm --cached` + 写 `.gitignore`），需要时本地重生成。",
+  "write_set": [
+    ".claude/reference-map.md",
+    ".gitignore",
+    "docs/synova/coordination/ownership.yaml",
+    "task-state/D864.json"
+  ],
+  "acceptance_points": [
+    "`git rm --cached .claude/reference-map.md` 后 main 不再跟踪该文件（`git cat-file -e origin/main:.claude/reference-map.md` 应失败）",
+    "`.gitignore` 含该路径且 `git check-ignore` 命中",
+    "`scripts/workflow/grep-refs.sh` 生成流程不因忽略而失败（本地重生成仍可用）",
+    "K3 终判：P1-2 关闭"
+  ],
+  "note": "来源：K3 D864 复审报告（分支 `audit/k3-d864-reaudit` @ 6d4e76cb）；CTO 裁决 2026-09-22。",
+  "next": "① 落 main ② 交 K3 终判",
+  "task_id": "D864"
+}
