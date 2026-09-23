@@ -1,0 +1,36 @@
+{
+  "task_id": "D931",
+  "title": "小队执行形态接线（队长预设挂 Agent Teams + 派单模板执行形态硬字段 + 纪律条目）",
+  "status": "impl_done",
+  "risk": "high",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": "dsh-cto",
+  "branch": "fix/d931-squad-lead-team",
+  "worktree": ".synova-wt-d931",
+  "base": "origin/main 967a58e5",
+  "milestone": "M0 项目管理基建",
+  "depends_on": ["D926"],
+  "blocked": null,
+  "target": "2026-W40",
+  "spec": ".claude/task-briefs/2026-09-23-D931-squad-team-wiring.md",
+  "impl": "根因修复（创始人 2026-09-23 指出「小队是摆设、队长预设没到位」）：① install-squad-lead.sh 把 legacy delegation（子代理）替换为 agent-team + tool-agent-team + ui-agent-team（含 overlay 同构 config，maxMembers=4 把成员上限物理化）+ 修脚本原有全角括号紧贴变量 bug；② squad-lead SYSTEM-PROMPT 增「团队机制」节（怎么建成员/共享任务格式/队长不下场/运行记录判据）；③ squad-discipline 技能增同节（双写一致）；④ 派单模板增「执行形态」硬字段（DSH 默认不建队友 → 派单必须显式要求）。",
+  "audit": null,
+  "fix_task_id": null,
+  "write_set": [
+    "docs/synova/presets/install-squad-lead.sh",
+    "docs/synova/presets/synova-squad-lead/SYSTEM-PROMPT.md",
+    ".claude/skills/squad-discipline/SKILL.md",
+    ".dsh/skills/squad-discipline/SKILL.md",
+    "docs/synova/coordination/派单模板.md",
+    "task-state/D931.json",
+    ".claude/task-briefs/2026-09-23-D931-squad-team-wiring.md"
+  ],
+  "evidence": {
+    "root_cause": "① 派单件零 team 字样（DSH 默认只有被明确要求才建队友）② 队长预设挂 legacy delegation 未挂 tool-agent-team（README：team 工具 replaces legacy subagent controls）",
+    "after_install": "落位后预设: agent-team:1 tool-agent-team:1 ui-agent-team:1 残留 delegation:0 | maxMembers:4",
+    "note": "预设需重启 DSH / 新开 session 生效"
+  },
+  "updated_at": "2026-09-23",
+  "updated_by": "synova-cto"
+}
