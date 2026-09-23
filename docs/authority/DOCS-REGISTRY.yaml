@@ -250,3 +250,20 @@ documents:
     note: "创始人 2026-09-20 裁定：研究院材料＝与创始人裁定同级；撤回清单 > 任何旧说法；未入库＝视为未交办；派单必给权威件回执（§〇-c）"
     verified-by: scripts/control-tower/pre-dispatch-check.sh (planned)
 
+  - id: DOC-0114
+    type: knowledge
+    path: .claude/skills/squad-discipline/SKILL.md
+    status: active
+    owner: DSH
+
+  - id: DOC-0115
+    type: knowledge
+    path: .dsh/skills/squad-discipline/SKILL.md
+    status: active
+    owner: DSH
+
+  - id: DOC-0116
+    type: knowledge
+    path: docs/synova/presets/synova-squad-lead/SYSTEM-PROMPT.md
+    status: active
+    owner: DSH
