@@ -1,0 +1,24 @@
+{
+  "task_id": "D927",
+  "title": "DSH 借鉴清单重新对比审计（B-01…B-20 现状矩阵 + 锚点重核 + 过时判定）",
+  "status": "spec_done",
+  "risk": "medium",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": "山河研究院（优先）/ synova-k3-audit（次选）",
+  "milestone": "M0 项目管理基建",
+  "depends_on": ["D917"],
+  "blocked": "等创始人指派执行方",
+  "target": "2026-W40",
+  "spec": "docs/synova/coordination/派单-DSH借鉴重新对比审计-20260923.md",
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "write_set": [
+    "docs/synova/coordination/派单-DSH借鉴重新对比审计-20260923.md",
+    "task-state/D927.json"
+  ],
+  "note": "触发：创始人 2026-09-23——DSH 今日再次更新，借鉴锚点面临整体漂移。三处置口径（创始人原话）：没动手的按最新来；已动手的确保可运行即可。CTO 实测现状：代码已落约 10 张（B-01/02/03/04/05/06/07/09+10…），其中 D598/D599 impl_done 无 audit、D588 CONDITIONAL（按纪律=未通过）；B-08 未落、B-11 未开工；G3 证据回写 2/20；版本锚点三处不一致（npm 0.1.0-rc.8 / bundle 0.1.6-alpha.1 / 研究期 0.1.6-alpha.2）。",
+  "updated_at": "2026-09-23",
+  "updated_by": "synova-cto"
+}
