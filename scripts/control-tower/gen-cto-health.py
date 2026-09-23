@@ -302,7 +302,20 @@ def analyze_task_state() -> Tuple[list, dict]:
 # 派生判定 (工件优先; json 字段兜底展示但不算真)
         # D399 (P1-2)/D400: spec = glob 扫描 OR json spec.path 兜底（文件必须真实存在——存在即算真, 消除幻影）
         # D412/U3: json spec.path 分支同样过仓库态校验（工作区存在 且 已提交 HEAD）
-        spec_path = (d.get("spec") or {}).get("path")
+        # D929 修复（CTO 接手批）: spec 字段两种形态并存 —— 字符串（多数卡，直接是路径）
+        #   与 dict（{path,...}）。原实现只假定 dict → 字符串卡触发 AttributeError ，
+        #   生成器整体崩溃（台账 2026-09-14 记 P0: gen-cto-health 自 D600 起无法生成）。
+        _spec = d.get("spec")
+        if isinstance(_spec, dict):
+            spec_path = _spec.get("path")
+        elif isinstance(_spec, str):
+            # 字符串 spec 有两种：① 路径（如 "docs/synova/.../派单-x.md"）② 散文式规格描述
+            #   （D911/D821 等卡实测为长段落）。只认「形如路径」者，散文 → 视为无路径（不猜）。
+            _s = _spec.strip()
+            if _s and "\n" not in _s and len(_s) <= 200 and re.match(r"^[\w./-]+\.(md|ya?ml|json|txt)$", _s):
+                spec_path = _s
+        else:
+            spec_path = None
         spec_path_ok = bool(
             spec_path
             and (REPO / spec_path).exists()
@@ -323,11 +336,19 @@ def analyze_task_state() -> Tuple[list, dict]:
             try:
                 txt = rep_path.read_text(encoding="utf-8", errors="replace")
                 # D395a verdict 优先序不变: CONDITIONAL PASS > PASS > FAIL > ?
-                if "CONDITIONAL PASS" in txt:
+                # D929 修复: 原实现按子串序 PASS > FAIL → 报告同时出现 "PASS" 与 "FAIL"
+                #   （汇总表/清单极常见）即误判 PASS（台账 2026-09-14: CTO-HEALTH.md:69 把
+                #   D393 的 FAIL 显示为 PASS）。新口径三步:
+                #   ① 认显式裁决行 ② 无歧义子串 ③ 有歧义 → "?"（fail-closed，不伪装 PASS）
+                _m = re.search(r"(?:结论|判定|verdict)[^\n]{0,40}?(CONDITIONAL[\s_]*PASS|PASS|FAIL)", txt, re.I)
+                if _m:
+                    _tok = re.sub(r"[\s_]+", "_", _m.group(1).upper())
+                    audit_txt = "CONDITIONAL_PASS" if _tok.startswith("CONDITIONAL") else _tok
+                elif "CONDITIONAL PASS" in txt:
                     audit_txt = "CONDITIONAL_PASS"
-                elif "PASS" in txt:
+                elif "PASS" in txt and "FAIL" not in txt:
                     audit_txt = "PASS"
-                elif "FAIL" in txt:
+                elif "FAIL" in txt and "PASS" not in txt:
                     audit_txt = "FAIL"
                 else:
                     audit_txt = "?"
