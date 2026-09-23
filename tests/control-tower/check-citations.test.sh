@@ -119,7 +119,7 @@ MD
 for i in $(seq 1 40); do echo "假引用 docs/synova/coordination/不存在-$i.md:1" >> "$TMPD/e4.md"; done
 # 注意: 本测试 set -o pipefail → 不可用 `cmd | py || echo 0`（首命令 exit 1 会让 || 追加第二行 → "40\n0"）
 "$PY" "$C" "$TMPD/e4.md" --repo "$REPO" --json > "$TMPD/e4.json" 2>/dev/null  # swallow-ok: 该次调用预期 exit 1（40 条违规），stdout 已重定向留档，stderr 无语义
-N=$("$PY" -c "import json,sys;print(json.load(open(sys.argv[1]))['summary']['violations'])" "$TMPD/e4.json" 2>/dev/null) || N=0
+N=$("$PY" -c "import json,sys;print(json.load(open(sys.argv[1],encoding='utf-8'))['summary']['violations'])" "$TMPD/e4.json" 2>/dev/null) || N=0
 [ "${N:-0}" -eq 40 ] && ok "边界: 40 条违规全量报出（不截断，原 head -25 漏洞）" || no "边界: 违规数 ${N:-0} ≠ 40（截断回归）"
 
 # D919 自测修正回归：行内标注「新建」的交付物 = 声明，非违规（防合法派单件被误拦）

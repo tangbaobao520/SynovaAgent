@@ -255,8 +255,11 @@ def main() -> int:
                "violations": len(all_v), "roots": roots, "owner": owner}
 
     if args.json:
+        # D919 Windows 修复（CI 实测 run 107021493797）：--json 用 ASCII 转义输出 ——
+        # 消费方（含测试内联 python）在 Windows 默认 locale 编码下读 UTF-8 中文会炸，
+        # 机器可读输出必须零编码假设（中文由 \uXXXX 表达，语义不变）。
         print(json.dumps({"artifacts": reports, "violations": all_v, "summary": summary},
-                         ensure_ascii=False, indent=2))
+                         ensure_ascii=True, indent=2))
     elif not args.quiet:
         for v in all_v:
             print(f"  ⚠️ [{v['code']}] {v['artifact']}:{v['line']} → {v['citation']} "
