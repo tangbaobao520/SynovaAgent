@@ -1,49 +1,74 @@
 {
   "task_id": "D927",
-  "title": "DSH 借鉴卡 B-01…B-20 重新对比审计（现状矩阵 + 锚点重核 + 过时判定 + 处置建议）",
+  "title": "DSH 借鉴卡 B-01…B-20 重新对比审计 v2（按 0.1.7-alpha.2 源码树重锚）",
   "status": "impl_done",
   "spec": "docs/synova/coordination/派单-DSH借鉴重新对比审计-20260923.md（依据计划 v1.2@4e46603f）",
   "write_set": [
-    "docs/synova/research/D927-DSH借鉴卡重新对比审计-20260923.md",
-    "docs/synova/research/D927-DSH锚点重核-0.1.6-alpha.2.md",
+    "docs/synova/research/D927-DSH借鉴重新对比审计-20260923/",
     "task-state/D927.json"
   ],
   "impl": {
     "by": "山河研究院（技术线 · 原对比研究作者）",
     "date": "2026-09-23",
+    "branch": "docs/d927-dsh-recompare-audit-v2",
     "files": [
-      "docs/synova/research/D927-DSH借鉴卡重新对比审计-20260923.md",
-      "docs/synova/research/D927-DSH锚点重核-0.1.6-alpha.2.md"
+      "docs/synova/research/D927-DSH借鉴重新对比审计-20260923/README.md",
+      "docs/synova/research/D927-DSH借鉴重新对比审计-20260923/①现状矩阵.md",
+      "docs/synova/research/D927-DSH借鉴重新对比审计-20260923/②锚点重核表.md",
+      "docs/synova/research/D927-DSH借鉴重新对比审计-20260923/③过时判定.md",
+      "docs/synova/research/D927-DSH借鉴重新对比审计-20260923/④处置建议.md",
+      "docs/synova/research/D927-DSH借鉴重新对比审计-20260923/附录-冒烟验证原始输出.md",
+      "docs/synova/research/D927-DSH借鉴重新对比审计-20260923/附件/DSH锚点重核-0.1.7-alpha.2源码树.md",
+      "docs/synova/research/D927-DSH借鉴重新对比审计-20260923/附件/DSH锚点重核-0.1.7-alpha.2源码树-B01-B05.md",
+      "docs/synova/research/D927-DSH借鉴重新对比审计-20260923/附件/DSH锚点重核-0.1.7-alpha.2源码树-B16-B20.md"
     ],
+    "section_correction": {
+      "v1_作废": "v1 误用 Desktop 打包运行时（…/deepseek-harness-desktop/dependencies/dsh/node_modules/@deepseek-ai/*，0.1.6-alpha.2，npm tarball + esbuild 产物 lib/*.js）作断面；v1 三档结论作废，两份 v1 文件已删除",
+      "v2_断面": "/Users/wane/src/deepseek-harness-017 @ HEAD 00102833（Merge PR #4978 release-dsh-0.1.7-alpha.2）；package.json / apps/desktop / apps/web 三处均 0.1.7-alpha.2；布局 packages/<组>/<包>/src/*.ts；307 个含 src/ 的包目录、54 个组",
+      "今日两件事": "①内核 0.1.7-alpha.1 → 0.1.7-alpha.2；②Desktop 回滚 0.1.7-alpha.1 → 0.1.6-alpha.2（.store.dat.before-kernel-rollback 01:05 vs .store.dat 01:12）",
+      "物理根因": "源码树里 307 个 lib/index.js 与 src/ 并存，但被 .gitignore:7 忽略（git ls-files=0）→ 工作树干净 ≠ 没有产物；grep 必须限定 src/"
+    },
     "deliverables": {
       "①现状矩阵": "B-01…B-20 全覆盖；代码在 main 用 git … HEAD 口径；审计 verdict 取 task-state 原字段；证据回写；冒烟实跑",
-      "②锚点重核表": "判定分布 命中38/位移9/被上游取代4/已消失1；每锚点附 file:line + 复现命令",
-      "③过时判定": "仍成立 10 / 需改法 10 / 已无必要（卡级）0；锚点级『已无必要』5 处",
-      "④处置建议": "B-08 锚点全活按原方案（1天）；B-11 改用官方 MCP SDK 蓝本（3-5天）；B-12…B-20 按原方案 + 三处微调"
+      "②锚点重核表": "旧 npm tarball 锚点 → 源码树 file:line；四值判定（命中/位移/被上游取代/已消失）+ 逐条复现命令 + 行号漂移不均一实证",
+      "③过时判定": "仍成立 7 / 需改法 12 / 已无必要 1",
+      "④处置建议": "B-08 按原方案（1天，理由替换）；B-11 换官方 MCP SDK 蓝本（3–5天）；B-18 须连装配一起借；B-09/B-10/B-11/B-12 卡面重写"
     },
     "verify": {
-      "版本断面": "活跃 = dependencies/dsh → wrapper deepseek-harness-pkg@0.1.6-alpha.1 / inner @deepseek-ai/dsh@0.1.6-alpha.2（261 包，250 个 dsh-* 全同版本）；目录 mtime 2026-09-23 01:06",
-      "今日变动真相": "0.1.7-alpha.1 → 0.1.6-alpha.2 回滚（.store.dat.before-kernel-rollback 01:05 dsh_pkg_tag=dsh-0.1.7-alpha.1-35696077623 vs .store.dat 01:12 dsh_pkg_tag=dsh-0.1.6-alpha.2-35295560626）",
-      "研究期锚点": "0.1.2-alpha.2（借鉴指引 v2 09-04）/ 0.1.2-rc.1（锚点映射 09-07，224 包）——非 CTO 记的 0.1.6-alpha.2；且旧基线物理断面已不在磁盘",
-      "冒烟": "cd /Users/wane/SynovaAgent && npx vitest run <10 个 B 卡测试文件> → Test Files 10 passed (10) / Tests 112 passed (112) / 6.20s",
-      "G1": "src+packages 的 @deepseek-ai = 0 命中；全仓 0 条真实 import；全仓引用计数 227（CTO 基线 199 系 2026-09-22 commit 1062ba2f 快照，已 +28）",
-      "红线": "未改 src/ scripts/ tests/；未改 DSH 安装目录；未 npm install；未 copy 代码"
+      "冒烟": "cd /Users/wane/SynovaAgent && npx vitest run <10 个 B 卡测试文件> → Test Files 10 passed (10) / Tests 112 passed (112) / 6.36s / exit 0（checkout = SynovaAgent main@967a58e5）",
+      "断面": "git -C /Users/wane/src/deepseek-harness-017 log -1 → 00102833 Merge PR #4978 release-dsh-0.1.7-alpha.2；git status --porcelain | wc -l → 0",
+      "浅克隆": "git -C … rev-parse --is-shallow-repository → true；rev-list --count HEAD → 1 → git log 不可作历史证据",
+      "B-09作废原文": "packages/preset/agent-preset/skills/editing-cordis-compositions/SKILL.md:70 → \"Nothing reads that directory any more.\"",
+      "G1": "src+packages 的 @deepseek-ai = 0 命中；全仓 0 条真实 import；全仓引用计数 227（CTO 基线 199 系 2026-09-22 commit 1062ba2f 快照）",
+      "红线": "未改 src/ scripts/ tests/；DSH 树全程只读（git status 0 脏、HEAD 未变）；未 npm install；未 copy 代码"
     },
     "findings": [
-      "今日『再次更新』实为回滚（0.1.7-alpha.1 → 0.1.6-alpha.2），非升级",
-      "B-06 旧定位 dsh-agent-loop 错误（1950 行、timeout 零命中、abort 98）；承担者 dsh-timeout + dsh-tool-call-timeout-policy",
-      "B-14 lib/types/spec.js 自始不成立（今日断面与源码 checkout 均无）",
-      "B-05 归属 dsh-compaction → dsh-compaction-basic（前者已退化为抽象 seam）",
-      "B-19 dsh-jobs 仅 65 行且构造即抛错；内存实体在 dsh-jobs-local",
-      "B-11 transport 层无需借：dsh-mcp-client 本身是 @modelcontextprotocol/client v2.0.0 的封装壳",
-      "B-01 守卫族收窄：isEmptyResponseError / isInvalidCredentialError 全 261 包零命中",
-      "B-05 编号撞车：task-state/D594.json 是另一张卡（closed，被 D602 取代），B-05 零审计承载",
-      "实际零审计 4 张（B-03/B-05/B-09/B-10），不止 CTO 所述的 D598/D599 两张",
-      "B-07 仍 CONDITIONAL PASS，修复卡 D597 自 2026-09-08 停在 impl_done 未收口",
-      "G3 真借鉴卡绑定证据仅 1 个（D806-borrow-cards-20260918.json，覆盖 8 张卡）",
-      "task-state/D769.json 已在 main（e418cddc，09-20），『B-20 未登记』结论已过期"
+      "断面错误更正：v1 用 Desktop 打包运行时，v2 用内核源码树 0.1.7-alpha.2",
+      "今日「再次更新」实为两件事：内核 0.1.7-alpha.1→0.1.7-alpha.2；Desktop 回滚 0.1.7-alpha.1→0.1.6-alpha.2",
+      "B-09 preset=目录 范式已被上游废弃（COMPOSITION_FILE/METADATA_FILE 零命中；SKILL.md:70 自述）→ 已无必要（保留 mountPreset/leakedServices 注册表语义）",
+      "B-10 patchNode 全树零命中 + settings-file 包消失 → 改为 boot/config-editor 的 profile patch（ConfigEditor.edit():75）",
+      "B-06 旧定位 dsh-agent-loop 两断面一致证伪（源码树 8 文件 timeout 全 0；tarball 1950 行 timeout=0 / abort=98）",
+      "B-18 只被 sdk-minimal 挂载，base/web-app/headless/acp-app 零挂载 → 照抄机制不照抄装配 = 抄了一个不会运行的正确检查（由仍成立改判需改法）",
+      "B-08 两断面 lib/index.js md5 相同（7a93bb9d…），39 行差 = 注释+空行+类型擦除；但上游无真并发写测试，「1 天」只覆盖抄机制",
+      "B-11 transport 层无需借（dsh-mcp-client 自身 import 官方 @modelcontextprotocol/client@2.0.0）；listChanged 归 SDK 非 DSH 自研",
+      "B-12 验签完全委托 @octokit/webhooks（packages/webhook 下 createHmac/timingSafeEqual 零命中）→ 我们须自研",
+      "B-14 撤回「spec.js 自始不成立」（浅克隆不可证历史）；指纹围栏实为三要素 [id,createdAt,cwd]",
+      "B-01 守卫族收窄为 3 个，且 isContextWindowExceededError/isQuotaExceededError 是正则分类器（与同文件「never by parsing message」相反）",
+      "B-03 plan/commit 是 surface 折叠异常安全事务对（非成本两段式）；projectedTokens 不可用于中文计费（DSH 自述低估 CJK）",
+      "B-04↔B-03 硬耦合（修剪器 inject=['tokenMeter']）→ 不能拆开移植",
+      "B-20 第6项 session-checkpoint-policy 与 session-projection 零引用（同词不同机制）→ 建议唯一归 B-20，两卡不合并",
+      "B-17 卡面「五包」实为 6 包"
     ],
-    "no_fix_card_reason": "已动手的 B-01…B-10 十张全部『今日仍能运行』（10 files / 112 tests 全绿），派单规定的 FIX 卡触发条件未成立"
+    "no_fix_card_reason": "已动手的 B-01…B-10 十张全部「今日仍能运行」（10 files / 112 tests 全绿），派单规定的 FIX 卡触发条件未成立",
+    "pending_ledger_items": [
+      "D594 编号撞车 → B-05 零审计承载：立新卡补审计",
+      "零审计 4 张（B-03/B-05/B-09/B-10）≠ CTO 所述 2 张：立审计卡",
+      "B-07 仍 CONDITIONAL PASS，修复卡 D597 自 2026-09-08 停在 impl_done：催收口",
+      "G1 全仓计数 199 已过期（实为 227）；§11.3「0/20 回写」已被 D806 超越未回改",
+      "「D769 未登记」已过期（D769.json 在 main，e418cddc）；board-backlog PLAN-d808-b20-unregistered 与物理矛盾",
+      "M3 存量缺口 4 文件锚点注释（Win 路径 + 0.1.1-rc.2）→ 立编码卡",
+      "B-08 开卡前置：scripts/control-tower/ 零线归属（M2）"
+    ]
   },
   "audit": null,
   "fix_task_id": null,
