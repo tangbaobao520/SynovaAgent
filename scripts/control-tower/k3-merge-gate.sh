@@ -108,6 +108,12 @@ def exact(block):
 def extra(block):
     m = re.search(r"^    extra_globs:\n(.*?)(?=^    [a-z_]+:|\Z)", block, re.M | re.S)
     return globs("  X:\n" + m.group(1).replace("      globs:", "    globs:")) if m else []
+def excludes(block):
+    # <规则>.exclude —— 该规则的自排除面。
+    # L9（D923 收尾）：此前 policy 已声明 B_finance.exclude 但**抽取器从未消费** ⇒ 声明与实现不一致。
+    # 现按「声明即生效」实现（排除项与规则标签绑定，见下方 match3 的 rule_excluded）。
+    m = re.search(r"^    exclude:\n((?:      - .*\n)+)", block, re.M)
+    return [l.strip()[2:].strip().strip('"') for l in m.group(1).splitlines()] if m else []
 def pick_excl(block):
     # C_storage.pickaxe.exclude_globs —— pickaxe 扫描面排除（6 空格键 / 8 空格条目）
     m = re.search(r"^      exclude_globs:\n((?:        - .*\n)+)", block, re.M)
@@ -117,14 +123,16 @@ pat = ""
 m = re.search(r"^      pattern:\s*\"?([^\"\n]+)\"?", C, re.M)
 if m: pat = m.group(1).strip()
 # 规则标签随 pattern 一并输出 —— 缺陷 B（红必须可归因）：命中的是「哪条规则」要能写出来
-def emit(label, pats):
+def emit(label, pats, excls):
     for g in pats:
         print("RULE\t" + label + "|" + g)
-emit("A_security.globs", globs(A))
-emit("A_security.exact_files", exact(A))
-emit("A_security.extra_globs", extra(A))
-emit("B_finance.globs", globs(B))
-emit("C_storage.globs", globs(C))
+    for e in excls:
+        print("EXCL\t" + label + "|" + e)
+emit("A_security.globs", globs(A), excludes(A))
+emit("A_security.exact_files", exact(A), excludes(A))
+emit("A_security.extra_globs", extra(A), excludes(A))
+emit("B_finance.globs", globs(B), excludes(B))
+emit("C_storage.globs", globs(C), excludes(C))
 for g in pick_excl(C):
     print("PICKEXCL\t" + g)
 if pat: print("PICKAXE\t" + pat)
@@ -132,6 +140,7 @@ sys.exit(0)
 PY
 )"
 RULE_PATTERNS="$(printf '%s\n' "$POLICY_OUT" | "$GREP_BIN" '^RULE' | cut -f2- || true)"
+RULE_EXCLUDES="$(printf '%s\n' "$POLICY_OUT" | "$GREP_BIN" '^EXCL' | cut -f2- || true)"
 PICKAXE_PAT="$(printf '%s\n' "$POLICY_OUT" | "$GREP_BIN" '^PICKAXE' | cut -f2- || true)"
 PICK_EXCL_POLICY="$(printf '%s\n' "$POLICY_OUT" | "$GREP_BIN" '^PICKEXCL' | cut -f2- || true)"
 if [ -z "$RULE_PATTERNS" ]; then
@@ -154,19 +163,38 @@ done <<< "$PICK_EXCL_POLICY"
 
 # 三类匹配：把 policy 的 glob 转成 git-pathspec 语义的 shell 匹配（`**` → 任意层级）
 # RULE_PATTERNS 每行形如 `<规则标签>|<pattern>`；命中时把标签写入 MATCH_RULE（缺陷 B：可归因）
+# RULE_EXCLUDES 每行形如 `<规则标签>|<exclude-glob>`；命中该规则但落在此面内 → 不算命中（L9：声明即生效）
+glob_hit() { # <相对路径> <pattern> → 0=命中
+  local f="$1" pat="$2"
+  case "$pat" in
+    *"/**") case "$f" in "$(printf '%s' "${pat%/**}")"/*) return 0 ;; esac ;;
+    *\**)
+      local core="${pat#\*\*\/}"; core="${core#\*}"
+      case "$f" in *"${core%\*}"*) return 0 ;; esac ;;
+    *) [ "$f" = "$pat" ] && return 0 ;;
+  esac
+  return 1
+}
+rule_excluded() { # <相对路径> <规则标签> → 0=被该规则的 exclude 排除
+  local f="$1" want="$2" line
+  while IFS= read -r line; do
+    [ -z "$line" ] && continue
+    case "$line" in
+      "$want|"*) glob_hit "$f" "${line#*|}" && return 0 ;;
+    esac
+  done <<< "$RULE_EXCLUDES"
+  return 1
+}
 match3() { # <相对路径> → 0=命中三类（MATCH_RULE=规则标签）
   local f="$1" rule
   MATCH_RULE=""
   while IFS= read -r pat; do
     [ -z "$pat" ] && continue
     rule="${pat%%|*}"; pat="${pat#*|}"
-    case "$pat" in
-      *"/**") case "$f" in "$(printf '%s' "${pat%/**}")"/*) MATCH_RULE="$rule"; return 0 ;; esac ;;
-      *\**)
-        local core="${pat#\*\*\/}"; core="${core#\*}"
-        case "$f" in *"${core%\*}"*) MATCH_RULE="$rule"; return 0 ;; esac ;;
-      *) [ "$f" = "$pat" ] && { MATCH_RULE="$rule"; return 0; } ;;
-    esac
+    if glob_hit "$f" "$pat"; then
+      if rule_excluded "$f" "$rule"; then continue; fi
+      MATCH_RULE="$rule"; return 0
+    fi
   done <<< "$RULE_PATTERNS"
   return 1
 }

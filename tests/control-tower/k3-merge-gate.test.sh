@@ -28,6 +28,7 @@ export LC_ALL=C.UTF-8 2>/dev/null || true
 #  14  变异体判别  — 把三类匹配改成恒不命中 → 同一红样例**必须漏判**（证明判据承重）
 #  15  缺陷A回归  — 门禁自身产物(k3-*)含 DDL 字面量 → **不自命中**（去掉 policy exclude_globs 即失败）
 #  16  缺陷B回归  — pickaxe 命中**可归因**：出现在「三类命中清单」并标明规则名
+#  17  L9 回归    — 规则级 `exclude:` **真被消费**（宽 glob 沙箱下，_extinct 不命中 / 子域命中）
 # ═══════════════════════════════════════════════════════════════════════════════
 set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -181,6 +182,40 @@ bash "$R16/scripts/control-tower/k3-merge-gate.sh" --base HEAD~1 --head HEAD --p
 RC=$?
 echo "[16] 缺陷B回归: pickaxe 命中可归因（清单逐条 + 规则名）"; check "exit" 1 "$RC"
 gcheck "清单含 pickaxe 逐条 + 规则名" "$SB/o16" '\(pickaxe\).*src/adapters/real-ddl\.ts.*规则 C_storage\.pickaxe' yes
+
+# ── 17 L9 回归: 规则级 `exclude:` 必须**真被消费**（声明即生效）────────────────
+# 判别点：把 B 的五条子域 glob 换成一条**宽 glob**（`extensions/sentinels/**`），
+#   使 `exclude: extensions/sentinels/_extinct/**` 成为唯一判别点。
+#   未实现 exclude 时：c1 的 _extinct 变更仍会命中 → exit 1 ⇒ 本用例失败（删掉即报红）。
+R17="$SB/r17"; mkdir -p "$R17/extensions/sentinels" "$R17/task-state" "$R17/scripts/control-tower"
+cp "$GATE" "$R17/scripts/control-tower/"
+cp "$REPO_ROOT/scripts/control-tower/k3-gate-policy.yaml" "$R17/scripts/control-tower/"
+python3 - "$R17/scripts/control-tower/k3-gate-policy.yaml" <<'PYX'
+import re, sys
+p = sys.argv[1]; t = open(p, encoding='utf-8').read()
+# 只替换 B_finance 的 globs 列表（逐行匹配，禁用 DOTALL 贪婪——否则会把 policy 后半截吃掉）
+t2 = re.sub(r'(^  B_finance:(?:[^\n]*\n)*?    globs:\n)(?:      - [^\n]*\n)+',
+            lambda m: m.group(1) + '      - "extensions/sentinels/**"\n', t, flags=re.M)
+assert t2 != t, "B_finance.globs 未替换（夹具前置失败）"
+assert '    exclude:\n      - "extensions/sentinels/_extinct/**"' in t2, "exclude 段被误删"
+assert t2.rstrip().endswith('backlog:') or 'backlog:' in t2, "policy 被截断"
+open(p, 'w', encoding='utf-8').write(t2)
+PYX
+( cd "$R17" && git init -q && git -c user.email=t@t -c user.name=t commit -q --allow-empty -m base )
+printf '{"task_id":"D117","audit":{"verdict":"PASS"}}' > "$R17/task-state/D117.json"
+mkdir -p "$R17/extensions/sentinels/_extinct/demo/computes"
+printf '// stub\n' > "$R17/extensions/sentinels/_extinct/demo/computes/x.ts"
+( cd "$R17" && git add -A && git -c user.email=t@t -c user.name=t commit -q -m c1 )
+bash "$R17/scripts/control-tower/k3-merge-gate.sh" --base HEAD~1 --head HEAD --pr 3 --state-dir "$R17" > "$SB/o17a" 2>&1
+RC17A=$?
+echo "[17] L9回归: exclude 内(_extinct)的变更不得命中"; check "exit" 0 "$RC17A"
+mkdir -p "$R17/extensions/sentinels/capital-health/computes"
+printf '// stub\n' > "$R17/extensions/sentinels/capital-health/computes/z.ts"
+( cd "$R17" && git add -A && git -c user.email=t@t -c user.name=t commit -q -m c2 )
+bash "$R17/scripts/control-tower/k3-merge-gate.sh" --base HEAD~2 --head HEAD --pr 3 --state-dir "$R17" > "$SB/o17b" 2>&1
+RC17B=$?
+echo "[17b] 对照: exclude 外的 B 子域变更仍须命中"; check "exit" 1 "$RC17B"
+gcheck "17b 命中带规则名" "$SB/o17b" '\(glob\).*capital-health.*规则 B_finance\.globs' yes
 
 echo ""
 if [ "$FAIL" -gt 0 ]; then echo "D923-FIXTURE: FAIL ($PASS/$TOTAL 通过)"; exit 1; fi

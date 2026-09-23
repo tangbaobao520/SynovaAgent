@@ -66,6 +66,12 @@ rules:
       - "extensions/sentinels/revenue-health/computes/**"
     exclude:
       - "extensions/sentinels/_extinct/**"
+    exclude_note: >
+      D923 收尾 L9：本键此前**已声明但抽取器从未消费**（声明与实现不一致，属惰性配置）。
+      现已按「声明即生效」在 `k3-merge-gate.sh` 的 `excludes()` + `rule_excluded()` 中实现 ——
+      排除项与**规则标签**绑定（`B_finance.globs|extensions/sentinels/_extinct/**`），
+      命中该规则但落在排除面内的文件不算命中。判据来源见 `reason`（33 个退役文件仅 type-only 引用，无运行时加载路径）。
+      判别性回归：夹具**用例 17**（宽 glob 沙箱下 `_extinct` 不命中 / 子域命中；去掉 `rule_excluded` 分支即失败）。
 
   C_storage:
     name: "数据迁移 / 存储"

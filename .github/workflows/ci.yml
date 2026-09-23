@@ -102,15 +102,27 @@ jobs:
           python3 scripts/control-tower/merge_writeset_gate.py \
             --base origin/main --head HEAD --branch "${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}"
 
-      # D923: K3 必经合并门禁 —— 与 D708 同宿主同形态（PR-diff + 三态 0/1/2），
-      #   但判别对象不同：D708 查「写集夹带」（intra-PR），本步查「三类路径变更是否具备 K3 结论」。
-      #   永远会跑（quality job 对每个 PR 运行）；纯文档 PR 同 D708 一样跳过。
-      #   政策外置: scripts/control-tower/k3-gate-policy.yaml（类目映射可审，禁硬编码）。
-      #   退出码: 0=绿 / 1=红（三类命中且无通过级 K3 结论）/ 2=降级(fail-closed，绝不等同通过)。
+  # D923: K3 必经合并门禁 —— **独立 job**（不是 `quality` 的 step）。两条理由都是结构性的：
+  #   ① branch protection 的 required check context 是 **job 名**，step 不是可注册单元
+  #      ⇒ step 形态**根本无法被注册为必经门禁**（目标不可达）。
+  #   ② job 内某 step 失败后其余 step 全部 `skipped`（实测：`Iron laws check` 失败 ⇒
+  #      其后 `Verify parallel`/D708/K3 三步全 skipped）⇒「被 skip」= 门禁在被依赖时**静默缺席**，
+  #      违反裁定 3「永远会跑」。故本 job：
+  #      · **不挂 `needs:`**（不被上游 job 失败拖成 skip）
+  #      · **不加 docs-only 跳过**（required check 必须在每个 PR 上都有结论；纯文档 PR 无三类命中 ⇒ PASS）
+  #   调用语义与 D708 同形: `--base origin/main --head HEAD --pr <event>` + 三态 0/1/2 + diff 口径。
+  #   政策外置: scripts/control-tower/k3-gate-policy.yaml（类目映射可审，禁硬编码）。
+  #   退出码: 0=绿 / 1=红（三类命中且无通过级 K3 结论）/ 2=降级(fail-closed，绝不等同通过)。
+  k3-gate:
+    name: K3 Merge Gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # gate 要算 merge-base / base..head diff（照 D708 所在 job 的写法）
       - name: K3 merge gate (D923)
-        if: steps.docsonly.outputs.docs_only != 'true'
         env:
-          GITHUB_EVENT_PATH: ${{ github.event_path }}
+          GITHUB_EVENT_PATH: ${{ github.event_path }}   # 供第三路 D# 归因读 PR 正文
         run: |
           bash scripts/control-tower/k3-merge-gate.sh \
             --base origin/main --head HEAD \
