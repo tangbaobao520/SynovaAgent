@@ -1,0 +1,18 @@
+{
+  "task_id": "D947",
+  "title": "P1 跨 session 隔离：/tmp/.synova-before-brief 未按 session 隔离",
+  "status": "spec_done",
+  "spec": "docs/synova/coordination/派单-B类并行与预规划-20260924.md",
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-24",
+  "updated_by": "alloc-task-id",
+  "risk": "high",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": "dsh-squad",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [],
+  "note": "D938 CT-4（CTO 亲验）：/tmp/.synova-before-brief 为机器级共享文件，实测含 D941 与另一 session 路径、D938 出现 0 次 → 任一 session 的 brief 时序问题阻断【所有】其他 session 的 strict 门禁（与今日所修『锁缝』同类）。判据：文件名按 session 派生 + 判别夹具（伪造他 session 记录 → 本 session 门禁不得被阻断）。"
+}
