@@ -117,6 +117,158 @@ if [ -n "$GOT" ] && [ "$GOT" -eq 500 ]; then pass "CT-63 NO_BRANCH: 发 D$GOT = 
 rm -rf "$CT63B_DIR"
 echo ""
 
+echo "── 9. D938 判别性夹具: 中文/斜杠 title + A′ 反吞 + 合法提前退出 ──"
+# 覆盖矩阵（铁律 48 三路径）:
+#   正常 — 纯中文 title: **stderr 空** + rc=0 + 骨架 1 个
+#          （改前实测: stderr `line 245: BRIEF_FILE<EF>: unbound variable` + rc=0 —— 报错却 rc=0）
+#   边界 — 含 `/` title: stderr 空 + rc=0 + 骨架 1 个 + **无孤儿号**
+#          （改前实测: `line 207: …/D500-M1/ownership-域修正.md: No such file or directory`
+#           + `D500.json` 已登记 + 骨架 0 个 = 号烧掉无人认领）
+#   边界 — 空格/中文/全角混合 title: rc=0 + stderr 空 + 骨架不裂子目录
+#   降级 — A′ 反吞: ① 真实 `_lock_release` handler 在 set -u 中止下 rc≠0（改前 rc=0 = fail-open）
+#          ② **对照组**（改前形态 handler）同场景 rc=0 → 证明本夹具能看见 fail-open（非空转）
+#          ③ 可达中止路径（brief 目录建不出）rc≠0 且回滚登记（不留孤儿号）
+#   降级 — 合法提前退出不被哨兵误伤: dry-run rc=0；D718 守卫 rc=0
+D938_DIR=$(mktemp -d)
+trap 'rm -rf "$D938_DIR"' EXIT
+D938_RUN() {  # $1=task-state 目录 $2=brief 目录 $3..=透传参数
+  local _ts="$1" _br="$2"; shift 2
+  SYNO_TASK_STATE_DIR="$_ts" SYNO_BRIEF_DIR="$_br" \
+    SYNO_ALLOC_NO_REMOTE=1 SYNO_ALLOC_NO_WORKTREE=1 SYNO_ALLOC_NO_BRANCH=1 \
+    bash "$TOOL" "$@"
+}
+D938_SANDBOX() {  # $1=目录 → 建 ts + 预置 D499
+  mkdir -p "$1/ts"
+  cp "$REPO_DIR/task-state/TEMPLATE.json" "$1/ts/TEMPLATE.json"
+  echo '{"task_id":"D499","status":"claimed","spec":null,"impl":null,"audit":null}' > "$1/ts/D499.json"
+}
+D938_NEWJSON() { ls "$1"/ts/D*.json 2>/dev/null | grep -v '/D499\.json$' | wc -l | tr -d ' \r' || true; }  # swallow-ok: 空=0 正常；pipefail 下 grep -v 无选中返 1，须兜底
+D938_BRIEFS()  { ls -1 "$1/briefs" 2>/dev/null | wc -l | tr -d ' \r' || true; }                              # swallow-ok: 空=0 正常
+
+# 9.1 纯中文 title —— 判别点 = stderr 必须为空
+D938_SANDBOX "$D938_DIR/cn"
+RC=0; OUT=$(D938_RUN "$D938_DIR/cn/ts" "$D938_DIR/cn/briefs" "测试中文标题" 2>"$D938_DIR/cn.err") || RC=$?
+assert_exit 0 "$RC" "9.1 中文 title rc"
+if [ -s "$D938_DIR/cn.err" ]; then
+  fail "9.1 中文 title → stderr 非空（改前即此形态: unbound variable）: $(tr '\n' '|' 2>/dev/null < "$D938_DIR/cn.err")"
+else
+  pass "9.1 中文 title → stderr 空"
+fi
+assert_contains "$OUT" "D500" "9.1 分配 D500"
+[ "$(D938_BRIEFS "$D938_DIR/cn")" = "1" ] && pass "9.1 骨架 1 个" || fail "9.1 骨架应 1 个，实得 $(D938_BRIEFS "$D938_DIR/cn")"
+
+# 9.2 含 `/` title —— 判别点 = 无孤儿号（登记与骨架同成同败）
+D938_SANDBOX "$D938_DIR/slash"
+RC=0; OUT=$(D938_RUN "$D938_DIR/slash/ts" "$D938_DIR/slash/briefs" "M1/ownership 域修正" 2>"$D938_DIR/slash.err") || RC=$?
+assert_exit 0 "$RC" "9.2 含 / title rc"
+if [ -s "$D938_DIR/slash.err" ]; then
+  fail "9.2 含 / title → stderr 非空: $(tr '\n' '|' 2>/dev/null < "$D938_DIR/slash.err")"
+else
+  pass "9.2 含 / title → stderr 空"
+fi
+NJ=$(D938_NEWJSON "$D938_DIR/slash"); NB=$(D938_BRIEFS "$D938_DIR/slash")
+[ "$NB" = "1" ] && pass "9.2 骨架 1 个" || fail "9.2 骨架应 1 个，实得 ${NB}（改前实测 0 个）"
+if [ "$NJ" = "$NB" ]; then
+  pass "9.2 无孤儿号（登记 $NJ 个 ↔ 骨架 $NB 个）"
+else
+  fail "9.2 孤儿号: 登记 $NJ 个但骨架 $NB 个（号已烧、无人认领）"
+fi
+if [ -z "$(find "$D938_DIR/slash/briefs" -mindepth 2 2>/dev/null)" ]; then
+  pass "9.2 骨架未裂成子目录（title 分隔符已消毒）"
+else
+  fail "9.2 骨架裂进子目录: $(find "$D938_DIR/slash/briefs" -mindepth 2 2>/dev/null | tr '\n' ' ')"
+fi
+
+# 9.3 边界: 空格 + 中文 + 全角混合 title
+D938_SANDBOX "$D938_DIR/mix"
+RC=0; OUT=$(D938_RUN "$D938_DIR/mix/ts" "$D938_DIR/mix/briefs" "混合 标题 全角A" 2>"$D938_DIR/mix.err") || RC=$?
+assert_exit 0 "$RC" "9.3 混合 title rc"
+if [ -s "$D938_DIR/mix.err" ]; then
+  fail "9.3 混合 title → stderr 非空: $(tr '\n' '|' 2>/dev/null < "$D938_DIR/mix.err")"
+else
+  pass "9.3 混合 title → stderr 空"
+fi
+[ "$(D938_BRIEFS "$D938_DIR/mix")" = "1" ] && pass "9.3 骨架 1 个" || fail "9.3 骨架应 1 个"
+
+# 9.4 A′ 反吞 ①②: 提取**生产** _lock_release handler，在 set -u 中止下验退出码
+#   说明: 改前 fail-open 的可达触发是 `set -u` unbound（实测矩阵: unbound→0 / false→1 /
+#   assign-from-failed-cmdsub→1）。c1 修掉 :242 后生产路径已无 unbound，故用「真实 handler
+#   源码 + 合成 unbound」驱动 —— 不是测副本函数体，也不是 grep 型静态判据。
+D938_HANDLER=""
+D938_HL="$(grep -n '^_lock_release() {' "$TOOL" | head -1 | cut -d: -f1)"
+if [ -n "$D938_HL" ]; then
+  D938_FIRST="$(sed -n "${D938_HL}p" "$TOOL")"
+  case "$D938_FIRST" in
+    *'{'*'}'*) D938_HANDLER="$D938_FIRST" ;;
+    *) D938_HANDLER="$(awk '/^_lock_release\(\) \{/{f=1} f{print} f&&/^\}/{exit}' "$TOOL")" ;;
+  esac
+fi
+if printf '%s' "$D938_HANDLER" | grep -q '_lock_release' && printf '%s' "$D938_HANDLER" | grep -q 'exit'; then
+  pass "9.4 已从生产脚本提取 _lock_release（含显式 exit）"
+else
+  fail "9.4 _lock_release 提取失败或未含显式 exit（提取器与源码漂移 —— fail-loud，不静默跳过）"
+fi
+# ① 生产 handler + 合成 unbound → 必须 rc≠0
+{
+  echo 'set -euo pipefail'
+  echo 'DONE=0'
+  echo "LOCK_DIR=\"$D938_DIR/prod-lock\""
+  echo 'mkdir -p "$LOCK_DIR"'
+  printf '%s\n' "$D938_HANDLER"
+  echo 'trap _lock_release EXIT'
+  echo 'echo "[[${D938_UNDEF_PROBE}]]"'
+} > "$D938_DIR/a2_prod.sh"
+RC=0; bash "$D938_DIR/a2_prod.sh" >/dev/null 2>&1 || RC=$?
+if [ "$RC" -ne 0 ]; then
+  pass "9.4 ① 生产 handler: unbound 中止 → rc=$RC ≠ 0（fail-closed）"
+else
+  fail "9.4 ① 生产 handler: unbound 中止 → rc=0（EXIT trap 仍把失败洗成成功 = fail-open）"
+fi
+# ② 对照组（改前形态 handler）→ rc=0，证明夹具看得见 fail-open
+{
+  echo 'set -euo pipefail'
+  echo 'DONE=0'
+  echo "LOCK_DIR=\"$D938_DIR/ctrl-lock\""
+  echo 'mkdir -p "$LOCK_DIR"'
+  echo '_lock_release() { rmdir "$LOCK_DIR" 2>/dev/null || true; }'
+  echo 'trap _lock_release EXIT'
+  echo 'echo "[[${D938_UNDEF_PROBE}]]"'
+} > "$D938_DIR/a2_ctrl.sh"
+RC=0; bash "$D938_DIR/a2_ctrl.sh" >/dev/null 2>&1 || RC=$?
+if [ "$RC" = "0" ]; then
+  pass "9.4 ② 对照组(改前形态): 同场景 rc=0 → 夹具能看见 fail-open（非空转网）"
+else
+  fail "9.4 ② 对照组异常: rc=${RC}（应 0；说明该夹具测不到真东西，结论不可信）"
+fi
+
+# 9.5 可达中止路径 → rc≠0 且回滚登记（不留孤儿号）
+D938_SANDBOX "$D938_DIR/abort"
+: > "$D938_DIR/blocker"   # 普通文件占位 → SYNO_BRIEF_DIR 的父路径不是目录 → 建目录必失败
+RC=0; OUT=$(D938_RUN "$D938_DIR/abort/ts" "$D938_DIR/blocker/briefs" "中止探针" 2>"$D938_DIR/abort.err") || RC=$?
+if [ "$RC" -ne 0 ]; then
+  pass "9.5 可达中止 → rc=$RC ≠ 0（不留 rc=0 的假成功）"
+else
+  fail "9.5 可达中止 → rc=0（错误却宣称成功）"
+fi
+NJ=$(D938_NEWJSON "$D938_DIR/abort"); NB=$(D938_BRIEFS "$D938_DIR/abort")
+if [ "$NJ" = "0" ] && [ "$NB" = "0" ]; then
+  pass "9.5 同成同败: 登记 0 个 / 骨架 0 个（回滚生效，无孤儿号）"
+else
+  fail "9.5 回滚未生效: 登记 $NJ 个 / 骨架 $NB 个（应为 0/0）"
+fi
+
+# 9.6/9.7 合法提前退出不得被成功哨兵误伤
+D938_SANDBOX "$D938_DIR/legal"
+RC=0; OUT=$(D938_RUN "$D938_DIR/legal/ts" "$D938_DIR/legal/briefs" "干跑" --dry-run 2>"$D938_DIR/dry.err") || RC=$?
+assert_exit 0 "$RC" "9.6 dry-run 合法提前退出 rc"
+assert_contains "$OUT" "dry-run" "9.6 dry-run 标注"
+[ ! -s "$D938_DIR/dry.err" ] && pass "9.6 dry-run stderr 空" || fail "9.6 dry-run stderr 非空"
+RC=0; OUT=$(SYNO_TASK_STATE_DIR="$D938_DIR/legal/ts" SYNO_ALLOC_NO_REMOTE=1 SYNO_ALLOC_NO_WORKTREE=1 \
+  SYNO_ALLOC_NO_BRANCH=1 bash "$TOOL" "守卫测试" 2>"$D938_DIR/guard.err") || RC=$?
+assert_exit 0 "$RC" "9.7 D718 守卫合法提前退出 rc（防哨兵误伤）"
+assert_contains "$(cat "$D938_DIR/guard.err")" "跳过 brief 骨架生成" "9.7 守卫仍按降级路径告警"
+echo ""
+
 echo "═══════════════════════════════════════════════════════════"
 echo "  结果: PASS=$PASS FAIL=$FAIL"
 echo "═══════════════════════════════════════════════════════════"
