@@ -275,6 +275,12 @@ jobs:
               FAIL=1
             fi
           done
+          # D943: DSH 断面一致性自扫（CI 无本地 DSH 树 → --no-tree-check；文档一致性仍全查）。
+          # 独立命令而非加入上方 for 清单——清单项由 `bash "$t"` 执行，命令串不可混入。
+          if ! python3 scripts/control-tower/check-dsh-anchor.py --repo . --no-tree-check; then
+            echo "::error title=check-dsh-anchor::DSH 断面自扫失败（见上方 ❌ file:line）"
+            FAIL=1
+          fi
           # D526: canary 密封清单漂移告警（::warning 可见，不阻断——防误伤；
           #   存量漂移由 K3/人工月度清理，全量密封化是 K3 P2-4 单独立项）
           bash scripts/control-tower/check-canary-drift.sh || true

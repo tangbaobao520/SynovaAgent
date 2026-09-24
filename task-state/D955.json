@@ -1,0 +1,36 @@
+{
+  "task_id": "D955",
+  "title": "D943 文档面 + DSH 断面接线（PR-2）：旧断面锚清零 + 断面门禁接线 CI/pre-commit",
+  "status": "impl_done",
+  "risk": "medium",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": "dsh-cto",
+  "milestone": "M0 项目管理基建",
+  "write_set": [
+    "docs/synova/coordination/TASK-ROUTING.md",
+    "docs/synova/coordination/Win侧同步包-20260923.md",
+    "docs/synova/coordination/两侧协作方式-Mac与Win-20260923.md",
+    "docs/synova/coordination/开工指令-Mac小队-D937-20260924.md",
+    "docs/synova/coordination/派单-W0与首模块-Win侧-20260923.md",
+    "docs/synova/coordination/收件闸检查单.md",
+    "docs/synova/coordination/规格-M9-门禁三件套-唯一事实源.md",
+    "docs/synova/coordination/派单模板.md",
+    "docs/synova/coordination/CTO-固化-II-研究院权威结论-20260924.md",
+    "docs/synova/coordination/CTO-固化-最终方向与在制任务-20260924.md",
+    ".github/workflows/ci.yml",
+    "scripts/pre-commit-check.sh",
+    "task-state/D955.json",
+    ".claude/task-briefs/2026-09-24-D955-d943-docs-anchor.md"
+  ],
+  "spec": "docs/synova/coordination/派单-并行CTO-PR2-新规范接线-20260924.md",
+  "impl": {
+    "branch": "feat/d943-docs-anchor",
+    "note": "前置：PR #745（机制面）squash 落 main = 1145827。本单接线 + 文档面。"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "note": "派单 §一 的 10 份写集实测不足以让完成标准 1/2 转绿：main 上另有 2 份带旧锚文档（CTO-固化-II L17 / CTO-固化-最终方向 L81）不在写集内 → 本单补入，写集 12 份 = D734 上限（实测 PASS，无余量）。接线形态与派单字面不同，两处实测偏差已在 brief Q1 与 PR 正文记录：①「清单加一行」会把命令塞进 `bash \"$t\"` 清单（必红），改为 done 之后独立命令计入 FAIL；② `soft_check` 第二参是命中描述串而非命令（原文形态恒判 1 命中 → CI strict 恒红），改为先跑命令取结论。",
+  "updated_at": "2026-09-24",
+  "updated_by": "synova-cto"
+}
