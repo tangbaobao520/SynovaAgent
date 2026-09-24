@@ -253,6 +253,7 @@ jobs:
             tests/control-tower/alloc-task-id-lock.test.sh \
             tests/control-tower/check-gitlinks.test.sh \
             tests/control-tower/grep-oP-regression.test.sh \
+            tests/control-tower/scan-fullwidth-vars.test.sh \
             tests/control-tower/merge_writeset_gate.test.sh \
             tests/control-tower/ci-ratchet-base.test.sh \
             tests/control-tower/verify-doc.test.sh \
