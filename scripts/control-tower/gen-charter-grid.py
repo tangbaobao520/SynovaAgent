@@ -11,7 +11,7 @@ for s in ("stdout","stderr"):
 def main():
     repo=sys.argv[1] if len(sys.argv)>1 else "."
     src=os.path.join(repo,"docs/synova/coordination/宪章三问-48格.json")
-    dst=os.path.join(repo,"docs/synova/charter/三问-48格.html")
+    dst=os.path.join(repo,"docs/synova/coordination/三问-48格.html")
     d=json.load(open(src,encoding="utf-8")); cells=d["cells"]
     def cnt(st): return sum(1 for c in cells if c.get("status")==st)
     COL={"green":("#0a7d32","🟢 生效了"),"yellow":("#b8860b","🟡 接了但没生效"),

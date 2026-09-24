@@ -12,7 +12,10 @@
     ".claude/skills/**",
     ".dsh/skills/**",
     "docs/synova/presets/**",
-    "task-state/**"
+    "task-state/**",
+    "docs/synova/coordination/三问-48格.html",
+    "docs/synova/coordination/宪章三问-48格.json",
+    "scripts/control-tower/gen-charter-grid.py"
   ],
   "impl": {
     "branch": "docs/d943-cto-a-items",
