@@ -9,7 +9,8 @@ mkdir -p "$(dirname "$LOG")" "$(dirname "$OUT")"
 stamp="$(date '+%Y-%m-%dT%H:%M:%S%z')"
 
 # ── 工作区自检（D796 的失败根因就是"目标工作区已不存在"却没告警）──
-if [ ! -d "$REPO/.git" ]; then
+# 注意: worktree 的 .git 是**文件**不是目录，故用 -e 而非 -d（D948 自证发现）
+if [ ! -e "$REPO/.git" ]; then
   printf '%s degraded: 目标工作区不存在 (%s)\n' "$stamp" "$REPO" | tee -a "$LOG" >&2
   echo "DAILY-BOARD: DEGRADED (工作区不存在)"; exit 2
 fi
