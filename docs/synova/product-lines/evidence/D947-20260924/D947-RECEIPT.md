@@ -103,9 +103,10 @@ sha256_first16=1f74c0703d279de6
 | **A（PR-1）** | **`77e0d6aa`** | middleware 层默认安全姿态 | `8 files changed, 953 insertions(+), 84 deletions(-)` |
 | **A2（PR-1 fixup）** | **`313150bf`** | 部门判据 fail-open 收窄（L-29/L-32） | `2 files changed, 174 insertions(+), 3 deletions(-)` |
 | **B（PR-2）** | **`2ea4df10`** | 路由层默认拒绝 + 中间件前移 + 唯一漏斗收口 | `9 files changed, 1084 insertions(+), 46 deletions(-)` |
-| **C（治理/证据）** | 见 §十 | 本证据目录全部报告 + task brief | 不计入 PR 预算 |
+| **C（治理/证据）** | **`e01d1345`** | 本证据目录全部报告 + task brief | `14 files changed, 5905 insertions(+)`（不计入 PR 预算） |
 
 - **PR-1 文件集合恒 8**（A 与 A2 同集合，无扩张）｜**PR-2 = 9**。
+- **口径注（防误读）**：`git diff --name-only` 在相邻提交间会多出 **`.claude/bypass.log`** —— 它是 **post-commit 钩子（D521 `bypass COMMITTED 登记`）自动写入**的治理产物，非任何成员所改。剔除后逐段为：**A2 = 2 · PR-2 = 9 · 相对基线合计 = 17**（队长实测：`git diff --name-only f25e61eb 2ea4df10` = **18 条 = 17 代码/测试 + 1 治理**）。
 - **PR-2 的 `base` 声明**：CTO 要求「= PR-1 合后 main」。**本机无推送凭据（见 §九），无法合并/推送** ⇒ 按 **R7 本地留存**，PR-2 实际为**栈式 base = PR-1 链尾 `313150bf`**（已显式声明，符合「栈式 PR 必须声明 base」）。
 - 每次提交本地门禁输出：**A2 与 B 均「全部 13 组通过」**。
 
