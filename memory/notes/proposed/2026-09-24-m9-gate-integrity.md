@@ -42,3 +42,10 @@ Anthropic 工程基线（门禁须可自证 + fail-closed 三态）／第一性�
 **理由（第一性原理）**：棘轮防"永久豁免"的属性应由**时间（expires）**承担；"已不再违规"在跨平台下混淆了"方言差异"与"真实修复"，把它判红等于制造门禁自阻断（本卡首版即被它堵在 CI）。
 
 **同时**（CTO 第四条）：`ci-red-baseline.txt` 补齐 **base（分支/PR push）三条既有红**（TypeScript + Lint + Iron Laws / Control Tower Gate Tests ubuntu / windows），与 main-push 两条共 5 条，每条带 `owner=`（暂 UNASSIGNED，待指派）与 `expires=`。
+
+## 修订 2（2026-09-24 夜，CTO 指令）：既有红 owner 指派 + 处置 SLA + CT(windows) 定态
+
+- **owner 指派（清 UNASSIGNED）**：`产物新鲜度（generated_at > 3 天必红）`/`TypeScript + Lint + Iron Laws`/`Control Tower Gate Tests (ubuntu-latest)`/`Control Tower Gate Tests (windows-latest)` → **mac-control-tower**；`Vitest (2/2)` → **mac-coding**。
+- **处置 SLA**：每条 `disposition_due=2026-09-27`；三种可能结论（①修好即删条目 ②转卡并写卡号/owner ③续期+理由+新 expires）；到期未出结论由 `--ci-reds` 判红倒逼。
+- **CT(windows) 定态**（自取 2026-09-24T21:21:40+08:00，base `94426c5b`）：`conclusion=failure`（completed 12:13:46Z，id 107618889188）→ 按 CTO 规则**保留条目并替换为定态证据**（原 in-progress 措辞清除）；定态快照复跑 `--ci-reds` → `失败检查 3 项；基线命中 3 项` rc=0。
+- **平台相关补充事实**（供 D937）：同一坐标 `scripts/pre-commit-check.sh:991` 的 `^+++`，BSD 侧非法 ERE（rc=2，判"仍违规"）、GNU 侧合法（判"不再违规"）→ 组 7a fail-open 属**平台相关**，两平台均已由 `[P]` 豁免覆盖而不再误伤。
