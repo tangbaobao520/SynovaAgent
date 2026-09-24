@@ -61,7 +61,7 @@ $ ls tests/control-tower/ | wc -l
 
 | # | 检查项（行号） | 组 | 级别 | DSH 做法 | 历史事故 | 测试文件 | 去向 |
 |---|---|---|---|---|---|---|---|
-| 1 | as any / as never / as unknown as 零容忍（L493） | 1 | 硬 | 有，等价更强：tsc -b 全量 typecheck + oxlint typeAware（.oxlintrc.json:9；lefthook.yml:61-63 pre-push typecheck）——DSH 无 as any 特赦需求 | 铁律38：47 次 as any 运行时崩溃；engine-core 20 桥接文件 as any 绕过类型检查、17 处 CJS require 在 ESM 崩溃；CT-46 `getDatabase() as never` 逃逸 | 无专项（as-any-audit 在 packages/test-kit） | 保留-CI |
+| 1 | as any / as never / as unknown as 零容忍（L493） | 1 | 硬 | 有，等价更强：tsc -b 全量 typecheck + oxlint typeAware（.oxlintrc.json:9；lefthook.yml:54-55 pre-push typecheck）——DSH 无 as any 特赦需求 | 铁律38：47 次 as any 运行时崩溃；engine-core 20 桥接文件 as any 绕过类型检查、17 处 CJS require 在 ESM 崩溃；CT-46 `getDatabase() as never` 逃逸 | 无专项（as-any-audit 在 packages/test-kit） | 保留-CI |
 | 2 | from" 语法损伤（L499） | 1 | 硬 | 无对应（Synova 专属事故模式，B表§二#2） | D93/D95：Claude Code 批量改 import 留下 `from"` 残骸，tsc 报错但 token 费、CI 才发现 | 无 | 退役（防护去向：CI quality job 的 `tsc --noEmit` 对 import 语法错误物理报错，同类别已双覆盖） |
 | 3 | 硬编码业务数据/类型（L514，调 check-hardcoded.sh） | 1 | 软 | 部分对应：no-restricted-properties 受限属性规则（.oxlintrc.json:60+），无业务实体清单类检查（B#3） | 文件驱动架构承诺：部门名等可扩展实体写成代码（AGENTS"文件化扩展"节） | 无专项 | 暂不动（grep 启发式高误报，linter 化属阶段 2 决策——铁律35"能变 lint 规则的不靠脚本"） |
 | 4 | 旧适配器废弃映射报告（L517，par_collect 纯打印） | 1 | 纯报告 | 无对应（B 表未列；纯报告项） | V4.2.4：11 个 @deprecated 旧适配器删除后的存量追踪 | 无 | 降为旁路看板指标（无判级纯报告，并入 gate-stats 月报观察） |
