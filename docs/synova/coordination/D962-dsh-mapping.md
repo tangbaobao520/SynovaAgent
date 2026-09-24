@@ -37,7 +37,7 @@ DSH 的门禁分两层：**lefthook 本地钩子（快速检查点）+ CI 门禁
 | pre-commit | whitespace | lefthook.yml:37-38（`git diff --cached --check`） |
 | pre-commit | vendor manifest guard | lefthook.yml:40-41（`scripts/check-vendor-manifest.sh`） |
 | pre-merge-commit | 同上翻译配对 + 归档笔记 | lefthook.yml:44-58 |
-| pre-push | typecheck | lefthook.yml:60-62（`pnpm run typecheck`） |
+| pre-push | typecheck | lefthook.yml:54-55（`pnpm run typecheck`） |
 
 ### 1.3 CI workflows（20 个 .yml，职责）
 
@@ -53,7 +53,7 @@ DSH 的门禁分两层：**lefthook 本地钩子（快速检查点）+ CI 门禁
 
 **构建产物门禁 `ciArtifactGates()`（run-gates.ts:492-503）**：build → publint(:495) → node-next-types → built-package-invariants → built-bin-smoke。
 
-**lint `lintGate()`（run-gates.ts:633-644）**：`lint:contracts-ready` = `tsx scripts/run-oxlint.ts .`（package.json:49），type-aware oxlint（.oxlintrc.json:11 `"typeAware": true`）。
+**lint `lintGate()`（run-gates.ts:633-644）**：`lint:contracts-ready` = `tsx scripts/run-oxlint.ts .`（package.json:49），type-aware oxlint（.oxlintrc.json:9 `"typeAware": true`）。
 
 **node-compat（run-gates.ts:400-417）**：typecheck + build + web build + CLI smoke —— 对应"compat-preflight"口径的跨 Node 版本验证（nodeCompatGates 按 runningNodeMajor 分支）。
 
@@ -63,7 +63,7 @@ DSH 的门禁分两层：**lefthook 本地钩子（快速检查点）+ CI 门禁
 |---|---|---|
 | oxlint 1.76.0 | package.json:246 | 主 lint（快速，type-aware） |
 | oxlint-tsgolint 7.0.2001 | package.json:247 | oxlint 的类型检查后端 |
-| eslint-plugin-sonarjs ^4.1.1 | package.json:231 | 重复码/质量规则（duplication gate） |
+| eslint-plugin-sonarjs ^4.1.0 | package.json:231 | 重复码/质量规则（duplication gate） |
 | @stylistic/eslint-plugin ^5.10.0 | package.json:220 | 风格规则 |
 | publint ^0.3.21 | package.json:249 | 发布产物校验（package.json:94 `publint-all.ts`） |
 | vitest | coverage 分区 gate（run-gates.ts:671-706） | 测试 + 覆盖率阈值 + 免重套件白名单（coverage-exempt.ts） |
@@ -84,7 +84,7 @@ DSH 的门禁分两层：**lefthook 本地钩子（快速检查点）+ CI 门禁
 
 | # | Synova 检查（行号） | 类型 | DSH 对应 | 依据 |
 |---|---|---|---|---|
-| 1 | as any / as never / as unknown as 零容忍（L493, hard） | hard | **有，等价更强**：TS `tsc -b` typecheck 全量类型检查（类型错误即 fail），无"as any 特赦"需求——DSH 无历史逃逸事故，靠编译器 + oxlint typeAware | .oxlintrc.json:11 `typeAware: true`；run-gates.ts:633 lintGate；lefthook.yml:60-62 pre-push typecheck |
+| 1 | as any / as never / as unknown as 零容忍（L493, hard） | hard | **有，等价更强**：TS `tsc -b` typecheck 全量类型检查（类型错误即 fail），无"as any 特赦"需求——DSH 无历史逃逸事故，靠编译器 + oxlint typeAware | .oxlintrc.json:9 `typeAware: true`；run-gates.ts:633 lintGate；lefthook.yml:54-55 pre-push typecheck |
 | 2 | from 损伤 D93/D95（L499, hard） | hard | **无对应**（Synova 专属事故模式） | — |
 | 3 | 硬编码业务数据/类型（L514, soft） | soft | **部分对应**：no-restricted-properties 等受限属性规则（按域限定 magic 字符串），但无"业务实体清单"类检查 | .oxlintrc.json:60+ no-restricted-properties |
 
@@ -103,7 +103,7 @@ DSH 的门禁分两层：**lefthook 本地钩子（快速检查点）+ CI 门禁
 
 | # | Synova 检查 | 类型 | DSH 对应 | 依据 |
 |---|---|---|---|---|
-| 11 | check-secrets.sh 全工作区 + .claude/ 专项（L640 par_collect, hard） | hard | **无 secrets 模式扫描脚本**；替代：check-dsh-package-licenses（许可而非泄密）+ 租赁 runner 沙箱隔离 + .gitignore；GitHub native secret scanning（外部，非仓库内门禁） | run-gates.ts:350 dsh-package-licenses |
+| 11 | check-secrets.sh 全工作区 + .claude/ 专项（L640 par_collect, hard） | hard | **无 secrets 模式扫描脚本**；替代：check-dsh-package-licenses（许可而非泄密）+ 租赁 runner 沙箱隔离 + .gitignore；GitHub native secret scanning（外部，非仓库内门禁） | run-gates.ts:348 dsh-package-licenses |
 
 ### 组 4 — 接线完整性
 
