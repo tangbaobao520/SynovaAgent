@@ -1,56 +1,67 @@
 # ═══════════════════════════════════════════════════════════════════════════════
-# ci-red-baseline.txt — CI 既有红基线登记表（M9 task-6 建、task-9 扩到两类事件口径）
+# ci-red-baseline.txt — CI 既有红基线登记表
+#   M9 task-6 建 → task-9 扩到两类事件口径 → task-13（后随①）owner 指派 + CT(windows) 定态处置
 #
-# 格式（冻结，勿改）: `#` 注释行 + 每条一行（数据行 5 个字段，分隔符 " | "）:
-#   CHECK_NAME | first_seen（YYYY-MM-DD） | evidence（引用） | owner（名或 UNASSIGNED） | expires（YYYY-MM-DD）
-#   ↑ 键名 = first_seen / evidence / owner / expires；值为上面的括号内容（数据行写作 <键>=<值>，见下方各行）
+# 格式（冻结，勿改）: `#` 注释行 + 每条一行（数据行 6 个字段，分隔符 " | "）:
+#   CHECK_NAME | first_seen（YYYY-MM-DD） | evidence（引用） | owner（执行者） | expires（YYYY-MM-DD） | disposition_due（YYYY-MM-DD）
+#   ↑ 键名 = first_seen / evidence / owner / expires / disposition_due；值为上面的括号内容（数据行写作 <键>=<值>，见下方各行）
 #   值内不得出现 '|'；CHECK_NAME 必须与 check-runs API 返回的 name **逐字一致**（含全角括号/空格/大小写，不规范化）。
 #
 # 解析器约束（供对齐，实读 scripts/control-tower/check-gate-integrity.sh run_ci_reds）:
 #   · 数据行 = 上述格式；`#` 行忽略；行首/行尾 trim 后为空的行忽略
 #   · 匹配 = `grep -E -m1 "^<CHECK_NAME 正则转义>[[:space:]]*\|"` → CHECK_NAME 必须**行首逐字**
-#   · owner/expires 按**键取值**（不是字段序号）；缺 expires → 显式降级 exit 2（不静默当 0）
-#   · 判红口径 = 仅 conclusion == "failure" 计入"失败检查"；null/in_progress/skipped/neutral **不计**
+#   · owner / expires 按**键取值**（不是字段序号）；缺 expires → 显式降级 exit 2（不静默当 0）
+#   · 判红口径 = 仅 conclusion == "failure" 计入"失败检查"；null/in_progress/skipped/neutral/cancelled **不计**
 #   · 未登记的失败 → VIOLATION（红）；已登记且未过期 → 计入"基线命中"；expires < 今天 → VIOLATION（过期）
-#   · 棘轮只减不增：过期条目须修或延期；条目对应 job 转绿后应删除（否则成死条目，本文件当前不自动清理）
+#   · 棘轮只减不增：过期条目须修或延期；条目对应 job 转绿后应删除（否则成死条目，本文件暂无自动清理）
 #
 # 红 / 非红口径:
 #   红     = conclusion ∈ {failure, timed_out, cancelled, action_required, startup_failure}
 #            （解析器实际只消耗 failure；其余按未登记失败处理——宁红不放过）
-#   非红   = success / neutral / skipped；**未定态（conclusion=null / in-progress）单列说明，见段头注**
+#   非红   = success / neutral / skipped
 #   基线语义 = "已登记且未到期的既有红**不作为新增**追责"；**未登记的红仍必红**。
 #
-# owner: 5 条全部 UNASSIGNED —— **待 CTO 指派**（本批不自行认领，避免制造"归属已收口"的假象）。
-# expires: 默认 = first_seen + 30 天（当前 5 条均为 2026-10-24）。
+# ═══ 归属与处置 SLA（CTO 2026-09-24 夜指令）═══
+# owner 指派（逐条写死，本表 5 条已全部指派、无未指派条目）:
+#   产物新鲜度（generated_at > 3 天必红）      → mac-control-tower
+#   Vitest (2/2)                              → mac-coding
+#   TypeScript + Lint + Iron Laws             → mac-control-tower
+#   Control Tower Gate Tests (ubuntu-latest)  → mac-control-tower
+#   Control Tower Gate Tests (windows-latest) → mac-control-tower
+# 处置 SLA：**每条须在 disposition_due（=2026-09-27）前给出三种结论之一**——
+#   ① 修   = 修复该 job 并删除本表对应条目（附修复 PR/commit 证据）
+#   ② 转卡 = 立卡承接（写明卡号/owner），本表条目保留到卡落地后再删
+#   ③ 续期 = 明确理由 + 新 expires（禁止无理由续期式常驻；棘轮只减不增）
+# 到期未出结论 → 条目过期即由 --ci-reds 判红（物理倒逼，非提醒）。
 # ═══════════════════════════════════════════════════════════════════════════════
 
-# ── [MAIN-PUSH] 段 —— main 分支 push 事件口径（保留既有 2 条） ─────────────────────
+# ── [MAIN-PUSH] 段 —— main 分支 push 事件口径 ─────────────────────────────────────
 # 口径: GET /repos/tangbaobao520/SynovaAgent/commits/<main-tip>/check-runs?per_page=100（事件类型 = push → main）
-# 取数: main tip = f25e61eb105690359dbe13baf64695e5ff1748f0
-#   $ git ls-remote origin refs/heads/main   → f25e61eb105690359dbe13baf64695e5ff1748f0  refs/heads/main
-#   $ curl -sS --fail ".../commits/main/check-runs?per_page=100" -o /tmp/checkruns.json   → http_code=200
-#   $ python3 -c "import json;d=json.load(open('/tmp/checkruns.json'));print('total=%d'%len(d['check_runs']))"
+# 取数（本段两次快照，均本机自取）:
+#   快照①  main tip = f25e61eb105690359dbe13baf64695e5ff1748f0（截至 2026-09-24T18:16+08:00）
 #     total_check_runs=20；conclusions={'failure': 2, 'skipped': 2, 'success': 16}
-# 截至时刻: 2026-09-24T18:16+08:00　　条数: 2　　owner: 待 CTO 指派（当前 UNASSIGNED）
-产物新鲜度（generated_at > 3 天必红） | first_seen=2026-09-24 | evidence=check-runs API main f25e61eb, conclusion=failure, started=2026-09-24T06:31:55Z, https://github.com/tangbaobao520/SynovaAgent/actions/runs/35964932621/job/107521310524 | owner=UNASSIGNED | expires=2026-10-24
-Vitest (2/2) | first_seen=2026-09-24 | evidence=check-runs API main f25e61eb, conclusion=failure, started=2026-09-24T05:04:29Z, https://github.com/tangbaobao520/SynovaAgent/actions/runs/35958319035/job/107501294874 （同一现象在 ci.yml L150-156 已有既有记录 PLAN-main-vitest-preexisting-red：存量红放行须可见、须烧掉，不得长期依赖放行） | owner=UNASSIGNED | expires=2026-10-24
+#     命中: 产物新鲜度（generated_at > 3 天必红）= failure；Vitest (2/2) = failure
+#   快照②  main tip = 9f0c8f65ffef56c8a916ddd1fa72d6e2aa9da053（自取时刻 2026-09-24T21:21:48+08:00）
+#     total_check_runs=19；conclusions={'failure': 1, 'cancelled': 1, 'skipped': 2, 'success': 15}
+#     命中: Vitest (2/2) = failure（completed 10:34:53Z）；Vitest (1/2) = cancelled（不计红）
+#     注意: 快照② 的 19 条中**未出现** `产物新鲜度（generated_at > 3 天必红）`（该 check 属另一 workflow，
+#           不一定随每次 push 产生）→ **缺失 ≠ success，条目保留**，由 owner 在 SLA 内给出结论。
+# 截至时刻: 2026-09-24T21:22+08:00（快照① 18:16 / 快照② 21:21:48，均本机实测）
+# 　　　　　条数: 2　　owner 待办见上（本段 2 条已全部指派）
+产物新鲜度（generated_at > 3 天必红） | first_seen=2026-09-24 | evidence=check-runs API main f25e61eb, conclusion=failure, started=2026-09-24T06:31:55Z, https://github.com/tangbaobao520/SynovaAgent/actions/runs/35964932621/job/107521310524 ；最新 main tip 9f0c8f65 快照（2026-09-24T21:21:48+08:00 自取，19 条）未见该名 → 缺失非 success，处置结论待 owner 出 | owner=mac-control-tower | expires=2026-10-24 | disposition_due=2026-09-27
+Vitest (2/2) | first_seen=2026-09-24 | evidence=check-runs API main 9f0c8f65（2026-09-24T21:21:48+08:00 自取）, conclusion=failure, completed=2026-09-24T10:34:53Z, id=107594395663 ；同 tip 的 Vitest (1/2) = cancelled（不计红）；同一现象在 ci.yml L150-156 已有既有记录 PLAN-main-vitest-preexisting-red（存量红放行须可见、须烧掉，不得长期依赖放行） | owner=mac-coding | expires=2026-10-24 | disposition_due=2026-09-27
 
-# ── [BRANCH/PR-PUSH] 段 —— 分支/PR push 事件口径（新增 3 条） ──────────────────────
-# 口径: GET /repos/tangbaobao520/SynovaAgent/commits/<base>/check-runs?per_page=100（事件类型 = push → feat/… 分支）
+# ── [BRANCH/PR-PUSH] 段 —— 分支/PR push 事件口径 ──────────────────────────────────
+# 口径: GET /repos/tangbaobao520/SynovaAgent/commits/<base>/check-runs?per_page=100（事件类型 = push → fix|feat/… 分支）
 # 取数: base = 94426c5b48ef04c3d11e4e4bea3ba3a6cd10e142（D938 分支 base，CTO 实测点）
-#   $ curl -sS --fail ".../commits/94426c5b48ef04c3d11e4e4bea3ba3a6cd10e142/check-runs?per_page=100" -o /tmp/d938runs.json
-#     total_check_runs=11；conclusions={'skipped': 2, 'success': 6, 'failure': 2, None: 1}
-#   $ curl -sS ".../commit/94426c5b.../checks"（commit checks 网页 = 独立于 REST 限流的第二条取数路径）
-#     实测 mtime = 2026-09-24 20:08:54 +0800（本机 stat 原始输出）
-#     TypeScript + Lint + Iron Laws             → "This job failed"
-#     Control Tower Gate Tests (ubuntu-latest)  → "This job failed"
-#     Control Tower Gate Tests (windows-latest) → "This job is in progress"
-# 截至时刻: 2026-09-24T20:10+08:00（API 快照 19:58:05 / checks 页 20:08:54，均本机实测）
-# 　　　　　条数: 3　　owner: 待 CTO 指派（当前 UNASSIGNED）
-# ⚠️ 观测注（不改登记、只记事实）: `Control Tower Gate Tests (windows-latest)` 两次独立观测
-#     （API 快照 19:58:05 / commit checks 页 20:08:54）均为 **未定态**（conclusion=null / in-progress），
-#     不是已定态的 failure。按 CTO 指令登记 3 条 → 它一旦转 failure 即被覆盖；
-#     **若其终局转 success，本条应删除**（本文件无自动清理：死条目不会被解析器判红，属已知卫生缺口）。
-TypeScript + Lint + Iron Laws | first_seen=2026-09-24 | evidence=check-runs API base 94426c5b, conclusion=failure, started=2026-09-24T11:50:19Z, job=107618889200, https://github.com/tangbaobao520/SynovaAgent/actions/runs/35995365564 | owner=UNASSIGNED | expires=2026-10-24
-Control Tower Gate Tests (ubuntu-latest) | first_seen=2026-09-24 | evidence=check-runs API base 94426c5b, conclusion=failure, started=2026-09-24T11:50:19Z, job=107618889115, https://github.com/tangbaobao520/SynovaAgent/actions/runs/35995365564 | owner=UNASSIGNED | expires=2026-10-24
-Control Tower Gate Tests (windows-latest) | first_seen=2026-09-24 | evidence=check-runs API base 94426c5b, conclusion=null(in-progress) at 2026-09-24T19:58:05+08:00 与提交 checks 页 20:08:54+08:00 (aria-label=This job is in progress), job=107618889188, https://github.com/tangbaobao520/SynovaAgent/actions/runs/35995365564 （未定态观测，见段头注） | owner=UNASSIGNED | expires=2026-10-24
+#   定态快照（本机自取 2026-09-24T21:21:40+08:00）:
+#     total_check_runs=11；conclusions={'failure': 3, 'skipped': 2, 'success': 6}
+#     failure（逐字）: TypeScript + Lint + Iron Laws（completed 11:53:05Z）
+#                      Control Tower Gate Tests (ubuntu-latest)（completed 11:51:51Z）
+#                      Control Tower Gate Tests (windows-latest)（completed 12:13:46Z）
+#   （历史快照 2026-09-24T19:58:05 中 windows-latest 为 in-progress → task-13 已用定态快照替换，不再留 in-progress 措辞）
+#   复核: M9 tip 8adf4b99（2026-09-24T21:22+08:00 自取）同名三条仍为 failure → 该三条是**跨分支复现**的存量红，非单次抖动
+# 截至时刻: 2026-09-24T21:22+08:00　　条数: 3　　owner 待办见上（本段 3 条已全部指派）
+TypeScript + Lint + Iron Laws | first_seen=2026-09-24 | evidence=check-runs API base 94426c5b 定态快照（2026-09-24T21:21:40+08:00 自取）, conclusion=failure, completed=2026-09-24T11:53:05Z, id=107618889200, https://github.com/tangbaobao520/SynovaAgent/actions/runs/35995365564 ；M9 tip 8adf4b99（21:22 自取）同名仍 failure | owner=mac-control-tower | expires=2026-10-24 | disposition_due=2026-09-27
+Control Tower Gate Tests (ubuntu-latest) | first_seen=2026-09-24 | evidence=check-runs API base 94426c5b 定态快照（2026-09-24T21:21:40+08:00 自取）, conclusion=failure, completed=2026-09-24T11:51:51Z, id=107618889115, https://github.com/tangbaobao520/SynovaAgent/actions/runs/35995365564 ；M9 tip 8adf4b99（21:22 自取）同名仍 failure | owner=mac-control-tower | expires=2026-10-24 | disposition_due=2026-09-27
+Control Tower Gate Tests (windows-latest) | first_seen=2026-09-24 | evidence=check-runs API base 94426c5b **定态**快照（2026-09-24T21:21:40+08:00 自取）, conclusion=failure, started=2026-09-24T11:50:20Z, completed=2026-09-24T12:13:46Z, id=107618889188, https://github.com/tangbaobao520/SynovaAgent/actions/runs/35995365564 （取代 19:58 in-progress 观测；该 job 定态为 failure → 条目保留） | owner=mac-control-tower | expires=2026-10-24 | disposition_due=2026-09-27
