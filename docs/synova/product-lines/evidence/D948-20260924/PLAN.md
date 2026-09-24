@@ -362,8 +362,35 @@
 ### §13-3 三项纪律（登记，不追溯，均记正向）
 
 1. **编制 5 人 vs 预设上限 4**：**派单为准**。
-2. **`reviewer` 直提 3 commit 到队长分支**：登记；后续收紧为「**成员产出交队长提交**」。
+2. **`reviewer` 直提 3 commit 到队长分支**：登记；后续收紧为「**成员产出交队长提交**」。**已执行**：`T-V-slice-a.md` 与 `REVIEW-EXEC.md` 由队长统一 commit + push（`d22506e0`）。
 3. **PLAN 编码事故 + 前向修正**：处置正确（不 force push、事故写进 §0）；**新增纪律——中文 UTF-8 文件禁 PowerShell 管道原地改写，一律走 edit 工具**。
+
+### §13-5 Windows 抓取判据的三个编码/计数陷阱（**两名成员各踩一次后固化**；建议升为团队工具链纪律）
+
+> 来源：队长（PLAN 编码事故）+ `reviewer`（两处自误，已入 `REVIEW-EXEC.md §11`）。**同一类坑本卡内已出现 3 次** ⇒ 按「同类第二次立即升级」升级登记，**建议 CTO 批准落 `docs/tools.md`**（`reviewer` 已备好可粘贴条目，但该文件**不存在且在其写集外**，未擅自创建）。
+
+| # | 坑 | 症状 | 正确姿势 |
+|---|---|---|---|
+| 1 | **PowerShell `>` 重定向写 UTF-16LE** | `python … --emit-codeowners > /tmp/x` 后比对得 6326 B vs 3420 B（≈1.85× 恰为 UTF-16 膨胀）⇒ **误判「CODEOWNERS 漂移」**。队长比 CODEOWNERS 时同样假报漂移 | 用 **Git bash 的 `>`** 或 Python 捕获 stdout 原始字节后 `read_bytes()` 比较；**禁用** PowerShell `>` |
+| 2 | **`Measure-Object -Line` 漏算空行** | `git show <ref>:tests/routes/auth.test.ts \| Measure-Object -Line` → 44，真值 **50** ⇒ `reviewer` 一度误判 PLAN P20 有错（已撤回） | `[System.IO.File]::ReadAllText()` 按 `` `n `` 计数，或 Python `read().split(b'\n')` |
+| 3 | **`Get-Content` 默认编码读中文源码** | 输出 mojibake（如 `缁撹锛堟湰浠朵笉鍒ゃ€岄€氳繃`），并可能按行错位 | `-Encoding utf8` / `ReadAllText($p,[Text.Encoding]::UTF8)` |
+| 附 | **CRLF/LF 混合 + 变异锚点带 `\n`** | code-a 首轮 M1/M3 **静默没落地却报绿**（`auth.ts` CRLF=534、`routes/auth.ts` CRLF=313；`rbac.ts`/`workspaces-api.ts` 是 LF） | 变异脚本一律 `ReadAllText`+`Replace`+**落地后断言**（内容比较），禁只靠锚点；verifier 已用内容比较复现 |
+| 附 | **PowerShell 管道污染退出码** | 绿腿进程 `$LASTEXITCODE` 变 1 | `cmd *> file` 后单独读 `$LASTEXITCODE` |
+
+**固化建议（供 CTO 裁）**：字节级/行数级判据一律走 **Python 或 Git bash 原生重定向**；禁用 PowerShell `>` 与 `Measure-Object -Line` 作判据。
+
+### §13-6 A6 口径偏差（**须 CTO 一句确认，否则 K3 按派单字面核验可能判不成立**）
+
+| 面 | 对「自报**兜底**复活」(M3b) | 对「自报**优先/覆盖验签身份**」(M3c) |
+|---|---|---|
+| **单元级**（`rbac` 断言） | **可红**（verifier 实测 9 红） | 可红 |
+| **HTTP 面**（`d948-department-visibility.test.ts` 两条） | **构造性无判别力（全绿）** | **有判别力**（夹具 `:425-443`：有效 Bearer staff + 自报 admin → 断言 role 仍是 staff）；`reviewer` 建议加 M3c 实跑取证，**该推断 reviewer 未实跑** |
+
+⇒ 回执必须写明：**A6 的判别主体在单元级；HTTP 面为互补面**，并对"兜底类"变异体无判别力。**请 CTO 确认此口径**（或要求补 M3c 实跑证据）。
+
+### §13-7 复核订正（verifier 措辞，结论不变）
+
+`verifier` 报「bypass.log 无 `detected-bypass` 行」——**措辞不准确**：全文件**有 19 条历史行**，但 base 与两个 HEAD 的计数**恒为 19 ⇒ 本卡零新增**。`reviewer` 已订正。**结论（无 `--no-verify` 绕过）不变**，口径以本条为准。
 
 ### §13-4 放行范围
 
