@@ -252,12 +252,18 @@ else
   fail "9.4 ① 生产 handler: unbound 中止 → rc=0（EXIT trap 仍把失败洗成成功 = fail-open）"
 fi
 # ② 对照组（改前形态 handler）→ rc=0，证明夹具看得见 fail-open
+#   D938-CI(方言/bash版本): 原对照组 handler 末尾无显式 exit，rc=0 依赖「EXIT trap 内末条命令
+#   成功 → 覆盖非零退出状态」——bash <5.1 语义；bash ≥5.1 起 EXIT trap 成功不再洗白非零退出码
+#   （#739 CI 双平台 FIRST_FAIL=9.4② 实证；本机 bash 3.2 成立、CI bash 5.x rc=1）。
+#   改**方言无关 fail-open 形态**: handler 显式 `exit 0`（不依赖任何 trap 退出码语义，
+#   BSD bash 3.2 / GNU bash 5.x 一致 rc=0）。演示的缺陷本质不变——handler 无条件导出
+#   成功、掩盖早先失败。
 {
   echo 'set -euo pipefail'
   echo 'DONE=0'
   echo "LOCK_DIR=\"$D938_DIR/ctrl-lock\""
   echo 'mkdir -p "$LOCK_DIR"'
-  echo '_lock_release() { rmdir "$LOCK_DIR" 2>/dev/null || true; }'
+  echo '_lock_release() { rmdir "$LOCK_DIR" 2>/dev/null || true; exit 0; }'
   echo 'trap _lock_release EXIT'
   echo 'echo "[[${D938_UNDEF_PROBE}]]"'
 } > "$D938_DIR/a2_ctrl.sh"

@@ -311,9 +311,13 @@ fi
 # ── 10. --json 机器可读 ──────────────────────────────────────────────────────
 echo ""
 echo "── 10. --json: stdout 是合法 JSON ──"
-bash "$SCAN" --json > "$TMPD/out.json" 2>/dev/null
+# D938-CI(方言): 原实现 `open('$TMPD/out.json')` —— mktemp 的 MSYS 绝对路径 `/tmp/...`
+#   交给 native Windows python（py/python）解析不了 → FileNotFoundError → 仅 CI windows 红
+#   （#739 windows FIRST_FAIL=--json 实证；同族问题见 alloc-task-id-lock.test.sh L44-46 注释）。
+#   改**方言无关构造**: JSON 走 stdin 管道（sys.stdin），不跨方言传路径。
+#   SCAN 侧 `|| true`: 扫描器有违规时 rc=1，若直接进 pipefail 管道会误伤本断言（本断言只判 JSON 合法性）。
 if [ -n "$PYBIN" ]; then
-  if "$PYBIN" -c "import json,sys; d=json.load(open('$TMPD/out.json')); assert d['counts']['violations']>=0; assert 'mac' in d['domains'] or d['domains'].get('status'); print('ok')" >/dev/null 2>&1; then
+  if { bash "$SCAN" --json 2>/dev/null || true; } | "$PYBIN" -c "import json,sys; d=json.load(sys.stdin); assert d['counts']['violations']>=0; assert 'mac' in d['domains'] or d['domains'].get('status'); print('ok')" >/dev/null 2>&1; then
     ok "--json 输出可被 python json.load 解析且字段完整"
   else
     no "--json 输出非法或字段缺失"
