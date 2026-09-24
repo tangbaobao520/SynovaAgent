@@ -1,0 +1,26 @@
+{
+  "task_id": "D938",
+  "title": "alloc-task-id.sh 两缺陷 + scripts 全角紧贴变量统一清扫",
+  "status": "spec_done",
+  "risk": "medium",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": "dsh-squad",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [],
+  "blocked": null,
+  "target": "2026-W40",
+  "spec": "docs/synova/coordination/派单-Mac小队-五卡-20260924.md",
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "write_set": [
+    "docs/synova/coordination/派单-Mac小队-五卡-20260924.md",
+    "task-state/D938.json"
+  ],
+  "priority": 2,
+  "wip_rule": "WIP=1：五卡已开，按 priority 一次开工一张；前一张未通过收件闸不放行下一张",
+  "note": ":242 全角（紧贴 $BRIEF_FILE → unbound variable；:204 title 含 / 未消毒致骨架静默不生成。追加：扫 scripts/** 的 \\$VAR（ 形态一并清。",
+  "updated_at": "2026-09-24",
+  "updated_by": "synova-cto"
+}

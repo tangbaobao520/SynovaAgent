@@ -1,0 +1,26 @@
+{
+  "task_id": "D940",
+  "title": "名字统一分配（worktree/分支/卡号）——今天撞号 3 次",
+  "status": "spec_done",
+  "risk": "high",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": "dsh-squad",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [],
+  "blocked": null,
+  "target": "2026-W40",
+  "spec": "docs/synova/coordination/派单-Mac小队-五卡-20260924.md",
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "write_set": [
+    "docs/synova/coordination/派单-Mac小队-五卡-20260924.md",
+    "task-state/D940.json"
+  ],
+  "priority": 4,
+  "wip_rule": "WIP=1：五卡已开，按 priority 一次开工一张；前一张未通过收件闸不放行下一张",
+  "note": "事故：D921 卡号被覆盖、D935 卡号+worktree 与他人撞、D936 被我重复使用。机制：统一分配器 + 命名前缀规范（cto-/squad-）+ 撞号检测（取号后立即比对远端分支与 task-state）。",
+  "updated_at": "2026-09-24",
+  "updated_by": "synova-cto"
+}
