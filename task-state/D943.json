@@ -14,12 +14,8 @@
     "tests/control-tower/check-dsh-anchor.test.sh",
     "tests/control-tower/check-k3-report.test.sh",
     ".github/workflows/ci.yml",
-    "scripts/pre-commit-check.sh",
     "docs/synova/coordination/DSH-断面.json",
     "docs/synova/coordination/已作废口径表.md",
-    "docs/synova/coordination/规格-M9-门禁三件套-唯一事实源.md",
-    "docs/synova/coordination/收件闸检查单.md",
-    "docs/synova/coordination/派单模板.md",
     "task-state/D943.json",
     "memory/notes/proposed/2026-09-24-dsh-anchor-gate.md",
     ".claude/task-briefs/2026-09-24-D943-mechanism.md"
