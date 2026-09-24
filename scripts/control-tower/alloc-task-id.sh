@@ -14,6 +14,11 @@
 #   @exit   — 0 = 分配成功（空壳已登记）; 非 0 = 失败。D938 成功哨兵：任何没走到
 #             「显式成功退出点」的终止一律非 0（EXIT trap 不再把失败洗成 rc=0）；
 #             骨架生成失败 → 回滚登记（不烧号）后非 0。
+#   @seam   — 三处注入缝（测试沙箱隔离用；**生产不设 = 行为完全不变**）:
+#             SYNO_TASK_STATE_DIR（占用表）/ SYNO_BRIEF_DIR（骨架落点）/
+#             SYNO_LOCK_DIR（D938 新增：锁目录，默认 $ROOT/.alloc-task-id.lock — 取仓库根，
+#             同工作树的并行进程共享同一把锁；设成各自唯一目录后，并行测试运行器互不等锁，
+#             消除「等锁超时」型假红）。
 #
 # 用法:
 #   bash alloc-task-id.sh "path-dependency 空壳补实现"      # 分配 + 建壳
@@ -40,7 +45,11 @@ TITLE="${1:-}"
 # 修法: mkdir 原子锁（跨平台零依赖，macOS 无 flock）包住"读占用表→分配→建壳"临界区。
 #       两个进程同时 mkdir 同一锁目录，只有一个成功；另一个重试等待。
 # 降级: 锁目录无法创建（权限/磁盘）→ 显式告警 + 继续（fail-open 不静默，铁律 11）。
-LOCK_DIR="$ROOT/.alloc-task-id.lock"
+# D938 增量: 锁目录也做成注入缝（同 SYNO_TASK_STATE_DIR / SYNO_BRIEF_DIR 模式）。
+#   动机（c2 实测复现的假红源）: LOCK_DIR 固定取仓库根 → 同工作树内两个 alloc 测试/并行
+#   运行器共享一把锁，互相等锁到 LOCK_WAIT_SEC 超时 → 假红（非产品缺陷）。生产不设该缝
+#   时取值与改前逐字节相同 = 零行为变化。
+LOCK_DIR="${SYNO_LOCK_DIR:-$ROOT/.alloc-task-id.lock}"
 LOCK_WAIT_SEC=30
 LOCK_POLL=0.2
 # D938 成功哨兵: 只有走过「合法成功退出点」才置 DONE=1（见 _lock_release）。
