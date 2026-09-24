@@ -61,7 +61,7 @@ $ ls tests/control-tower/ | wc -l
 
 | # | 检查项（行号） | 组 | 级别 | DSH 做法 | 历史事故 | 测试文件 | 去向 |
 |---|---|---|---|---|---|---|---|
-| 1 | as any / as never / as unknown as 零容忍（L493） | 1 | 硬 | 有，等价更强：tsc -b 全量 typecheck + oxlint typeAware（.oxlintrc.json:11；lefthook.yml:60-62 pre-push typecheck）——DSH 无 as any 特赦需求 | 铁律38：47 次 as any 运行时崩溃；engine-core 20 桥接文件 as any 绕过类型检查、17 处 CJS require 在 ESM 崩溃；CT-46 `getDatabase() as never` 逃逸 | 无专项（as-any-audit 在 packages/test-kit） | 保留-CI |
+| 1 | as any / as never / as unknown as 零容忍（L493） | 1 | 硬 | 有，等价更强：tsc -b 全量 typecheck + oxlint typeAware（.oxlintrc.json:9；lefthook.yml:61-63 pre-push typecheck）——DSH 无 as any 特赦需求 | 铁律38：47 次 as any 运行时崩溃；engine-core 20 桥接文件 as any 绕过类型检查、17 处 CJS require 在 ESM 崩溃；CT-46 `getDatabase() as never` 逃逸 | 无专项（as-any-audit 在 packages/test-kit） | 保留-CI |
 | 2 | from" 语法损伤（L499） | 1 | 硬 | 无对应（Synova 专属事故模式，B表§二#2） | D93/D95：Claude Code 批量改 import 留下 `from"` 残骸，tsc 报错但 token 费、CI 才发现 | 无 | 退役（防护去向：CI quality job 的 `tsc --noEmit` 对 import 语法错误物理报错，同类别已双覆盖） |
 | 3 | 硬编码业务数据/类型（L514，调 check-hardcoded.sh） | 1 | 软 | 部分对应：no-restricted-properties 受限属性规则（.oxlintrc.json:60+），无业务实体清单类检查（B#3） | 文件驱动架构承诺：部门名等可扩展实体写成代码（AGENTS"文件化扩展"节） | 无专项 | 暂不动（grep 启发式高误报，linter 化属阶段 2 决策——铁律35"能变 lint 规则的不靠脚本"） |
 | 4 | 旧适配器废弃映射报告（L517，par_collect 纯打印） | 1 | 纯报告 | 无对应（B 表未列；纯报告项） | V4.2.4：11 个 @deprecated 旧适配器删除后的存量追踪 | 无 | 降为旁路看板指标（无判级纯报告，并入 gate-stats 月报观察） |
@@ -71,7 +71,7 @@ $ ls tests/control-tower/ | wc -l
 | 8 | 桩测试：新测试 ≥3 expect()（L610） | 2 | 硬 | 无对应（DSH 用覆盖率数字代替断言计数）（B#7） | 铁律48：空壳测试→假绿 CI→合并后回归 | 无专项 | 保留-CI |
 | 9 | 跨模块集成：bridge/context 需 .integration.test.ts（L611） | 2 | 硬 | 无对应；DSH 用独立 E2E workflow 分层（e2e.yml / pi-ai-provider-e2e.yml）（B#8） | 铁律12：单元测试 mock 一切，跨层调用只有集成才真实 | 无专项 | 保留-CI |
 | 10 | 控制塔脚本测试门禁 U7/CT-40（L617-625，三态） | 2 | 硬 | 部分对应：scripts/ 113 个 .spec.ts 与实现同仓同跑，无独立聚合门禁（B#9-10） | D393：控制塔脚本改了没测试门禁→交付态红灯无物理拦截；命中 7 次 | ct-test-gate.test.sh | 保留-CI |
-| 11 | Secrets 全工作区扫描（L640，par check-secrets.sh；另 L331/L366 纯文档与 fastlane 通道保留同扫） | 3 | 硬 | 无 secrets 模式扫描；替代 = dsh-package-licenses + 沙箱隔离 + GitHub native secret scanning（run-gates.ts:350）（B#11） | .env 真实 API Key 暴露入库 + 飞书 App Secret 暴露（2026-06）；旧门禁只扫暂存区漏掉磁盘 Key | check-secrets.test.sh, secrets-env-exempt.test.sh | 保留-CI |
+| 11 | Secrets 全工作区扫描（L640，par check-secrets.sh；另 L331/L366 纯文档与 fastlane 通道保留同扫） | 3 | 硬 | 无 secrets 模式扫描；替代 = dsh-package-licenses + 沙箱隔离 + GitHub native secret scanning（run-gates.ts:348）（B#11；自验④勘误：B 原引 :350 实为 package-meta） | .env 真实 API Key 暴露入库 + 飞书 App Secret 暴露（2026-06）；旧门禁只扫暂存区漏掉磁盘 Key | check-secrets.test.sh, secrets-env-exempt.test.sh | 保留-CI |
 | 12 | 接线审计：新 export 必须被引用（L677，plan_aware） | 4 | 硬 | 有，等价更强：no-unused-vars（.oxlintrc.json:51）+ verify-runtime-closure（run-gates.ts:309/344）（B#12） | 4 次接线失败（同 #7 源；铁律4/5） | 无专项 | 保留-CI |
 | 13 | 接线深度：import 了但从未调用（L697） | 4 | 硬 | 有：no-unused-expressions + runtime-closure（未调用导出不进产物闭包）（B#13） | v3.5：agent import 函数不调用以绕过"有调用方"检测 | 无专项 | 保留-CI |
 | 14 | 架构边界：禁止跨层引用（L728，内联实现） | 5 | 软 | 有，等价更强：constraints（check-workspace-constraints）+ verify-package-dependencies + verify-module-graph（run-gates.ts:347/348/487）（B#14） | 铁律39 跨层违规；命中 4 次 | 无专项（check-architecture.sh 在 CI architecture job 单独跑） | 合并到 check-architecture.sh（新名：CI architecture job 单点判定；全类别：L1→L4/L5、L2→L5、L3→engine-core 跨层 import——pre-commit 内联副本与独立脚本双实现漂移） |
@@ -156,7 +156,7 @@ $ ls tests/control-tower/ | wc -l
 ## 六、A/B 编号口径对齐说明（50 vs 38）
 
 - B 表实测口径 = `hard_check"/soft_check"` 调用点 38 处（合并三态后 34 条目）；本表口径 = 全部可产生失败/警告报告的检查块 50 项（多出：decl/warn/opt/v5_soft 调用点、3 处内联软计数块、GATEKEEPER 前置、纯报告 par_collect）。
-- B 34 条目 → 本表逐项编号展开对照（B#n 见第 5 列标注）：B#1→#1，B#2→#2，B#3→#3，B#4→#5，B#5→#6，B#6→#7，B#7→#8，B#8→#9，B#9-10→#10，B#11→#11，B#12→#12，B#13→#13，B#14→#14，B#15→#15，B#16→#17，B#17→#20，B#18→#21，B#19→#30，B#20→#34，B#21→#36，B#22→#37，B#23→#38，B#24→#39，B#25→#41，B#26→#43，B#27→#44，B#28→#47，B#29→#48，B#30-31→#45，B#32-33→#49，B#34→#50。共覆盖本表 34 项。
-- **B 表未覆盖的本表 16 项**（第 5 列标注"B 表未列"）：#4（deprecated 纯报告）、#16（铁律47 warn）、#18/#19（Brief 存在/6字段 decl）、#22（Notes 迁移）、#23/#24/#25（plan-integrity/verifiable-done/q0c）、#26/#27/#28（SOG×3 内联）、#29（PRD 对照 opt）、#31（专家配置）、#32（门禁故障审计）、#33（绕过审计 7c）、#35（验收CI）、#40（G12 范围）、#42（G12b 可解析）、#46（GATEKEEPER 前置）。性质：agent 行为治理/meta/本地网守类——B §二核心结论：DSH 无此类门禁是贡献者模型差异（人类 PR vs 多 agent 并发写主树），属**合理差异而非缺口**，故统一标"无对应"。
+- B 34 条目 → 本表逐项编号展开对照（B#n 见第 5 列标注）：B#1→#1，B#2→#2，B#3→#3，B#4→#5，B#5→#6，B#6→#7，B#7→#8，B#8→#9，B#9-10→#10，B#11→#11，B#12→#12，B#13→#13，B#14→#14，B#15→#15，B#16→#17，B#17→#20，B#18→#21，B#19→#30，B#20→#34，B#21→#36，B#22→#37，B#23→#38，B#24→#39，B#25→#41，B#26→#43，B#27→#44，B#28→#47，B#29→#48，B#30-31→#45，B#32-33→#49，B#34→#50。共覆盖本表 **31 项**（34 是 B 条目数，多条目合一致本表行；31+19=50 物理闭合，自验问题③勘误）。
+- **B 表未覆盖的本表 19 项**（第 5 列标注"B 表未列"）：#4（deprecated 纯报告）、#16（铁律47 warn）、#18/#19（Brief 存在/6字段 decl）、#22（Notes 迁移）、#23/#24/#25（plan-integrity/verifiable-done/q0c）、#26/#27/#28（SOG×3 内联）、#29（PRD 对照 opt）、#31（专家配置）、#32（门禁故障审计）、#33（绕过审计 7c）、#35（验收CI）、#40（G12 范围）、#42（G12b 可解析）、#46（GATEKEEPER 前置）。性质：agent 行为治理/meta/本地网守类——B §二核心结论：DSH 无此类门禁是贡献者模型差异（人类 PR vs 多 agent 并发写主树），属**合理差异而非缺口**，故统一标"无对应"。
 
 — D962-A 第二次提交：合入 B 映射 + 口径对齐，2026-09-25
