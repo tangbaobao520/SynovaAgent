@@ -2,6 +2,9 @@
 # D948 — CTO 每日自动看板（官方 schedule 触发；吸收 D796 每日体检静默失败的教训）
 # 三态：0=OK 1=有红项(已告警) 2=degraded(环境不可用, fail-closed，绝不静默通过)
 set -uo pipefail
+
+# D520/V5 平台敏感命令规避：Windows 可能无 python3.exe（仅 python / py -3）
+PYBIN="$(command -v python3 2>/dev/null || command -v python 2>/dev/null || echo python3)"
 REPO="${SYNO_REPO:-/Users/wane/SynovaAgent}"
 OUT="$REPO/docs/synova/coordination/CTO-看板-自动.md"
 LOG="$REPO/.codex/control-tower/logs/daily-board.log"

@@ -8,6 +8,7 @@
   ④ 被扫描文档不得出现"未登记"的 DSH 版本串 否则 exit 1
 输出: DSH-ANCHOR: OK | VIOLATION(n) | DEGRADED
 """
+# D520/V5: 纯 python 实现，无裸 python3/date +%s/date -v/grep -P 调用（已对照 PLATFORM-CHECKLIST.md）
 import argparse, io, json, os, re, subprocess, sys
 
 # Windows 兼容（windows-compat）：CI 控制台非 UTF-8 时中文输出会抛 UnicodeEncodeError

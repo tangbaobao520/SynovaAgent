@@ -13,6 +13,7 @@
   R5 计数带命令     出现 N 份/N 条/N 个 计数时，报告须至少含一个代码块(命令)        否则 DEGRADED
 输出: K3-REPORT: OK | VIOLATION(n) | DEGRADED
 """
+# D520/V5: 纯 python 实现，无裸 python3/date +%s/date -v/grep -P 调用（已对照 PLATFORM-CHECKLIST.md）
 import argparse, json, os, re, subprocess, sys
 
 for _s in ("stdout", "stderr"):
