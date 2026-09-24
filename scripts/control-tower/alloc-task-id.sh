@@ -11,6 +11,14 @@
 #   @input  — 任务名（必填）; --dry-run 只打印不写
 #   @output — stdout: 分配到的 D#（如 D384）; 空壳 task-state/D384.json 已建
 #   @degraded — task-state/ 不可读 → exit 1 + 提示（fail-closed，不盲发号）
+#   @exit   — 0 = 分配成功（空壳已登记）; 非 0 = 失败。D938 成功哨兵：任何没走到
+#             「显式成功退出点」的终止一律非 0（EXIT trap 不再把失败洗成 rc=0）；
+#             骨架生成失败 → 回滚登记（不烧号）后非 0。
+#   @seam   — 三处注入缝（测试沙箱隔离用；**生产不设 = 行为完全不变**）:
+#             SYNO_TASK_STATE_DIR（占用表）/ SYNO_BRIEF_DIR（骨架落点）/
+#             SYNO_LOCK_DIR（D938 新增：锁目录，默认 $ROOT/.alloc-task-id.lock — 取仓库根，
+#             同工作树的并行进程共享同一把锁；设成各自唯一目录后，并行测试运行器互不等锁，
+#             消除「等锁超时」型假红）。
 #
 # 用法:
 #   bash alloc-task-id.sh "path-dependency 空壳补实现"      # 分配 + 建壳
@@ -37,9 +45,18 @@ TITLE="${1:-}"
 # 修法: mkdir 原子锁（跨平台零依赖，macOS 无 flock）包住"读占用表→分配→建壳"临界区。
 #       两个进程同时 mkdir 同一锁目录，只有一个成功；另一个重试等待。
 # 降级: 锁目录无法创建（权限/磁盘）→ 显式告警 + 继续（fail-open 不静默，铁律 11）。
-LOCK_DIR="$ROOT/.alloc-task-id.lock"
+# D938 增量: 锁目录也做成注入缝（同 SYNO_TASK_STATE_DIR / SYNO_BRIEF_DIR 模式）。
+#   动机（c2 实测复现的假红源）: LOCK_DIR 固定取仓库根 → 同工作树内两个 alloc 测试/并行
+#   运行器共享一把锁，互相等锁到 LOCK_WAIT_SEC 超时 → 假红（非产品缺陷）。生产不设该缝
+#   时取值与改前逐字节相同 = 零行为变化。
+LOCK_DIR="${SYNO_LOCK_DIR:-$ROOT/.alloc-task-id.lock}"
 LOCK_WAIT_SEC=30
 LOCK_POLL=0.2
+# D938 成功哨兵: 只有走过「合法成功退出点」才置 DONE=1（见 _lock_release）。
+#   动机: EXIT trap 退出码 = trap 内最后一条命令的退出码（实测 _lock_release 末句
+#   `rmdir … || true` → 恒 0），且 set -e/set -u 中止时 trap 内 $? 读到 0、ERR trap
+#   不触发 → 脚本报错却 rc=0（fail-open）。哨兵把「没成功」一律判成非 0。
+DONE=0
 
 _lock_acquire() {
   local waited=0
@@ -64,7 +81,14 @@ _lock_acquire() {
 }
 
 _lock_release() {
+  local rc=$?  # 必须首句捕获：任何命令都会覆盖 $?
+  # D938 fail-closed: 未走到显式成功退出点（DONE≠1）而 rc=0 → 判定失败。
+  #   覆盖两种实测场景: (a) 末条命令决定 trap 退出码; (b) set -e/set -u 中止时 $? 读到 0。
+  if [ "$rc" -eq 0 ] && [ "${DONE:-0}" != "1" ]; then
+    rc=1
+  fi
   rmdir "$LOCK_DIR" 2>/dev/null || true  # swallow-ok: 释放锁失败=已释放
+  exit "$rc"  # 显式导出退出码（EXIT trap 内 exit 不回递归触发 trap）
 }
 
 if ! _lock_acquire; then
@@ -157,8 +181,20 @@ NEW_ID="D${NEXT}"
 
 if [ "$DRY_RUN" = true ]; then
   echo "$NEW_ID (dry-run, 未建壳)"
+  DONE=1  # D938: 合法成功退出点
   exit 0
 fi
+
+# ── D938: 骨架路径先算好（纯计算，零副作用）——必须在登记 task-state **之前** ──
+# D521: SYNO_BRIEF_DIR 注入缝（测试隔离，同 SYNO_TASK_STATE_DIR 模式）——
+#   修测试污染: alloc-task-id.test.sh 曾在真实 brief 目录生成占位 brief（含模板排除项
+#   占位文本，CI strict 下 plan-integrity 硬炸）
+BRIEF_DIR="${SYNO_BRIEF_DIR:-$ROOT/.claude/task-briefs}"
+# D938 缺陷③: title 含路径分隔符（如 "M1/ownership 域修正"）→ 骨架路径裂成子目录
+#   → 生成失败，但 D# 已登记 = **孤儿号**（号烧掉、无人认领；实测 D500 已登记 + 骨架 0 个）。
+#   修法: 路径分隔符（`/`、Windows `\`）与空格统一转 `-`，保持可读。
+SAFE_TITLE="$(printf '%s' "$TITLE" | tr ' /' '--' | tr '\\' '-')"
+BRIEF_FILE="$BRIEF_DIR/$(date +%Y-%m-%d)-${NEW_ID}-${SAFE_TITLE}.md"
 
 # ── 建空壳登记（先登记后使用）──
 STATE_FILE="$TASK_STATE_DIR/$NEW_ID.json"
@@ -184,10 +220,6 @@ EOF
 echo "$NEW_ID"
 echo "已登记: $STATE_FILE (status=claimed)"
 # D508: 生成 brief 骨架（六字段模板接线——认领即有模板，格式错误不靠提交失败发现）
-# D521: SYNO_BRIEF_DIR 注入缝（测试隔离，同 SYNO_TASK_STATE_DIR 模式）——
-#   修测试污染: alloc-task-id.test.sh 曾在真实 brief 目录生成占位 brief（含模板排除项
-#   占位文本，CI strict 下 plan-integrity 硬炸）
-BRIEF_DIR="${SYNO_BRIEF_DIR:-$ROOT/.claude/task-briefs}"
 # D718 机制级防线（同类第二次复发）: D521 已给 alloc-task-id.test.sh 补 SYNO_BRIEF_DIR 注入缝，
 #   但 alloc-task-id-lock.test.sh 漏设 → 每次运行把 20 份骨架 brief 写进**真实仓库**
 #   （实测泄漏 56 份）。逐测试打补丁无效（同类第 2 次）→ 在源头 fail-closed：
@@ -196,12 +228,20 @@ BRIEF_DIR="${SYNO_BRIEF_DIR:-$ROOT/.claude/task-briefs}"
 if [ -n "${SYNO_TASK_STATE_DIR:-}" ] && [ -z "${SYNO_BRIEF_DIR:-}" ]; then
   echo "⚠ alloc-task-id: task-state 已注入（${TASK_STATE_DIR}）但未注入 SYNO_BRIEF_DIR" >&2
   echo "  → 跳过 brief 骨架生成，防污染真实仓库（测试请同时设 SYNO_BRIEF_DIR）" >&2
+  DONE=1  # D938: 合法提前退出（D718 守卫），非失败 —— 不得被成功哨兵误判
   exit 0
 fi
-BRIEF_FILE="$BRIEF_DIR/$(date +%Y-%m-%d)-${NEW_ID}-$(echo "$TITLE" | tr " " "-").md"
+
+# D938 同成同败: 骨架是「认领即完成」的一半，生成失败必须回滚刚登记的空壳 ——
+#   否则留下孤儿号（号已烧、骨架 0 个，实测 D500）。回滚点安全：登记前已确认该文件不存在。
+_brief_generation_failed() {
+  rm -f "$STATE_FILE" 2>/dev/null || true  # swallow-ok: 回滚失败不掩盖主错误（下一句即非零退出）
+  echo "❌ brief 骨架生成失败（$1）→ 已回滚 $NEW_ID 登记（防空烧号，fail-closed）" >&2
+  exit 1
+}
 if [ -n "${NEW_ID:-}" ] && [ ! -f "$BRIEF_FILE" ]; then
-  mkdir -p "$BRIEF_DIR"
-  cat > "$BRIEF_FILE" <<SKEL
+  mkdir -p "$BRIEF_DIR" || _brief_generation_failed "目录创建失败: $BRIEF_DIR"
+  cat > "$BRIEF_FILE" <<SKEL || _brief_generation_failed "写入失败: $BRIEF_FILE"
 # Task Brief: ${NEW_ID} ${TITLE}
 
 > 生成: $(date +%Y-%m-%d) | 任务: ${NEW_ID} | 认领: <agent>
@@ -239,6 +279,7 @@ if [ -n "${NEW_ID:-}" ] && [ ! -f "$BRIEF_FILE" ]; then
 ## Done 标准
 - [ ] verify: <可执行命令> <预期>
 SKEL
-  echo "brief 骨架已生成: $BRIEF_FILE（填写后开工）"
+  echo "brief 骨架已生成: ${BRIEF_FILE}（填写后开工）"
 fi
+DONE=1  # D938: 合法成功退出点（空壳 + 骨架均已落盘）
 exit 0
