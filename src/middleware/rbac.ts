@@ -12,8 +12,15 @@ const log = createLogger('middleware/rbac');
 
 export type WorkspaceRole = 'admin' | 'manager' | 'liaison' | 'staff' | 'ga';
 
-const DEFAULT_ROLE: WorkspaceRole = 'staff';
-const DEFAULT_USER = 'dev';
+/**
+ * D947: 无凭据请求的占位身份/占位角色。
+ *
+ * 占位角色仅用于满足 {@link RbacContext} 的类型（'staff' 本身不是放行依据）——
+ * 放行与否只由 `authenticated === false` 前置短路决定，
+ * 见 {@link canAccessWorkspace} / {@link canModifyWorkspace}。
+ */
+const ANONYMOUS_ROLE: WorkspaceRole = 'staff';
+const ANONYMOUS_USER = 'unauthenticated';
 
 // ═══ D242: 权限模板 ═══
 
@@ -89,11 +96,26 @@ export interface RbacContext {
   role: WorkspaceRole;
   department?: string;
   userId: string;
+  /**
+   * D947: 该上下文是否来自已验签的认证注入（req.auth）。
+   *
+   * - `false` = 无凭据 / 自报凭据被拒 → 所有权限判定 fail-closed（直接拒绝）。
+   * - `true` 或 `undefined` = 已认证（`undefined` 用于兼容既有直接构造 RbacContext 的
+   *   内部调用点与夹具，其语义等价于已认证）。
+   */
+  authenticated?: boolean;
   /** D239: GA 约束（仅 ga role 有效） */
   gaConstraints?: GAConstraints;
 }
 
-/** 从请求中提取 RBAC 上下文 */
+/**
+ * 从请求中提取 RBAC 上下文。
+ *
+ * D947（默认安全姿态）: 唯一可信来源是 `req.auth`（由 jwtAuthMiddleware 验签后注入）。
+ * 本函数**不再读取** `x-synova-token` / `query.token` 等自报凭据——此类字符串
+ * 不经验签即可自封 `role=admin`，属默认放行姿态，已删除。
+ * 无凭据时返回 `authenticated: false` 的匿名上下文（fail-closed，绝不回退 admin）。
+ */
 export function extractRbacContext(req: {
   headers?: Record<string, unknown>;
   query?: Record<string, unknown>;
@@ -104,19 +126,17 @@ export function extractRbacContext(req: {
       role: req.auth.role as WorkspaceRole,
       department: undefined,
       userId: req.auth.sub,
+      authenticated: true,
       gaConstraints: req.auth.gaConstraints,
     };
   }
-  const token = String((req.headers?.['x-synova-token'] as string) || (req.query?.token as string) || '');
-  if (token && token.includes(':')) {
-    const parts = token.split(':');
-    return {
-      role: (parts[0] as WorkspaceRole) || DEFAULT_ROLE,
-      department: parts[1] || undefined,
-      userId: parts[2] || DEFAULT_USER,
-    };
-  }
-  return { role: 'admin', userId: DEFAULT_USER };
+  // D947: 无认证上下文 → 明确拒绝并留痕（P5 三态之一「被拒绝」）。
+  // 原实现（rbac.ts:110-119）自报 token 分支 + 兜底 { role: 'admin' } 已删除。
+  log.warn(
+    { code: 'RBAC_DENIED', reason: 'no_authenticated_context' },
+    '安全判据: 被拒绝 — 无认证上下文（fail-closed，不回退自报凭据/不回退 admin）',
+  );
+  return { role: ANONYMOUS_ROLE, userId: ANONYMOUS_USER, authenticated: false };
 }
 
 // ═══ D239: GA 检查链 ═══
@@ -204,6 +224,15 @@ export function canAccessWorkspace(ctx: RbacContext, ws: {
   owner?: string;
   sensitivity?: string;
 }): boolean {
+  // D947: 未认证上下文一律拒绝（fail-closed，先于任何角色分支——含 admin）
+  if (ctx.authenticated === false) {
+    log.warn(
+      { code: 'RBAC_DENIED', userId: ctx.userId, reason: 'unauthenticated_context' },
+      '安全判据: 被拒绝 — 未认证上下文不得访问工作区',
+    );
+    return false;
+  }
+
   // D239: GA 冻结检查（最高优先级）
   if (isGaFrozen(ctx)) {
     log.warn({ userId: ctx.userId }, 'GA 账户已冻结 — 拒绝访问');
@@ -245,6 +274,15 @@ export function canModifyWorkspace(ctx: RbacContext, ws: {
   department?: string;
   owner?: string;
 }): boolean {
+  // D947: 未认证上下文一律拒绝（fail-closed，先于 role==='admin' 分支）
+  if (ctx.authenticated === false) {
+    log.warn(
+      { code: 'RBAC_DENIED', userId: ctx.userId, reason: 'unauthenticated_context' },
+      '安全判据: 被拒绝 — 未认证上下文不得修改工作区',
+    );
+    return false;
+  }
+
   const role = ctx.role as string;
   if (role === 'admin') return true;
   if (role === 'manager') {

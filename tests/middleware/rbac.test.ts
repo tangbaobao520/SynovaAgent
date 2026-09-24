@@ -4,37 +4,85 @@ import { listTemplates, getTemplate, saveTemplate, deleteTemplate } from '../../
 import { unlinkSync, existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
 
-function mockReq(token: string): Record<string, unknown> {
-  return { headers: { 'x-synova-token': token }, query: {} };
+/**
+ * D947 夹具请求构造——只带自报 x-synova-token（无 req.auth）。
+ * 返回类型与 extractRbacContext 入参结构一致，不需要 any/never 断言。
+ */
+function mockReq(token: string) {
+  return { headers: { 'x-synova-token': token }, query: {} as Record<string, unknown> };
 }
 
-describe('extractRbacContext', () => {
-  it('admin token → role=admin', () => {
-    const ctx = extractRbacContext(mockReq('admin::dev') as any);
-    expect(ctx.role).toBe('admin');
-    expect(ctx.userId).toBe('dev');
+/**
+ * D947 PR-1 / P0+P1: 默认安全姿态——自报凭据（x-synova-token / query.token）
+ * 不经验签，**一律不放行**；无凭据时标记未认证，绝不回退 admin。
+ *
+ * 修复前行为（rbac.ts:110-119）: 任一带 ':' 的字符串即可自封 role=admin；
+ * 无凭据时兜底 `{ role: 'admin' }`。以下用例在修复前为红/为"放行"，修复后为绿/为"拒绝"。
+ */
+describe('extractRbacContext — D947 默认安全姿态', () => {
+  it('P0: x-synova-token=admin::dev 自报 → 角色 ≠ admin 且标记未认证', () => {
+    const ctx = extractRbacContext(mockReq('admin::dev'));
+    expect(ctx.role).not.toBe('admin');
+    expect(ctx.authenticated).toBe(false);
   });
 
-  it('manager token with department', () => {
-    const ctx = extractRbacContext(mockReq('manager:marketing:alice') as any);
-    expect(ctx.role).toBe('manager');
-    expect(ctx.department).toBe('marketing');
-    expect(ctx.userId).toBe('alice');
+  it('P0: query.token=admin::x 自报 → 角色 ≠ admin（query 自报同样不放行）', () => {
+    const ctx = extractRbacContext({ headers: {}, query: { token: 'admin::x' } });
+    expect(ctx.role).not.toBe('admin');
+    expect(ctx.authenticated).toBe(false);
   });
 
-  it('liaison token → role=liaison', () => {
-    const ctx = extractRbacContext(mockReq('liaison::coordinator') as any);
-    expect(ctx.role).toBe('liaison');
+  it('P0: manager:marketing:alice 自报 → 不解析出 manager/department/alice（越权面归零）', () => {
+    const ctx = extractRbacContext(mockReq('manager:marketing:alice'));
+    expect(ctx.role).not.toBe('manager');
+    expect(ctx.department).toBeUndefined();
+    expect(ctx.userId).not.toBe('alice');
   });
 
-  it('empty token → default admin in dev', () => {
-    const ctx = extractRbacContext(mockReq('') as any);
-    expect(ctx.role).toBe('admin');
+  it('P0: liaison::coordinator 自报 → 不解析出 liaison', () => {
+    const ctx = extractRbacContext(mockReq('liaison::coordinator'));
+    expect(ctx.role).not.toBe('liaison');
+    expect(ctx.authenticated).toBe(false);
   });
 
-  it('token without colon → default admin', () => {
-    const ctx = extractRbacContext(mockReq('some-random-token') as any);
-    expect(ctx.role).toBe('admin');
+  it('P1: 空 token → 不得 admin + 标记未认证', () => {
+    const ctx = extractRbacContext(mockReq(''));
+    expect(ctx.role).not.toBe('admin');
+    expect(ctx.authenticated).toBe(false);
+  });
+
+  it('P1: 无冒号 token → 不得 admin + 标记未认证', () => {
+    const ctx = extractRbacContext(mockReq('some-random-token'));
+    expect(ctx.role).not.toBe('admin');
+    expect(ctx.authenticated).toBe(false);
+  });
+
+  it('P1: 完全无 headers/query → 不得 admin + 标记未认证', () => {
+    const ctx = extractRbacContext({});
+    expect(ctx.role).not.toBe('admin');
+    expect(ctx.authenticated).toBe(false);
+  });
+
+  it('P1: 自报 admin 上下文 → canAccessWorkspace(global) 拒绝', () => {
+    const ctx = extractRbacContext(mockReq('admin::dev'));
+    expect(canAccessWorkspace(ctx, { visibility: 'global' })).toBe(false);
+  });
+
+  it('P1: 自报 admin 上下文 → canModifyWorkspace 拒绝', () => {
+    const ctx = extractRbacContext(mockReq('admin::dev'));
+    expect(canModifyWorkspace(ctx, { visibility: 'global' })).toBe(false);
+  });
+
+  it('P1 边界: department 可见但 ws.department 缺失 → 不得因 undefined===undefined 放行', () => {
+    const ctx = extractRbacContext(mockReq('admin::dev'));
+    expect(canAccessWorkspace(ctx, { visibility: 'department' })).toBe(false);
+  });
+
+  it('正常路径: req.auth（验签注入）仍正确提取，且标记已认证', () => {
+    const ctx = extractRbacContext({ auth: { sub: 'ga_001', role: 'ga', orgId: 'org-1' } });
+    expect(ctx.role).toBe('ga');
+    expect(ctx.userId).toBe('ga_001');
+    expect(ctx.authenticated).toBe(true);
   });
 });
 
