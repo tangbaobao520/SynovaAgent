@@ -44,8 +44,11 @@ WIN_FILE_BASELINE=10   # 上限（棘轮）：全 win 域残余文件数（CTO �
 
 PASS=0; FAIL=0; SKIP=0
 FAILED_NAMES=()
+FIRST_FAIL=""
 ok()   { echo "  ✅ $1"; PASS=$((PASS+1)); }
-no()   { echo "  ❌ $1"; FAIL=$((FAIL+1)); FAILED_NAMES+=("$1"); }   # D938-CI: 记名以便尾部摘要
+# D938-CI-2(可见性): ci.yml 注解 tail -8|cut -c1-450 在长输出下截掉末行 FAILED(N) 摘要
+#   （#739 windows 实测）。FIRST_FAIL 压进**结果行本身**，窗口含结果行即必可见；叠加不替换。
+no()   { echo "  ❌ $1"; FAIL=$((FAIL+1)); FAILED_NAMES+=("$1"); if [ -z "$FIRST_FAIL" ]; then FIRST_FAIL="$1"; fi; }   # D938-CI: 记名以便尾部摘要
 skip() { echo "  ⏭ $1"; SKIP=$((SKIP+1)); }
 # 绿腿告警必须可见（CI 只打印失败测试的输出 → 绿腿的 SKIP/缩水必须走 annotation）
 visible_warn() {
@@ -333,7 +336,12 @@ fi
 
 echo ""
 echo "═══════════════════════════════════════════════════════════"
-echo "  结果: PASS=$PASS FAIL=$FAIL SKIP=$SKIP"
+# D938-CI-2: FAIL>0 但 FIRST_FAIL 为空 = 夹具自身缺陷，显式红，不得静默
+if [ "$FAIL" -gt 0 ] && [ -z "$FIRST_FAIL" ]; then
+  echo "  ❌ SELF-CHECK: FAIL=$FAIL 但 FIRST_FAIL 为空（no() 记名机制缺陷）"
+  exit 2
+fi
+echo "  结果: PASS=$PASS FAIL=$FAIL SKIP=$SKIP${FIRST_FAIL:+ FIRST_FAIL=${FIRST_FAIL}}"
 echo "═══════════════════════════════════════════════════════════"
 [ "$SKIP" -gt 0 ] && visible_warn "本测试有 $SKIP 项 SKIP（平台能力缺失，非通过）—— 计数已进入结果行"
 # 失败摘要（**必须留在最后一行**：CI 只截 tail -8 进 ::error 注解，无摘要就只能靠猜）

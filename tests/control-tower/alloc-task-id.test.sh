@@ -32,10 +32,18 @@ export SYNO_LOCK_DIR="$ALLOC_LOCK_DIR"  # D938-a: 消费注入缝（子进程全
 
 PASS=0; FAIL=0
 FAILED_NAMES=()
+FIRST_FAIL=""
 pass() { PASS=$((PASS + 1)); echo "  ✅ $1"; }
 # D938-CI: 失败断言名落盘 —— CI 只把 `tail -8` 写进 ::error 注解，没有摘要就只剩尾几行、
 #   定位靠猜。摘要压成**一行**放最后，使注解里能看到"到底哪条红"。
-fail() { FAIL=$((FAIL + 1)); FAILED_NAMES+=("$1"); echo "  ❌ $1" >&2; }
+# D938-CI-2(可见性): ci.yml 注解还叠了 `cut -c1-450`——末行摘要在长输出下会被截掉
+#   （#739 实测：截断发生在结果行之后的分隔线上，FAILED(N) 摘要永远进不了注解）。
+#   FIRST_FAIL 压进**结果行本身**，只要 tail -8 窗口含结果行就必可见；与末行摘要叠加，不替换。
+fail() {
+  FAIL=$((FAIL + 1)); FAILED_NAMES+=("$1")
+  if [ -z "$FIRST_FAIL" ]; then FIRST_FAIL="$1"; fi
+  echo "  ❌ $1" >&2
+}
 assert_contains() { if echo "$1" | grep -qF "$2"; then pass "$3"; else fail "$3 — 未找到: $2"; fi; }
 assert_exit() { if [ "$1" = "$2" ]; then pass "$3 (exit=$2)"; else fail "$3 — 期望 exit=$1 实际=$2"; fi; }
 
@@ -359,7 +367,12 @@ assert_contains "$(cat "$PROBE_DIR/o2")" "D500" "10.2 并发乙拿到 D500（沙
 echo ""
 
 echo "═══════════════════════════════════════════════════════════"
-echo "  结果: PASS=$PASS FAIL=$FAIL"
+# D938-CI-2: FAIL>0 但 FIRST_FAIL 为空 = 夹具自身缺陷（记名机制失灵），必须显式红，不得静默
+if [ "$FAIL" -gt 0 ] && [ -z "$FIRST_FAIL" ]; then
+  echo "  ❌ SELF-CHECK: FAIL=$FAIL 但 FIRST_FAIL 为空（fail() 记名机制缺陷）"
+  exit 2
+fi
+echo "  结果: PASS=$PASS FAIL=$FAIL${FIRST_FAIL:+ FIRST_FAIL=${FIRST_FAIL}}"
 echo "═══════════════════════════════════════════════════════════"
 # 失败摘要（**必须留在最后一行**：CI 只截 tail -8 进 ::error 注解）
 if [ "$FAIL" -gt 0 ]; then
