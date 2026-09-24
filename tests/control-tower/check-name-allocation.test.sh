@@ -37,12 +37,21 @@ TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 
 echo "=== D940: 命名三元组校验器（check-name-allocation.sh）==="
 
-# ── 0. 接线: 被测脚本存在（缺了后面每条都会红，但要点名根因）──
+# ── 0. 接线（两条缺一不可）──
+# ① 被测脚本存在（缺了后面每条都会红，但要点名根因）
 if [ -f "$TOOL" ]; then
   ok "接线: $TOOL 存在"
 else
   no "接线: $TOOL 不存在（D940-T1 未落地 → 本测试全红属预期，禁放宽）"
 fi
+# ② 本测试在 ci.yml 密封清单内 —— 沿 check-progress-freshness.test.sh:44 /
+#    merge_writeset_gate.test.sh:36 / check-citations.test.sh:36 同款。
+# ⚠ E-M5（d937-v 独立自验发现）：此前只断言"文件存在"，**删掉 ci.yml 登记行后本测试仍全绿**
+#   （全仓唯一察觉者 check-canary-drift.sh 契约恒 exit 0，且在 CI 里写作 `|| true`）⇒ 非判别性。
+#   本条使「删掉 ci.yml 该行」**立即变红** —— 这才是卡面「接线」的实质（CI 不跑 = 摆设）。
+grep -q 'check-name-allocation.test.sh' "$REPO/.github/workflows/ci.yml" \
+  && ok "接线: 本测试在 ci.yml control-tower-tests 密封清单（删掉该行即红）" \
+  || no "接线: 本测试不在 ci.yml 密封清单（CI 不跑 = 摆设，M3 未接线）"
 
 # ── 夹具 A: 本地仓（bare origin 含 docs/d942-cto-fixation；无 tracking ref）──
 FA="$TMP/A"; BARE="$FA/origin.git"; WA="$FA/repo"
