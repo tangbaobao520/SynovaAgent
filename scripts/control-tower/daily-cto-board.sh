@@ -35,6 +35,35 @@ line "工作树数: ${wt:-0}"
 # 4) 门禁健康（本地软提示级）
 if bash scripts/pre-commit-check.sh >/tmp/daily-pc.log 2>&1; then line "✅ 本地门禁: 全组通过"
 else line "⚠️ 本地门禁: 有非通过项（详见 .codex/control-tower/logs）"; fi
+# 6) 台账 P0 与队列对账（D943：**登记 ≠ 执行** —— gen-cto-health 的 P0 挂了 10 天无人开卡）
+LEDGER="$REPO/docs/synova/coordination/审计发现台账-DSH-CTO.md"
+if [ -f "$LEDGER" ]; then
+  aged=$(python3 - "$LEDGER" "$REPO" <<'PYEOF'
+import datetime, os, re, sys
+p, repo = sys.argv[1], sys.argv[2]
+today = datetime.date.today()
+miss = []
+for ln in open(p, encoding="utf-8", errors="replace"):
+    m = re.match(r"\|\s*(\d{4}-\d{2}-\d{2})\s*\|", ln)
+    if not m or "P0" not in ln: continue
+    try: d = datetime.date.fromisoformat(m.group(1))
+    except Exception: continue
+    if (today - d).days < 7: continue
+    ids = set(re.findall(r"\bD(\d{3})\b", ln))
+    if not ids: continue
+    if not any(os.path.exists(os.path.join(repo, "task-state", "D%s.json" % i)) for i in ids):
+        miss.append("%s 的 P0 条目（D%s）无对应卡" % (m.group(1), ",".join(sorted(ids))))
+for x in miss[:5]: print(x)
+PYEOF
+)
+  if [ -n "$aged" ]; then
+    line "❌ 台账 P0 未进队列（登记≠执行）: $(echo "$aged" | head -1)"
+    red=1
+  else
+    line "✅ 台账 P0 与队列对账: 无超期未开卡"
+  fi
+fi
+
 # 5) 漂移/孤儿
 orph=$(find . -maxdepth 1 -type d -name ".synova-wt-*" 2>/dev/null | wc -l | tr -d ' ')
 line "孤儿工作树候选: ${orph:-0}"
