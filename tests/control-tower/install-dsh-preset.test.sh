@@ -28,6 +28,15 @@
 #    · 平台能力：POSIX 权限位（T6）在 Windows 不强制 → 显式 `T6-SKIP-PLATFORM` 跳过，不静默算通过。
 # ═══════════════════════════════════════════════════════════════════════════════
 set -uo pipefail
+# ── D313 M5 UTF-8 强制（**B3 Windows 红态的根因修复**）─────────────────────────
+#   夹具内嵌 python 会把含中文的 persona 块写进管道；Windows/Git Bash 下 python3 的
+#   stdout 默认编码是 cp936/cp1252（非 UTF-8）→ `UnicodeEncodeError: 'charmap' codec …`
+#   → 探针输出为空 → "面内计数 = 0"（而注入本身成功 → --check 仍报漂移）→
+#   症状 = **T3 绿 + T3c 红**。本机复现命令（与 CI Windows 逐字同形）：
+#     PYTHONIOENCODING=cp1252 bash tests/control-tower/install-dsh-preset.test.sh
+#   产品脚本 install-dsh-preset.sh:27 一直有这一行；夹具此前漏了 → 只在 windows runner 暴露。
+export PYTHONIOENCODING=utf-8
+export LC_ALL=C.UTF-8 2>/dev/null || true
 
 # BASH_SOURCE **绝对化**：主运行（`bash tests/...` 相对路径）与 /tmp 变异体（绝对路径）
 # 两种语义都要稳 —— 用 cd+pwd 而非直接使用可能相对的 ${BASH_SOURCE[0]}（跨平台脆点，B3 返修 #2）。
@@ -99,15 +108,19 @@ inject_persona_drift() { # <cordis-file> [inside|outside]
 }
 
 # ── 判据面探针（**独立复刻**被测脚本的结构锚，不调用其内部函数）: 输出 persona 块 ──
+#   二进制读 + 按实际行尾切分（行尾无关）；输出走 `sys.stdout.buffer`（**字节写**，
+#   不受 stdout 编码设置影响 —— 与文件头 PYTHONIOENCODING 双保险，编码类平台差异免疫）。
 extract_persona_probe() {
   python3 - "$1" <<'PY'
 import sys
-lines = open(sys.argv[1], encoding="utf-8").read().splitlines()
-start = next((i for i, l in enumerate(lines) if l.strip() == "- id: persona"), None)
+data = open(sys.argv[1], "rb").read()
+nl = b"\r\n" if b"\r\n" in data else b"\n"
+lines = data.split(nl)
+start = next((i for i, l in enumerate(lines) if l.strip() == b"- id: persona"), None)
 if start is None:
     sys.exit(3)
-end = next((i for i in range(start + 1, len(lines)) if lines[i].startswith("- id: ")), len(lines))
-sys.stdout.write("\n".join(lines[start:end]) + "\n")
+end = next((i for i in range(start + 1, len(lines)) if lines[i].lstrip().startswith(b"- id: ")), len(lines))
+sys.stdout.buffer.write(b"\n".join(lines[start:end]) + b"\n")
 PY
 }
 
@@ -173,27 +186,52 @@ echo "$OUT2" | grep -qi "SYNC-OK" && pass "T2: 输出含 SYNC-OK" || fail "T2: �
 # ── T3（**承重 / LOAD-BEARING**）: persona 漂移 → --check exit 1 + 点名 ──
 #   注入 = 结构锚（块内插标记行），与文案无关；D926 重写后仍成立。
 #   T3-STATUS 行是 **ASCII** 状态令牌，供元变异体用（不 grep emoji/中文，避免 locale/编码差异）。
+#   **面内前提耦合（B3 返工）**: 标记必须先落在判据面内（与 T3c 同源计数），否则 T3 的绿
+#   可能来自"整文件 EOL 变化/空行"等**非目标原因** → 此时 T3 不得记 PASS。
 T3_STATUS=PASS
 inject_persona_drift "$INSTALLED/agent.cordis.yml"
 T3_INJECT_RC=$?
+MARKERS=$(extract_persona_probe "$INSTALLED/agent.cordis.yml" | tr -d '\r' | grep -c -- "$MARKER" || true)
 OUT3=$(RUN --check 2>&1)
 EXIT3=$?
 assert_exit "$EXIT3" 1 "T3(承重): 结构锚注入 persona 漂移 → --check exit 1" || T3_STATUS=FAIL
 echo "$OUT3" | grep -q "agent.cordis.yml" && pass "T3(承重): 输出点名 agent.cordis.yml" || { T3_STATUS=FAIL; fail "T3(承重): 未点名漂移文件"; }
+echo "$OUT3" | grep -q "persona 与仓库 persona-block.yml 不一致" \
+  && pass "T3(承重): 漂移原因是 persona 内容不一致（非 EOL/结构类假漂移）" \
+  || { T3_STATUS=FAIL; fail "T3(承重): 漂移原因不是 persona 内容不一致（检查输出无该原因，疑为 EOL/结构类假漂移）"; }
+if [ "$MARKERS" -ge 1 ]; then
+  pass "T3(承重): 面内前提成立（判据面内 ${MARKER} 计数=${MARKERS} ≥ 1）"
+else
+  T3_STATUS=FAIL
+  fail "T3(承重): 面内前提不成立（判据面内 ${MARKER} 计数=${MARKERS}）——本次 check_rc=${EXIT3} 的绿不作为通过依据"
+fi
 printf 'T3-STATUS: %s\n' "$T3_STATUS"
-echo "T3 LOAD-BEARING: inject=structural(块内) inject_rc=${T3_INJECT_RC} check_rc=${EXIT3} 点名=$(printf '%s\n' "$OUT3" | grep -c 'agent.cordis.yml' || true) status=${T3_STATUS}"
+echo "T3 LOAD-BEARING: inject=structural(块内) inject_rc=${T3_INJECT_RC} check_rc=${EXIT3} 面内计数=${MARKERS} 点名=$(printf '%s\n' "$OUT3" | grep -c 'agent.cordis.yml' || true) status=${T3_STATUS}"
 
 # ── T3c（**承重 / LOAD-BEARING**）: 落点证明 —— 标记必须落在判据面（persona 块）内 ──
+#   失败时输出 **四段自证 dump**（ASCII 前缀 `T3C-DUMP-n:`，供 CI 注解公开检索）：
+#   ① python 版本/路径 ② 安装产物前 20 行 ③ 判据面原始输出前 20 行 ④ 标记行所在位置的 od -c 前 32 字节。
+#   目的：Windows 侧 job log 匿名取不回（API 403）时，让失败自己把平台形态带到注解里。
 T3C_STATUS=PASS
-MARKERS=$(extract_persona_probe "$INSTALLED/agent.cordis.yml" | grep -c -- "$MARKER" || true)
 assert_eq_int "$MARKERS" "$EXPECT_MARKERS" "T3c(承重): 判据面内 ${MARKER} 计数 == ${EXPECT_MARKERS}" || T3C_STATUS=FAIL
+if [ "$T3C_STATUS" = "FAIL" ]; then
+  # 每项 ≤5 行 / 每行 ≤200 字节（适配注解配额；完整版另落 step summary）
+  echo "T3C-DUMP-1: python3=$(command -v python3 2>/dev/null || echo MISSING) version=$(python3 -V 2>&1 | cut -c1-120)"
+  echo "T3C-DUMP-2: installed head -5 ↓"
+  head -5 "$INSTALLED/agent.cordis.yml" 2>/dev/null | cut -c1-200 | sed 's/^/T3C-DUMP-2: /'   # swallow-ok: 诊断转储（文件缺失则该段留空，dump 仍输出；不影响任何判据）
+  echo "T3C-DUMP-3: extract_persona_probe head -5 ↓"
+  extract_persona_probe "$INSTALLED/agent.cordis.yml" 2>&1 | head -5 | cut -c1-200 | sed 's/^/T3C-DUMP-3: /'
+  echo "T3C-DUMP-4: 标记行 od -c（前 32 字节）↓"
+  grep -a -m1 -- "$MARKER" "$INSTALLED/agent.cordis.yml" 2>/dev/null | od -c 2>/dev/null | head -2 | cut -c1-200 | sed 's/^/T3C-DUMP-4: /'   # swallow-ok: 诊断转储（探测型 grep：无命中=标记不在文件里，下一行显式打印命中数；非静默吞错）
+  echo "T3C-DUMP-4: 文件内标记命中=$(grep -a -c -- "$MARKER" "$INSTALLED/agent.cordis.yml" 2>/dev/null || echo 0)（0 = 标记根本没写进文件）"
+fi
 printf 'T3c-STATUS: %s\n' "$T3C_STATUS"
 echo "T3c LOAD-BEARING: extract_persona 面内 ${MARKER}=${MARKERS}（期望 ${EXPECT_MARKERS}）→ 注入落在判据面内 status=${T3C_STATUS}"
 
 # ── M2（判别性元变异）: 注入插到**块外** → T3c 面内计数必须为 0（证明 T3c 对落点敏感）──
 RUN --install >/dev/null 2>&1
 inject_persona_drift "$INSTALLED/agent.cordis.yml" outside
-M2_MARKERS=$(extract_persona_probe "$INSTALLED/agent.cordis.yml" | grep -c -- "$MARKER" || true)
+M2_MARKERS=$(extract_persona_probe "$INSTALLED/agent.cordis.yml" | tr -d '\r' | grep -c -- "$MARKER" || true)
 if [ "$M2_MARKERS" -eq 0 ]; then
   pass "M2 判别性: 块外注入 → 判据面内计数 0（T3c 依赖真实落点，非恒真）"
 else
