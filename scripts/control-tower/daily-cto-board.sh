@@ -27,7 +27,7 @@ line() { body="$body- $1
 "; }
 
 # 1) DSH 断面
-if a=$(python3 scripts/control-tower/check-dsh-anchor.py --repo . 2>&1); then line "✅ DSH 断面: $(echo "$a"|tail -1)"
+if a=$("$PYBIN" scripts/control-tower/check-dsh-anchor.py --repo . 2>&1); then line "✅ DSH 断面: $(echo "$a"|tail -1)"
 else rc=$?; line "❌ DSH 断面: $(echo "$a"|tail -1) (rc=$rc)"; red=1; fi
 # 2) 卡状态
 tot=$(ls task-state/D*.json 2>/dev/null | wc -l | tr -d ' ')
@@ -41,7 +41,7 @@ else line "⚠️ 本地门禁: 有非通过项（详见 .codex/control-tower/lo
 # 6) 台账 P0 与队列对账（D943：**登记 ≠ 执行** —— gen-cto-health 的 P0 挂了 10 天无人开卡）
 LEDGER="$REPO/docs/synova/coordination/审计发现台账-DSH-CTO.md"
 if [ -f "$LEDGER" ]; then
-  aged=$(python3 - "$LEDGER" "$REPO" <<'PYEOF'
+  aged=$("$PYBIN" - "$LEDGER" "$REPO" <<'PYEOF'
 import datetime, os, re, sys
 p, repo = sys.argv[1], sys.argv[2]
 today = datetime.date.today()

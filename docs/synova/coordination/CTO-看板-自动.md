@@ -1,9 +1,9 @@
 # CTO 自动看板（每日）
 
-> 生成: 2026-09-24T23:23:26+0800 ｜ 触发: DSH 官方 schedule ｜ 失败即告警，不静默
+> 生成: 2026-09-24T23:23:58+0800 ｜ 触发: DSH 官方 schedule ｜ 失败即告警，不静默
 
 **结论: 有红项**
-- ❌ DSH 断面: DSH-ANCHOR: VIOLATION(4)  [扫描 209 份] (rc=1)
+- ❌ DSH 断面: DSH-ANCHOR: VIOLATION(4)  [扫描 210 份] (rc=1)
 - 卡总数: 359（在制按 task-state+worktree 判定）
 - 工作树数: 206
 - ✅ 本地门禁: 全组通过
