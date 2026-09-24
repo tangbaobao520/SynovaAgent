@@ -1,0 +1,25 @@
+{
+  "task_id": "D1001",
+  "title": "表缺口收口：渲染层测试归属改判 mac —— 产出改判建议 + 证据，交 Mac-CTO 执行改表",
+  "status": "claimed",
+  "risk": "medium",
+  "domain": "mac",
+  "owner_side": "win",
+  "cross_domain_reason": "改判对象是 mac 域测试文件的归属规则（tests/electron/**、tests/ga-collab-*.test.ts）；ownership.yaml 为 Mac-CTO 单写者，Win 无写权，故由 Win 出建议+证据、Mac 执行改表",
+  "owner": "win-codex-cto",
+  "executor": "synova-squad-lead（队长不下场写码）+ 1 编码 + 1 独立自验 + 1 独立复核",
+  "branch": "fix/d1001-ownership-renderer-tests",
+  "base": "origin/main（合后 tip）",
+  "depends_on": [],
+  "blocked": "本卡不是代码交付：Win 产出「改判建议 + 证据」，由 Mac-CTO 执行 ownership.yaml 改表 + --emit-codeowners + 测试；改表落地前 D1000 切片 B 不得开工",
+  "target": "2026-W40",
+  "spec": "docs/synova/dispatch/D1001-ownership-renderer-tests-20260925.md（派单即规格）",
+  "write_set": [
+    "docs/synova/product-lines/evidence/D1001-20260925/（建议件 + 证据，域豁免目录）",
+    "task-state/D1001.json"
+  ],
+  "renumber": "原 D949（与 Mac 侧 D949 = N8 卡撞号）→ D1001；Mac-CTO 2026-09-25 裁定批准，附「不得直接改 ownership.yaml」硬约束",
+  "note": "来源：D948 PLAN §6 P0 影响面矩阵实测——P0-a 原案（仅 tests/electron/** → mac）放行不了切片 B，因 tests/ga-collab-logic.test.ts 在 tests/ 根、不经该规则；CTO 2026-09-25 裁定采用 P0-a+ 并扩为 glob（tests/ga-collab-*.test.ts）。范围已按 Mac-CTO 2026-09-25 §四 收窄：Win 不再直接改 ownership.yaml / .github/CODEOWNERS / tests/control-tower/check-ownership.test.sh（三者均 mac），改为产出改判建议与证据，由 Mac-CTO 执行改表。字段规范：domain 单值枚举 + owner_side + cross_domain_reason（Mac-CTO 2026-09-25 §四）。",
+  "updated_at": "2026-09-25",
+  "updated_by": "win-codex-cto"
+}
