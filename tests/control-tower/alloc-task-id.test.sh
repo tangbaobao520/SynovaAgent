@@ -465,6 +465,15 @@ esac
 rm -rf "$F11"
 echo ""
 
+echo "── 12. D940/E-M5 接线判别性: 本测试必须在 ci.yml 密封清单内（删掉该行即红）──"
+# 沿 check-progress-freshness.test.sh:44 / merge_writeset_gate.test.sh:36 同款。
+# 此前全仓只有 check-canary-drift.sh 能察觉本测试掉出清单，但它契约恒 exit 0（CI 里写作 `|| true`）
+# ⇒ 非判别性防线（E-M5，d937-v 独立自验发现）。本条把"掉出密封清单"变成**红**。
+grep -q 'alloc-task-id.test.sh' "$REPO_DIR/.github/workflows/ci.yml" \
+  && pass "接线: 本测试在 ci.yml control-tower-tests 密封清单（删掉该行即红）" \
+  || fail "接线: 本测试不在 ci.yml 密封清单（CI 不跑 = 摆设，M3 未接线）"
+echo ""
+
 echo "═══════════════════════════════════════════════════════════"
 # D938-CI-2: FAIL>0 但 FIRST_FAIL 为空 = 夹具自身缺陷（记名机制失灵），必须显式红，不得静默
 if [ "$FAIL" -gt 0 ] && [ -z "$FIRST_FAIL" ]; then
