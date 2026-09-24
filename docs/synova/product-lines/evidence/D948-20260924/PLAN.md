@@ -20,7 +20,7 @@
 
 **⚠️ 编制上限冲突（须 CTO 裁）**：本卡派单 §七要求「队长 + 2 编码 + 1 自验 + 1 复核」= **5 人**；队长预设上限为「成员 ≤4（队长 + ≤2 编码 + 1 自验），不组第 5 人」。派单件第 7 行自我声明「凡本件与任何旧基线冲突，以本件为准」⇒ 本阶段**按派单执行 5 人**，并在此显式登记冲突，请 CTO 裁定后续是否并轨。
 
-**本阶段成员"运行"的物理证明**：三份 recon 文件均由对应成员写入并 commit（见 §9 `git diff --stat`）；成员若只有队长在跑 = 交付退回——本卡不适用（4 名成员均有产出）。
+**本阶段成员"运行"的物理证明**：四份成员产出（A/B/T-V/REVIEW）均由对应成员写入并 commit（见 §10 文件清单 + §11 `git diff --stat`）；成员若只有队长在跑 = 交付退回——本卡不适用（4 名成员均有产出）。
 
 ---
 
@@ -108,8 +108,8 @@
 | **A1** 登录 token 解码含真实部门 | `src/routes/auth.ts:134`：`signJwtToken({ sub: foundUser.userId, role: foundUser.role, orgId: foundUser.orgId })` → **+`department: foundUser.department`** | 正常：注入 `UserStore`（`InMemoryGraphStore` + `setUserStore`，模板 `enterprise.test.ts:50-75/:178-197`）建 `department:'marketing'` 用户 → `POST /api/auth/login` → **base64url 解码 token 第二段** → `payload.department === 'marketing'`（**不断 HTTP 200**）<br>降级：用户记录无 department → `payload.department === undefined`（不得伪造）<br>边界：`department:''` → 仍 `undefined` 或空串，**不得**被下游当"同部门" | 把该行改回三字段 → 解码断言必红 |
 | **A2** `extractRbacContext` 返回真实部门 | `src/middleware/rbac.ts:122`（内联 `auth` 入参类型 **必须**加 `department?: string`，否则 `:127` 编不过）+ `:127`：`department: undefined` → **`department: req.auth.department`** | 正常/降级/边界：纯函数直调（`JWT auth` 带/不带/空串部门） | 把 `:127` 改回 `undefined` → 必红 |
 | **A3** 同部门可见 | **被 W2 阻断**（HTTP 恒 404）→ 改口径：**最小 app 探针** = `express()` + 真实 `jwtAuthMiddleware`（`auth.ts:311` 导出）+ 真实 `rbacMiddleware`（`rbac.ts:320`，`req.rbac = extractRbacContext(req)`）+ 从 `router.stack` 抽出的**真实 handler**（先例 `workspace-access-write-endpoint.test.ts:338-350 loadMineHandler`）。**只绕开「路由遮蔽」，不绕开身份链**。播种 = admin JWT 经 HTTP 建 parent → `POST /:id/sub{department:'marketing'}` | 正常：manager@marketing 的**真实 JWT**（非合成 ctx）经中间件 → handler 响应含该部门工作区 | ① `rbac.ts:127` 改回 `undefined` → 必红；② **禁止用 `syntheticRbac`**（`:369-371`）——它写死 `department: undefined` 且无形参 ⇒ 假红/假绿（§1-补 4） |
-| **A4** 异部门不可见 | 同 A3（同一最小 app 探针） | 正常：manager@sales 的真实 JWT → 响应**不含** marketing 工作区 | 去掉 `isSameDepartment` 的非空收窄（改 `ctxDept === wsDept`）→ 必红 |
-| **A5** 无部门仍 fail-closed | 不改实现（**只加夹具**）；判据落 `rbac.ts:287` / `:313` 现状 | 正常：合法 JWT 但无 department + `visibility:'department'` 工作区 → `canAccessWorkspace===false && canModifyWorkspace===false`<br>边界：`''`、`undefined`、双空、仅一侧空 → 全 false | 在部门分支加 `\|\| role === 'manager'` 旁路 → 必红 |
+| **A4** 异部门不可见 | 同 A3（同一最小 app 探针） | 正常：manager@sales 的真实 JWT → 响应**不含** marketing 工作区 | ⚠️ **独立复核 I-3 更正**：原挂变异体「`isSameDepartment` 改 `ctxDept===wsDept`」对 A4 **不判别**（sales vs marketing 两版同为 false，只判别 A5 边界）。A4 改用 **A-recon M8**：把过滤改 `w.department===dept \|\| w.visibility==='global'`（去掉 owner 析取）→ A4 必红 |
+| **A5** 无部门仍 fail-closed | 不改实现（**只加夹具**）；判据落 `rbac.ts:287` / `:313` 现状 | 正常：合法 JWT 但无 department + `visibility:'department'` 工作区 → `canAccessWorkspace===false && canModifyWorkspace===false`<br>**⚠️ 独立复核 I-4 必加约束**：夹具工作区**必须满足 `ws.owner !== ctx.userId`** —— 否则 `:313` 的 `\|\| ws.owner === ctx.userId` 析取会使 `canModifyWorkspace` 在**正确实现上为 true** ⇒ A5 假红，实施者会被逼去改产品代码<br>边界：`''`、`undefined`、双空、仅一侧空 → 全 false | 在部门分支加 `\|\| role === 'manager'` 旁路 → 必红。**A5-b 登记**：`canModifyWorkspace` 的 owner 析取路径（`:313`）属**既有语义不回改**，A5 不覆盖它 |
 | **A6** 自报头零复活 | `auth.ts:503-508` 显式拒绝分支 **严禁删除**（D947-RULINGS.md:109 硬要求） | 正常：请求带 `x-synova-token: admin:marketing:u1` 且无 Bearer → `role !== 'admin'` + `log.warn` 留痕编码在场 | 恢复任一自报分支（auth 或 rbac）→ 必红 |
 | **A7** refresh 不丢部门 | `src/routes/auth.ts:176-180`：`signJwtToken({sub,role,orgId})` → **+`department: result.payload.department`** | 正常：带部门 JWT → refresh → 新 token 解码仍有部门<br>降级/边界：旧 token 无部门 → 新 token 也无（保持 `undefined`，**fail-closed 不猜测**，见 §7-7） | 改回三字段 → 必红 |
 
@@ -150,7 +150,7 @@
 **顺序（硬）**：`PR-1` → （`PR-0`，若需）→ `PR-2`。串行规则：**A 合了再开 B**；重型验证（vitest / 全量门禁 / 黄金门禁）**串行 ≤1**（本阶段队长只跑了 1 个靶向文件用于 N1 裁决，未与他人并跑）。
 
 **写集互斥核对**（A 7 文件 vs 队长 2 文件 vs B 8 文件）：
-- A 与 B **零交集**；A 与队长文件仅 `task-state/D948.json` 相邻但**无重叠**（`task-state/**` 属域豁免，且队长是唯一写者）。
+- A 与 B **零交集**；`task-state/D948.json`：**同一写者（队长）、跨分支二次写**（phase-0 本分支已写 + 派单 §五 A 表又把它列为 PR-1 文件）⇒ **须择一**：推荐 **A 分支不再重复写该文件**，或 A 分支继承时以本分支版本为准（§7 新增登记）。**不写成"无重叠"**（独立复核 §3.1 更正）。
 - `src/routes/auth.ts` **单写者 = code-a**（A/D948 内无第二写者；全仓库其他卡未持有）✅。
 - **A3/A4 宿主问题**：handler 探针的唯一现成宿主 `tests/routes/workspace-access-write-endpoint.test.ts` **不在 7 文件写集** ⇒ 需 CTO 在三种放法中选择（见 §7-2）。
 
@@ -199,6 +199,9 @@
 | 20 | **本地 `main` 落后 `origin/main` 69 提交**（`git rev-list --left-right --count origin/main...main` → `69  0`，实测）⇒ **回执 `git diff --stat` 的基准必须写明**（切片 A 用 `ef5c8caa`；其余用 `origin/main`），**禁用本地 `main`**（否则数字无意义） | 队长（回执纪律） | 本 PLAN 及后续回执一律显式标注基准 |
 | 21 | **B-0b：模板助手 `syntheticRbac` 造成假红/假绿**（`:369-371` 写死 `department: undefined` 且无形参） | CTO 知悉 + 执行纪律 | A3/A4 改走"真实中间件链 + 抽出 handler"探针；**禁止**合成 ctx 直喂；必须附 `rbac.ts:127` 判别性变异体 |
 | 22 | **症状订正**：派单 §一 症状表「恒'无权限/空列表'」不实，实为 `department-workspace.ts:89-98` 的 `undefined.length` 抛错被 `console.warn` 吞掉 → 页面永久停在加载态（兼铁律 24/31 存违规） | CTO 知悉 | 非本卡引入，登记；`department-workspace.ts` 不在写集 |
+| 23 | **`task-state/D948.json` 跨分支二次写**（phase-0 本分支已写 + 派单 §五 A 表又列它为 PR-1 文件） | 队长 | 择一：A 分支不重复写 / 以 `docs/d948-plan` 版本为准（§5 已更正"无重叠"措辞） |
+| 24 | **FG-5（独立复核）**：B2/B3 的夹具若落在**白名单端点**（`/api/sentinel/*`、`/api/diagnosis/*`、`/api/solutions` 免认证）⇒ **无判别力**；且给这些端点加 gating 可能**回退已闭环的 8 验证点** | CTO | B2/B3 夹具端点须选**受 JWT 门禁保护**者（如 `/api/ga/clients`），并在 PLAN 中钉死 |
+| 25 | **FG-6（独立复核）**：N1 的真实判别条件是 `auth.ts:350 if (!secret && DEV_MODE==='true')`，**只断 `DEV_MODE` 不充分** | CTO 知悉 + 执行纪律 | 夹具须**同时**断「走的是验签分支」而非 dev-admin 分支（加分支判别器，不只断环境变量） |
 
 ---
 
@@ -210,14 +213,17 @@
 
 ---
 
-## §9 派单件指纹对账（三条 fetch 坐标三方值）
+## §9 派单件指纹对账（**三条坐标 × 三方值**；独立复核 §12-6 口径更正）
 
-| 坐标 | 派单件声明 | `ls-remote`（远端权威） | 本地 remote-tracking / worktree HEAD | 一致 |
+> 口径更正：本节标题原写「三条 fetch 坐标」易被误读为三个 `fetch()` 调用点。实际所指 = **三条待核对坐标**（派单件分支 / 切片 A base / main），每条给**三方值**：①派单件声明 ②`ls-remote` 远端权威 ③本地检出（remote-tracking ref 与 worktree HEAD）。
+
+| 坐标 | ①派单件声明 | ②`ls-remote` 远端权威 | ③本地检出（tracking ref / worktree HEAD） | 一致 |
 |---|---|---|---|---|
-| 派单件分支 | tip `df9dc5ed` | `df9dc5edcaa753830c80c2a3050a27d2d6d21bd8 refs/heads/docs/d948-identity-chain-dispatch` | `df9dc5ed`（worktree `.synova-wt-d948-dispatch` HEAD 同） | ✅ |
-| 切片 A base | `feat/d947-middleware-default-posture` tip `ef5c8caa` | `ef5c8caaf8689cd41ab551495efcd002fb6d4e5f` | `ef5c8caa`（worktree `.synova-wt-d947-middleware` HEAD 同） | ✅ |
-| main | —（派单未固定） | `114582799d55ffd43a36daf6fa5e1268488752a0 refs/heads/main` | `11458279`（`docs/d948-plan` 的 base） | ✅ |
-| 规格内容指纹 | 无（派单未自附） | — | 派单件 blob SHA1 `b338b6b44a8f1601b541855dee31dfdff5969d23`（17340 bytes，175 行）；卡片 blob `1ba676e4bc992c8347a8e9ad99cd964409d07dd2`（2931 bytes）；工作树 `hash-object` 与 blob **逐位相等** ⇒ 检出无漂移 | ✅ |
+| 派单件分支 `docs/d948-identity-chain-dispatch` | tip `df9dc5ed` | `df9dc5edcaa753830c80c2a3050a27d2d6d21bd8` | `df9dc5ed`（`.synova-wt-d948-dispatch` HEAD 同） | ✅ |
+| 切片 A base `feat/d947-middleware-default-posture` | tip `ef5c8caa` | `ef5c8caaf8689cd41ab551495efcd002fb6d4e5f` | `ef5c8caa`（`.synova-wt-d947-middleware` HEAD 同） | ✅ |
+| `main` | —（派单未固定） | `114582799d55ffd43a36daf6fa5e1268488752a0` | `11458279`（`docs/d948-plan` 的 base；**本地 `main` 落后 69**，见 §7-20） | ✅ |
+
+**内容指纹（派单件未自附，队长补）**：派单件 blob SHA1 `b338b6b44a8f1601b541855dee31dfdff5969d23`（17340 bytes / 175 行）；卡片 blob `1ba676e4bc992c8347a8e9ad99cd964409d07dd2`（2931 bytes）；工作树文件 `git hash-object` 与 blob **逐位相等** ⇒ 检出无漂移。
 
 ---
 
@@ -232,6 +238,18 @@
 | `docs/synova/product-lines/evidence/D948-20260924/REVIEW-PLAN.md` | reviewer | 待出（task-5） |
 | `task-state/D948.json` | lead | 本阶段状态回填 |
 
+**本阶段 `git diff --stat`（回执第 4 项；基准 `origin/main` = `11458279`，**禁用本地 main**，见 §7-20）**：
+```
+ $ git diff --stat origin/main..HEAD
+ docs/synova/product-lines/evidence/D948-20260924/A-recon.md            | 437 +++
+ docs/synova/product-lines/evidence/D948-20260924/B-recon.md            | 392 +++
+ docs/synova/product-lines/evidence/D948-20260924/PLAN.md              | 244 ++
+ docs/synova/product-lines/evidence/D948-20260924/REVIEW-PLAN.md        | 474 +++
+ docs/synova/product-lines/evidence/D948-20260924/T-V-premise-2nd.md    | 336 +++
+ task-state/D948.json                                                   |  69 ++
+```
+（终值见 §12 收口后的实际输出。）
+
 **独立复核状态**：`task-5` 由 `reviewer` 对本件做**对抗性复核**；**复核未通过前本 PLAN 不得视为已定型**（派单 §十：独立复核未通过 = 未完成）。
 
 ---
@@ -242,3 +260,34 @@
 - 前提实测：23 条，其中 **P10 / P12 两条推翻派单件既述**（`department` 生产无写入者；`/mine` HTTP 恒 404），**P5 / P6 / P16 / P17 四条行号漂移**已登记，**N-1 一条被队长裁决推翻**（N1 可满足，34/34 绿证）。
 - **自验结论：PLAN 可提请 CTO 复核放行**（并请一并裁定 §7 的 1/2/3/4/6/7-12）。
 - **不予判定**：A1–A7 / B1–B4 **全未实施**，不存在任何"通过"结论；通过与否归 **CTO 收件闸 + K3 终审**。
+
+---
+
+## §12 独立复核（task-5，`reviewer`）结论与收口
+
+**复核产出**：`REVIEW-PLAN.md`（606 行 / 62288 bytes）｜复核员自验结论：**可提请独立审计**（不判通过）。
+**复核员自我更正**：其首轮「`auth.test.ts` = 44 行 / PLAN P20 有误」系其自方方法误差（`Measure-Object -Line` 漏算空行）——**正确 = 50 行 / 6 个 `it`，PLAN P20 与派单件均正确**；相关对 437/392/337 行数的怀疑亦已撤回。
+
+### §12-1 已收口（本 PLAN 本轮修订直接吸收）
+
+| 复核项 | 处置 |
+|---|---|
+| **I-3** A4 变异体不判别（`isSameDepartment` 收紧对 sales/marketing 两版同为 false） | ✅ §3 A4 行改用 **A-recon M8**（过滤去 owner 析取） |
+| **I-4** A5 在正确实现上**假红**（`:313` 的 `\|\| ws.owner === ctx.userId` 析取） | ✅ §3 A5 行加硬约束「夹具必须 `ws.owner !== ctx.userId`」+ A5-b 登记 owner 路径为既有语义 |
+| **§12-4** 回执第 4 项缺 `git diff --stat` + §0 悬空引用 | ✅ §10 补 `git diff --stat`（含基准）；§0 交叉引用改指 §10/§11 |
+| **§12-6** §9 标题名不符实 | ✅ §9 改为「三条坐标 × 三方值」并逐列标注三方来源 |
+| **§3.1** `task-state/D948.json` 跨分支二次写 | ✅ §5 更正"无重叠"措辞 + §7-23 登记 |
+| **§1.4/1.5** P0-a 原案放行不了 B + B 写集 8 > 6 | ✅ 已在 §6 / §4 / §7-2/3 登记（与本 PLAN 独立结论一致） |
+| **FG-5** B 夹具落白名单端点无判别力 | ✅ §7-24 登记 |
+| **FG-6** N1 只断 `DEV_MODE` 不充分 | ✅ §7-25 登记 |
+
+### §12-2 复核员对队长四问的答复（原样登记）
+
+1. **W1 / W2 独立复核成立**；**W3 未二次复核**（只对 W1/W2 表态）→ 本 PLAN 的 W3 仍为单一来源（code-b），登记为**未独立复核**。
+2. **认同队长推翻 code-b N-1**（`getSecret()` 惰性读 env + 34/34 绿为物理证据）；复核员不主张 N1 不可满足，只补"判别力"要求（见 §7-25）。
+3. **A3/A4 宿主推荐 (iii)** 新建 `tests/routes/d948-department-visibility.test.ts`，并**代跑域**：该路径判 **win** ⇒ A 写集 7 件合并 `✅ PASS 7 同域 win`，单域不破。
+4. A×B **零交集** ✓；`src/routes/auth.ts` **单写者 = code-a** ✓；**P0-a+ 治理三件复跑 = `mac ×3` `✅ PASS`** ✓；但「P0-a+ 后 B 8 件 PASS」为**预测值、本机未实测**（治理件未改）——本 PLAN 已按此标注。
+
+### §12-3 复核员未覆盖面（与 §7 未清项合并）
+
+`tests/middleware/auth.test.ts` 34/34 未由复核员复跑（队长亲跑）；W3 未二次复核；P0-a+ 放行 B 未实测；`electron/**` 主进程与 `tests/electron/` 13 件连带改判未复核。**以上四项不得在回执中表述为"已验"。**
