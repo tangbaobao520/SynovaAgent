@@ -1690,6 +1690,11 @@ Binary file .claude/bypass.log matches
 2026-09-24T18:13:16+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=d5f4fc063e603d1819e49253044a6306a8b9eb42
 2026-09-24T18:16:40+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=6faaf1458d812d4e74bb98fe2c38669822380643
 2026-09-24T18:17:28+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=5341b67c2bab27d7e66bc9f21f81fd2b711584e2
+2026-09-24T21:25:45+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=c60868076872457f4c2a646696cc999f2ad0966e
+2026-09-24T21:47:23+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=f10fdb7f3f88c3edf5fc9510061e837fcc79a80f
+2026-09-24T22:07:00+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=d2f88963d278f667ec4b548c5db9d1798c9e9612
+2026-09-24T23:19:33+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=43d61137c92673349e8f6473dcd70e43e60b6f7a
+2026-09-25T00:43:47+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=312c12d3f062080258f412d62f77b164820ebc28
 2026-09-24T18:34:34+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=72def03e99cd2095eb6ac4536aa42be05e7cc226
 2026-09-24T23:00:38+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/d943-mechanism
 2026-09-24T23:00:39+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=43b902c8cddf97d4efd0b79a9539e95afe330477
@@ -1699,3 +1704,5 @@ Binary file .claude/bypass.log matches
 2026-09-24T23:24:04+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/d943-mechanism
 2026-09-24T23:24:04+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=4d25c34127d1053d51bf2c674a4ee5118247ce34
 2026-09-24T23:46:08+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=35de80cbe993be54c0a03421de4d9e204bf1bee5
+2026-09-25T01:00:41+08:00 | GATE_FAIL_SOFT | exit=1 | branch=fix/b3-writeset-declaration
+2026-09-25T01:02:13+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=e81353e37b31b200a3be367adb19edbae1e04981
