@@ -1,0 +1,24 @@
+{
+  "task_id": "D949",
+  "title": "表缺口收口：渲染层测试归属改判 mac（D948 切片 B 的开工前置）",
+  "status": "claimed",
+  "risk": "medium",
+  "domain": "mac（Win 小队代行，创始人 2026-09-24 授权）",
+  "owner": "win-codex-cto",
+  "executor": "synova-squad-lead（队长不下场写码）+ 编码 + 1 独立自验 + 1 独立复核",
+  "branch": "fix/d949-ownership-renderer-tests",
+  "base": "origin/main（合后 tip）",
+  "depends_on": [],
+  "blocked": "无（可立即开工）；但本卡未合 = D948 切片 B 不得开工",
+  "target": "2026-W40",
+  "spec": "docs/synova/dispatch/D949-ownership-renderer-tests-20260925.md（派单即规格）",
+  "write_set": [
+    "docs/synova/coordination/ownership.yaml",
+    ".github/CODEOWNERS",
+    "tests/control-tower/check-ownership.test.sh",
+    "task-state/D949.json"
+  ],
+  "note": "来源：D948 PLAN §6 P0 影响面矩阵实测——P0-a 原案（仅 tests/electron/** → mac）放行不了 D948 切片 B，因 tests/ga-collab-logic.test.ts 在 tests/ 根、不经该规则；CTO 2026-09-25 裁定采用 P0-a+ 并扩为 glob（tests/ga-collab-*.test.ts），一并覆盖 ga-collab-ui。治理三件实测均 mac ⇒ 本卡自身是干净的单域 mac PR。连带把 tests/electron/ 13 件既有文件改判 mac（含 D716 Win 建的 dual-guide-packaging-guard.test.ts，其头注自陈断言对象为 mac 域资产，改判系纠正旧误标）。判据锚点 = D948 切片 B 候选 8 文件同域 mac PASS + CODEOWNERS 逐字节 drift + check-ownership.test.sh ≥58 项。",
+  "updated_at": "2026-09-25",
+  "updated_by": "win-codex-cto"
+}
