@@ -14,6 +14,7 @@
     "tests/control-tower/check-dsh-anchor.test.sh",
     "tests/control-tower/check-k3-report.test.sh",
     ".github/workflows/ci.yml",
+    "docs/synova/coordination/CTO-看板-自动.md",
     "docs/synova/coordination/DSH-断面.json",
     "docs/synova/coordination/已作废口径表.md",
     "task-state/D943.json",
@@ -25,7 +26,7 @@
     "note": "CTO 自产治理件；write_set 为登记用（门禁 S1 写集源）"
   },
   "spec": "docs/synova/coordination/CTO-固化-最终方向与在制任务-20260924.md",
-  "note": "CTO 侧治理交付。补登记动机：commit 前缀引用了 D942/D943 但无卡 → 写集门禁三源皆空 → fail-closed（#736/#738 的 CI 红真因）。 ｜ 拆分说明：原 #738 含 23 文件超 D734 上限，拆为「机制面」（本 PR）与「文档/裁定面」。",
+  "note": "CTO 侧治理交付。补登记动机：commit 前缀引用了 D942/D943 但无卡 → 写集门禁三源皆空 → fail-closed（#736/#738 的 CI 红真因）。 ｜ 拆分说明：原 #738 含 23 文件超 D734 上限，拆为「机制面」（本 PR）与「文档/接线面」（PR-2）。 ｜ 2026-09-24 修复：ci.yml 两行由循环体移入清单（原形态致 ubuntu Control-Tower job exit 126）；恢复 docs/synova/coordination/派单模板.md 到 main 版本（4fd7fcc9 误删，属夹带）；CTO-看板-自动.md 属本 PR 产物 → 补登记 write_set。自扫接线（ci.yml + pre-commit soft_check）移交 PR-2。",
   "updated_at": "2026-09-24",
   "updated_by": "synova-cto"
 }
