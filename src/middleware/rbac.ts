@@ -217,6 +217,25 @@ export function auditGaAccess(
   }
 }
 
+/**
+ * D947/L-32: 部门命中判据——**唯一事实源**，canAccessWorkspace 与 canModifyWorkspace 共用。
+ *
+ * 契约（铁律 47）:
+ *   输入 — ctxDept（上下文部门声明）/ wsDept（工作区部门声明），二者均可能为 undefined
+ *   输出 — true **仅当**双方均为**非空字符串**且相等
+ *   降级 — 不适用（纯判据，无 IO）；任何缺失（undefined）/ 空串输入一律 false（fail-closed）
+ *
+ * 为什么必须收窄: 天真的 `wsDept === ctxDept` 在**双 undefined** 命中 `undefined === undefined`，
+ * 在**双空串**命中 `'' === ''` ⇒ 无部门工作区被任意已认证非 admin 命中（fail-open 授权）。
+ */
+function isSameDepartment(ctxDept: string | undefined, wsDept: string | undefined): boolean {
+  return (
+    typeof ctxDept === 'string' && ctxDept.length > 0 &&
+    typeof wsDept === 'string' && wsDept.length > 0 &&
+    wsDept === ctxDept
+  );
+}
+
 /** 检查用户是否可访问指定工作区 */
 export function canAccessWorkspace(ctx: RbacContext, ws: {
   visibility?: 'global' | 'department' | 'private';
@@ -263,7 +282,9 @@ export function canAccessWorkspace(ctx: RbacContext, ws: {
   if (ws.visibility === 'global') return role === 'admin';
   if (ws.visibility === 'private') return ws.owner === ctx.userId || role === 'admin';
   if (ws.visibility === 'department') {
-    return ws.department === ctx.department || role === 'admin';
+    // D947/L-32: 与 canModifyWorkspace 同源收窄——双 undefined / 单侧 undefined / 空串均不得命中；
+    // admin 旁路保持原样。
+    return isSameDepartment(ctx.department, ws.department) || role === 'admin';
   }
   return false;
 }
@@ -286,7 +307,10 @@ export function canModifyWorkspace(ctx: RbacContext, ws: {
   const role = ctx.role as string;
   if (role === 'admin') return true;
   if (role === 'manager') {
-    return ws.department === ctx.department || ws.owner === ctx.userId;
+    // D947/L-29 + L-32: 部门分支要求**双方均为非空字符串且相等**才可能命中——
+    // 双 undefined / 单侧 undefined / 双 '' / 单侧 '' 一律不命中（fail-closed）。
+    // owner 路径并行保留（不受收窄影响）。
+    return isSameDepartment(ctx.department, ws.department) || ws.owner === ctx.userId;
   }
   if (role === 'ga') return false;
   return false;
