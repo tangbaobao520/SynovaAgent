@@ -1,0 +1,69 @@
+{
+  "task_id": "D948",
+  "title": "身份链补全：部门可见性恢复（服务端签发/接收链 + 桌面端身份通道切换）",
+  "status": "planned",
+  "risk": "high",
+  "domain": "win(切片A) + mac(切片B, Win 代行)",
+  "owner": "win-codex-cto",
+  "executor": "synova-squad-lead（队长，不下场写码）+ code-a（切片A）+ code-b（切片B）+ verifier-tv（独立自验）+ reviewer（独立复核）",
+  "branch_a": "feat/d948-identity-chain-server",
+  "branch_b": "feat/d948-identity-chain-desktop",
+  "base_a": "feat/d947-middleware-default-posture @ ef5c8caa（栈式；D947 未合 main，实测 IN_MAIN=no）",
+  "branch_plan": "docs/d948-plan",
+  "depends_on": ["D947"],
+  "blocked": "① 前置 P0：ownership.yaml 缺 tests/electron/** 规则（实测判 win）→ 桌面改动天然跨域。**PLAN 实测修正派单原案：P0-a（仅 tests/electron/** → mac）不足以放行（B 候选 8 文件仍 FAIL），推荐 P0-a+（另把 tests/ga-collab-logic.test.ts 判 mac）实测 PASS 8 文件同域 mac**。② PLAN 待 CTO 复核放行。③ 本机无 GitHub PAT → PR 创建/合并需创始人补 token；push 走 SSH 部署钥可用。④ 切片 B 另受 4 项未裁阻塞：写集 8>6、B2/B4 覆盖面（14/15 fetch 点零身份且在写集外）、bootUserRole 取值域、LoginPanel 挂载点。⑤ 切片 A 的 A3/A4 受 F-1 阻断（/mine HTTP 恒 404，D947 已裁不修 ordering）→ 须改用 /mine handler 直接运行时探针，宿主文件待 CTO 三选一。",
+  "spec": "docs/synova/dispatch/D948-win-identity-chain-department-20260924.md（派单即规格）@ origin/docs/d948-identity-chain-dispatch tip df9dc5ed（blob SHA1 b338b6b44a8f1601b541855dee31dfdff5969d23）",
+  "plan": "docs/synova/product-lines/evidence/D948-20260924/PLAN.md",
+  "plan_evidence": [
+    "docs/synova/product-lines/evidence/D948-20260924/A-recon.md",
+    "docs/synova/product-lines/evidence/D948-20260924/B-recon.md",
+    "docs/synova/product-lines/evidence/D948-20260924/T-V-premise-2nd.md",
+    "docs/synova/product-lines/evidence/D948-20260924/REVIEW-PLAN.md"
+  ],
+  "plan_stage": {
+    "concluded_at": "2026-09-24",
+    "product_code_written": false,
+    "premises_measured": 23,
+    "premises_refuted": [
+      "P10 department 在生产无写入者（派单件「签发侧数据源已存在」在 API 面不成立）",
+      "P12 GET /api/workspaces/mine HTTP 恒 404（/:id@126 遮蔽 /mine@264；队长运行时探针 STATUS=404；D947 已裁定不修 ordering）"
+    ],
+    "line_drifts_registered": [
+      "rbac.ts department: undefined 实为 :127，派单件写 :104-105 系 JSDoc 区",
+      "routes/auth.ts 签发三处 :97/:134/:176，派单件漏 refresh :176",
+      "electron-renderer 内 x-synova-token 实为 5 处/2 文件，派单件口径含 RightPanel.tsx:157（实为 getSeedToken() 调用行）",
+      "ga-collab.ts getSeedToken 实为 :99，派单件写 :60"
+    ],
+    "member_claim_refuted": "code-b N-1（N1 判据恒红）被队长裁决推翻：auth.ts:50-54 getSecret 惰性读 env；存量同款夹具 tests/middleware/auth.test.ts 亲跑 34/34 passed（971ms）⇒ N1 按「先覆写再断言」可满足",
+    "goal_reachability": "三堵墙 W1(department 无写入者)/W2(/mine 恒 404)/W3(桌面端无部门工作区消费点) ⇒ 本卡只到「签发/验签/RBAC 上下文层」，用户可见目标不可达 → 须登记为功能回退（未闭环），禁写「已知限制」",
+    "team_size_conflict": "派单要求 5 人（队长+2编码+1自验+1复核）；预设上限 4 人且「不组第 5 人」→ 本阶段按派单执行并登记冲突，待 CTO 裁"
+  },
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "write_set_a": [
+    "src/middleware/auth.ts",
+    "src/middleware/rbac.ts",
+    "src/routes/auth.ts",
+    "tests/middleware/auth.test.ts",
+    "tests/middleware/rbac.test.ts",
+    "tests/routes/auth.test.ts",
+    "task-state/D948.json"
+  ],
+  "write_set_b": [
+    "electron-renderer/src/stores/auth-session.ts",
+    "electron-renderer/src/stores/ga-collab.ts",
+    "electron-renderer/src/components/RightPanel.tsx",
+    "electron-renderer/src/components/LoginPanel.tsx",
+    "electron-renderer/src/lib/api.ts",
+    "electron-renderer/src/stores/app-store.ts（PLAN 新增：写集缺口 1，必入集）",
+    "tests/ga-collab-logic.test.ts（PLAN 新增：写集缺口 2，必入集）",
+    "tests/electron/d948-identity-chain.test.ts（P0-a+ 落地后判 mac）"
+  ],
+  "write_set_a_proposed_add": [
+    "tests/routes/d948-department-visibility.test.ts（PLAN §7-2 推荐：A3/A4 的 /mine handler 探针宿主；+1 文件仍 ≤12，待 CTO 放行）"
+  ],
+  "note": "来源：D947 PLAN-REV2 REV-8 登记的「JWT 用户部门级可见性恒 deny」功能回退。CTO 定稿时 REV-8 把它标成「Mac 域登录链」——经 check-ownership.py 实测系错标（JwtPayload/rbac/routes/auth 全判 win），本件为实体纠正。创始人 2026-09-24 裁定：①客户端自报身份完全不允许 ②默认拒绝 ③提交时就该拦。执行形态：Agent Teams 组队、队长不下场写码、自验不得由编码兼任、两切片串行、重型验证串行 ≤1、每条修复带 1 个改坏即红反例、回执含团队成员运行记录。第 0 阶段 PLAN 已完成（23 条前提实测 + 三份独立侦察/自验 + PLAN.md），**未写任何产品代码**；待 CTO 复核放行后方可开工切片 A。",
+  "updated_at": "2026-09-24",
+  "updated_by": "synova-squad-lead"
+}
