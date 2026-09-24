@@ -14,5 +14,5 @@
   "milestone": "M0 项目管理基建",
   "risk": "medium",
   "depends_on": [],
-  "note": "实测（D945 push CI 红 run 36029371946）：① scripts/pre-commit-check.sh:774 的正则 `迁移.*完成` 命中 brief 第 20 行原文「迁移完成≠内容最新」——该句恰是**反面教训**，属字面误伤（正则匹配自然语言必然误伤，需排除否定语境或要求“声称+证明”同句）② V5 平台敏感命令扫描器 `grep -v 'PYBIN\\|swallow-ok\\|D520\\|#'` 不豁免“探测/枚举”形态：check-preset-bundles.sh:51 的 PYBIN 三级探测 `for _c in python3 python py; do` 不含 'PYBIN' 字样而中招。判据：① 修后构造“反面教训句”与“正常声称”两夹具（前者不红、后者该红则红）② 探测/枚举行豁免形态明确（注释含 PYBIN 即放行）③ 不得放宽成“整段豁免”。门禁变更必过 K3。"
+  "note": "实测（D945 push CI 红 run 36029371946）：① pre-commit-check.sh:774 正则 `迁移.*完成` 命中 brief 反面教训句「迁移完成≠内容最新」——正则匹配自然语言必然误伤 ② V5 扫描器 grep -v 'PYBIN\\|swallow-ok\\|D520\\|#' 不豁免探测/枚举形态：check-preset-bundles.sh:51 的 PYBIN 三级探测 `for _c in python3 python py; do` 不含 'PYBIN' 而中招。【按 DSH 原则2「归属自有+可归因」修订判据】不靠正则猜语义 ⇒ ① 铁律47 改为要求「声称与物理证明同句/邻句」或**显式标记**（如 `# CLAIM: <声称> — <grep 证据>`），并排除否定语境 ② 豁免必须**可归因**（豁免码+路径+理由，注释含 PYBIN 即放行探测行）③ **不得放宽成整段豁免**（fail-closed）④ 夹具：反面教训句不红 / 真声称无证据必红 / 豁免生效 / 豁免越界仍红 ⑤ 验收链（模式6）：bash -n → UTF-8 头 → 专项夹具 → check-plan-integrity → pre-commit-check.sh 自过。门禁变更必过 K3。"
 }
