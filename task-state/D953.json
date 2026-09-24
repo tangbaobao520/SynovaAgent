@@ -1,0 +1,15 @@
+{
+  "task_id": "D953",
+  "title": "P1 pre-audit-summary.sh:74 丢弃 stdout+stderr → 故障不可归因",
+  "status": "spec_done",
+  "risk": "high",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": "dsh-squad",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [],
+  "spec": "docs/synova/coordination/裁定-B5U6归并与第③面恢复-20260924.md",
+  "note": "U12（B5-U6 侧发现，CTO 复核成立）：pre-audit-summary.sh:74 的 `python3 - \"$runner\" \"$full\" \"$@\" >/dev/null 2>&1 <<'PYEOF'` 同时丢弃 stdout 与 stderr ⇒ U3-artifact-repro 门（同文件 :48 挂 gen-cto-health.py --strict）失败时只留『未过』、看不到 traceback ⇒ **知道失败、不知为何失败**（与组 7a 恒过/棘轮空转/D796 静默失败同族：看不见的失败）。判据：门失败时必须把 stderr（或最后 N 行）落到可见处（日志/step summary），并加判别夹具（构造失败 → 必须能看到原因）。",
+  "updated_at": "2026-09-24",
+  "updated_by": "synova-cto"
+}
