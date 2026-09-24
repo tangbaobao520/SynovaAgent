@@ -361,10 +361,26 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
-          REF: ${{ github.event.pull_request.head.sha || github.sha }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
           set -euo pipefail
           OUT=/tmp/checkruns.json
+          # D954（K3 定罪修复）: 对账对象 = **base**，不是当前提交。
+          #   旧取数 REF=head.sha → 该时刻同 SHA 多数 job 仍 in_progress（conclusion≠failure）
+          #   → 「失败检查 0 项」→ 棘轮从未被行使（同 SHA 终局实有 3 个 failure）。
+          #   base 是已定态集合，才可判定"有没有既有红"。
+          REF="${PR_BASE_SHA:-}"
+          if [ -z "$REF" ]; then
+            echo "── push 事件：base = origin/main（fetch 后解析）"
+            git fetch origin main --quiet 2>/dev/null || true   # swallow-ok: fetch 失败时下方 rev-parse 仍可命中既存 origin/main；两者皆失败 → fail-closed
+            REF="$(git rev-parse --verify --quiet 'origin/main^{commit}' 2>/dev/null || true)"
+          fi
+          if [ -z "$REF" ]; then
+            echo "::error title=ci-reds base::无法解析 base ref（PR base.sha 为空且 origin/main 不可解析）—— fail-closed，不静默放行"
+            exit 1
+          fi
+          echo "对账对象 base = ${REF}"
+          printf '%s\n' "$REF" > /tmp/ci-reds-base-ref.txt
           URL="https://api.github.com/repos/${REPO}/commits/${REF}/check-runs?per_page=100"
           AUTH=()
           [ -n "${GH_TOKEN:-}" ] && AUTH=(-H "Authorization: Bearer ${GH_TOKEN}")
@@ -390,7 +406,7 @@ jobs:
             echo "::warning title=ci-reds::${REF} 取到 0 条 check-runs（尚无检查记录）——基线核对为空集，不等于「已核对通过」"
           fi
           echo "check_runs=${N} (ref=${REF})"
-          bash scripts/control-tower/check-gate-integrity.sh --ci-reds /tmp/checkruns.json
+          bash scripts/control-tower/check-gate-integrity.sh --root "$PWD" --ci-reds /tmp/checkruns.json --base-ref "$REF"
       # 证据步（M9 task-11）：判定已由前面 step 完成，本步只把关键行发布为 **可公开检索的注解**——
       #   GitHub job logs 端点匿名 404/403（CTO 证据要求 ③ 的 CI GNU 侧原始输出取不回，K3 也核不了），
       #   而注解有公开 API：GET /repos/{owner}/{repo}/check-runs/{id}/annotations（无需 token）。
@@ -400,12 +416,21 @@ jobs:
         run: |
           set -uo pipefail
           # 证据步：判定已由前面 step 完成；此处只把关键行发布为可公开检索的注解
-          # 带上 --ci-reds（若取数成功），使 C 段对账结果同样可公开检索；缺文件则自然回落 SKIPPED（可见，不静默）
+          # 带上 --ci-reds + --base-ref（若取数成功），使 C 段对账结果与**对账对象身份**同样可公开检索；
+          # 缺文件则自然回落 SKIPPED（可见，不静默）。
           ARGS=""
           [ -f /tmp/checkruns.json ] && ARGS="--ci-reds /tmp/checkruns.json"
-          OUT="$(bash scripts/control-tower/check-gate-integrity.sh $ARGS 2>&1 || true)"
+          # D954: base ref 由前一步落盘（单一解析点）；缺失则不传 → 检查器出显式 SKIPPED（不伪造判定）
+          if [ -f /tmp/ci-reds-base-ref.txt ]; then
+            ARGS="$ARGS --base-ref $(cat /tmp/ci-reds-base-ref.txt)"
+          fi
+          OUT="$(bash scripts/control-tower/check-gate-integrity.sh --root "$PWD" $ARGS 2>&1 || true)"
           # 取不到关键行时**可见但不断**（发布者不判红；真实判定见 step 1）——见下方 ::warning 分支
-          LINES="$(echo "$OUT" | grep -E '^(PATTERN-SENTINEL|PATTERN-BASELINE|CI-REGISTRY|CI-RED-CHECK|GATE-INTEGRITY):' | head -10 || true)"
+          # D954: 「对账对象」行**优先占一个注解位**（注解 ≤10 条上限）——保证对账对象身份必然可公开检索，
+          #   不被 PATTERN/REGISTRY 等行的条数挤出（原实现 head -10 有被挤掉的风险）。
+          KEY="$(echo "$OUT" | grep -E '^对账对象 = ' | head -1 || true)"
+          REST="$(echo "$OUT" | grep -E '^(PATTERN-SENTINEL|PATTERN-BASELINE|CI-REGISTRY|CI-RED-CHECK|CI-RED-BASELINE|GATE-INTEGRITY):' | head -9 || true)"
+          LINES="$(printf '%s\n%s\n' "$KEY" "$REST" | grep -v '^$' | head -10 || true)"
           if [ -z "$LINES" ]; then
             echo "::warning title=gate-integrity::证据步未取到关键行（检查器可能未能执行）——发布者不判红；真实判定见 step 1"
           else
