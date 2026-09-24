@@ -83,7 +83,7 @@ RUN() { # $1=scan $2=tests_dir $3=ci_yml $4=baseline $5=red_baseline $6=degraded
   SYNO_GATE_BASELINE="$base" \
   SYNO_CI_RED_BASELINE="$redbase" \
   SYNO_GATE_DEGRADED_LOG="$dlog" \
-  bash "$GATE" "$@"
+  bash "$GATE" --root "$REPO" "$@"
 }
 
 echo "=== M9: check-gate-integrity.sh 夹具（hermetic）==="
@@ -118,6 +118,16 @@ tests/control-tower/beta.test.sh
 EOB
 # C 模式冻结格式（C1: `NAME | first_seen=…`，`|` 前有空格）
 printf 'ci-unit | first_seen=2026-09-24 | owner=D-M9-test | expires=2099-12-31 | evidence=夹具\n' > "$SB/red-baseline.txt"
+
+# ── D954 前置: PYBIN（禁裸 python3，变异体改写用）+ 对账对象锚 ──
+PYBIN=""
+for _c in python3 python py; do
+  if command -v "$_c" >/dev/null 2>&1 && "$_c" -c "import sys" >/dev/null 2>&1; then PYBIN="$_c"; break; fi
+done
+# C 段对账对象: 夹具用 HEAD（恒可解析）；判定只取决于 JSON 内容与基线，与真仓库历史无关。
+#   同时钉住 sha → 可对「对账对象 = <ref> @ <sha>」做**逐字**断言。
+BASE_REF_FIX="HEAD"
+BASE_SHA_FIX="$(git -C "$REPO" rev-parse HEAD 2>/dev/null || true)"
 printf '{"check_runs":[{"name":"ci-unit","conclusion":"failure"},{"name":"ci-lint","conclusion":"success"}]}\n' > "$SB/red-ok.json"
 LOG_DEF="$SB/logs/default.log"
 
@@ -142,7 +152,7 @@ printf '%s\n' "$OUT" | grep -q "CI-RED-CHECK: SKIPPED (no --ci-reds；CI job 提
   || no "C 未显式跳过"
 
 # ── C1 回归: 冻结格式（`|` 前带空格）已登记红 → exit 0（旧实现此处误判"未登记"）──
-OUT="$(RUN "$SCAN_OK" "$SB/tests" "$SB/ci.yml" "$SB/baseline.txt" "$SB/red-baseline.txt" "$SB/logs/c1.log" --ci-reds "$SB/red-ok.json" 2>&1)"; rc=$?
+OUT="$(RUN "$SCAN_OK" "$SB/tests" "$SB/ci.yml" "$SB/baseline.txt" "$SB/red-baseline.txt" "$SB/logs/c1.log" --base-ref "$BASE_REF_FIX" --ci-reds "$SB/red-ok.json" 2>&1)"; rc=$?
 if [ "$rc" -eq 0 ] && printf '%s\n' "$OUT" | grep -q "CI-RED-CHECK: 失败检查 1 项；基线命中 1 项"; then
   ok "C1 回归: 冻结格式（NAME 后空格）→ 命中基线 → exit 0"
 else
@@ -155,7 +165,7 @@ fi
   printf 'ci-unit | first_seen=2026-09-24 | owner=D-M9-test | expires=2099-12-31 | evidence=夹具\n'
 } > "$SB/red-two.txt"
 printf '{"check_runs":[{"name":"%s","conclusion":"failure"},{"name":"ci-unit","conclusion":"failure"},{"name":"ci-ok","conclusion":"success"}]}\n' "$NAME_CN" > "$SB/red-two.json"
-OUT="$(RUN "$SCAN_OK" "$SB/tests" "$SB/ci.yml" "$SB/baseline.txt" "$SB/red-two.txt" "$SB/logs/c2e2e.log" --ci-reds "$SB/red-two.json" 2>&1)"; rc=$?
+OUT="$(RUN "$SCAN_OK" "$SB/tests" "$SB/ci.yml" "$SB/baseline.txt" "$SB/red-two.txt" "$SB/logs/c2e2e.log" --base-ref "$BASE_REF_FIX" --ci-reds "$SB/red-two.json" 2>&1)"; rc=$?
 if [ "$rc" -eq 0 ] && printf '%s\n' "$OUT" | grep -q "CI-RED-CHECK: 失败检查 2 项；基线命中 2 项"; then
   ok "端到端复现: 两条已登记红（含中文/全角括号/点号名）→ exit 0"
 else
@@ -164,13 +174,13 @@ fi
 
 # ── 向后兼容: 无空格旧格式 `NAME|first_seen=…|expires=…` → exit 0 ──
 printf 'ci-unit|first_seen=2026-09-24|owner=D-M9-test|expires=2099-12-31|evidence=夹具\n' > "$SB/red-nospace.txt"
-OUT="$(RUN "$SCAN_OK" "$SB/tests" "$SB/ci.yml" "$SB/baseline.txt" "$SB/red-nospace.txt" "$SB/logs/c3.log" --ci-reds "$SB/red-ok.json" 2>&1)"; rc=$?
+OUT="$(RUN "$SCAN_OK" "$SB/tests" "$SB/ci.yml" "$SB/baseline.txt" "$SB/red-nospace.txt" "$SB/logs/c3.log" --base-ref "$BASE_REF_FIX" --ci-reds "$SB/red-ok.json" 2>&1)"; rc=$?
 [ "$rc" -eq 0 ] && ok "向后兼容: 无空格旧格式 → 命中基线 → exit 0" || no "无空格格式回归失败: rc=$rc"
 
 # ── C2 回归: expires 已过期 → exit 1 且必须命中具体原因「CI 红基线过期」──
 printf 'ci-old | first_seen=2026-01-01 | owner=D-M9-expired | expires=2020-01-01 | evidence=夹具\n' > "$SB/red-expired.txt"
 printf '{"check_runs":[{"name":"ci-old","conclusion":"failure"}]}\n' > "$SB/red-old.json"
-OUT="$(RUN "$SCAN_OK" "$SB/tests" "$SB/ci.yml" "$SB/baseline.txt" "$SB/red-expired.txt" "$SB/logs/c4.log" --ci-reds "$SB/red-old.json" 2>&1)"; rc=$?
+OUT="$(RUN "$SCAN_OK" "$SB/tests" "$SB/ci.yml" "$SB/baseline.txt" "$SB/red-expired.txt" "$SB/logs/c4.log" --base-ref "$BASE_REF_FIX" --ci-reds "$SB/red-old.json" 2>&1)"; rc=$?
 if [ "$rc" -eq 1 ] && printf '%s\n' "$OUT" | grep -q "VIOLATION: CI 红基线过期"; then
   ok "C2 回归: expires 过期 → exit 1 + 命中「CI 红基线过期」（按键取值生效）"
 else
@@ -179,7 +189,7 @@ fi
 
 # ── 降级: 条目缺 expires 键 → exit 2（malformed 不静默当 0）──
 printf 'ci-unit | first_seen=2026-09-24 | owner=D-M9-test | evidence=夹具（缺 expires）\n' > "$SB/red-nokey.txt"
-OUT="$(RUN "$SCAN_OK" "$SB/tests" "$SB/ci.yml" "$SB/baseline.txt" "$SB/red-nokey.txt" "$SB/logs/c5.log" --ci-reds "$SB/red-ok.json" 2>&1)"; rc=$?
+OUT="$(RUN "$SCAN_OK" "$SB/tests" "$SB/ci.yml" "$SB/baseline.txt" "$SB/red-nokey.txt" "$SB/logs/c5.log" --base-ref "$BASE_REF_FIX" --ci-reds "$SB/red-ok.json" 2>&1)"; rc=$?
 if [ "$rc" -eq 2 ] && printf '%s\n' "$OUT" | grep -q "degraded: CI 红基线条目缺 expires 键"; then
   ok "降级: 红基线条目缺 expires 键 → exit 2 + degraded（不静默当 0）"
 else
@@ -213,7 +223,7 @@ fi
 
 # ── 降级: --ci-reds 指向非法 JSON → exit 2 ──
 printf 'not-json{' > "$SB/bad.json"
-OUT="$(RUN "$SCAN_OK" "$SB/tests" "$SB/ci.yml" "$SB/baseline.txt" "$SB/red-baseline.txt" "$SB/logs/d3.log" --ci-reds "$SB/bad.json" 2>&1)"; rc=$?
+OUT="$(RUN "$SCAN_OK" "$SB/tests" "$SB/ci.yml" "$SB/baseline.txt" "$SB/red-baseline.txt" "$SB/logs/d3.log" --base-ref "$BASE_REF_FIX" --ci-reds "$SB/bad.json" 2>&1)"; rc=$?
 if [ "$rc" -eq 2 ] && printf '%s\n' "$OUT" | grep -q "degraded: check-runs JSON 非法"; then
   ok "降级: 非法 check-runs JSON → exit 2 + degraded"
 else
@@ -243,7 +253,7 @@ else
 fi
 
 # ── 棘轮 R1: 真仓库 --patterns-only → exit 0（:991 已登记；STALE 语义随平台自适应）──
-OUT="$(SYNO_GATE_DEGRADED_LOG="$SB/logs/real.log" bash "$GATE" --patterns-only 2>&1)"; rc=$?
+OUT="$(SYNO_GATE_DEGRADED_LOG="$SB/logs/real.log" bash "$GATE" --root "$REPO" --patterns-only 2>&1)"; rc=$?
 if [ "$rc" -eq 0 ] && printf '%s\n' "$OUT" | grep -q "PATTERN-BASELINE: registered 1；STALE(0)"; then
   ok "棘轮: 真仓库 --patterns-only → exit 0（:991 在本平台违规且已登记，registered 1 / STALE 0）"
 elif [ "$rc" -eq 0 ] && printf '%s\n' "$OUT" | grep -q "PATTERN-BASELINE: STALE("; then
@@ -393,7 +403,7 @@ fi
 
 # ── 判别性 M5: 伪造 check-runs JSON 多加一条未登记 failure → 必红 ──
 printf '{"check_runs":[{"name":"ci-unit","conclusion":"failure"},{"name":"ci-rogue","conclusion":"failure"}]}\n' > "$SB/red-rogue.json"
-OUT="$(RUN "$SCAN_OK" "$SB/tests" "$SB/ci.yml" "$SB/baseline.txt" "$SB/red-baseline.txt" "$SB/logs/m5.log" --ci-reds "$SB/red-rogue.json" 2>&1)"; rc=$?
+OUT="$(RUN "$SCAN_OK" "$SB/tests" "$SB/ci.yml" "$SB/baseline.txt" "$SB/red-baseline.txt" "$SB/logs/m5.log" --base-ref "$BASE_REF_FIX" --ci-reds "$SB/red-rogue.json" 2>&1)"; rc=$?
 if [ "$rc" -eq 1 ] && printf '%s\n' "$OUT" | grep -q "VIOLATION: 未登记 CI 失败: ci-rogue"; then
   ok "M5: 未登记 failure → exit 1（点名 ci-rogue）"
 else
@@ -427,7 +437,7 @@ SUM_OK="$SB/logs/summary-ok.md"
 OUT="$(SYNO_GATE_SCAN_SCRIPTS="$SCAN_OK" SYNO_TESTS_DIR="$SB/tests" SYNO_CI_YML="$SB/ci.yml" \
   SYNO_GATE_BASELINE="$SB/baseline.txt" SYNO_CI_RED_BASELINE="$SB/red-baseline.txt" \
   SYNO_GATE_DEGRADED_LOG="$SB/logs/s4a.log" GITHUB_STEP_SUMMARY="$SUM_OK" \
-  bash "$GATE" --patterns-only 2>&1)"; rc=$?
+  bash "$GATE" --root "$REPO" --patterns-only 2>&1)"; rc=$?
 if [ "$rc" -eq 0 ] && [ -f "$SUM_OK" ] \
   && grep -q '^## Gate Integrity$' "$SUM_OK" \
   && grep -q 'PATTERN-BASELINE: registered=' "$SUM_OK" \
@@ -443,13 +453,155 @@ printf 'x\n' > "$SUM_RO"; chmod 444 "$SUM_RO"
 OUT="$(SYNO_GATE_SCAN_SCRIPTS="$SCAN_OK" SYNO_TESTS_DIR="$SB/tests" SYNO_CI_YML="$SB/ci.yml" \
   SYNO_GATE_BASELINE="$SB/baseline.txt" SYNO_CI_RED_BASELINE="$SB/red-baseline.txt" \
   SYNO_GATE_DEGRADED_LOG="$SB/logs/s4b.log" GITHUB_STEP_SUMMARY="$SUM_RO" \
-  bash "$GATE" --patterns-only 2>&1)"; rc=$?
+  bash "$GATE" --root "$REPO" --patterns-only 2>&1)"; rc=$?
 if [ "$rc" -eq 2 ] && printf '%s\n' "$OUT" | grep -q "degraded: GITHUB_STEP_SUMMARY 存在但不可写"; then
   ok "④b step summary 不可写 → exit 2 + 显式 degraded（不静默跳过）"
 else
   no "④b 不可写摘要未显式降级: rc=$rc"
 fi
 chmod 644 "$SUM_RO" 2>/dev/null || true
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# D954（2026-09-25）: C 段「对账对象」锚 + base JSON 判别靶 + disposition_due + --root 护栏
+#   K3 定罪: C 段取**当前提交**的 check-runs → 同 SHA 多数 job 仍 in_progress（conclusion≠failure）
+#   → `失败检查 0 项` → **棘轮从未被行使**（同 SHA 终局实有 3 个 failure）。本节断言修复后的口径。
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# ── D1（正常 + 身份锚）: 已登记红命中基线 → rc=0，且必打印「对账对象 = HEAD @ <sha>」──
+#   判红口径(③): 仅 conclusion==failure 计入 —— 构造里另放 skipped/cancelled 各一，计数须仍为 1。
+printf '{"check_runs":[{"name":"Vitest (2/2)","conclusion":"failure"},{"name":"Checker Review","conclusion":"skipped"},{"name":"Vitest (1/2)","conclusion":"cancelled"},{"name":"Golden Case F1 Gate","conclusion":null}]}\n' > "$SB/d954-reg.json"
+printf 'Vitest (2/2) | first_seen=2026-09-24 | owner=UNASSIGNED | expires=2099-12-31 | evidence=夹具已登记红\n' > "$SB/d954-red.txt"
+OUT="$(RUN "$SCAN_OK" "$SB/tests" "$SB/ci.yml" "$SB/baseline.txt" "$SB/d954-red.txt" "$SB/logs/d954-1.log" --base-ref "$BASE_REF_FIX" --ci-reds "$SB/d954-reg.json" 2>&1)"; rc=$?
+if [ "$rc" -eq 0 ] && printf '%s\n' "$OUT" | grep -qF "对账对象 = ${BASE_REF_FIX} @ ${BASE_SHA_FIX}" \
+   && printf '%s\n' "$OUT" | grep -q "CI-RED-CHECK: 失败检查 1 项；基线命中 1 项"; then
+  ok "D1: 已登记红命中基线 → rc=0 + 对账对象行（ref @ sha 逐字）+ 失败 1/命中 1（不再恒 0）"
+else
+  no "D1 异常: rc=$rc（对账对象行或计数不符）"
+fi
+printf '%s\n' "$OUT" | grep -q "CI-RED-CHECK: 失败检查 1 项" \
+  && ok "D1: 判红口径 = 仅 conclusion==failure（skipped/cancelled/null 均不计）" \
+  || no "D1: 非 failure 态被误计"
+printf '%s\n' "$OUT" | grep -q "未登记 CI 失败" \
+  && no "D1: 已登记项被误报为未登记（假红）" \
+  || ok "D1: 已登记项未被误报为未登记（无误报）"
+
+# ── M1（K3 判别靶）: base JSON「有红且未登记」→ **必红**（空转修复的核心判别点）──
+printf '{"check_runs":[{"name":"Vitest (2/2)","conclusion":"failure"},{"name":"brand-new-red (x/y)","conclusion":"failure"}]}\n' > "$SB/d954-rogue.json"
+OUT="$(RUN "$SCAN_OK" "$SB/tests" "$SB/ci.yml" "$SB/baseline.txt" "$SB/d954-red.txt" "$SB/logs/d954-m1.log" --base-ref "$BASE_REF_FIX" --ci-reds "$SB/d954-rogue.json" 2>&1)"; rc=$?
+if [ "$rc" -eq 1 ] && printf '%s\n' "$OUT" | grep -qF "VIOLATION: 未登记 CI 失败: brand-new-red (x/y)" \
+   && printf '%s\n' "$OUT" | grep -qF "对账对象 = ${BASE_REF_FIX} @ ${BASE_SHA_FIX}"; then
+  ok "M1: base 有红且未登记 → exit 1 + 点名未登记项（棘轮真被行使）"
+else
+  no "M1 判别靶失败: rc=$rc（base 有未登记红却未判红 = 空转复发）"
+fi
+# M1 负控: 同一 JSON，该红登记后 → 不判红（防"一律判红"的错修法）
+printf 'brand-new-red (x/y) | first_seen=2026-09-24 | owner=UNASSIGNED | expires=2099-12-31 | evidence=夹具\n' >> "$SB/d954-red.txt"
+OUT="$(RUN "$SCAN_OK" "$SB/tests" "$SB/ci.yml" "$SB/baseline.txt" "$SB/d954-red.txt" "$SB/logs/d954-m1n.log" --base-ref "$BASE_REF_FIX" --ci-reds "$SB/d954-rogue.json" 2>&1)"; rc=$?
+[ "$rc" -eq 0 ] && ok "M1 负控: 该红登记后 → rc=0（不得一律判红）" || no "M1 负控失败: rc=$rc"
+
+# ── M2: --base-ref 不可解析 → exit 2 + degraded（绝不判绿）──
+OUT="$(RUN "$SCAN_OK" "$SB/tests" "$SB/ci.yml" "$SB/baseline.txt" "$SB/d954-red.txt" "$SB/logs/d954-m2.log" --base-ref refs/heads/definitely-not-a-ref-954 --ci-reds "$SB/d954-reg.json" 2>&1)"; rc=$?
+if [ "$rc" -eq 2 ] && printf '%s\n' "$OUT" | grep -q "degraded: base-ref 不可解析" && [ "$(last_line "$OUT")" = "GATE-INTEGRITY: DEGRADED" ]; then
+  ok "M2: --base-ref 不可解析 → exit 2 + degraded + 末行 DEGRADED（fail-closed）"
+else
+  no "M2 异常: rc=$rc"
+fi
+if [ -f "$SB/logs/d954-m2.log" ] && grep -q '"code":"C_BASE_REF_UNRESOLVED"' "$SB/logs/d954-m2.log" \
+   && grep -q '"phase":"ci-reds"' "$SB/logs/d954-m2.log" && grep -q '"retryable":false' "$SB/logs/d954-m2.log"; then
+  ok "M2: 降级日志五字段齐（code=C_BASE_REF_UNRESOLVED / phase=ci-reds）"
+else
+  no "M2 降级日志字段缺失"
+fi
+# M2b: JSON 缺 check_runs → exit 2（"无 check-runs" ≠ "无红"）
+printf '{"total_count":0}\n' > "$SB/d954-noruns.json"
+OUT="$(RUN "$SCAN_OK" "$SB/tests" "$SB/ci.yml" "$SB/baseline.txt" "$SB/d954-red.txt" "$SB/logs/d954-m2b.log" --base-ref "$BASE_REF_FIX" --ci-reds "$SB/d954-noruns.json" 2>&1)"; rc=$?
+[ "$rc" -eq 2 ] && ok "M2b: JSON 缺 check_runs → exit 2（不判绿）" || no "M2b 异常: rc=$rc"
+
+# ── M4: disposition_due 逾期 → 必红（新增判据的变异体）──
+printf 'Vitest (2/2) | first_seen=2026-09-24 | owner=UNASSIGNED | expires=2099-12-31 | disposition_due=2020-01-01 | evidence=夹具逾期\n' > "$SB/d954-due.txt"
+OUT="$(RUN "$SCAN_OK" "$SB/tests" "$SB/ci.yml" "$SB/baseline.txt" "$SB/d954-due.txt" "$SB/logs/d954-m4.log" --base-ref "$BASE_REF_FIX" --ci-reds "$SB/d954-reg.json" 2>&1)"; rc=$?
+if [ "$rc" -eq 1 ] && printf '%s\n' "$OUT" | grep -q "VIOLATION: CI 红处置逾期" \
+   && printf '%s\n' "$OUT" | grep -q "处置逾期 1 项"; then
+  ok "M4: disposition_due 逾期 → exit 1 + 点名「CI 红处置逾期」（与 expires 同级硬门）"
+else
+  no "M4 异常: rc=$rc（disposition_due 逾期未判红）"
+fi
+printf 'Vitest (2/2) | first_seen=2026-09-24 | owner=UNASSIGNED | expires=2099-12-31 | disposition_due=2099-12-31 | evidence=夹具未到期\n' > "$SB/d954-due-ok.txt"
+OUT="$(RUN "$SCAN_OK" "$SB/tests" "$SB/ci.yml" "$SB/baseline.txt" "$SB/d954-due-ok.txt" "$SB/logs/d954-m4n1.log" --base-ref "$BASE_REF_FIX" --ci-reds "$SB/d954-reg.json" 2>&1)"; rc=$?
+[ "$rc" -eq 0 ] && ok "M4 负控1: disposition_due 未到期 → rc=0（不误判）" || no "M4 负控1 失败: rc=$rc"
+OUT="$(RUN "$SCAN_OK" "$SB/tests" "$SB/ci.yml" "$SB/baseline.txt" "$SB/d954-red.txt" "$SB/logs/d954-m4n2.log" --base-ref "$BASE_REF_FIX" --ci-reds "$SB/d954-reg.json" 2>&1)"; rc=$?
+[ "$rc" -eq 0 ] && ok "M4 负控2: 无 disposition_due 键 → 不判（存量条目不回溯，向后兼容）" || no "M4 负控2 失败: rc=$rc"
+
+# ── SKIP: 缺 --base-ref → 显式 SKIPPED，不伪造判定（有未登记红也不判/不放行）──
+OUT="$(RUN "$SCAN_OK" "$SB/tests" "$SB/ci.yml" "$SB/baseline.txt" "$SB/d954-red.txt" "$SB/logs/d954-skip.log" --ci-reds "$SB/d954-rogue.json" 2>&1)"; rc=$?
+if [ "$rc" -eq 0 ] && printf '%s\n' "$OUT" | grep -qF "SKIPPED (--ci-reds 已给但缺 --base-ref" \
+   && ! printf '%s\n' "$OUT" | grep -q "VIOLATION: 未登记 CI 失败"; then
+  ok "SKIP: 缺 --base-ref → 显式 SKIPPED 且不伪造判定（可见，不静默放行）"
+else
+  no "SKIP 异常: rc=$rc"
+fi
+
+# ── M3（判别性自证）: 删「对账对象」打印行 → 变异体不再输出该行（夹具断言具备判别性）──
+if [ -n "$PYBIN" ] && [ -n "$BASE_SHA_FIX" ]; then
+  MUT_G="$TMPD/gate-no-account-line.sh"
+  "$PYBIN" - "$GATE" "$MUT_G" <<'PYD954'
+import io
+import sys
+
+src = io.open(sys.argv[1], encoding="utf-8").read().splitlines(True)
+out = [ln for ln in src if "对账对象 = " not in ln]
+assert len(out) == len(src) - 1, "变异失败：未恰好删掉 1 行"
+io.open(sys.argv[2], "w", encoding="utf-8").write("".join(out))
+PYD954
+  OUT_M="$(bash "$MUT_G" --root "$REPO" --patterns-only --base-ref "$BASE_REF_FIX" --ci-reds "$SB/d954-rogue.json" 2>&1 || true)"
+  if printf '%s\n' "$OUT_M" | grep -qF "对账对象 = "; then
+    no "M3: 删行变异体仍输出该行（变异无效）"
+  else
+    ok "M3: 删「对账对象」打印行 → 变异体无该行 ⇒ D1 的「行存在」断言有判别性（非空壳）"
+  fi
+else
+  no "M3: PYBIN 或对账对象 sha 不可用，无法构造变异体"
+fi
+
+# ── 接线（铁律 0-2）: ci.yml 必须传 --base-ref 且 REF 取 base（防生产退回空转）──
+CIY="$REPO/.github/workflows/ci.yml"
+grep -q -- "--base-ref" "$CIY" \
+  && ok "接线: ci.yml 已传 --base-ref（对账对象由生产侧给定）" \
+  || no "接线缺失: ci.yml 未传 --base-ref → 生产侧 C 段将 SKIPPED（棘轮空转）"
+grep -qF "pull_request.base.sha" "$CIY" \
+  && ok "接线: ci.yml REF 取 PR base.sha（不再取当前提交）" \
+  || no "接线缺失: ci.yml 未取 pull_request.base.sha"
+grep -qF "pull_request.head.sha" "$CIY" \
+  && no "接线回退: ci.yml 仍用 pull_request.head.sha（K3 定罪的空转取数形态）" \
+  || ok "接线: ci.yml 已无 pull_request.head.sha（旧空转取数形态已移除）"
+
+# ── J6a/J6b/J6c: --root 护栏（ROOT 随 cwd 漂移 → 会读错树的基线）──
+OUT="$(bash "$GATE" --root "$REPO" --patterns-only 2>&1)"; rc=$?
+if [ "$rc" -eq 0 ] && printf '%s\n' "$OUT" | grep -qF "root=$REPO"; then
+  ok "J6a: 显式 --root → 定根本 worktree + rc=0（默认行为不变）"
+else
+  no "J6a 异常: rc=$rc"
+fi
+mkdir -p "$TMPD/non-git"
+OUT="$(cd "$TMPD/non-git" && bash "$GATE" --root "$REPO" --patterns-only 2>&1)"; rc=$?
+if [ "$rc" -eq 0 ] && printf '%s\n' "$OUT" | grep -qF "root=$REPO"; then
+  ok "J6b: cwd=非 git + --root → 仍正确定根（不静默落空）"
+else
+  no "J6b 异常: rc=$rc"
+fi
+OTHER="$TMPD/other-repo"
+mkdir -p "$OTHER"
+if git -C "$OTHER" init -q 2>/dev/null; then
+  OUT_NO="$(cd "$OTHER" && bash "$GATE" --registry-only 2>&1 || true)"
+  OUT_YES="$(cd "$OTHER" && bash "$GATE" --registry-only --root "$REPO" 2>&1 || true)"
+  if printf '%s\n' "$OUT_YES" | grep -qF "root=$REPO" && ! printf '%s\n' "$OUT_NO" | grep -qF "root=$REPO"; then
+    ok "J6c 判别性: 同 cwd 下 无 --root → ROOT≠worktree / 有 --root → ROOT=worktree（护栏真实生效）"
+  else
+    no "J6c: --root 未改变定根结果（护栏可能失效）"
+  fi
+else
+  no "J6c: git init 不可用，无法构造漂移场景"
+fi
 
 # ── 收尾: 红证不残留（仓库内零命中）──
 HITS="$(grep -rl -- "$MARK" "$REPO/scripts" "$REPO/tests" 2>/dev/null | wc -l | tr -d ' ')"   # swallow-ok: 探测型 grep（红证残留检查）；无命中=期望结果 0，grep rc=1 不是错误
