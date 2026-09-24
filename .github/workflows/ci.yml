@@ -391,3 +391,25 @@ jobs:
           fi
           echo "check_runs=${N} (ref=${REF})"
           bash scripts/control-tower/check-gate-integrity.sh --ci-reds /tmp/checkruns.json
+      # 证据步（M9 task-11）：判定已由前面 step 完成，本步只把关键行发布为 **可公开检索的注解**——
+      #   GitHub job logs 端点匿名 404/403（CTO 证据要求 ③ 的 CI GNU 侧原始输出取不回，K3 也核不了），
+      #   而注解有公开 API：GET /repos/{owner}/{repo}/check-runs/{id}/annotations（无需 token）。
+      #   `|| true` 仅限本步（判定归前一步）；`if: always()` 保证失败时同样出证据；注解 ≤10 行（GitHub 上限）。
+      - name: Publish gate-integrity summary (public evidence via annotations)
+        if: always()
+        run: |
+          set -uo pipefail
+          # 证据步：判定已由前面 step 完成；此处只把关键行发布为可公开检索的注解
+          # 带上 --ci-reds（若取数成功），使 C 段对账结果同样可公开检索；缺文件则自然回落 SKIPPED（可见，不静默）
+          ARGS=""
+          [ -f /tmp/checkruns.json ] && ARGS="--ci-reds /tmp/checkruns.json"
+          OUT="$(bash scripts/control-tower/check-gate-integrity.sh $ARGS 2>&1 || true)"
+          # 取不到关键行时**可见但不断**（发布者不判红；真实判定见 step 1）——见下方 ::warning 分支
+          LINES="$(echo "$OUT" | grep -E '^(PATTERN-SENTINEL|PATTERN-BASELINE|CI-REGISTRY|CI-RED-CHECK|GATE-INTEGRITY):' | head -10 || true)"
+          if [ -z "$LINES" ]; then
+            echo "::warning title=gate-integrity::证据步未取到关键行（检查器可能未能执行）——发布者不判红；真实判定见 step 1"
+          else
+            echo "$LINES" | while IFS= read -r line; do
+              echo "::notice title=gate-integrity::$line"
+            done
+          fi
