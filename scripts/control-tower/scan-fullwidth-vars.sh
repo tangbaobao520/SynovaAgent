@@ -134,7 +134,7 @@ trap 'rm -rf "$TMPD"' EXIT
 
 # ── python 三级探测（PLATFORM-CHECKLIST #1，禁裸 python3）────────────────────────
 PYBIN=""
-for _c in python3 python py; do
+for _c in python3 python py; do  # PYBIN 三级探测（PLATFORM-CHECKLIST #1，禁裸 python3）
   if command -v "$_c" >/dev/null 2>&1 && "$_c" -c 'import sys' >/dev/null 2>&1; then
     PYBIN="$_c"; break
   fi
