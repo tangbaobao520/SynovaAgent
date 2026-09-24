@@ -8,7 +8,14 @@
   ④ 被扫描文档不得出现"未登记"的 DSH 版本串 否则 exit 1
 输出: DSH-ANCHOR: OK | VIOLATION(n) | DEGRADED
 """
-import argparse, json, os, re, subprocess, sys
+import argparse, io, json, os, re, subprocess, sys
+
+# Windows 兼容（windows-compat）：CI 控制台非 UTF-8 时中文输出会抛 UnicodeEncodeError
+for _s in ("stdout", "stderr"):
+    try:
+        getattr(sys, _s).reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 
 OK, VIOL, DEG = 0, 1, 2
 
@@ -75,4 +82,11 @@ def main():
     print("DSH-ANCHOR: OK  [事实源 %s @ %s ｜ 扫描 %d 份]" % (cur["version"], cur["head"], scanned)); return OK
 
 if __name__ == "__main__":
-    sys.exit(main())
+    try:
+        sys.exit(main())
+    except SystemExit:
+        raise
+    except Exception as _e:            # 未预期异常必须显式降级（fail-closed），不得装成 VIOLATION/通过
+        print("degraded: 内部错误 %s: %s" % (type(_e).__name__, _e))
+        print("DSH-ANCHOR: DEGRADED")
+        sys.exit(2)
