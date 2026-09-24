@@ -24,6 +24,8 @@ def main():
     ap.add_argument("--anchor", default="docs/synova/coordination/DSH-断面.json")
     ap.add_argument("--scan-dir", default="docs/synova/coordination")
     ap.add_argument("--tree", default=None)
+    ap.add_argument("--no-tree-check", action="store_true",
+                    help="跳过 DSH 树在场与 HEAD 一致校验（CI 侧用：CI 无本地 DSH 树；文档一致性仍全查）")
     a = ap.parse_args()
 
     apath = os.path.join(a.repo, a.anchor)
@@ -33,13 +35,14 @@ def main():
     except Exception as e:
         print("degraded: 事实源不可读/非法: %s (%s)" % (apath, e)); print("DSH-ANCHOR: DEGRADED"); return DEG
 
-    tree = a.tree or cur.get("path")
-    real = sh(["git", "-C", tree, "rev-parse", "--short", "HEAD"]) if tree and os.path.isdir(tree) else ""
-    if not real:
-        print("degraded: 无法解析 DSH 树 HEAD: %s" % tree); print("DSH-ANCHOR: DEGRADED"); return DEG
-    if real != cur["head"]:
-        print("degraded: 树已移动 — 事实源 %s，实测 %s（所有绑旧 HEAD 的结论自动降级『待复核』）" % (cur["head"], real))
-        print("DSH-ANCHOR: DEGRADED"); return DEG
+    if not a.no_tree_check:
+        tree = a.tree or cur.get("path")
+        real = sh(["git", "-C", tree, "rev-parse", "--short", "HEAD"]) if tree and os.path.isdir(tree) else ""
+        if not real:
+            print("degraded: 无法解析 DSH 树 HEAD: %s" % tree); print("DSH-ANCHOR: DEGRADED"); return DEG
+        if real != cur["head"]:
+            print("degraded: 树已移动 — 事实源 %s，实测 %s（所有绑旧 HEAD 的结论自动降级『待复核』）" % (cur["head"], real))
+            print("DSH-ANCHOR: DEGRADED"); return DEG
 
     sup_pairs = {(s["version"], s["head"]) for s in sup}
     sup_versions = {s["version"] for s in sup}
