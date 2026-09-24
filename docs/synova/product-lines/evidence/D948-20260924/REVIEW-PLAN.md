@@ -7,8 +7,7 @@
 > 复核时间：**2026-09-25 00:37 +08:00** ｜ 工作树 HEAD `11458279` = `origin/main` `11458279`
 > 用词纪律：本文件只给「自验结论 / 可提请独立审计 / 退回」，**不含"审计通过"**——审计结论只认 K3。
 
-**本轮状态**：task-4（PLAN）在复核时点 **pending**（`blockedBy task-1/2/3`，三者 in_progress），`PLAN.md` 在工作树内**不存在**（`Get-ChildItem docs/synova/product-lines/evidence/D948-20260924` 空 / `git status --porcelain` 空）。
-故本文件先固化**不依赖 PLAN 的第 3/4/5/8 项**（写集互斥、域与预算、判据可证伪性、红线）；第 1/2/6/7 项（需逐条比对 PLAN 文本）标 `[待收口]`，PLAN 落地后补。
+**本文件结构**：第一部分的第 3/4/5/8 项**不依赖 PLAN**，为开始复核时点（PLAN 尚未落地）即已固化；第 1/2/6/7 项与"答队长四问"在 **PLAN 落地（commit `48d860af`）后**于**第二部分**收口。**先读 §〇（撞墙次序）与 §17（收口总表）**，再看细节。**§11 是我的自我更正（撤回我首轮一处方法误差）**，请一并读——不要只看对方的错。
 
 ---
 
@@ -190,7 +189,7 @@ $ git show ef5c8caa:src/growth/user-store.ts
 **穷举结论**：**全仓库三处 `createUser` 调用，无一传 `department`** ⇒ 经任何 HTTP 路由建出的用户，库里 `department === ''`（空串，非 undefined）。派单 §三 的「`UserRecord` 有 `department` 字段（注册时由 `extra.department` 落库）→ 签发侧数据源已存在」**只对了一半：schema 在、人口为 0**——这正是「接线了 ≠ 被执行」作用在**字段**上。
 
 **反驳**：A1 断言「登录 token 解码后 `payload.department === 该用户记录的部门`」。要让 A1 变绿，`foundUser.department` 必须先非空，而唯一能把它填成"该用户记录的部门"的现成通路只有 `req.body`（register 是**匿名**端点，且已从 body 取 `role`/`orgId` 直接签发）⇒ **A1 可以完全由"客户端回声"满足**，与创始人决策①「客户端自报身份完全不允许」正面冲突；而 A1 的验收语（判据表）对此**零约束**。
-另：`tests/routes/auth.test.ts` 现为 **44 行纯路由注册桩**（实测 `git show ef5c8caa:tests/routes/auth.test.ts`，6 个 `it`，全部断 `authRoutes.stack`；含 `(layer: any)` 注解），其中 login 响应体 `payload`（auth.ts:139）**不含 `department`**——若夹具断言 `res.body.payload.department`，落点须补 `routes/auth.ts:139`（同文件、在写集，但 PLAN 必须点名，否则会被读成"签发函数坏了"）。
+另：`tests/routes/auth.test.ts` 现为 **50 行纯路由注册桩**（`[System.IO.File]::ReadAllText` + `\n` 计数 = 50；6 个 `it`，全部断 `authRoutes.stack`；含 `(layer: any)` 注解）。**更正**：我首轮据 `Measure-Object -Line` 报"44 行"——该 cmdlet 漏算空行为 0，属我方方法误差，已撤回（详见 §11）。其中 login 响应体 `payload`（auth.ts:139）**不含 `department`**——若夹具断言 `res.body.payload.department`，落点须补 `routes/auth.ts:139`（同文件、在写集，但 PLAN 必须点名，否则会被读成"签发函数坏了"）。
 
 **该改哪一句**：判据表 A1 改为
 > **A1**：① 经 `UserStore.updateUser(userId, { department: 'marketing' })`（`src/growth/user-store.ts:218`，**服务端侧**落库）后登录 → token 解码 `payload.department === 'marketing'`；② **反向**：以 `body.department='attacker'` 注册 → token 解码**不含** `attacker`（或 register 不接收该字段）→ 缺 ② 则 A1 不成立。
@@ -440,7 +439,7 @@ $ git rev-parse --short main / origin/main            →  main=1a1cccc8   origi
 | ② | §三「`src/middleware/rbac.ts:104-105` JWT 分支返回 `department: undefined`」 | 实为 **`:127`**（`:104-105` 是 JSDoc 注释区） | `git grep -n "department" ef5c8caa -- src/middleware/rbac.ts` → `:127: department: undefined,` |
 | ③ | §三「`canModifyWorkspace` manager 分支：同上，共用同一判据（`\|\| role === 'admin'`）」 | 实为 `\|\| ws.owner === ctx.userId`（:313） | 见 FG-2 |
 | ④ | §三「`electron-renderer/src/stores/ga-collab.ts:60` `getSeedToken()` 组装自报串」 | 函数定义在 **`:99`**；`:92` 是 JSDoc | `git grep -n "getSeedToken" ef5c8caa -- electron-renderer/src/stores/ga-collab.ts` → `:99:export function getSeedToken(): string \| null {`（另 `:57-59` 是 `getSeedIdentity` JSDoc、`:65` 定义） |
-| ⑤ | task-1 派单描述「`tests/routes/auth.test.ts` 现为 **50 行**桩」 | 实测 **44 行**（内容性质结论不变 = 纯路由注册桩） | `git show ef5c8caa:tests/routes/auth.test.ts` → 44 行 |
+| ⑤ | ~~task-1 派单描述「`tests/routes/auth.test.ts` 现为 **50 行**桩」→ 实测 44 行~~ **【本行已自我更正，见 §11】**：正确值 = **50 行 / 6 个 `it`**，**派单件与 PLAN P20 均正确**；我首轮的"44 行"是 PowerShell `Measure-Object -Line` 漏算空行的**我方方法误差**，非 PLAN 缺陷 | — | `[System.IO.File]::ReadAllText` + `\n` 计数 = 50（口径见 §11） |
 | ⑥ | 派单 §六 A3/A4 用 `GET /api/workspaces/mine` 作靶端点 | 该端点在 HTTP 面**恒 404**，且 **D947 L-28 已由 CTO 裁定「本卡不修」**；派单**通篇零提及** | 见 FG-7（静态）+ `D947-RULINGS.md:253`、`D947-verifier-pr2.md:282` |
 | ⑦ | 派单 §一 症状「打开部门工作区 → 恒'无权限/空列表'」 | 实测用户看到的是页面**永久停在"加载中…"**（404 → `d.workspaces.length` 抛错 → `catch` 仅 `console.warn`） | `src/routes/department-workspace.ts:89-98` |
 
@@ -472,3 +471,136 @@ $ git rev-parse --short main / origin/main            →  main=1a1cccc8   origi
 
 **本轮自验结论**：切片 A 的域/预算结论为 `[通过]`；其余 12 项为 `[阻塞]`/`[建议]`（明细见 §〇 与各节）。
 **不作**"通过/审计通过"判定；第 1/2/6/7 项收口后，本复核可 **可提请独立审计**（K3）——合并与否归 CTO 收件闸 + K3 终审。
+
+---
+
+# 第二部分 — PLAN 收口（第 1 / 2 / 6 / 7 项）
+
+> 收口对象：`PLAN.md`，**复核时点已经 commit**（内容提交 `48d860af docs(D948): 第0阶段 PLAN — 23条前提实测 + 三堵墙可达性裁决 + 逐判据落点/夹具/反例`；分支 tip `37861bbe`）。实测 `git status --porcelain` = **空**（工作树干净）。
+> 复核读数口径：`[System.IO.File]::ReadAllText` + `\n` 计数（PowerShell `Get-Content`/`Measure-Object -Line` 在本仓库会**漏算空行**，见 §11）。
+> PLAN 当前行数 = **244**（`A-recon.md` 437 / `B-recon.md` 392 / `T-V-premise-2nd.md` 336）。
+
+## §11 自我更正（先撤回我自己的两处方法误差）
+
+| # | 我首轮的说法 | 实测（正确） | 结论 |
+|---|---|---|---|
+| 1 | `tests/routes/auth.test.ts` = **44 行**（并据此暗示 PLAN P20 的"50 行"有误） | **50 行 / 6 个 `it`** | **我方方法误差**：PowerShell `Measure-Object -Line` 对空串计 0 行 ⇒ 6 个空行被吃掉。**PLAN P20 的"50 行；6 个 `it`"完整正确**，派单件 task-1 的"50 行"亦正确。**撤回我 §8.4-⑤ 与该行的"PLAN 有误"取向**。 |
+| 2 | （同一方法产生的）对 PLAN §0/§10 行数 `437/392/337` 的"可疑" | `A-recon=437`、`B-recon=392`、`T-V=336` | `437`/`392` **正确**；`337` 与实测 `336` **差 1**（末行换行计数口径）⇒ 降为 `[建议]`（统一口径），**不构成缺陷**。 |
+
+**纪律自陈**：我首轮用了一个**不适用的计数命令**并据此写出"PLAN 有误"的取向——这正是我在 FG 系列里要求别人避免的事。已按"数字必贴原始输出"重测并撤回。**保留的教训**：`Measure-Object -Line` 在本仓库不可用于行数；行数一律用 `ReadAllText + \n` 计数。
+
+## §12 第 1 项 `[阻塞]` 派单 8 项回执 → PLAN 落点逐项
+
+| 回执项（派单 §八） | PLAN 落点 | 判定 |
+|---|---|---|
+| 1 逐判据 `file:line` + 改前/改后 + **反例夹具原始输出** | §3（A1–A7）/§4（B1–B4）给了落点与改前/改后 + 反例设计；**反例"原始输出"本阶段不可能有**（零实施） | `[建议]` 补一句「§八.1/2 的**原始输出**属 PR 阶段回执，本件只交设计」——现由 §11「不予判定」隐含，字面未声明 |
+| 2 三路径夹具输出（正常/降级/边界） | §3/§4 每判据三路径列齐 | `[通过]`（设计层；输出同上属 PR 阶段） |
+| 3 团队成员运行记录（成员名·运行状态·**token**·共享任务 id 与状态） | §0 表：成员/产出/**实际行数**/共享任务/状态 齐 | `[建议]` **缺 `token`**（派单 §八.3 字面要求）；建议在 §0 表加 `target`（如 `lead`/`code-a`…）与模型列 |
+| 4 `git diff --stat` + `ls-remote` 回执 | §9 有 `ls-remote` 三种 ref + blob 指纹；**`git diff --stat` 全件无** | **`[阻塞]`** —— 且 §0 L23 写「（见 §9 `git diff --stat`）」是**悬空引用**（§9 无该段）。**该改哪一句**：§0 L23 删「（见 §9 `git diff --stat`）」，并在 §9 增设一段 `git diff --stat 11458279..HEAD`（base = `origin/main` tip，**禁本地 `main`**，见 §8.3） |
+| 5 未清项清单（诚实登记） | §7 共 **22 条**，含 W1/W2/W3、P0、预算、写集缺口、编制冲突、bash 不可用 | `[通过]`（本项是本件最强的部分） |
+| 6 **派单件指纹对账（三条 fetch 坐标三方值）** | §9 **标题**写「三条 fetch 坐标三方值」，**表内容却是 分支/base/main/规格 blob** —— 无任何 `fetch` 坐标 | **`[阻塞]`** 名不符实。**该改哪一句**：§9 增一张表，对 `RightPanel.tsx:160`（`apiFetch` 内）/`:186`（`fetchLatestReportId`）/`:352`（报告 markdown）三处 `fetch` 逐处给「派单件声明 vs 实测 vs 覆盖与否」；本队 §FG-4 已实测三处落点（**B2 只覆盖 1/3**），可直接引用 |
+| 7 功能回退 / 新增回退显式登记 | §8 三条，明确写「功能回退（部分恢复，未闭环）」并禁写"已知限制" | `[通过]` |
+
+**小结**：8 项中 **5 `[通过]` / 3 `[建议]`→其中 2 项实为 `[阻塞]`**（第 4 项缺 `git diff --stat` 且悬空引用；第 6 项 fetch 指纹名不符实）。
+
+## §13 第 2 项 — 前提实测表逐条核（命令+口径+输出）
+
+**总体 `[通过]`**：23 条 + §1-补 5 条，口径统一（`ref=ef5c8caa`、读取时刻、worktree、HEAD），未发现"凭记忆"条目。我**独立复算 12 条**，逐条对照：
+
+| 前提 | 我的独立复算 | 一致 |
+|---|---|---|
+| P4 `auth.ts` 内 `department` 零命中 | `git grep -n` ref 对象 → 零 | ✅ |
+| P5 实为 `rbac.ts:127` | `git grep -n department -- src/middleware/rbac.ts` → `:127: department: undefined,` | ✅ |
+| P6 三处签发 `:97/:134/:176` | 读 `routes/auth.ts` → 三处 | ✅ |
+| P7 落点 `:231-237`/`:287`/`:313` | 读 → 一致（**含 `:313` = `\|\| ws.owner === ctx.userId`**） | ✅ |
+| P8/P10 类型在、人口 0 | 三处 `createUser` 调用全不传 department；`:99 extra?.department \|\| ''` | ✅ |
+| P13 `DEV_MODE='true'` 全局 | `vitest.config.ts:58-63` | ✅ |
+| P15/P16 `Bearer` 零命中；`x-synova-token` **5 处 / 2 文件** | `git grep -n "x-synova-token" ef5c8caa -- electron-renderer` → `RightPanel.tsx:155/159` + `ga-collab.ts:18/44/92` | ✅ |
+| P17 `getSeedToken` 在 `:99` | 读 → `:99 export function getSeedToken()` | ✅ |
+| P18 写集缺口 `app-store.ts:5/:128` | 读 → 一致 | ✅ |
+| P20 `auth.test.ts` = 50 行桩 | `ReadAllText` LF=50、`it(`×6 | ✅（我首轮"44"是方法误差，见 §11） |
+| P21/P22/P23 域 | 我自跑 `check-ownership.py` → A `✅ PASS win`；B `❌ FAIL ['mac','win']`；`tests/electron/...` → `win` | ✅ |
+| P16 派单 `:157` 实为 `getSeedToken()` 调用行 | 读 `:157 const seedToken = getSeedToken();` | ✅ |
+| P12 `/mine` 恒 404 | 我**静态证明**（`:126` 先注册 + `:127-129` 无 guard）；**运行时长证据属队长探针与 D947 仓内产物**（见 FG-7 来源标注） | ✅（来源已标注） |
+| P15 `bash` 本机不可用（§7-15） | 我自跑 `bash --version` → 输出为 WSL「没有已安装的分发版」，`exit=-1` | ✅ **成立** |
+
+**`[建议]` 两条（不阻塞）**：
+1. P2/P3/P5/P7/P9/P11/P13/P14/P19/P20 的"命令"栏写的是「**读 <file>**」而非可复跑命令 → 与"每条 = 命令 + 口径 + 原始输出"的字面要求有差；建议换成 `git show ef5c8caa:<file> | Select-String -Pattern <段>` 一类原文命令。
+2. **P20 引用的命令与引用的数字不同源**：`git show ef5c8caa:tests/routes/auth.test.ts | Measure-Object -Line` 实得 **44**（漏算空行），而 P20 写 **50**。数字对、命令错配 ⇒ 建议把命令改为 `ReadAllText + \n` 计数，或直接标"50 行（含 6 空行）"。
+3. `337` vs `336`（T-V 行数，§0/§10）→ 统一口径即可。
+
+## §14 第 6 项 `[阻塞]` 内部一致性（验收命令 vs 期望结果两两比对）
+
+| # | 不一致 | 证据 | 判定 |
+|---|---|---|---|
+| I-1 | §0 L23「（见 §9 `git diff --stat`）」**悬空** | §9 表内无 `git diff --stat` 行 | `[阻塞]`（同 §12-4） |
+| I-2 | §9 标题「三条 **fetch** 坐标三方值」vs 表内容（分支/base/main/blob） | PLAN §9 全表 | `[阻塞]`（同 §12-6） |
+| **I-3** | **A4 的反例对 A4 不判别** | A4 = 「manager@sales 的真实 JWT → 响应**不含** marketing 工作区」；而其反例写「去掉 `isSameDepartment` 非空收窄（改 `ctxDept === wsDept`）→ 必红」。该变异在下 `ctx='sales'` / `ws='marketing'` 时**两版均为 false** ⇒ **A4 不变色**，只有**双空/双 `undefined`** 才变色（那是 **A5 的边界路径**） | `[阻塞]` **该改哪一句**：A4 反例改用 A-recon **M8**（`workspaces-api.ts:285-287` 过滤改 `w.visibility === 'global'` → A4 红）；A3 反例补 **M9**（`:286` 删 `w.department === dept` 项 → A3 红）。现 A4 行等于把 A5 的变异体挂错了判据 |
+| **I-4** | **A5 的 `canModifyWorkspace === false` 在正确实现上假红**（= 我的 FG-2，PLAN 未纳入） | `rbac.ts:313` = `isSameDepartment(...) || ws.owner === ctx.userId`（**无** `\|\| role === 'admin'`；PLAN §1 P7 已正确记到 `:313`，但 §3 A5 未落这条语义）；department 工作区 `owner = rbac.userId`（`workspaces-api.ts:244`）即建者 | `[阻塞]` **该改哪一句**：A5 正常路径补「**夹具须保证 `ws.owner !== ctx.userId`**」；并加 A5-b 登记「`owner === ctx.userId` 时 `canModifyWorkspace === true`」为**既有语义、不作安全判据**。否则实施者按「A5 不改实现、只加夹具」执行时会卡死在红上，进而去动产品代码（违反决策②） |
+| I-5 | A6 观测弱 | 仅断「`role !== 'admin'` + `log.warn` 在场」；403/500/非 JSON 体下 `undefined !== 'admin'` **同为绿** | `[建议]` 加 `status === 401`（`/mine` 非白名单）+ 响应体不含 workspaces + log code ∈ {`AUTH_REJECTED`,`RBAC_DENIED`}（FG-6②） |
+| I-6 | §4 标题「受 P0 + **4 项** CTO 裁定阻塞」vs §7 实列 ≥5 项（P0 选项/宿主/预算/W1/W3/B-②） | §4 标题 vs §7-1/2/3/4/6/12 | `[建议]` 数字对齐 |
+| I-7 | §3 A1 判据「解码后 `department ===` 该用户记录的部门」在 PLAN 内的**来源已正确收窄**（`InMemoryGraphStore` + `setUserStore` 落库，非 body） | §3 A1 正常路径 | `[通过]`（此即我 FG-1 要求的正解，PLAN 已与决策①自洽） |
+| I-8 | §1 P12「❌ A3/A4 字面形态不可实现」与 §3 A3「改口径后用最小 app 探针」 | — | `[通过]`（前后自洽：判据不可实现 → 已换形态并登记） |
+
+## §15 第 7 项 — 编制 / 流程自检
+
+| 检查点 | PLAN 落点 | 判定 |
+|---|---|---|
+| 成员编制与上限冲突声明 | §0「5 人 vs 预设 ≤4」显式登记 + 请求 CTO 裁定 | `[通过]` |
+| 串行规则「A 合了再开 B」 | §5 L142 明文 | `[通过]` |
+| 重型验证串行 ≤1 | §5 L142 明文，且本阶段只跑 1 个靶向文件 | `[通过]`（**并实测一致**：我在本阶段**未跑任何 vitest**，避免与队友并发） |
+| 工作目录钉死 worktree | §0/§5 各成员唯一写入文件 + §1 口径写 HEAD | `[通过]` |
+| 禁项清单（`--no-verify`/`git stash`/force push/临时产物 `/tmp`） | **PLAN 正文无此条款**（A-recon §7 有；PLAN 未复述） | `[建议]` 在 §5 或 §7 补一段禁项清单 |
+| 分支/回执 | §7-17 登记分支未推 origin；§9 附 ls-remote | `[通过]` |
+| 治理产物域归属 | §6：P0-a+ 三件 → 我**独立复跑** `check-ownership.py docs/synova/coordination/ownership.yaml .github/CODEOWNERS tests/control-tower/check-ownership.test.sh` → `mac ×3` / `✅ PASS 3 个文件同域: mac` | `[通过]`（PLAN 该项声明**实测成立**） |
+| A3/A4 新宿主域 | 我复跑：`tests/routes/d948-department-visibility.test.ts` → **`win`**，与 A 其余 6 件合并 ⇒ `✅ PASS 7 个文件同域: win` | `[通过]`（**推荐选项 (iii) 不破坏单域**，7→8 件 ≤12） |
+| P0-a+ 是否真能放行 B | PLAN 声明"P0-a+ 后 8 文件 `✅ PASS`" | `[建议]` **该预测在本机不可实测**（须先改 `ownership.yaml`，而治理件属 mac 域、P0 未裁）；覆盖关系可逐文件推出（两个 win 文件恰为新规则目标），但应标注为"**预测值，未实测**"以免被当作已验结论 |
+
+**分支 tip 登记（非缺陷，防误读）**：PLAN 所在分支 tip = `37861bbe chore: bypass COMMITTED 登记 (auto hook, D521)`，其内容为 `.claude/bypass.log` 追加 `COMMITTED | pre-commit PASS (hook 层登记)` —— **不是** `detected-bypass`，**不构成绕过证据**；但回执贴 tip 时应同时给**内容提交 `48d860af`**（同 §8.2 对派单件的处置）。
+
+## §16 答 lead 四问（逐问表态）
+
+**问 1：§2 三堵墙是否成立？**
+- **W1（`department` 无生产写入者）→ 我独立复核成立**：全仓库 3 处 `createUser` 调用（`routes/auth.ts:89`、`enterprise.ts:116`、`enterprise.ts:252`）**无一传 `department`**；`user-store.ts:99` 落库为 `extra?.department || ''` ⇒ 经任何 HTTP 路由建出的用户库里是**空串**。派单 §三「签发侧数据源已存在」**在人口层面不成立**。
+- **W2（`/mine` HTTP 恒 404）→ 我独立复核成立**（静态证明：`:126` 先于 `:264`，`:127-129` 无 guard；运行时长证据来自队长探针 + D947 仓内产物，来源已在 FG-7 标注）。
+- **W3（桌面端无部门工作区消费点）→ 我【未二次复核】**：该条出自 code-b B-recon §N-4，我未独立穷举 renderer 的消费点。**故我只对 W1/W2 表态成立**；W3 需 verifier-tv 二次实测或由其出示命令原文。
+- ⇒ 若 CTO 采信"用户可见目标不可达"，§8 的「**功能回退（部分恢复，未闭环）**」是唯一诚实写法；**我支持该登记纪律**，并强调：**不得**因为"达成了签发/验签层"而写成"部门可见性已恢复"。
+
+**问 2：N1 裁决（推翻 code-b N-1）是否认同？**
+- **我认同队长的裁决**，理由可核：`getSecret()` 在 `auth.ts:50-65` 是**函数体**，`:51 const secret = process.env.JWT_SECRET;`、`:54 process.env.DEV_MODE === 'true'` 均为**每次调用读 env**（非模块级常量）⇒ 夹具 `beforeAll` 覆写有效；队长亲跑 `tests/middleware/auth.test.ts` = `34 passed (34)` 属物理证据。
+- **我不主张"N1 不可满足"**（即不认同 code-b 的 N-1 原文结论）。"先覆写再断言"口径正确。
+- **但补一条限定（FG-6①）**：逃生口的充要条件在 `auth.ts:350` `!secret && process.env.DEV_MODE === 'true'` ⇒ **真正关掉它的是 `JWT_SECRET` 存在且 ≥16**；`DEV_MODE !== 'true'` 单独**不充分**。建议 N1 保留两条断言，但在 PLAN 里注明**哪一条是判别性的**，并加一个"确实走了验签分支"的判别器（logger spy 断言 `AUTH_DEV_MODE_GRANT` 未出现 / `RBAC_DENIED` 出现）。这不是否决策裁决，是补判别力。
+
+**问 3：§7-2 A3/A4 宿主三选，是否有更好放法？**
+- **我推荐 (iii) 新建 `tests/routes/d948-department-visibility.test.ts`，与队长一致**，并补三条理由：① (i) 把 D948 判据塞进 D947 的**现状锁定**夹具——该文件 `:326-335` 明写「登记性断言在此**锁定现状（不代表期望行为）**」，语义相冲；② (ii) 把 workspace 判据塞进 auth 路由夹具 = 跨主题；③ **(iii) 无域代价**：我实测该路径判 **`win`**，与 A 其余 6 件合并 `✅ PASS 7 个文件同域: win` ⇒ 单域不破、7→8 件 ≤12。
+- **更优放法（我未找到）**：另一种是"探针完全独立、不新增文件"——即把最小 app 探针写进**已在集内的** `tests/routes/auth.test.ts`，但那是 (ii) 的变体，语义更差。**故 (iii) 是当前最优**。
+- **一条附加要求**：新建文件须在 PLAN 里点明其**域归属实测值**（我已代跑：`win`），并把它计入 A 的 PR 文件数（7→8）。
+
+**问 4：§5 写集互斥 / `src/routes/auth.ts` 单写者 / PR 预算？**
+- **A × B 零交集 → `[通过]`**（我按两切片文件清单逐一比对）。
+- **`src/routes/auth.ts` 单写者 = code-a → `[通过]`**：派单 §五 仅 A 表列它；B 表正文「不改 `src/**`」；我另穷举该文件在 D948 内的写者，无第二处。
+- **PR 预算 → `[阻塞]` 两条要修正**：① PLAN §5 写「A 与队长文件仅 `task-state/D948.json` 相邻但**无重叠**」——**不准确**：派单 §五 A 表把 `task-state/D948.json` 列为 **A 的 7 文件之一**（写者=队长），即**同一文件出现在 phase-0 分支与 PR-1 文件表两处**，应写成「**同一写者、跨分支二次写，须择一**」（我 §3.1 的 `[阻塞]`）；② B 真实最小写集我独立复算 = **8 文件（6 mac + 2 win）** ✓ 与 PLAN 一致，**须 CTO 裁预算**（派单 ≤6）；③ **P0-a+ 能否放行 B 目前是"预测"而非实测**（本机无法先改治理表），建议标注。
+- **P0-a+ 三件域归属我独立复跑 = `mac ×3` `✅ PASS`** ⇒ §6「P0-a+ 自身即干净单域 mac PR」**成立**。
+
+## §17 收口后的总表（替换 §〇 的临时摘要）
+
+| 复核项 | 结论 |
+|---|---|
+| 1 派单 8 项回执落点 | **2 `[阻塞]`**（缺 `git diff --stat` + §0 悬空引用；fetch 指纹名不符实）+ 3 `[建议]` + 3 `[通过]` |
+| 2 前提实测表 | `[通过]`（12 条独立复算一致；3 条 `[建议]` 属命令/口径形式问题） |
+| 3 写集互斥 | `[阻塞]`（`task-state/D948.json` 跨分支二次写；B 测试写者栏歧义）+ `[通过]`（A×B 零交集、`auth.ts` 单写者、无第六调用方） |
+| 4 域与 PR 预算 | `[阻塞]`（**P0-a 原案放行不了 B**；B 真实写集 8 > ≤6；本地 `main` 落后 69 提交的**回执基准**）+ `[通过]`（A 单域 win、证据/治理件域、P0-a+ 三件 mac、新宿主 win） |
+| 5 判据可证伪性 | **`[阻塞]` 8 条**（FG-1 A1 回声 / FG-2 A5 假红 / FG-3 A3 短路 / FG-4 B1 负向+覆盖面 / FG-5 白名单靶点 / FG-6 N1 判别力 / FG-7 A3A4 靶端点不可达 / FG-8 `syntheticRbac` 假红假绿） |
+| 6 内部一致性 | **`[阻塞]` 3 条**（I-1 悬空引用、I-2 标题失实、**I-3 A4 反例不判别**、**I-4 A5 假红未纳入** —— 共 4 条）+ 2 `[建议]` |
+| 7 编制/流程自检 | `[通过]`（编制冲突/串行/重型≤1/worktree/域）/ `[建议]`（补禁项清单；P0-a+ 预测值标注） |
+| 8 红线 | `[通过]`（无 `--no-verify`/`stash`/force push 迹象；工作树干净；未碰 `scripts/**`、`scripts/audit/**`）+ 2 条登记（tip 为 auto-hook 登记提交、本地 main 落后） |
+
+**收口后未覆盖面（追加）**：
+8. **`tests/middleware/auth.test.ts` 34/34 绿未由我复跑**（属重型验证；队长已跑，我按"重型串行 ≤1"让位）。
+9. **W3（桌面端无部门消费点）未二次复核**（归 code-b/verifier-tv）。
+10. **P0-a+ 放行 B 的 `✅ PASS` 是预测值**，本机无法先行实测（治理件未改）。
+11. **`ELECTRON` 主进程是否发自报头、`tests/electron/` 13 件连带改判**：未复核（前者属 code-b 未决项，后者我只复算了 1 件）。
+
+**最终自验结论**：本 PLAN 的**前提表、三堵墙裁决、功能回退登记、P0-a+ 建议**四项为 `[通过]`；**判据层与回执层共 12 条 `[阻塞]`**（分布见 §17），其中 **I-3/I-4/A5-A4 反例与假红**、**§12-4/6 回执缺口**、**§1.4/1.5 P0-a 与预算**、**§3.1 跨分支二次写** 为"若照此执行，实施者会先撞墙且会误判为自己的问题"的六处。
+**本件不判"通过"**；修正上述 `[阻塞]` 后，本复核为 **可提请独立审计**（K3 终审）；合并与否则归 CTO 收件闸。
+
