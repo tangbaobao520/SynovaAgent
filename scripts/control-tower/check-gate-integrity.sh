@@ -10,9 +10,18 @@
 #
 # 契约（铁律 47）:
 #   @用法    bash scripts/control-tower/check-gate-integrity.sh \
-#              [--patterns-only|--registry-only] [--ci-reds <check-runs.json>] [--verbose]
+#              [--patterns-only|--registry-only] [--ci-reds <check-runs.json>] [--base-ref <ref>] [--root <dir>] [--verbose]
 #            默认（无模式旗标）= A 模式哨兵 + B 登记 gate；--ci-reds 追加 C 对账；
 #            未给 --ci-reds 时 C 显式 SKIPPED（不参与 OK/违规判定）。
+#   D954（2026-09-25，K3 定罪「C 段空转」修复）——**对账对象必须可确定**:
+#     · 定罪: C 段此前取的是**当前提交**的 check-runs（ci.yml `REF=head.sha`），而该时刻同 SHA
+#       多数 job 仍 in_progress（conclusion≠failure）→ `失败检查 0 项` → **棘轮从未被行使**
+#       （同 SHA 终局实有 3 个 failure）。取"当前提交"= 用未定态集合证明"无红"，是空转的根因。
+#     · 修法: 取 **base**（PR: `github.event.pull_request.base.sha`；push: `origin/main`）并由
+#       `--base-ref <ref>` 显式传入；C 段**必打印**一行 `对账对象 = <ref> @ <sha>`
+#       （ASCII 前缀 `对账对象 `，供 ci.yml 证据步注解公开检索，使证据自带对账对象身份）。
+#     · `--base-ref` 缺省时 C 段**显式 SKIPPED**（可见、不静默放行；ratchet 不判定 ≠ 通过）——
+#       绝不"用不知来源的 JSON 判绿"。ref 不可解析 → **exit 2**（fail-closed，绝不判绿）。
 #   @输入    注入缝（生产有默认值；测试必需）:
 #              SYNO_GATE_SCAN_SCRIPTS  空格分隔脚本清单（默认 scripts/pre-commit-check.sh + scripts/control-tower/*.sh）
 #              SYNO_TESTS_DIR          测试根（默认 tests/）
@@ -78,20 +87,24 @@
 #   基线文件 $SYNO_GATE_BASELINE 为**双段单文件**（A/B 各读自己那段，见两处段标记的注释行）:
 #     [R] REGISTRY-BASELINE 段 = 未登记测试存量（本模式读）；[P] PATTERN-BASELINE 段 = 既有非法模式（A 模式读）。
 #
-# C 既有红对账（仅 --ci-reds 时执行）:
+# C 既有红对账（仅 --ci-reds 时执行；**必须同时给 --base-ref**，见上方 D954 段）:
 #   读 GitHub check-runs JSON（.check_runs[].name/.conclusion）；conclusion=="failure" 的 name
 #   必须在 $SYNO_CI_RED_BASELINE 内且 expires 未过期，否则违规。红基线每行格式（冻结）:
 #     <check-run name> | first_seen=YYYY-MM-DD | owner=<D#/角色> | expires=YYYY-MM-DD | evidence=<引用>
+#   · 可选键 `disposition_due=YYYY-MM-DD`（D954 新增消费）: **处置期限**（与 expires 同级硬门）——
+#     键存在且 `disposition_due < 今天` → 违规「CI 红处置逾期」。键**缺失不判**（存量条目不回溯，
+#     向后兼容）；缺 expires 键仍按既有规则 exit 2（两者语义不同：expires=豁免到期，disposition_due=处置到期）。
 #   · name 匹配容忍 `|` 前空格（C1 缺陷修复：冻结格式是 `NAME | first_seen=...`），
 #     name 内 ERE 元字符整体转义（检查名含中文/全角括号/点号）。
-#   · expires / owner **按键取值**，绝不按字段序号（C2 缺陷修复：冻结格式 $2 是 first_seen，不是 expires）。
+#   · expires / owner / disposition_due **按键取值**，绝不按字段序号（C2 缺陷修复：冻结格式 $2 是 first_seen，不是 expires）。
 #   · 条目命中但缺 expires 键 → exit 2（malformed，绝不静默当 0 = fail-open）。
-#   · JSON 不可读/非法/缺 check_runs → exit 2；expires < 今天 → 违规。
+#   · JSON 不可读/非法/缺 check_runs → exit 2；expires < 今天 → 违规；disposition_due < 今天 → 违规。
 #   · K3 端到端复核（真基线 + 真 API 快照，无需自造样本）:
 #       curl -sS -H "Authorization: Bearer $GITHUB_TOKEN" \
-#         "https://api.github.com/repos/<owner>/<repo>/commits/<sha>/check-runs" > /tmp/checkruns.json
-#       bash scripts/control-tower/check-gate-integrity.sh --ci-reds /tmp/checkruns.json
-#     期望: 既有红全部在 ci-red-baseline.txt 内 → rc=0；退化/离线时用夹具的 C1/C2 断言做等价回归。
+#         "https://api.github.com/repos/<owner>/<repo>/commits/<base sha>/check-runs" > /tmp/checkruns.json
+#       bash scripts/control-tower/check-gate-integrity.sh --ci-reds /tmp/checkruns.json --base-ref <ref>
+#     期望: 首行出 `对账对象 = <ref> @ <sha>`；既有红全部在 ci-red-baseline.txt 内 → rc=0；
+#     退化/离线时用夹具的 C1/C2/C3/D1 断言做等价回归（含 D954 的 M1–M4 判别性靶）。
 #
 # 与 check-canary-drift.sh 的分工（CTO Q-M9-2）: canary 漂移 = 告警恒 exit 0；本器 = 阻断（1/2）。
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -99,8 +112,31 @@ set -uo pipefail
 export PYTHONIOENCODING=utf-8
 export LC_ALL=C.UTF-8 2>/dev/null || true
 
-ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
-[ -n "$ROOT" ] || ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"   # 非 git cwd 时按脚本位置定位仓库根
+# D954 定根（护栏）: 顺序 = `--root` 显式值 > `git rev-parse` > 脚本相对兜底。
+#   `git rev-parse --show-toplevel` **随 cwd 漂移**（实测：cwd=主仓 → ROOT=主仓；cwd=另一 git 仓 →
+#   ROOT=那个仓）→ 会静默读错树的基线 = "测试的树不是被测的树"。故 `--root` 必须在**本行之前**解析生效
+#   （若在参数循环里才解析，非 git cwd 下 ROOT 已落空，覆盖将静默失效）。预扫只认 --root，不做别的判定。
+ROOT_OVERRIDE=""
+_i=1
+while [ "$_i" -le "$#" ]; do
+  _a="${!_i}"
+  case "$_a" in
+    --root) _j=$((_i + 1)); [ "$_j" -le "$#" ] && ROOT_OVERRIDE="${!_j}" ;;
+    --root=*) ROOT_OVERRIDE="${_a#--root=}" ;;
+  esac
+  _i=$((_i + 1))
+done
+if [ -n "$ROOT_OVERRIDE" ]; then
+  ROOT="$(cd "$ROOT_OVERRIDE" 2>/dev/null && pwd)"
+  if [ -z "$ROOT" ]; then
+    # degrade()/降级日志此刻尚未就绪（日志路径本身依赖 ROOT）→ 只 stderr 显式 + exit 2（fail-closed）
+    printf 'degraded: --root 目录不存在或不可进入: %s\n' "$ROOT_OVERRIDE" >&2
+    exit 2
+  fi
+else
+  ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+  [ -n "$ROOT" ] || ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"   # 非 git cwd 时按脚本位置定位仓库根
+fi
 TMPD="$(mktemp -d 2>/dev/null || mktemp -d -t m9-gate-integrity)"
 trap 'rm -rf "$TMPD"' EXIT
 DEGRADED_LOG="${SYNO_GATE_DEGRADED_LOG:-$ROOT/.codex/control-tower/logs/degraded-events.log}"
@@ -198,10 +234,14 @@ degrade() { # $1=code $2=phase $3=原因
 
 usage() {
   cat <<'USAGE'
-用法: bash scripts/control-tower/check-gate-integrity.sh [--patterns-only|--registry-only] [--ci-reds <json>] [--verbose]
+用法: bash scripts/control-tower/check-gate-integrity.sh [--patterns-only|--registry-only] [--ci-reds <json>] [--base-ref <ref>] [--verbose]
   --patterns-only   仅 A 模式哨兵（grep 方言语法验证）
   --registry-only   仅 B CI 登记 gate
   --ci-reds <json>  追加 C 既有红基线对账（GitHub check-runs JSON）
+  --base-ref <ref>  C 段对账对象（**取 base，不取当前提交**；如 PR base.sha / origin/main）
+                    缺省时 C 段显式 SKIPPED（不判定 ≠ 通过）；不可解析 → exit 2
+  --root <dir>      显式定根（默认 `git rev-parse --show-toplevel`，**随 cwd 漂移**）；
+                    多 worktree / cwd 非本仓场景必须显式给，防读错树的基线（D954 护栏）
   --verbose         打印逐条模式与集合明细
 USAGE
 }
@@ -638,6 +678,20 @@ run_ci_reds() { # $1 = check-runs JSON
   local red_base="${SYNO_CI_RED_BASELINE:-$ROOT/scripts/control-tower/ci-red-baseline.txt}"
   info ""
   info "── C 既有红基线对账（ratchet）──"
+  # D954: 对账对象不可确定 → 不判定（显式 SKIPPED，可见；ratchet 未行使 ≠ 通过）
+  #   绝不"拿不知来源的 JSON 判绿"——那正是 K3 定罪的空转形态（用未定态集合证明"无红"）。
+  if [ -z "$BASE_REF" ]; then
+    info "CI-RED-CHECK: SKIPPED (--ci-reds 已给但缺 --base-ref；对账对象不可确定 → ratchet 不判定，≠ 通过)"
+    SUM_CIRED="SKIPPED(缺 --base-ref)"
+    return 0
+  fi
+  local base_sha
+  # 解析**针对 $ROOT（被审计的那棵树）**，不用进程 cwd —— 否则 `--root` 只定了基线、钉不住对账对象，
+  # 仍会"读 A 树的基线、认 B 树的对账对象"。git 不可用/ref 不在该树 → 显式 degrade（fail-closed）。
+  base_sha="$(git -C "$ROOT" rev-parse --verify --quiet "${BASE_REF}^{commit}" 2>/dev/null || true)"   # swallow-ok: 解析失败由下一行显式 degrade 兜住（不吞错）
+  [ -n "$base_sha" ] || degrade "C_BASE_REF_UNRESOLVED" "ci-reds" "base-ref 不可解析: ${BASE_REF}（git -C ${ROOT} rev-parse --verify 失败）——对账对象不明，fail-closed 不判绿"
+  # 对账对象行（ASCII 前缀「对账对象 」；ci.yml 证据步据此发布注解 → 证据自带对账对象身份）
+  info "对账对象 = ${BASE_REF} @ ${base_sha}"
   [ -f "$json" ] || degrade "C_JSON_MISSING" "ci-reds" "check-runs JSON 不可读: $json"
   [ -f "$red_base" ] || degrade "C_RED_BASELINE_MISSING" "ci-reds" "CI 红基线缺失: $red_base"
 
@@ -676,7 +730,7 @@ PYEOF
   # 归一：去注释/空行；tr -d '\r'；两侧 trim（数据行不得依赖缩进）
   grep -v '^[[:space:]]*#' "$red_base" 2>/dev/null | tr -d '\r' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' | grep -v '^$' > "$red_norm" || true   # swallow-ok: 红基线存在性已在上游校验；无行=空登记表 → 所有失败项判"未登记"（红，不静默放行）
 
-  local today name line expires owner matched=0 n_fail=0
+  local today name line expires owner due matched=0 n_fail=0 n_due=0
   today="$(date -u +%F)"
   while IFS= read -r name; do
     name="$(printf '%s' "$name" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
@@ -692,6 +746,7 @@ PYEOF
     # C2 修复: **按键取值**（不按字段序号——冻结格式里 $2 是 first_seen，不是 expires）
     expires="$(_key_value "$line" expires)"
     owner="$(_key_value "$line" owner)"
+    due="$(_key_value "$line" disposition_due)"
     if [ -z "$expires" ]; then
       degrade "C_RED_BASELINE_NO_EXPIRES" "ci-reds" "CI 红基线条目缺 expires 键（不可静默当 0）: ${name}"
     fi
@@ -699,15 +754,24 @@ PYEOF
     if [[ "$expires" < "$today" ]]; then
       violation "CI 红基线过期（须修或延期）: ${name}（expires ${expires} < ${today}）"
     fi
+    # D954: disposition_due = **处置期限**，与 expires 同级硬门（逾期判红）。
+    #   键**缺失不判**（存量条目不回溯；缺 expires 仍按既有规则 exit 2 —— 两者语义不同）。
+    if [ -n "$due" ]; then
+      vprint "  CI-RED-BASELINE: ${name}（disposition_due=${due}）"
+      if [[ "$due" < "$today" ]]; then
+        n_due=$((n_due + 1))
+        violation "CI 红处置逾期（disposition_due 硬门）: ${name}（disposition_due ${due} < ${today}）"
+      fi
+    fi
   done < "$failing"
 
-  info "CI-RED-CHECK: 失败检查 ${n_fail} 项；基线命中 ${matched} 项；基线条目 $(wc -l < "$red_norm" | tr -d ' ') 条；今天 ${today}"
-  SUM_CIRED="失败检查 ${n_fail} 项；基线命中 ${matched} 项"
+  info "CI-RED-CHECK: 失败检查 ${n_fail} 项；基线命中 ${matched} 项；基线条目 $(wc -l < "$red_norm" | tr -d ' ') 条；今天 ${today}；处置逾期 ${n_due} 项"
+  SUM_CIRED="失败检查 ${n_fail} 项；基线命中 ${matched} 项；处置逾期 ${n_due} 项"
 }
 
 # ═══ 主流程 ═══════════════════════════════════════════════════════════════════
 
-DO_PATTERNS=0; DO_REGISTRY=0; CI_REDS=""; VERBOSE=0
+DO_PATTERNS=0; DO_REGISTRY=0; CI_REDS=""; BASE_REF=""; VERBOSE=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --patterns-only) DO_PATTERNS=1 ;;
@@ -718,6 +782,14 @@ while [ $# -gt 0 ]; do
       shift
       ;;
     --ci-reds=*) CI_REDS="${1#--ci-reds=}" ;;
+    --base-ref)
+      BASE_REF="${2:-}"
+      [ -n "$BASE_REF" ] || { usage >&2; degrade "USAGE_ARGS" "args" "--base-ref 缺少 <ref> 参数"; }
+      shift
+      ;;
+    --base-ref=*) BASE_REF="${1#--base-ref=}" ;;
+    --root) shift ;;                      # 已在文件头预扫生效（定根必须先于 ROOT 解析）
+    --root=*) ;;                          # 同上
     --verbose) VERBOSE=1 ;;
     -h|--help) usage; exit 0 ;;
     *) usage >&2; degrade "USAGE_ARGS" "args" "未知参数: $1" ;;
@@ -726,7 +798,7 @@ while [ $# -gt 0 ]; do
 done
 if [ "$DO_PATTERNS" = 0 ] && [ "$DO_REGISTRY" = 0 ]; then DO_PATTERNS=1; DO_REGISTRY=1; fi
 
-info "GATE-INTEGRITY-CHECK: patterns=${DO_PATTERNS} registry=${DO_REGISTRY} ci_reds=$([ -n "$CI_REDS" ] && echo 1 || echo 0) root=${ROOT}"
+info "GATE-INTEGRITY-CHECK: patterns=${DO_PATTERNS} registry=${DO_REGISTRY} ci_reds=$([ -n "$CI_REDS" ] && echo 1 || echo 0) base_ref=${BASE_REF:-<未提供>} root=${ROOT}"
 
 [ "$DO_PATTERNS" = 1 ] && run_patterns
 [ "$DO_REGISTRY" = 1 ] && run_registry
