@@ -264,7 +264,8 @@ jobs:
             tests/doc-system/doc-triage.test.sh \
             tests/doc-system/generate-chronicle-monthly.test.sh \
             tests/control-tower/check-citations.test.sh \
-            tests/control-tower/check-progress-freshness.test.sh; do
+            tests/control-tower/check-progress-freshness.test.sh \
+            tests/control-tower/check-gate-integrity.test.sh; do
             echo "── $t"
             # D526: 测试失败输出进 ::error 注解——无 token 也能经 annotations 定位（D521 工具1 语义）
             if ! bash "$t" > /tmp/ct-out.log 2>&1; then
@@ -330,3 +331,63 @@ jobs:
         run: npx tsx scripts/ci/golden-case-checker.ts
       - name: Run diagnosis quality check
         run: bash scripts/ci/diagnosis-quality-check.sh
+
+  # ── M9 门禁完整性：三件套接线（task-5 检查器 + task-6 夹具/基线表；本 job 由 task-6 登记）──
+  # 三步各堵一类洞，缺一步即门禁有洞（B 模式口径：登记 gate 判 = 路径出现在 ci.yml **全文**，
+  #   含本 job 的 run: 行；重型夹具不入 canary 密封清单，避免 canary 运行时长翻倍）：
+  #   step 1 = 检查器本体（模式哨兵 + 登记 gate；本地/CI 同一条命令）
+  #   step 2 = 注入夹具**抽检**（组 1/2/7/12 + 绿基线；全量由 SYNO_PRE_COMMIT_INJECT_FULL=1
+  #            人工或夜间触发——全量 ≈ 12 组 ×1 次 pre-commit，副本内实测 ~4s/次）
+  #   step 3 = CI 既有红基线对账（--ci-reds /tmp/checkruns.json），取数 fail-closed
+  gate-integrity:
+    name: Gate Integrity (pattern sentinel + injection fixture + ci-reds)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 登记 gate/模式哨兵依赖 origin/main 与完整历史（同 control-tower-tests 口径）
+      # 棘轮语义（check-gate-integrity.sh 的 PATTERN-BASELINE 段，README 见该脚本头部）：
+      #   存量非法模式（如 scripts/pre-commit-check.sh:991 的 `^+++` 非法 ERE——组 7a 因此恒绿）
+      #   以「登记豁免 owner/expires」形式入 gate-integrity-baseline.txt → 修复未落地前不堵队列；
+      #   **未登记的新非法模式仍必红**；已登记条目过期或失效（模式已消失却未清理）→ exit 1。
+      #   棘轮只减不增：到期即强制清理，豁免不得续期式常驻。
+      - name: Gate integrity pattern sentinel + registration gate
+        run: bash scripts/control-tower/check-gate-integrity.sh
+      # 抽检即注册（B 模式口径）——该行同时是"夹具在 CI 里无人执行"的反证。
+      - name: pre-commit groups injection fixture (sampled)
+        run: bash tests/control-tower/precommit-groups-injection.test.sh
+      # 取数失败必须让 step 失败（fail-closed，不静默放行）：豁免台账核对不到 = 既有红基线不可核。
+      - name: CI red baseline reconciliation (--ci-reds, fail-closed fetch)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          REF: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          OUT=/tmp/checkruns.json
+          URL="https://api.github.com/repos/${REPO}/commits/${REF}/check-runs?per_page=100"
+          AUTH=()
+          [ -n "${GH_TOKEN:-}" ] && AUTH=(-H "Authorization: Bearer ${GH_TOKEN}")
+          ok=0
+          for i in 1 2 3; do
+            echo "── check-runs 取数尝试 ${i}/3: ${URL}"
+            if curl -sS --fail --max-time 30 "${AUTH[@]+"${AUTH[@]}"}" \
+                 -H "Accept: application/vnd.github+json" \
+                 -H "X-GitHub-Api-Version: 2022-11-28" \
+                 -o "$OUT" "$URL"; then
+              ok=1
+              break
+            fi
+            echo "::warning title=ci-reds fetch::第 ${i} 次取数失败（最多 3 次，退避重试）"
+            sleep $((i * 5))
+          done
+          if [ "$ok" -ne 1 ]; then
+            echo "::error title=ci-reds fetch::check-runs 取数 3 次全失败 —— fail-closed，不静默放行（既有红基线无从核对）"
+            exit 1
+          fi
+          N=$(python3 -c "import json;print(len(json.load(open('$OUT')).get('check_runs',[])))")
+          if [ "$N" -eq 0 ]; then
+            echo "::warning title=ci-reds::${REF} 取到 0 条 check-runs（尚无检查记录）——基线核对为空集，不等于「已核对通过」"
+          fi
+          echo "check_runs=${N} (ref=${REF})"
+          bash scripts/control-tower/check-gate-integrity.sh --ci-reds /tmp/checkruns.json
