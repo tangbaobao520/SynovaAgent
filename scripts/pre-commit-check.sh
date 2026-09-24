@@ -1487,6 +1487,7 @@ if [ -f "$ROOT/scripts/control-tower/PLATFORM-CHECKLIST.md" ]; then
     done <<< "$_PLAT_NEW"
   fi
   soft_check "V5 平台敏感命令: 新控制塔脚本对照 PLATFORM-CHECKLIST.md (D520)" "${_PLAT_HITS:-}"
+soft_check "DSH 断面一致性 (D943)" "python3 scripts/control-tower/check-dsh-anchor.py --repo . >/dev/null 2>&1"
 else
   soft_pass "V5 平台检查: PLATFORM-CHECKLIST.md 不存在(跳过)"
 fi

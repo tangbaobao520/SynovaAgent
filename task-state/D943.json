@@ -1,0 +1,35 @@
+{
+  "task_id": "D943",
+  "title": "D943 机制面：DSH 断面唯一源+门禁 / K3 报告机械保险 / 观测式看板 runner（拆分自 #738）",
+  "status": "impl_done",
+  "risk": "medium",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": "dsh-cto",
+  "milestone": "M0 项目管理基建",
+  "write_set": [
+    "scripts/control-tower/check-dsh-anchor.py",
+    "scripts/control-tower/check-k3-report.py",
+    "scripts/control-tower/daily-cto-board.sh",
+    "tests/control-tower/check-dsh-anchor.test.sh",
+    "tests/control-tower/check-k3-report.test.sh",
+    ".github/workflows/ci.yml",
+    "scripts/pre-commit-check.sh",
+    "docs/synova/coordination/DSH-断面.json",
+    "docs/synova/coordination/已作废口径表.md",
+    "docs/synova/coordination/规格-M9-门禁三件套-唯一事实源.md",
+    "docs/synova/coordination/收件闸检查单.md",
+    "docs/synova/coordination/派单模板.md",
+    "task-state/D943.json",
+    "memory/notes/proposed/2026-09-24-dsh-anchor-gate.md",
+    ".claude/task-briefs/2026-09-24-D943-mechanism.md"
+  ],
+  "impl": {
+    "branch": "docs/d943-cto-a-items",
+    "note": "CTO 自产治理件；write_set 为登记用（门禁 S1 写集源）"
+  },
+  "spec": "docs/synova/coordination/CTO-固化-最终方向与在制任务-20260924.md",
+  "note": "CTO 侧治理交付。补登记动机：commit 前缀引用了 D942/D943 但无卡 → 写集门禁三源皆空 → fail-closed（#736/#738 的 CI 红真因）。 ｜ 拆分说明：原 #738 含 23 文件超 D734 上限，拆为「机制面」（本 PR）与「文档/裁定面」。",
+  "updated_at": "2026-09-24",
+  "updated_by": "synova-cto"
+}
