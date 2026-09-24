@@ -191,7 +191,7 @@ git-sync-pr / brief-compose / claim-verifier / windows-compat / synova-audit / p
 3. **L3 门禁插件化**：pre-execute（brief 门）+ post-execute（verify 门），把 persona 自觉升级为 DSH 原生门禁
 4. **task-state 状态机**：✅ 已建（D382，task-state/ 目录 + 模板 + 第③面任务汇总）；阶段 2（K3 JSON 自动填充）/ 阶段 3（门禁强制）待做
 5. **观星台 UI**（L5）：创始人驾驶舱面板（北星/进度/证据链/待办）
-6. **CTO 健康仪表盘**（第③面）：✅ v0.1 已上线（docs/synova/CTO-HEALTH.md + gen-cto-health.py）；v0.2 待补 CI job 级判定
+6. **CTO 健康仪表盘**（第③面）：✅ v0.1 已上线（docs/synova/coordination/CTO-看板-自动.md + gen-cto-health.py）；v0.2 待补 CI job 级判定
 7. **session 质量评分卡**：三员工各指标量化
 8. **双轨评估看板**（第④面）：DSH vs Claude 效率/质量/成本对照（创始人评估依据）
 
