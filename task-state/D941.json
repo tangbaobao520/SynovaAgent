@@ -1,0 +1,26 @@
+{
+  "task_id": "D941",
+  "title": "M1b：ownership.yaml 生成式重写（最长前缀 + 兜底 fail-closed + 解析算法）必过 K3",
+  "status": "spec_done",
+  "risk": "high",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": "dsh-squad",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [],
+  "blocked": null,
+  "target": "2026-W40",
+  "spec": "docs/synova/coordination/派单-Mac小队-五卡-20260924.md",
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "write_set": [
+    "docs/synova/coordination/派单-Mac小队-五卡-20260924.md",
+    "task-state/D941.json"
+  ],
+  "priority": 5,
+  "wip_rule": "WIP=1：五卡已开，按 priority 一次开工一张；前一张未通过收件闸不放行下一张",
+  "note": "M1 只加了 presets→mac 一条；本卡做生成式映射（从真实目录树生成不许手写）+ 最长前缀 + 兜底语义明确 + 改解析算法 + 同批 --emit-codeowners + 判别性夹具。门禁语义变更 → 必过 K3。",
+  "updated_at": "2026-09-24",
+  "updated_by": "synova-cto"
+}

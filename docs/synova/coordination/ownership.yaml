@@ -140,6 +140,14 @@ rules:
   - glob: "docs/synova/research/**"
     owner: "mac"
     source: "研究院交办件入库路径（D849/D912）；研究线=Mac DSH"
+  # D935 增补（2026-09-24）: DSH 预设与技能目录 docs/synova/presets/** 漏登记 → 落 `**` 兜底
+  #   判 win，与同写集的 mac 文件混装即被 D734 判「变更跨域」硬拦（D931 实测，卡住 PR #727）。
+  #   权威源 TASK-ROUTING.md L37「… + coordination + DSH 预设与技能 → Mac DSH」；兄弟路径
+  #   .claude/task-briefs/**、.claude/skills/**、.claude/settings.json、.dsh/** 均同源同归属
+  #   （见上方 Mac 例外区）。不改任何既有归属。
+  - glob: "docs/synova/presets/**"
+    owner: "mac"
+    source: "TASK-ROUTING.md L37 DSH 预设与技能"
   - glob: ".github/workflows/**"
     owner: "mac"
     source: "TASK-ROUTING.md L34 场景回归 CI、产品进度 CI"
