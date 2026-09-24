@@ -26,11 +26,11 @@
   "spec": "docs/synova/coordination/派单-并行CTO-PR2-新规范接线-20260924.md",
   "impl": {
     "branch": "feat/d943-docs-anchor",
-    "note": "前置：PR #745（机制面）squash 落 main = 1145827。本单接线 + 文档面。"
+    "note": "前置：PR #745（机制面）squash 落 main = 1145827。本单接线 + 文档面。本卡覆盖 PR-2（#748）与其拆分出的 PR-2a（收件闸检查单.md 单独落地）——拆分为 D734 预算 CI 实测强制。"
   },
   "audit": null,
   "fix_task_id": null,
-  "note": "派单 §一 的 10 份写集实测不足以让完成标准 1/2 转绿：main 上另有 2 份带旧锚文档（CTO-固化-II L17 / CTO-固化-最终方向 L81）不在写集内 → 本单补入，写集 12 份 = D734 上限（实测 PASS，无余量）。接线形态与派单字面不同，两处实测偏差已在 brief Q1 与 PR 正文记录：①「清单加一行」会把命令塞进 `bash \"$t\"` 清单（必红），改为 done 之后独立命令计入 FAIL；② `soft_check` 第二参是命中描述串而非命令（原文形态恒判 1 命中 → CI strict 恒红），改为先跑命令取结论。",
+  "note": "派单 §一 的 10 份写集实测不足以让完成标准 1/2 转绿：main 上另有 2 份带旧锚文档（CTO-固化-II L17 / CTO-固化-最终方向 L81）不在写集内 → 本单补入。接线形态与派单字面不同，两处实测偏差已在 brief Q1 与 PR 正文记录：①「清单加一行」会把命令塞进 `bash \"$t\"` 清单（必红），改为 done 之后独立命令计入 FAIL；② `soft_check` 第二参是命中描述串而非命令（原文形态恒判 1 命中 → CI strict 恒红），改为先跑命令取结论。③ 门禁冲突（待 K3/CTO 裁定）：D734 预算按 `git diff --name-only --diff-filter=ACMR origin/main...HEAD` 计数，而 .claude/bypass.log 由 post-commit hook 每次提交强制追加（merge-writeset-gate 自认其为「运行期产物，与写集无关」并豁免，D860 GOV_PREFIX_RE 却未含它）→ 顶格 12 份写集在 CI 上必假红（实测 13 > 12，唯一超标项即该账本）；本轮按 D734 指示「拆 PR」处置（禁调高上限），收件闸检查单.md 移出为 PR-2a。",
   "updated_at": "2026-09-24",
   "updated_by": "synova-cto"
 }
