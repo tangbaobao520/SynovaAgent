@@ -104,5 +104,6 @@ L1（src/routes 消费）+ 中间件层（src/middleware 认证/RBAC）。不改
 - [ ] 链路走通: 上述套件含 **A1 解码载荷**断言（`payload.department === 'marketing'`）与 **A7 刷新保留**断言
 - [ ] 结果可见: A3/A4/A5 每条均有「正路径 + 负路径 + 对照」成对断言，且 `grep -c "syntheticRbac" tests/routes/d948-department-visibility.test.ts` 输出 0
 - [ ] 零新增禁用断言: `git diff ef5c8caa..HEAD | grep -cE "^\+.*(as any|as never|as unknown as)"` 输出 0
-- [ ] 写集不越界: `git diff --name-only ef5c8caa..HEAD | wc -l` 输出 8
+- [ ] 写集不越界: `git diff --name-only ef5c8caa..HEAD | grep -vc "^.claude/bypass.log$"` 输出 8
+      （`.claude/bypass.log` 是 D521 post-commit hook 的**自动登记产物**，每次提交都会 +1 行，非人工写集；不排除它则该数恒为 9）
 - [ ] 门禁: `bash scripts/pre-commit-check.sh` 退出码 0
