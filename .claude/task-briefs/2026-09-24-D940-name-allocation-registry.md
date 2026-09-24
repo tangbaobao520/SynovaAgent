@@ -67,7 +67,7 @@ L0 控制塔工具层（非 L1-L5）。对象 = `scripts/control-tower/alloc-tas
 | `docs/synova/product-lines/evidence/D940-改动清单.md` | task（证据，写者 d940-c1） |
 | `docs/synova/product-lines/evidence/D940-夹具原始输出.md` | task（证据，写者 d940-c2） |
 | `docs/synova/product-lines/evidence/D940-自验.md` | task（证据，写者 d940-v，独立自验） |
-| `memory/notes/proposed/2026-09-24-d940-cross-location-alloc.md` | task（Note，写者 d940-c1） |
+| `memory/notes/implemented/2026-09-24-d940-cross-location-alloc.md` | task（Note，写者 d940-c1） |
 | `.claude/task-briefs/2026-09-24-D940-name-allocation-registry.md` | builtin（本认领 brief，队长治理产物） |
 | `docs/synova/product-lines/evidence/D940-收尾与回执-20260924.md` | task（M6 收尾，写者 lead，治理产物） |
 | `.claude/task-briefs/2026-09-24-D940-name-allocation-registry.md` | builtin（本 brief，队长治理产物） |
