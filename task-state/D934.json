@@ -13,7 +13,9 @@
   "merge_commit": "1a1cccc8f3d40b93e1d32cf881352ff25850c394",
   "merged_to_main": true,
   "branch": "docs/d934-cross-side-mode",
-  "spec": "docs/synova/coordination/两侧协作方式-Mac与Win-20260923.md",
+  "spec": {
+    "path": "docs/synova/coordination/两侧协作方式-Mac与Win-20260923.md"
+  },
   "impl": "PR #731（merge commit 1a1cccc8f3d40b93e1d32cf881352ff25850c394，2026-09-24 04:50:58 +0800，merged_to_main=true）合入 main，2 文件：docs/synova/coordination/两侧协作方式-Mac与Win-20260923.md（A，72 行新文件——文档自声明「本件是两侧协作的唯一事实源」）+ .claude/bypass.log（M，+1 行，hook 自动登记 builtin，不计入 write_set）。分支 docs/d934-cross-side-mode，实现提交 6782ff2d。",
   "audit": "pending：K3 批次2 派单 docs/synova/coordination/派单-K3审计-批次2-20260924.md:26（审计问项=「严禁子代理代替小队」的判据是否可执行；有无与现行法规/仓库现实冲突处）",
   "fix_task_id": null,

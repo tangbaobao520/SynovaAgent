@@ -13,7 +13,9 @@
   "merge_commit": "12383f144f912279390698eb325eacba78e75a9c",
   "merged_to_main": true,
   "branch": "docs/d936-ownership-defer",
-  "spec": ".claude/task-briefs/2026-09-24-D936-ownership-defer.md",
+  "spec": {
+    "path": ".claude/task-briefs/2026-09-24-D936-ownership-defer.md"
+  },
   "impl": "PR #733（merge commit 12383f144f912279390698eb325eacba78e75a9c，merged_to_main=true）合入 main，4 文件：docs/synova/coordination/模块归属-MacWin-20260923.md（M，+33/-9——改为「三条原则 + 服从 ownership.yaml」，删四组冲突清单）、docs/synova/coordination/审计发现台账-DSH-CTO.md（M，+2——2026-09-24 三处登记）、.claude/task-briefs/2026-09-24-D936-ownership-defer.md（A，42 行新文件）+ .claude/bypass.log（M，+2 行，hook 自动登记 builtin，不计入 write_set）。分支 docs/d936-ownership-defer，实现提交 acafaa03、e48b1900。",
   "audit": "pending：K3 批次2 派单 docs/synova/coordination/派单-K3审计-批次2-20260924.md:28（审计问项=台账引用口径「39 条违规」的构成是否需豁免规则）",
   "fix_task_id": null,

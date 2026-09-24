@@ -11,7 +11,9 @@
   "depends_on": [],
   "blocked": null,
   "spec": {
-    "path": "docs/synova/coordination/派单-W0与首模块-Win侧-20260923.md",
+    "path": "docs/synova/coordination/派单-W0与首模块-Win侧-20260923.md"
+  },
+  "spec_meta": {
     "by": "synova-cto",
     "at": "2026-09-23",
     "note": "本卡无独立 dev doc：派单件出件即交付物（同一 PR #730 合并）"

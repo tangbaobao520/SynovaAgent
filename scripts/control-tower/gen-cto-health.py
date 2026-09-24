@@ -229,6 +229,41 @@ def resolve_audit_report(num, audit_dict, audit_dir, is_committed):
     return None, None
 
 
+_SPEC_PATH_RE = re.compile(r"^\S+\.(md|json|yml|yaml|txt|py|sh|ts|tsx)$")
+_SPEC_STR_MAX = 512  # 单路径长度上限（防 `File name too long` 类崩溃；本仓实测最长路径 89）
+
+
+def _extract_spec_path(d: dict, tid: str) -> Tuple[Optional[str], Optional[str]]:
+    """U6: 提取 spec 路径 —— 形态不合法时**显式降级**（不崩溃、不静默）。
+
+    @input  — d: 卡片 JSON(dict)；tid: 卡号(用于降级信息定位)
+    @output — (spec_path, degraded_reason) 二元组:
+              · dict                      → (d["spec"].get("path"), None)
+              · str 且**形如单一路径**      → (该字符串, 原因串)  ← **向后兼容**：仍当 path 使用，不因降级弃用
+              · str 但非单一路径形态        → (None, 原因串)      ← 散文/多路径/§节引用：不得当路径
+                                            （旧实现直接 `(REPO / 散文).exists()` → OSError: File name too long）
+              · None / ""                 → (None, None)         ← 未填 = 正常态，非降级
+              · 其他类型                   → (None, 原因串)
+    @degraded — spec 为 str / 其他类型 时返回原因串；调用方**必须**把原因汇总进报告输出
+                （U6 要求③：不得只写 stderr）。旧实现 `(d.get("spec") or {}).get("path")`
+                对 string 直接 AttributeError 并冒泡出 main() → 整个看板零输出（实测 exit=1）。
+    """
+    spec = d.get("spec")
+    if isinstance(spec, dict):
+        return spec.get("path"), None
+    if isinstance(spec, str):
+        s = spec.strip()
+        if not s:
+            return None, None
+        if len(s) <= _SPEC_STR_MAX and _SPEC_PATH_RE.match(s):
+            return s, 'spec 为 string（旧形），应为 {"path": …}（已按该路径继续使用，属兼容降级）'
+        return None, ('spec 为 string 但非单一路径形态（散文/多路径/§节引用），**不按路径使用**'
+                      '（旧实现会对它调 exists() → OSError: File name too long 崩溃），应改为 {"path": …}')
+    if spec is None:
+        return None, None
+    return None, f'spec 类型 {type(spec).__name__} 不可解析，应为 {{"path": …}}'
+
+
 def analyze_task_state() -> Tuple[list, dict]:
     """D393: 状态从工件自动派生 — 不靠人工维护 status (防失真, GitHub/Linear 同哲学).
 
@@ -241,6 +276,7 @@ def analyze_task_state() -> Tuple[list, dict]:
     """
     tasks = []
     phantom_n = 0
+    spec_degraded_n = 0  # U6: spec 形态降级计数（string/非 dict 形态，显式降级而非崩溃）
     if not TASK_STATE_DIR.exists():
         return tasks, {"phantom": 0, "repo_degraded": False}
     # 一次采集工件索引 (D393: 全量一次, 进程内匹配, 不逐任务起子进程)
@@ -302,7 +338,11 @@ def analyze_task_state() -> Tuple[list, dict]:
 # 派生判定 (工件优先; json 字段兜底展示但不算真)
         # D399 (P1-2)/D400: spec = glob 扫描 OR json spec.path 兜底（文件必须真实存在——存在即算真, 消除幻影）
         # D412/U3: json spec.path 分支同样过仓库态校验（工作区存在 且 已提交 HEAD）
-        spec_path = (d.get("spec") or {}).get("path")
+        # U6: 形态兼容 —— dict 走原路径；string(旧形)继续可用但**显式降级**；其他类型显式降级（禁静默/禁崩溃）
+        spec_path, _spec_degraded = _extract_spec_path(d, tid)
+        if _spec_degraded:
+            spec_degraded_n += 1
+            print(f"⚠ degraded: {tid} {_spec_degraded}", file=sys.stderr)
         spec_path_ok = bool(
             spec_path
             and (REPO / spec_path).exists()
@@ -352,6 +392,7 @@ def analyze_task_state() -> Tuple[list, dict]:
             "impl": "✅" if has_impl else "—",
             "audit": audit_txt,
             "fix": d.get("fix_task_id") or "",
+            "spec_degraded": _spec_degraded or "",
         })
         if spec_phantom or audit_txt == "⚠phantom":
             phantom_n += 1
@@ -370,7 +411,7 @@ def analyze_task_state() -> Tuple[list, dict]:
             "audit": audit_txt_hist,
             "fix": "",
         })
-    return tasks, {"phantom": phantom_n, "repo_degraded": repo_degraded}
+    return tasks, {"phantom": phantom_n, "repo_degraded": repo_degraded, "spec_degraded": spec_degraded_n}
 
 
 def analyze_ci() -> dict:
@@ -488,6 +529,18 @@ def render(bypass: dict, fail: dict, ledger: dict, tasks: list, ci: dict = None)
             lines.append("")
     else:
         lines.append("| — | 无 task-state 文件 | | | | |")
+        lines.append("")
+
+    # U6: spec 形态降级必须在**报告输出**里可见（不得只写 stderr，铁律 11/31 降级信号传播）
+    _sd_tasks = [t for t in tasks if t.get("spec_degraded")]
+    if _sd_tasks:
+        lines.append(f'> ⚠ degraded(spec 形态): **{len(_sd_tasks)}** 张卡的 `spec` 非规范形 {{"path": …}}'
+                     ' —— 分两类：形如单一路径者**已按该路径继续使用**；散文/多路径/§节引用者**不按路径使用**'
+                     '（逐卡原因见下）。建议归一化（U6）。')
+        for _t in _sd_tasks[:5]:
+            lines.append(f">   - `{_t['task_id']}`: {_t['spec_degraded']}")
+        if len(_sd_tasks) > 5:
+            lines.append(f">   - …其余 {len(_sd_tasks) - 5} 张同因（stderr 有逐卡 `⚠ degraded:` 行）")
         lines.append("")
 
     # CT-41①: CI 状态段
