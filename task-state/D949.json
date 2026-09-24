@@ -1,0 +1,36 @@
+{
+  "task_id": "D949",
+  "title": "D949 P0-a+ 治理 — tests/electron/** + tests/ga-collab-*.test.ts → mac（D948 切片 B 前置）",
+  "status": "impl_done",
+  "risk": "medium",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": "dsh-squad-code-b",
+  "milestone": "M1 控制塔域判定",
+  "branch": "fix/d949-ownership-electron-tests",
+  "worktree": ".synova-wt-d949-ownership",
+  "base": "origin/main 6a714483",
+  "depends_on": [],
+  "blocked": null,
+  "write_set": [
+    "docs/synova/coordination/ownership.yaml",
+    ".github/CODEOWNERS",
+    "task-state/D949.json",
+    ".claude/task-briefs/2026-09-25-D949-ownership-electron-tests.md"
+  ],
+  "impl": {
+    "branch": "fix/d949-ownership-electron-tests",
+    "note": "ownership.yaml 新增两条 mac 规则（R1 口径 = glob，非列文件）：tests/electron/** + tests/ga-collab-*.test.ts，落点在 ** 兜底行之后（表语义「按顺序求值，最后匹配者胜出」）。.github/CODEOWNERS 由 --emit-codeowners 整文件重跑（+2 行）。tests/control-tower/check-ownership.test.sh 未改动——先跑后判，58/58 绿，无需随规则更新断言。"
+  },
+  "spec": "docs/synova/dispatch/D948-win-identity-chain-department-20260924.md §四 P0（P0-a+ 由 CTO 2026-09-24 R1 裁定覆盖原案）",
+  "evidence": {
+    "criterion_1_slice_b_8_files": "python scripts/control-tower/check-ownership.py <8 文件> → ✅ PASS 8 个文件同域: mac（无归属 0，域判定豁免 0）exit=0",
+    "criterion_2_gate_test": "bash tests/control-tower/check-ownership.test.sh → ✅ 全部通过: 58 项 / EXIT=0（base 基线同为 58 项）",
+    "criterion_3_codeowners_emit": "python scripts/control-tower/check-ownership.py --emit-codeowners → 整文件替换；git diff 仅 +2 行",
+    "collateral_reclass": "tests/electron/ 13 件全判 mac（CTO 已批准）",
+    "discriminative_fixture": "删掉两条新规则（/tmp 沙箱副本）重跑同一命令 → ❌ FAIL 跨域 ['mac','win'] exit=1 = 删掉即红（判据真读数据，非 grep 型静态判据）"
+  },
+  "note": "动因：D948 切片 B 的写集为 electron-renderer/src/**（6 件，mac）+ tests/**（2 件，win）→ D734 单域门禁必判跨域。表缺口非 D948 特有（同族 D782 tests/doc-system、D806 tests/project、D914 三类文档）。D948 侦察实测：P0-a 原案（仅 tests/electron/** → mac）不足以放行——tests/ga-collab-logic.test.ts 在 tests/ 根不经该规则仍判 win；故按 CTO R1 用 glob tests/ga-collab-*.test.ts 一并覆盖 logic + ui 两件。",
+  "updated_at": "2026-09-25",
+  "updated_by": "synova-code-b"
+}

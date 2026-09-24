@@ -175,6 +175,22 @@ rules:
   - glob: "electron-renderer/**"
     owner: "mac"
     source: "TASK-ROUTING.md L36"
+  # D949 增补（2026-09-24，CTO R1）: 桌面端测试随被测主体归属。
+  #   被测 electron/**（L172）+ electron-renderer/**（L175）均 mac，而 tests/electron/** 此前
+  #   落 ** 兜底判 win → 任何一次桌面端改动（源码 mac + 测试 win）必被 D734 判「变更跨域」卡死。
+  #   这不是 D948 特有（同族 D782 tests/doc-system、D806 tests/project、D914 三类文档）。
+  #   连带改判 tests/electron/ 13 件为 mac——CTO 2026-09-24 已批准（含 D716 那件：其头注自陈
+  #   断言对象是 mac 域资产，改判系纠正旧误标）。
+  - glob: "tests/electron/**"
+    owner: "mac"
+    source: "派生: 测试随被测主体（electron/** + electron-renderer/** 均 mac）；D948 P0 表缺口，D949 修复；13 件连带改判已获 CTO 批准"
+  # D949 增补: tests/ga-collab-*.test.ts 的**被测主体在 electron-renderer/**（ga-collab.ts 状态机/
+  #   请求构建 + ga-detail-sections.tsx 展示），故同归 mac。glob 覆盖两件（logic + ui）——
+  #   CTO R1 原话：「不是只列 logic 那一件——tests/ga-collab-ui.test.ts 同样以
+  #   electron-renderer/src/** 为被测主体，只写一件下张卡还会撞」。
+  - glob: "tests/ga-collab-*.test.ts"
+    owner: "mac"
+    source: "派生: 同 tests/electron/**（测试随被测主体 electron-renderer/src/**）；D948 切片 B 写集缺口，D949 修复；覆盖 tests/ga-collab-logic.test.ts + tests/ga-collab-ui.test.ts"
 
   # ═══ Kimi K3 审计红线（L40；其他角色禁碰）═══
   - glob: "scripts/audit/**"
