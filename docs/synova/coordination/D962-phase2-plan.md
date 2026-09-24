@@ -131,3 +131,53 @@
 5. 残留：退役 16 项每项给了防护承接；合并 10 项给了宿主；未动 scripts/audit/**。
 
 — D962-A2，工作树 .synova-wt-d962a（分支 docs/d962-disposition），2026-09-25
+
+## 七、§CTO 四项必改闭合（task-5 / D962-A3，只读实测）
+
+> 必改 1（宽窗）已由队长裁决闭合：选 A——先合 D956 再落 iron-laws 硬阻断，不设宽窗；实施顺序 #753→#750→D956→D962。本节闭合必改 2/3/4。
+
+### 必改 2：#37 契约门禁处置判据（实测）
+
+| 判据 | 命令 | 原始输出 |
+|---|---|---|
+| 目录存在性 | `ls -la .codex/contracts` | `ls: .codex/contracts: No such file or directory`（.codex/ 实有：agents/audit/audit-reports/checkpoints/control-tower/criteria-code-map.json/enterprise/hooks.json/snapshots——无 contracts） |
+| pre-commit 引用 | `grep -n "CONTRACT_DIR" scripts/pre-commit-check.sh` | L1093/1095 均为 `-d "$CONTRACT_DIR"` 条件守卫 → 目录不存在 = 恒跳过（soft_pass 不触发判定） |
+| 其他引用方 | grep 全 scripts/.github/package.json | agent-start.sh:90、agent-start.bat:51-56、run-contract-gate.ts（D217 基建在）——**全部以目录存在为前置**；无任何文档声明启用计划（docs/ 命中仅本卡两文件） |
+
+**结论（CTO 二选一之第一支）：#37 退役。** 防护承接：契约优先（铁律47）的现存真实防线 = #7 新文件配对 + #8 expect≥3（铁律48 测试即契约）迁 CI；中期由 §五 linter 化"契约即类型"路线（tsc build + oxlint-contract 类规则 + doc-typecheck，DSH 同构 B#22）承接；D217 基建（run-contract-gate.ts）保留在库，启用时按新卡重建调用点。
+
+### 必改 3：阶段 2 后 pre-commit 本地清单（全文）+ 三处接线落点
+
+| # | 条目 | 调用脚本/命令 | 执行位置 | 三态语义 |
+|---|---|---|---|---|
+| 1 | #17 主树占用检测 | pre-commit L807-843 内联 + session_registry.py list --active | 本地 | 拦（主树脏+活跃>1 硬）/ 放行（worktree/单 session/干净）/ 降级（registry 不可读 warn+放行，铁律11） |
+| 2 | #33 绕过审计 7c | pre-commit L1029-1055 读 .claude/bypass.log | 本地 | 强信号 detected≥3 超限（soft，ACK 可降级告警）/ 弱信号 possible（告警不阻断，U1 推送对账兜底）/ 绿 |
+| 3 | #46 GATEKEEPER 前置 + fastlane 通道 | pre-commit L239-257（exit 1）+ L359-373（SYNO_FASTLANE） | 本地 | 硬拦（当日 detected-bypass）/ 降级（SYNO_GATEKEEPER_ACK=1 放行+degraded-events.log 登记）/ CI 跳过（GITHUB_ACTIONS 守卫）；fastlane：过（Secrets 绿 exit 0）/ 拒（Secrets 红 exit 1） |
+| 4 | #11 家族·CT-34 纯文档早退 Secrets | pre-commit L319-352 调 check-secrets.sh（+L336-345 Notes 硬拦） | 本地 | 过（Secrets 绿 exit 0）/ 拒（Secrets 红 exit 1）/ 拒（proposed/ 僵尸 Note exit 1，硬） |
+| 5 | 旁路 4 项数据源钩子（log_gate/gate-hits） | pre-commit L78-82 → .claude/gate-hits.log；汇总=scripts/control-tower/gate-stats.sh | 本地写 / CI 与月报读 | 写成功 / 写失败静默（swallow-ok：统计非门禁）/ 汇总侧 gate-stats 三态 |
+| 6 | #3 硬编码业务数据（linter 化过渡期） | check-hardcoded.sh 经 check-file-driven.sh 宿主 | 判定在 CI；本地暂不动提示保留至 §五 规则落地 | 过/软提示（soft，SYNO_CI=1 转硬）/脚本缺失三态 |
+| 7 | #30 禁止新 DiagnosticModule | pre-commit L991-992 内联 | 本地（暂不动） | 过/软提示/CI 转硬 |
+| 8 | #38 G10 条件区域 | pre-commit L1123-1168 + .codex/criteria-code-map.json（实测存在） | 本地（暂不动） | 过/warn（CI 转硬 D542）/无映射跳过 |
+| 9 | #39 G11 验收测试覆盖 | pre-commit L1170-1191 | 本地（暂不动） | 过/warn（CI 转硬）/无 brief 跳过 |
+
+（原第 10 条目 = #37 契约门禁，必改 2 裁定退役后移出清单。）
+
+**三处接线落点结论（引用队长实测，本次不动）**：merge_writeset_gate / check-dsh-anchor / check-k3-report 的接线仅在 ci.yml:102 / 256 / 267-268，pre-commit 零接线——保持现状。**依赖声明**：#750 分支新增的 pre-commit 断面行（主树现 L1494-1500 CP3 python checkpoint，带 `|| true` 吞错——重写时顺带修复为三态）在 #750 合并（顺序 #753→#750→D956→D962）后，其断面行**原文列入本清单**并占用一个条目位，届时清单 9→10、下方等式本地侧 +1、CI 侧相应 −1，等式仍闭合。
+
+### 必改 4：计数等式（#37 落位后终态）
+
+**项级等式（50 项完备划分）**：
+
+```
+本地保留独立 7（保留-脚本 #17/#33/#46 + 暂不动终态 #3/#30/#38/#39）
++ 迁CI 34（原保留-CI 33 + 合并 1：#14 判定并入 check-architecture.sh @ ci.yml:174）
++ 旁路看板 4（#4/#29/#32/#34）
++ 退役 5（#2/#26/#27/#28 + 本次 #37）
+= 50 ✔
+```
+
+**条目级口径**：本地清单 = 7 独立项 + 2 非独立接线（CT-34 早退 Secrets+fastlane ∈ #11/#46 家族；gate-hits 钩子 ∈ 旁路 4 数据源）= **9 条目**；消失条目 = 50 − 9 = **41**。
+
+**与"消失 40"的对账（显式声明，不调和数字）**：40 出自本计划前一版"10 项口径"（8 独立 + 2 非独立，当时 #37 仍为暂不动）。必改 2 裁定 #37 退役后，本地独立 8→7、清单 10→9、消失 40→**41**。差 1 完全由 #37 改判产生，来源可追溯；CTO 若取"消失 40"口径，须改判 #37 为本地保留（判据不支持，目录不存在且无启用计划）或接受 41。**建议以本节等式（7+34+4+5=50 / 消失 41）为终态口径。**
+
+— D962-A3 追加，2026-09-25
