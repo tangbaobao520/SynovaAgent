@@ -8,15 +8,27 @@
 #   3. dry-run → 只预览不建壳
 #   4. 空任务名 → exit 1 + 用法提示
 #   5. 撞车防护 → 目标号已存在时报错 (fail-closed)
+#   9. D938 判别性夹具（中文/斜杠 title + A′ 反吞 + 合法提前退出）
+#  10. D938-a 并发隔离: 消费 SYNO_LOCK_DIR 注入缝（每进程唯一锁目录）+ 缝消费判别探针
 #
-# 零真实仓库污染: 用临时 task-state 目录 (SYNO_TASK_STATE_DIR 注入缝)。
+# 零真实仓库污染: 临时 task-state 目录 (SYNO_TASK_STATE_DIR 注入缝)。
+# D938-a 并发安全: 沙箱/锁目录**全部每进程唯一**（mktemp）—— 改前 TMP_DIR 是固定路径
+#   `/tmp/d384-alloc-tests`，同测试并发两份会互相 rm -rf 沙箱；加上仓库级锁
+#   `$ROOT/.alloc-task-id.lock` 被两个测试共用 → 实测并发下本测试 A 组 FAIL=4。
+#   修法: ① 沙箱走 mktemp（本文件）② 锁走 SYNO_LOCK_DIR 注入缝（生产不设 = 行为不变）。
 # ═══════════════════════════════════════════════════════════════════════════════
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 TOOL="$REPO_DIR/scripts/control-tower/alloc-task-id.sh"
-TMP_DIR="/tmp/d384-alloc-tests"
+TMP_DIR="$(mktemp -d)"                 # D938-a: 每进程唯一（改前固定 /tmp/d384-alloc-tests → 并发互踩）
+LOCK_PARENT="$(mktemp -d)"             # D938-a: 每进程唯一锁父目录
+ALLOC_LOCK_DIR="$LOCK_PARENT/lock"     # 不存在 → mkdir 即拿锁（语义同生产）
+CLEANUP_DIRS=("$TMP_DIR" "$LOCK_PARENT")
+cleanup() { local _d; for _d in ${CLEANUP_DIRS[@]+"${CLEANUP_DIRS[@]}"}; do rm -rf "$_d"; done; }
+trap cleanup EXIT
+export SYNO_LOCK_DIR="$ALLOC_LOCK_DIR"  # D938-a: 消费注入缝（子进程全部继承，含各 section 的内联调用）
 
 PASS=0; FAIL=0
 pass() { PASS=$((PASS + 1)); echo "  ✅ $1"; }
@@ -130,7 +142,7 @@ echo "── 9. D938 判别性夹具: 中文/斜杠 title + A′ 反吞 + 合法
 #          ③ 可达中止路径（brief 目录建不出）rc≠0 且回滚登记（不留孤儿号）
 #   降级 — 合法提前退出不被哨兵误伤: dry-run rc=0；D718 守卫 rc=0
 D938_DIR=$(mktemp -d)
-trap 'rm -rf "$D938_DIR"' EXIT
+CLEANUP_DIRS+=("$D938_DIR")
 D938_RUN() {  # $1=task-state 目录 $2=brief 目录 $3..=透传参数
   local _ts="$1" _br="$2"; shift 2
   SYNO_TASK_STATE_DIR="$_ts" SYNO_BRIEF_DIR="$_br" \
@@ -267,6 +279,46 @@ RC=0; OUT=$(SYNO_TASK_STATE_DIR="$D938_DIR/legal/ts" SYNO_ALLOC_NO_REMOTE=1 SYNO
   SYNO_ALLOC_NO_BRANCH=1 bash "$TOOL" "守卫测试" 2>"$D938_DIR/guard.err") || RC=$?
 assert_exit 0 "$RC" "9.7 D718 守卫合法提前退出 rc（防哨兵误伤）"
 assert_contains "$(cat "$D938_DIR/guard.err")" "跳过 brief 骨架生成" "9.7 守卫仍按降级路径告警"
+echo ""
+
+# ── 10. D938-a: SYNO_LOCK_DIR 注入缝（并发隔离）──
+# 判别方式 = **行为 + 路径特异**，不是 grep 源码:
+#   预置一个 mtime=2000-01-01 的**陈旧**锁目录交给 SYNO_LOCK_DIR，运行后断言：
+#     ① rc=0（照常发号）② **该注入目录被脚本清理掉**（缝被消费的铁证：没消费就不碰它）
+#     ③ stderr 出现「陈旧锁」告警（次级证据，说明走的是陈旧清理分支）
+#   ⚠️ 只用 ③ 会假阳: 仓库锁若恰好陈旧，告警也会出现（本轮实测踩到过）→ 主判据是 ②。
+echo "── 10. D938-a: 锁注入缝消费判别 + 并发隔离 ──"
+PROBE_DIR=$(mktemp -d); CLEANUP_DIRS+=("$PROBE_DIR")
+mkdir -p "$PROBE_DIR/lock"
+: > "$PROBE_DIR/ref"
+touch -t 200001010000 "$PROBE_DIR/ref"          # BSD/GNU 均支持（跨平台）
+touch -r "$PROBE_DIR/ref" "$PROBE_DIR/lock"     # 锁目录 mtime → 2000 年 ⇒ 锁龄 > 60s ⇒ 判陈旧
+D938_SANDBOX "$PROBE_DIR/sb"
+RC=0; OUT=$(SYNO_LOCK_DIR="$PROBE_DIR/lock" SYNO_TASK_STATE_DIR="$PROBE_DIR/sb/ts" \
+  SYNO_BRIEF_DIR="$PROBE_DIR/sb/briefs" SYNO_ALLOC_NO_REMOTE=1 SYNO_ALLOC_NO_WORKTREE=1 \
+  SYNO_ALLOC_NO_BRANCH=1 bash "$TOOL" "陈旧锁探针" 2>&1) || RC=$?
+assert_exit 0 "$RC" "10.1 陈旧锁被清理后照常发号 rc"
+if [ ! -d "$PROBE_DIR/lock" ]; then
+  pass "10.1 缝被真实消费（注入的锁目录运行后被清理 = 该路径确被脚本使用）"
+else
+  fail "10.1 缝未被消费：注入的锁目录仍在（脚本用的是仓库级锁 → 并发仍会互撞）"
+fi
+assert_contains "$OUT" "陈旧锁" "10.1 陈旧清理分支可达（次级证据）"
+
+# 10.2 并发隔离快检: 两把**不同**的锁目录 + 两个沙箱 → 互不干扰、都拿到号
+P1="$PROBE_DIR/p1"; P2="$PROBE_DIR/p2"; D938_SANDBOX "$P1"; D938_SANDBOX "$P2"
+( SYNO_LOCK_DIR="$P1/lock" SYNO_TASK_STATE_DIR="$P1/ts" SYNO_BRIEF_DIR="$P1/briefs" \
+    SYNO_ALLOC_NO_REMOTE=1 SYNO_ALLOC_NO_WORKTREE=1 SYNO_ALLOC_NO_BRANCH=1 \
+    bash "$TOOL" "并发甲" > "$PROBE_DIR/o1" 2>&1; echo $? > "$PROBE_DIR/r1" ) &
+( SYNO_LOCK_DIR="$P2/lock" SYNO_TASK_STATE_DIR="$P2/ts" SYNO_BRIEF_DIR="$P2/briefs" \
+    SYNO_ALLOC_NO_REMOTE=1 SYNO_ALLOC_NO_WORKTREE=1 SYNO_ALLOC_NO_BRANCH=1 \
+    bash "$TOOL" "并发乙" > "$PROBE_DIR/o2" 2>&1; echo $? > "$PROBE_DIR/r2" ) &
+wait || true  # swallow-ok: 两个 rc 已各自落文件，wait 的聚合状态无意义
+R1="$(tr -d ' \r' < "$PROBE_DIR/r1" 2>/dev/null || echo 9)"; R2="$(tr -d ' \r' < "$PROBE_DIR/r2" 2>/dev/null || echo 9)"
+assert_exit 0 "${R1:-9}" "10.2 并发甲（独立锁目录）rc"
+assert_exit 0 "${R2:-9}" "10.2 并发乙（独立锁目录）rc"
+assert_contains "$(cat "$PROBE_DIR/o1")" "D500" "10.2 并发甲拿到 D500（沙箱隔离）"
+assert_contains "$(cat "$PROBE_DIR/o2")" "D500" "10.2 并发乙拿到 D500（沙箱隔离，与甲互不干扰）"
 echo ""
 
 echo "═══════════════════════════════════════════════════════════"
