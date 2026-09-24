@@ -1,0 +1,30 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# ci-red-baseline.txt — CI 既有红基线登记表（M9 task-6 交付；供 check-gate-integrity.sh --ci-reds 解析）
+#
+# 格式（冻结，勿改）: `#` 注释行 + 每条一行:
+#   CHECK_NAME | first_seen=YYYY-MM-DD | evidence=<引用> | owner=<名或 UNASSIGNED> | expires=YYYY-MM-DD
+#   字段分隔符 = " | "；值内不得出现 '|'；CHECK_NAME 必须与 check-runs API 的 name 字段**逐字一致**
+#   （含全角括号与空格——逐字比对，不做规范化）。
+#
+# 生成/核对命令（2026-09-24 18:1x CST 实测，原始输出）:
+#   $ git ls-remote origin refs/heads/main
+#     f25e61eb105690359dbe13baf64695e5ff1748f0	refs/heads/main
+#   $ curl -sS --fail "https://api.github.com/repos/tangbaobao520/SynovaAgent/commits/main/check-runs?per_page=100" -o /tmp/checkruns.json
+#     http_code=200（4292 行 JSON）
+#   $ python3 -c "import json;d=json.load(open('/tmp/checkruns.json'));print('total=%d'%len(d['check_runs']));print(dict(__import__('collections').Counter(c['conclusion'] for c in d['check_runs'])))"
+#     total_check_runs=20
+#     conclusions={'failure': 2, 'skipped': 2, 'success': 16}
+#
+# 口径:
+#   红 = conclusion ∈ {failure, timed_out, cancelled, action_required, startup_failure}
+#   非红 = success / neutral / skipped
+#   基线语义 = "已登记且未到期的既有红**不作为新增**追责"；**未登记的红仍必红**；登记条目过期
+#   （未在 expires 前清理/修复）→ --ci-reds 应判红（棘轮只减不增，豁免不得续期式常驻）。
+#
+# owner: 两条均 UNASSIGNED —— **待 CTO 指派**（本批不自行认领，避免制造"归属已收口"的假象）。
+# expires: 默认 = first_seen + 30 天。
+# 截至时刻: 2026-09-24T18:16+08:00（main tip f25e61eb105690359dbe13baf64695e5ff1748f0）。
+#           main 推进后须重新核对（本表是快照，不是永久事实）。
+# ═══════════════════════════════════════════════════════════════════════════════
+产物新鲜度（generated_at > 3 天必红） | first_seen=2026-09-24 | evidence=check-runs API main f25e61eb, conclusion=failure, started=2026-09-24T06:31:55Z, https://github.com/tangbaobao520/SynovaAgent/actions/runs/35964932621/job/107521310524 | owner=UNASSIGNED | expires=2026-10-24
+Vitest (2/2) | first_seen=2026-09-24 | evidence=check-runs API main f25e61eb, conclusion=failure, started=2026-09-24T05:04:29Z, https://github.com/tangbaobao520/SynovaAgent/actions/runs/35958319035/job/107501294874 （同一现象在 ci.yml L150-156 已有既有记录 PLAN-main-vitest-preexisting-red：存量红放行须可见、须烧掉，不得长期依赖放行） | owner=UNASSIGNED | expires=2026-10-24
