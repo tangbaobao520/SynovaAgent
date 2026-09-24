@@ -1,6 +1,8 @@
 # 2026-09-24 — D940 取号器跨位置拒绝重号（分配器 + 三元组校验器）
 
-> 状态: proposed | 任务: D940 | 写者: d940-c1 | 分支: fix/d940-name-allocation
+> 状态: implemented | 任务: D940 | 写者: d940-c1 | 分支: fix/d940-name-allocation
+> 归位说明: 原落 `proposed/`，被 D472 迁移门禁判为僵尸条目（`task-state/D940.json` status=`spec_done`）
+> → 依 README「决策被采纳执行」迁移 `proposed → implemented`（`git mv` + 头字段同步）。
 > 参考：第一性原理 + Anthropic 基线（决策点 fail-closed 优于事后补偿）
 
 ## 决策
