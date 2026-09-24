@@ -263,7 +263,8 @@ jobs:
             tests/doc-system/doc-triage.test.sh \
             tests/doc-system/generate-chronicle-monthly.test.sh \
             tests/control-tower/check-citations.test.sh \
-            tests/control-tower/check-progress-freshness.test.sh; do
+            tests/control-tower/check-progress-freshness.test.sh \
+            tests/control-tower/install-dsh-preset.test.sh; do
             echo "── $t"
             # D526: 测试失败输出进 ::error 注解——无 token 也能经 annotations 定位（D521 工具1 语义）
             if ! bash "$t" > /tmp/ct-out.log 2>&1; then
@@ -277,6 +278,21 @@ jobs:
           #   存量漂移由 K3/人工月度清理，全量密封化是 K3 P2-4 单独立项）
           bash scripts/control-tower/check-canary-drift.sh || true
           exit $FAIL
+
+      # D922/B3 取证步（CTO 证据要求 3；卡片原落点 gate-integrity job 在此 base 不存在 →
+      #   经队长裁定 A 落本 job）: 把夹具关键行发成 ::notice 注解，CI 侧原始输出公开可检索。
+      #   runner 为 bash -e：取行管道一律 `|| true`；空捕获时发 ::warning 可见回落——发布者不判红。
+      - name: Publish D922 preset fixture summary (public evidence via annotations)
+        if: always()
+        run: |
+          set -uo pipefail
+          OUT="$(bash tests/control-tower/install-dsh-preset.test.sh 2>&1 || true)"
+          LINES="$(echo "$OUT" | grep -E '^(T3|T3b|T3c|D922-FIXTURE|=== 结果)' | head -10 || true)"
+          if [ -z "$LINES" ]; then
+            echo "::warning title=b3-fixture::证据步未取到关键行（夹具可能未执行）——发布者不判红"
+          else
+            echo "$LINES" | while IFS= read -r l; do echo "::notice title=b3-fixture::$l"; done
+          fi
 
   integration-check:
     name: Integration Contract Check
