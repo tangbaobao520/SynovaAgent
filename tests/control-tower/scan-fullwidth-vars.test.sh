@@ -43,8 +43,9 @@ MAC_RES_BASELINE=6     # 上限（棘轮）：全 mac 域残余**文件**数（C
 WIN_FILE_BASELINE=10   # 上限（棘轮）：全 win 域残余文件数（CTO 裁定订正 8 → 10）
 
 PASS=0; FAIL=0; SKIP=0
+FAILED_NAMES=()
 ok()   { echo "  ✅ $1"; PASS=$((PASS+1)); }
-no()   { echo "  ❌ $1"; FAIL=$((FAIL+1)); }
+no()   { echo "  ❌ $1"; FAIL=$((FAIL+1)); FAILED_NAMES+=("$1"); }   # D938-CI: 记名以便尾部摘要
 skip() { echo "  ⏭ $1"; SKIP=$((SKIP+1)); }
 # 绿腿告警必须可见（CI 只打印失败测试的输出 → 绿腿的 SKIP/缩水必须走 annotation）
 visible_warn() {
@@ -97,15 +98,23 @@ fi
 # ── 1. 负例: grep -P 静默失败陷阱 ─────────────────────────────────────────────
 echo ""
 echo "── 1. 负例: grep -P 静默失败陷阱（假绿家族）──"
-# ① 实测陷阱存在: BSD grep 无 -P → rc=2；`2>/dev/null` 后管道读到「0 命中」= 假绿
-P_HITS=$(grep -rnP "$(printf '\\$\\w+%s' "$FW")" "$REPO/scripts" 2>/dev/null | wc -l | tr -d ' \r')
-P_RC=$(grep -rnP 'x' "$REPO/scripts" >/dev/null 2>&1; echo $?)
-if [ "$P_RC" = "2" ] && [ "$P_HITS" = "0" ]; then
-  ok "陷阱复现: grep -P → rc=2，但 \`2>/dev/null\` 后读到 0 命中（这就是假绿来源）"
-elif [ "$P_RC" = "0" ]; then
-  ok "本平台 grep 支持 -P（GNU grep）→ 陷阱不适用；扫描器仍不使用 -P（见下条）"
+# D938-CI(方言): 改**显式平台探针 + 双分支期望**（CTO 新规范），不再依赖 rc 的巧合分支、不再 skip。
+#   探针: 用一条管道判 -P 是否可用（BSD grep 无 -P → 走不支持分支；GNU/msys → 支持分支）。
+if printf 'x\n' | grep -qP 'x' 2>/dev/null; then P_SUPPORTED=1; else P_SUPPORTED=0; fi
+echo "  平台探针: printf 'x' | grep -qP 'x' → 支持=${P_SUPPORTED}（1=本平台 grep 有 -P）"
+if [ "$P_SUPPORTED" = "0" ]; then
+  # 支持分支：-P 不存在 ⇒ 陷阱必然存在，实测复现它（rc=2 且 2>/dev/null 后读成 0 命中）
+  P_HITS=$(grep -rnP "$(printf '\\$\\w+%s' "$FW")" "$REPO/scripts" 2>/dev/null | wc -l | tr -d ' \r')
+  P_RC=$(grep -rnP 'x' "$REPO/scripts" >/dev/null 2>&1; echo $?)
+  if [ "$P_RC" = "2" ] && [ "$P_HITS" = "0" ]; then
+    ok "陷阱复现: grep -P → rc=2，但 \`2>/dev/null\` 后读到 0 命中（这就是假绿来源）"
+  else
+    no "陷阱未复现（无 -P 的平台却 rc=${P_RC} hits=${P_HITS}）—— 前提不成立，需人工核"
+  fi
 else
-  skip "grep -P 行为未判定（rc=${P_RC}, hits=${P_HITS}）—— 平台差异，不属于失败"
+  # 不支持分支：本平台有 -P ⇒ 陷阱**不适用**，改断言「等效风险」——PCRE 与 ERE 语义不同,
+  #   用 -P 写出的门禁在无 -P 平台会静默失效；断言扫描器不写 -P（下条静态断言）+ 金丝雀真匹配（§2）。
+  ok "本平台 grep 支持 -P（GNU/msys）→ 陷阱不适用；等效风险由下条静态断言 + §2 金丝雀覆盖"
 fi
 # ② 静态: 扫描器**代码行**（去注释）不得出现 -P（注释里写"禁 grep -P"不算）
 P_CODE=$(grep -vE '^[[:space:]]*#' "$SCAN" | grep -E 'grep[^|]*[[:space:]]-[A-Za-z]*P[A-Za-z]*([[:space:]]|$)')
@@ -327,5 +336,11 @@ echo "════════════════════════�
 echo "  结果: PASS=$PASS FAIL=$FAIL SKIP=$SKIP"
 echo "═══════════════════════════════════════════════════════════"
 [ "$SKIP" -gt 0 ] && visible_warn "本测试有 $SKIP 项 SKIP（平台能力缺失，非通过）—— 计数已进入结果行"
+# 失败摘要（**必须留在最后一行**：CI 只截 tail -8 进 ::error 注解，无摘要就只能靠猜）
+if [ "$FAIL" -gt 0 ]; then
+  D938_DIGEST=""
+  for _n in ${FAILED_NAMES[@]+"${FAILED_NAMES[@]}"}; do D938_DIGEST="${D938_DIGEST}${_n} ; "; done
+  echo "❌ FAILED(${FAIL}): ${D938_DIGEST}"
+fi
 [ "$FAIL" -eq 0 ] || exit 1
 exit 0

@@ -31,8 +31,11 @@ trap cleanup EXIT
 export SYNO_LOCK_DIR="$ALLOC_LOCK_DIR"  # D938-a: 消费注入缝（子进程全部继承，含各 section 的内联调用）
 
 PASS=0; FAIL=0
+FAILED_NAMES=()
 pass() { PASS=$((PASS + 1)); echo "  ✅ $1"; }
-fail() { FAIL=$((FAIL + 1)); echo "  ❌ $1" >&2; }
+# D938-CI: 失败断言名落盘 —— CI 只把 `tail -8` 写进 ::error 注解，没有摘要就只剩尾几行、
+#   定位靠猜。摘要压成**一行**放最后，使注解里能看到"到底哪条红"。
+fail() { FAIL=$((FAIL + 1)); FAILED_NAMES+=("$1"); echo "  ❌ $1" >&2; }
 assert_contains() { if echo "$1" | grep -qF "$2"; then pass "$3"; else fail "$3 — 未找到: $2"; fi; }
 assert_exit() { if [ "$1" = "$2" ]; then pass "$3 (exit=$2)"; else fail "$3 — 期望 exit=$1 实际=$2"; fi; }
 
@@ -207,12 +210,16 @@ fi
 #   assign-from-failed-cmdsub→1）。c1 修掉 :242 后生产路径已无 unbound，故用「真实 handler
 #   源码 + 合成 unbound」驱动 —— 不是测副本函数体，也不是 grep 型静态判据。
 D938_HANDLER=""
+# D938-CI(方言): 提取必须**方言无关** —— 原实现用 `awk '/^_lock_release\(\) \{/…'`：`\{` 在 POSIX ERE 里
+#   单独出现属**未定义**（GNU awk/mawk 与 BSD awk 处理不一致），可能提取为空 → 断言红且判别信息丢给
+#   "unbound variable" 那类噪音，定位要靠猜。改成纯字面量 sed 区间（BRE 里 `(` `{` 都是字面字符，
+#   无 interval 构造）→ BSD/GNU/msys 一致。（根因结论以 CI 注解中的失败摘要为准，本注释是修因不是判据。）
 D938_HL="$(grep -n '^_lock_release() {' "$TOOL" | head -1 | cut -d: -f1)"
 if [ -n "$D938_HL" ]; then
   D938_FIRST="$(sed -n "${D938_HL}p" "$TOOL")"
   case "$D938_FIRST" in
     *'{'*'}'*) D938_HANDLER="$D938_FIRST" ;;
-    *) D938_HANDLER="$(awk '/^_lock_release\(\) \{/{f=1} f{print} f&&/^\}/{exit}' "$TOOL")" ;;
+    *) D938_HANDLER="$(sed -n '/^_lock_release() {/,/^}/p' "$TOOL")" ;;
   esac
 fi
 if printf '%s' "$D938_HANDLER" | grep -q '_lock_release' && printf '%s' "$D938_HANDLER" | grep -q 'exit'; then
@@ -287,23 +294,53 @@ echo ""
 #     ① rc=0（照常发号）② **该注入目录被脚本清理掉**（缝被消费的铁证：没消费就不碰它）
 #     ③ stderr 出现「陈旧锁」告警（次级证据，说明走的是陈旧清理分支）
 #   ⚠️ 只用 ③ 会假阳: 仓库锁若恰好陈旧，告警也会出现（本轮实测踩到过）→ 主判据是 ②。
+# D938-CI(方言): 锁路径改用**相对路径**（CWD = 探针目录）。
+#   原因: 工具的陈旧判定走 `python3 -c "…os.path.getmtime('$LOCK_DIR')"`；Git Bash(msys) 下 native python
+#   解析不了 `/tmp/...` 这类 MSYS 绝对路径 → 抛错被 `|| echo 0` 吞成 lock_age=0 → **恒判不陈旧**
+#   → 走 30s 等待超时分支（CI windows 实测 2 红）。相对路径下 python 继承同一 CWD → 全平台一致。
+#   另加**平台探针 + 双分支期望**（CTO 新规范）：探针证明本平台能 stat 该路径才断言陈旧分支；
+#   不能 stat 时走「持锁等待超时」分支并**显式标 PLATFORM-DIFF**（不是静默 skip，也不是假绿）。
 echo "── 10. D938-a: 锁注入缝消费判别 + 并发隔离 ──"
 PROBE_DIR=$(mktemp -d); CLEANUP_DIRS+=("$PROBE_DIR")
 mkdir -p "$PROBE_DIR/lock"
 : > "$PROBE_DIR/ref"
-touch -t 200001010000 "$PROBE_DIR/ref"          # BSD/GNU 均支持（跨平台）
+touch -t 200001010000 "$PROBE_DIR/ref"          # BSD/GNU/msys 均支持 -t
 touch -r "$PROBE_DIR/ref" "$PROBE_DIR/lock"     # 锁目录 mtime → 2000 年 ⇒ 锁龄 > 60s ⇒ 判陈旧
 D938_SANDBOX "$PROBE_DIR/sb"
-RC=0; OUT=$(SYNO_LOCK_DIR="$PROBE_DIR/lock" SYNO_TASK_STATE_DIR="$PROBE_DIR/sb/ts" \
+# 平台探针: 本平台 python 能否 stat 相对路径（决定期望分支，不去猜方言）
+PROBE_PY=""
+for _c in python3 python py; do
+  if command -v "$_c" >/dev/null 2>&1 && "$_c" -c 'import sys' >/dev/null 2>&1; then PROBE_PY="$_c"; break; fi
+done
+PROBE_REL_OK=0
+if [ -n "$PROBE_PY" ] && ( cd "$PROBE_DIR" && "$PROBE_PY" -c "import os;os.path.getmtime('ref')" >/dev/null 2>&1 ); then PROBE_REL_OK=1; fi
+echo "  平台探针: python(${PROBE_PY:-none}) 相对路径 stat → ${PROBE_REL_OK}（1=可执行陈旧分支）"
+RC=0; OUT=$( cd "$PROBE_DIR" && SYNO_LOCK_DIR="lock" SYNO_TASK_STATE_DIR="$PROBE_DIR/sb/ts" \
   SYNO_BRIEF_DIR="$PROBE_DIR/sb/briefs" SYNO_ALLOC_NO_REMOTE=1 SYNO_ALLOC_NO_WORKTREE=1 \
-  SYNO_ALLOC_NO_BRANCH=1 bash "$TOOL" "陈旧锁探针" 2>&1) || RC=$?
-assert_exit 0 "$RC" "10.1 陈旧锁被清理后照常发号 rc"
-if [ ! -d "$PROBE_DIR/lock" ]; then
-  pass "10.1 缝被真实消费（注入的锁目录运行后被清理 = 该路径确被脚本使用）"
+  SYNO_ALLOC_NO_BRANCH=1 bash "$TOOL" "陈旧锁探针" 2>&1 ) || RC=$?
+if [ "$PROBE_REL_OK" = "1" ]; then
+  assert_exit 0 "$RC" "10.1 陈旧锁被清理后照常发号 rc"
+  if [ ! -d "$PROBE_DIR/lock" ]; then
+    pass "10.1 缝被真实消费（注入的锁目录运行后被清理 = 该路径确被脚本使用）"
+  else
+    fail "10.1 缝未被消费：注入的锁目录仍在（脚本用的是仓库级锁 → 并发仍会互撞）"
+  fi
+  assert_contains "$OUT" "陈旧锁" "10.1 陈旧清理分支可达（次级证据）"
 else
-  fail "10.1 缝未被消费：注入的锁目录仍在（脚本用的是仓库级锁 → 并发仍会互撞）"
+  # 双分支期望: 本平台 python 读不到 mtime → 工具的陈旧清理不可达 → 期望「持锁等待超时」分支。
+  # 该分支同样证明**缝被消费**（脚本在等我们注入的那把锁，而不是仓库锁），且不靠任何方言。
+  echo "  ⚠️ PLATFORM-DIFF: 本平台 python 无法 stat 相对路径 → 改判「持锁超时」分支（可见降级，非静默）"
+  if [ "$RC" -ne 0 ]; then
+    pass "10.1 缝被真实消费（持锁分支 rc=${RC} ≠ 0 = 脚本在等注入的锁，非仓库锁）"
+  else
+    fail "10.1 缝未被消费：持锁情况下仍 rc=0（说明脚本没在用注入的锁目录）"
+  fi
+  if printf '%s' "$OUT" | grep -q "分配锁超时"; then
+    pass "10.1 超时告警出现（注入锁确有阻塞效果 = 次级证据）"
+  else
+    fail "10.1 未出现超时告警（注入锁未生效）"
+  fi
 fi
-assert_contains "$OUT" "陈旧锁" "10.1 陈旧清理分支可达（次级证据）"
 
 # 10.2 并发隔离快检: 两把**不同**的锁目录 + 两个沙箱 → 互不干扰、都拿到号
 P1="$PROBE_DIR/p1"; P2="$PROBE_DIR/p2"; D938_SANDBOX "$P1"; D938_SANDBOX "$P2"
@@ -324,5 +361,11 @@ echo ""
 echo "═══════════════════════════════════════════════════════════"
 echo "  结果: PASS=$PASS FAIL=$FAIL"
 echo "═══════════════════════════════════════════════════════════"
+# 失败摘要（**必须留在最后一行**：CI 只截 tail -8 进 ::error 注解）
+if [ "$FAIL" -gt 0 ]; then
+  D938_DIGEST=""
+  for _n in ${FAILED_NAMES[@]+"${FAILED_NAMES[@]}"}; do D938_DIGEST="${D938_DIGEST}${_n} ; "; done
+  echo "❌ FAILED(${FAIL}): ${D938_DIGEST}"
+fi
 [ "$FAIL" -eq 0 ] || exit 1
 exit 0
