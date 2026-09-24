@@ -17,8 +17,11 @@
 #   降级 — ci.yml 缺失 / 基线缺失 / --ci-reds 非法 JSON → 各自 exit 2 + stderr `degraded:` + 日志 JSON 五字段
 #   边界 — 基线条目过期（幽灵条目）→ exit 1；扫描脚本解析到 0 个模式 → exit 2
 #   边界 — 模式隔离: --patterns-only 不因 registry 面缺失而降级
-#   棘轮 — PATTERN-BASELINE: 真仓库 --patterns-only → exit 0（:991 已登记；D937 落地后自适应为"须删条目"）
-#   棘轮 — PATTERN 条目 expires 过期 → exit 1；条目已不再违规 → exit 1（须删条目）
+#   棘轮 — PATTERN-BASELINE: 真仓库 --patterns-only → exit 0（:991 已登记；本平台/GNU STALE 亦不影响退出码）
+#   棘轮 — PATTERN 条目 expires 过期 → exit 1（硬门，registered / STALE 皆不放行）
+#   棘轮 — ① 修好副本（坐标不再违规）→ STALE(方言) + exit 0；③ STALE 且过期 → 仍 exit 1（反"拔牙"）；⑩ 混合计数
+#   棘轮 — ④ step summary: GITHUB_STEP_SUMMARY 可写 → 落 `## Gate Integrity` 块；存在但不可写 → 显式 degrade
+#   棘轮 — 跨方言陷阱: :991 在 BSD rc=2(违规) / GNU 合法(不违规) → "已不再违规"不得判红（CTO 裁定 A）
 #   分段 — 双段互不串行: [R] 段 key 不给 A 模式豁免；[P] 段条目不进 registry 面
 #   判别性 — M1 未登记的新非法 ERE（临时脚本）→ 必红（exit 1 + 点名 file:line + 模式原文）
 #   判别性 — M2 从基线删 1 条仍存在的未登记项 → 必红
@@ -37,6 +40,11 @@
 #   · expires/owner **按键取值**，绝不按字段序号（冻结格式 $2 = first_seen，不是 expires）
 #   · 缺 expires 键 → exit 2 degrade（静默当 0 = fail-open）
 #
+# 平台方言（CTO 裁定 A，2026-09-24）: 同一坐标跨方言判定不同 ——
+#   `scripts/pre-commit-check.sh:991` 的 `^+++` 在 BSD grep rc=2（非法=违规）、GNU grep 合法（不违规）。
+#   故"条目已不再违规"记 STALE（可见/计数/标注平台）而**不判违规**；expires 仍是硬门（缺键 exit 2 / 过期 exit 1）。
+#   本地夹具用 `sed '/grep -Ev/ …'` 造出"修好副本"作为 CI(GNU) 情形的等价物（只改 ERE 那条，避免把 :492 的 BRE 也改坏）。
+#
 # 已知边界（与本器头注释一致）: 整行注释不扫；变量/命令替换模式与 -P PCRE 计"不可校验"。
 # ═══════════════════════════════════════════════════════════════════════════════
 set -uo pipefail
@@ -52,6 +60,7 @@ SB="$TMPD/sb"
 mkdir -p "$SB/scripts" "$SB/tests/control-tower" "$SB/logs"
 MARK="INJECTED""-RED"      # 拼接构造：本文件源码内不出现该字面量（收尾断言仓库零命中）
 BAD_RE='^+'"++"             # 拼接构造非法 ERE：扫描面里不出现"红"字面量
+PROBE_RE='^+'"++"           # 拼接构造方言探针模式（= ^+++；BSD rc=2 / GNU rc 0-1）——同上，避开字面量
 NAME_CN='门禁完整性（gate-integrity）检查 v1.2'   # 含中文/全角括号/点号 → 转义回归
 
 PASS=0; FAIL=0
@@ -122,8 +131,8 @@ fi
 printf '%s\n' "$OUT" | grep -q "PATTERN-SENTINEL: 解析 2 个模式" \
   && ok "正常: 解析到 2 个模式（ERE 1 / BRE 1，方言分判生效）" \
   || no "模式统计异常（应为 解析 2 个模式）"
-printf '%s\n' "$OUT" | grep -q "PATTERN-BASELINE: registered 0；条数 0" \
-  && ok "正常: PATTERN-BASELINE 空段 → registered 0 / 条数 0" \
+printf '%s\n' "$OUT" | grep -q "PATTERN-BASELINE: registered 0；STALE(0)" \
+  && ok "正常: PATTERN-BASELINE 空段 → registered 0 / STALE(0)" \
   || no "PATTERN-BASELINE 空段统计异常"
 printf '%s\n' "$OUT" | grep -q "CI-REGISTRY: 测试文件 2（密封面 sh/py 2；ts 面 0）" \
   && ok "正常: 密封面 2 文件 / 登记 1 / 未登记 1（[R] 段内）" \
@@ -233,12 +242,12 @@ else
   no "基线过期边界异常: rc=$rc"
 fi
 
-# ── 棘轮 R1: 真仓库 --patterns-only → exit 0（:991 已登记）──
+# ── 棘轮 R1: 真仓库 --patterns-only → exit 0（:991 已登记；STALE 语义随平台自适应）──
 OUT="$(SYNO_GATE_DEGRADED_LOG="$SB/logs/real.log" bash "$GATE" --patterns-only 2>&1)"; rc=$?
-if [ "$rc" -eq 0 ] && printf '%s\n' "$OUT" | grep -q "PATTERN-BASELINE: registered 1；条数 1"; then
-  ok "棘轮: 真仓库 --patterns-only → exit 0（:991 已登记，registered 1）"
-elif [ "$rc" -eq 1 ] && printf '%s\n' "$OUT" | grep -q "VIOLATION: 基线过期，须删条目: scripts/pre-commit-check.sh:991"; then
-  ok "棘轮: 真仓库 --patterns-only → exit 1 且点名 :991（= D937 已落地，应删 [P] 条目；断言按状态自适应）"
+if [ "$rc" -eq 0 ] && printf '%s\n' "$OUT" | grep -q "PATTERN-BASELINE: registered 1；STALE(0)"; then
+  ok "棘轮: 真仓库 --patterns-only → exit 0（:991 在本平台违规且已登记，registered 1 / STALE 0）"
+elif [ "$rc" -eq 0 ] && printf '%s\n' "$OUT" | grep -q "PATTERN-BASELINE: STALE("; then
+  ok "棘轮: 真仓库 --patterns-only → exit 0 且 :991 记 STALE（= 本平台/GNU 已不再违规；STALE 不影响退出码，按新契约正确）"
 else
   no "棘轮: 真仓库 --patterns-only 非预期: rc=$rc"
 fi
@@ -265,20 +274,61 @@ else
   no "PATTERN 过期未触发: rc=$rc"
 fi
 
-# ── 棘轮: PATTERN 条目已不再违规 → exit 1（须删条目）──
-cat > "$SB/baseline-pat-stale.txt" <<EOB
+# ── 判别性 ① STALE 去平台陷阱: 修好副本（^\+\+\+ = GNU 下 :991 的等价合法形态）→ rc=0 + STALE(方言) ──
+#    CI(C) 情形: GNU 上 :991 本来合法 → 坐标不再违规 → 旧实现误判"基线过期 exit 1"；新契约记 STALE 且不影响退出码。
+#    夹具只改 ERE 那条（sed 限定 `grep -Ev` 行）——若整文件替换会把 :492 的 BRE 也改成 BSD 非法形态（假修复）。
+sed '/grep -Ev/ s/\^+++/^\\+\\+\\+/' "$REPO/scripts/pre-commit-check.sh" > "$SB/scripts/fixed-precommit.sh"
+FIXED_LINE="$(grep -n 'grep -Ev' "$SB/scripts/fixed-precommit.sh" | grep -F '^\\+\\+\\+' | head -1 | cut -d: -f1)"
+printf 'test\n' | grep -Ev "$PROBE_RE" >/dev/null 2>&1   # 夹具独立跑同款行为探针（不读被测实现）
+if [ $? -eq 2 ]; then EXPECT_DIALECT="bsd"; else EXPECT_DIALECT="gnu"; fi
+cat > "$SB/baseline-fixed.txt" <<EOB
 # 夹具基线
 # ═══ REGISTRY-BASELINE（夹具）═══
 tests/control-tower/beta.test.sh
-# ═══ PATTERN-BASELINE（夹具：失效条目 = 指向合法模式行）═══
+# ═══ PATTERN-BASELINE（夹具：条目坐标在副本里已不再违规 = STALE）═══
 # 格式：<路径>:<行号> | owner=<D#> | expires=YYYY-MM-DD | evidence=<引用>
-$SCAN_OK:2 | owner=fixture | expires=2099-12-31 | evidence=夹具-已不再违规
+$SB/scripts/fixed-precommit.sh:$FIXED_LINE | owner=fixture | expires=2099-12-31 | evidence=夹具-修好副本（STALE）
 EOB
-OUT="$(RUN "$SCAN_OK" "$SB/tests" "$SB/ci.yml" "$SB/baseline-pat-stale.txt" "$SB/red-baseline.txt" "$SB/logs/r3.log" --patterns-only 2>&1)"; rc=$?
-if [ "$rc" -eq 1 ] && printf '%s\n' "$OUT" | grep -q "VIOLATION: 基线过期，须删条目"; then
-  ok "棘轮: PATTERN 条目已不再违规 → exit 1（须删条目）"
+OUT="$(RUN "$SB/scripts/fixed-precommit.sh" "$SB/tests" "$SB/ci.yml" "$SB/baseline-fixed.txt" "$SB/red-baseline.txt" "$SB/logs/r3.log" --patterns-only 2>&1)"; rc=$?
+if [ "$rc" -eq 0 ] && printf '%s\n' "$OUT" | grep -q "PATTERN-BASELINE: STALE(${EXPECT_DIALECT})" \
+  && printf '%s\n' "$OUT" | grep -q "PATTERN-BASELINE: registered 0；STALE(1)" \
+  && ! printf '%s\n' "$OUT" | grep -q "VIOLATION"; then
+  ok "① STALE: 修好副本 → rc=0 + STALE(${EXPECT_DIALECT}) + registered 0/STALE 1（不再是 exit 1）"
 else
-  no "PATTERN 失效条目未触发: rc=$rc"
+  no "① STALE 断言失败: rc=$rc（期望 rc=0 + STALE(${EXPECT_DIALECT})，实际见下）"
+fi
+
+# ── 判别性 ③ 反"拔牙": STALE 且 expires 已过 → 仍须 exit 1 ──
+cat > "$SB/baseline-stale-expired.txt" <<EOB
+# 夹具基线
+# ═══ REGISTRY-BASELINE（夹具）═══
+tests/control-tower/beta.test.sh
+# ═══ PATTERN-BASELINE（夹具：STALE + 过期）═══
+# 格式：<路径>:<行号> | owner=<D#> | expires=YYYY-MM-DD | evidence=<引用>
+$SCAN_OK:2 | owner=fixture | expires=2020-01-01 | evidence=夹具-STALE且过期
+EOB
+OUT="$(RUN "$SCAN_OK" "$SB/tests" "$SB/ci.yml" "$SB/baseline-stale-expired.txt" "$SB/red-baseline.txt" "$SB/logs/r4.log" --patterns-only 2>&1)"; rc=$?
+if [ "$rc" -eq 1 ] && printf '%s\n' "$OUT" | grep -q "VIOLATION: PATTERN 基线过期（须修或延期；条目本平台已 STALE(" ; then
+  ok "③ 反拔牙: STALE 且 expires 已过 → exit 1（放宽 STALE 未连带跳过 expires 硬门）"
+else
+  no "③ 反拔牙断言失败: rc=$rc（STALE 把 expires 一起放行了 = fail-open）"
+fi
+
+# ── 判别性 ⑩ STALE 与 registered 同时存在 → 计数各自准确，退出码不受 STALE 影响 ──
+cat > "$SB/baseline-mixed.txt" <<EOB
+# 夹具基线
+# ═══ REGISTRY-BASELINE（夹具）═══
+tests/control-tower/beta.test.sh
+# ═══ PATTERN-BASELINE（夹具：1 条命中违规 + 1 条 STALE）═══
+# 格式：<路径>:<行号> | owner=<D#> | expires=YYYY-MM-DD | evidence=<引用>
+$SCAN_M1:3 | owner=fixture | expires=2099-12-31 | evidence=夹具-registered
+$SCAN_OK:2 | owner=fixture | expires=2099-12-31 | evidence=夹具-STALE
+EOB
+OUT="$(RUN "$SCAN_M1" "$SB/tests" "$SB/ci.yml" "$SB/baseline-mixed.txt" "$SB/red-baseline.txt" "$SB/logs/r5.log" --patterns-only 2>&1)"; rc=$?
+if [ "$rc" -eq 0 ] && printf '%s\n' "$OUT" | grep -q "PATTERN-BASELINE: registered 1；STALE(1)"; then
+  ok "⑩ 混合: registered 1 + STALE 1 → rc=0（计数准确且 STALE 不入违规）"
+else
+  no "⑩ 混合计数断言失败: rc=$rc"
 fi
 
 # ── 分段隔离 A: [R] 段里的 key 不给 [P] 面生效（新非法模式仍必红）──
@@ -309,8 +359,8 @@ EOB
 OUT="$(RUN "$SCAN_OK" "$SB/tests" "$SB/ci.yml" "$SB/baseline-both.txt" "$SB/red-baseline.txt" "$SB/logs/r5.log" --registry-only 2>&1)"; rc=$?
 [ "$rc" -eq 0 ] && ok "分段隔离: [P] 段条目不进 registry 面 → exit 0（无跨段串行）" || no "分段隔离 B 失败: rc=$rc"
 OUT="$(RUN "$SCAN_M1" "$SB/tests" "$SB/ci.yml" "$SB/baseline-both.txt" "$SB/red-baseline.txt" "$SB/logs/r6.log" --patterns-only 2>&1)"; rc=$?
-if [ "$rc" -eq 0 ] && printf '%s\n' "$OUT" | grep -q "PATTERN-BASELINE: registered 1；条数 1"; then
-  ok "分段隔离: [P] 段条目正确豁免既有非法模式 → exit 0（registered 1）"
+if [ "$rc" -eq 0 ] && printf '%s\n' "$OUT" | grep -q "PATTERN-BASELINE: registered 1；STALE(0)"; then
+  ok "分段隔离: [P] 段条目正确豁免既有非法模式 → exit 0（registered 1 / STALE 0）"
 else
   no "分段隔离([P] 豁免)失败: rc=$rc"
 fi
@@ -371,6 +421,35 @@ if [ "$rc" -eq 0 ] && printf '%s\n' "$OUT" | grep -q "GATE-INTEGRITY: OK"; then
 else
   no "M6 回归失败（拼接模式被截断成假违规）: rc=$rc"
 fi
+
+# ── 判别性 ④a step summary 注入缝: GITHUB_STEP_SUMMARY=<tmpfile> → 摘要含关键行 ──
+SUM_OK="$SB/logs/summary-ok.md"
+OUT="$(SYNO_GATE_SCAN_SCRIPTS="$SCAN_OK" SYNO_TESTS_DIR="$SB/tests" SYNO_CI_YML="$SB/ci.yml" \
+  SYNO_GATE_BASELINE="$SB/baseline.txt" SYNO_CI_RED_BASELINE="$SB/red-baseline.txt" \
+  SYNO_GATE_DEGRADED_LOG="$SB/logs/s4a.log" GITHUB_STEP_SUMMARY="$SUM_OK" \
+  bash "$GATE" --patterns-only 2>&1)"; rc=$?
+if [ "$rc" -eq 0 ] && [ -f "$SUM_OK" ] \
+  && grep -q '^## Gate Integrity$' "$SUM_OK" \
+  && grep -q 'PATTERN-BASELINE: registered=' "$SUM_OK" \
+  && grep -q 'GATE-INTEGRITY: ' "$SUM_OK"; then
+  ok "④a step summary: GITHUB_STEP_SUMMARY 已写（## Gate Integrity + registered= + GATE-INTEGRITY:）"
+else
+  no "④a step summary 未落地: rc=$rc file=$([ -f "$SUM_OK" ] && echo yes || echo no)"
+fi
+
+# ── 判别性 ④b step summary 不可写 → 显式 degrade（不得静默）──
+SUM_RO="$SB/logs/summary-readonly.md"
+printf 'x\n' > "$SUM_RO"; chmod 444 "$SUM_RO"
+OUT="$(SYNO_GATE_SCAN_SCRIPTS="$SCAN_OK" SYNO_TESTS_DIR="$SB/tests" SYNO_CI_YML="$SB/ci.yml" \
+  SYNO_GATE_BASELINE="$SB/baseline.txt" SYNO_CI_RED_BASELINE="$SB/red-baseline.txt" \
+  SYNO_GATE_DEGRADED_LOG="$SB/logs/s4b.log" GITHUB_STEP_SUMMARY="$SUM_RO" \
+  bash "$GATE" --patterns-only 2>&1)"; rc=$?
+if [ "$rc" -eq 2 ] && printf '%s\n' "$OUT" | grep -q "degraded: GITHUB_STEP_SUMMARY 存在但不可写"; then
+  ok "④b step summary 不可写 → exit 2 + 显式 degraded（不静默跳过）"
+else
+  no "④b 不可写摘要未显式降级: rc=$rc"
+fi
+chmod 644 "$SUM_RO" 2>/dev/null || true
 
 # ── 收尾: 红证不残留（仓库内零命中）──
 HITS="$(grep -rl -- "$MARK" "$REPO/scripts" "$REPO/tests" 2>/dev/null | wc -l | tr -d ' ')"   # swallow-ok: 探测型 grep（红证残留检查）；无命中=期望结果 0，grep rc=1 不是错误
