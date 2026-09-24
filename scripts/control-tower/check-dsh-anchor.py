@@ -6,13 +6,13 @@
   ② 真实 DSH 树 HEAD == 事实源 head  否则 exit 2（degraded：树已移动，全部引用降级待复核）
   ③ 被扫描文档不得出现 superseded 的 (version, head) 否则 exit 1（VIOLATION，点名 file:line）
   ④ 被扫描文档不得出现"未登记"的 DSH 版本串 否则 exit 1
+输出: DSH-ANCHOR: OK | VIOLATION(n) | DEGRADED
+"""
   ⑤ 豁免（D943-FIX，K3 批次4 §1.4 逃逸向量收口）——旧断面引用只有两条出清路径：
        a) 入 DSH-断面.json 的 known_versions（沿革/史料可提及，见 policy.known_versions_note）；
        b) 显式写 `## 引用豁免` 段，且段内**至少一条逐行显式条目**（`-`/`*`/`+`/`1.` 列表项）→ 该段内逐行豁免；
           段内无条目的标题不生效（fail-closed）。
        **任何"行内含 superseded / 已作废口径表 字样"都不再触发豁免**（原实现：一行命中 → 免检至下一个 `## ` 标题）。
-输出: DSH-ANCHOR: OK | VIOLATION(n) | DEGRADED
-"""
 # D520/V5: 纯 python 实现，无裸 python3/date +%s/date -v/grep -P 调用（已对照 PLATFORM-CHECKLIST.md）
 import argparse, io, json, os, re, subprocess, sys
 
@@ -87,6 +87,7 @@ def main():
     sup_pairs = {(s["version"], s["head"]) for s in sup}
     sup_versions = {s["version"] for s in sup}
     known = set(anchor.get("known_versions") or []) | {cur["version"]} | sup_versions
+    ver_re = re.compile(r"\b\d+\.\d+\.\d+-[A-Za-z0-9.]+\b")  # 任意 semver prerelease（原只匹配 0.1.7-* → 将来版本静默放过）
     # 任意 semver prerelease（原只匹配 0.1.7-* → 将来版本静默放过）
     # 尾部 `(?!-)`：排除"版本号后紧跟连字符"的伪命中——实测台账里 SynovaAgent-0.1.0-win32-x64.exe
     #   被旧正则截成 0.1.0-win32（D943-FIX 收紧豁免后暴露的误报，非 DSH 版本串）。
@@ -106,8 +107,12 @@ def main():
             scanned += 1
             try: lines = open(p, encoding="utf-8").read().splitlines()
             except Exception: continue
-            ex = exempt_lines(lines)          # D943-FIX: 豁免只认显式 `## 引用豁免` 段（无关键字触发）
+            exempt = False
             for i, ln in enumerate(lines, 1):
+                if ln.strip().startswith("## 引用豁免") or "已作废口径表" in ln or "superseded" in ln: exempt = True
+                if ln.strip().startswith("## ") and "引用豁免" not in ln: exempt = False
+                if exempt: continue
+            ex = exempt_lines(lines)          # D943-FIX: 豁免只认显式 `## 引用豁免` 段（无关键字触发）
                 if i in ex: continue
                 for v in ver_re.findall(ln):
                     if v not in known:

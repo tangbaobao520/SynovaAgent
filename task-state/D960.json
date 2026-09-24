@@ -1,0 +1,18 @@
+{
+  "task_id": "D960",
+  "title": "P2 台账 P0 未开卡对账接入门禁（存量 18 条）",
+  "status": "spec_done",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-25",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": "dsh-squad",
+  "milestone": "M0 项目管理基建",
+  "risk": "medium",
+  "depends_on": [],
+  "note": "实测：台账 P0 且 ≥7 天未开卡 = **18 条**（最早 2026-08-12 D333/D339）。daily-cto-board.sh 第 6 节已能报但**只跑在人工看板**、且曾跑在陈旧检出上（假红）。【按 DSH 原则5「诊断不污染主路径」+ 反模式「❌ 让主路径承担诊断」修订】① **改为旁路**：schedule 定时（DSH 官方 daily）产出 + 看板展示，**不塞进 pre-commit** ② **锚定 origin/main 快照**（禁本地检出，防假红）③ 输出**全部**超期条目（不只首条）+ 天数 + 可归因（D#/日期）④ 判据：构造「P0 登记无卡」→ 必须报 ⑤ 存量 18 条**逐条给处置**（开卡/作废/续期+理由）——按「超限即退役」，不留悬案。"
+}

@@ -263,6 +263,10 @@ jobs:
             tests/doc-system/doc-triage.test.sh \
             tests/doc-system/generate-chronicle-monthly.test.sh \
             tests/control-tower/check-citations.test.sh \
+            tests/control-tower/check-progress-freshness.test.sh; do
+            tests/control-tower/check-dsh-anchor.test.sh
+            tests/control-tower/check-k3-report.test.sh
+            python3 scripts/control-tower/check-dsh-anchor.py --repo . --no-tree-check
             tests/control-tower/check-progress-freshness.test.sh \
             tests/control-tower/check-dsh-anchor.test.sh \
             tests/control-tower/check-k3-report.test.sh \

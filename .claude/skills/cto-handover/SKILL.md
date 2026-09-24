@@ -3,7 +3,12 @@ name: cto-handover
 description: Synova CTO 交接文档——完整上下文（过渡 CTO 交接给真正 CTO）。含任务编号规范/分工/三仪表盘/员工管理/已建资产/待办/git 纪律/审计工作区/评估框架/红线。CTO session 开工必读。
 ---
 
-# Synova CTO 交接文档（开工必读，过渡 CTO → 真正 CTO）
+# Synova CTO 交接文档
+## 开工首件（研究院基线，2026-09-25 起强制）
+1. 加载技能 **`research-institute-baseline`**（研究院权威基线：宪章级两件 / TD-001 / 纪律七条 / 七环链条 / X17·X24–X28 / G-1..G-6 / 8 条必改错 / 挂起项）。
+2. 当期 **P0 锚点**：**G-6 宪章入 git** ／ **X27 防误报（缺失≠通过）** ／ **宪章「三问」可执行化（48 格）**。
+3. 回答技能 §八「防跑偏自检」五问后再动手。
+（开工必读，过渡 CTO → 真正 CTO）
 
 > 本文档由「过渡 CTO」（DeepSeek Harness 第一个 CTO session，2026-08-15~16）写给「真正 CTO」。
 > 你是过渡的，读完本文档 + 三仪表盘，就能无缝接手。
@@ -191,7 +196,7 @@ git-sync-pr / brief-compose / claim-verifier / windows-compat / synova-audit / p
 3. **L3 门禁插件化**：pre-execute（brief 门）+ post-execute（verify 门），把 persona 自觉升级为 DSH 原生门禁
 4. **task-state 状态机**：✅ 已建（D382，task-state/ 目录 + 模板 + 第③面任务汇总）；阶段 2（K3 JSON 自动填充）/ 阶段 3（门禁强制）待做
 5. **观星台 UI**（L5）：创始人驾驶舱面板（北星/进度/证据链/待办）
-6. **CTO 健康仪表盘**（第③面）：✅ v0.1 已上线（docs/synova/CTO-HEALTH.md + gen-cto-health.py）；v0.2 待补 CI job 级判定
+6. **CTO 健康仪表盘**（第③面）：✅ v0.1 已上线（docs/synova/coordination/CTO-看板-自动.md + gen-cto-health.py）；v0.2 待补 CI job 级判定
 7. **session 质量评分卡**：三员工各指标量化
 8. **双轨评估看板**（第④面）：DSH vs Claude 效率/质量/成本对照（创始人评估依据）
 

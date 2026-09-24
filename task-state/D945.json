@@ -1,0 +1,20 @@
+{
+  "task_id": "D945",
+  "title": "预设机制迁移：legacy 目录（~/.dsh/.agent-presets）→ bundle 声明行",
+  "status": "spec_done",
+  "spec": "docs/synova/coordination/派单-K3回执-批次2-20260924.md",
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-24",
+  "updated_by": "synova-cto",
+  "risk": "high",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": "dsh-squad",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [],
+  "blocked": null,
+  "target": "2026-W40",
+  "note": "上游已作废 legacy 目录（'Nothing reads that directory any more'）；预设现走 bundle 声明行（@deepseek-ai/dsh-agent-preset + config{id,order,plugins}）。判据：plugin_manager list_bundles 列出 bundle ／ list_plugins 出现 preset-<id> 且无诊断 ／ 新会话选择器可见。方向修正：原『安装器多根化』作废（多根也没用——根已死）。写集：scripts/control-tower/** + docs/synova/presets/**。属门禁/机制变更 → 必过 K3。"
+}

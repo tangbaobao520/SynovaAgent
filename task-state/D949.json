@@ -1,0 +1,20 @@
+{
+  "task_id": "D949",
+  "title": "P1 降级发放缺 issued_degraded 标记（有条件的 fail-open 面）",
+  "status": "spec_done",
+  "spec": "docs/synova/coordination/收件闸检查单.md",
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-24",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": "dsh-squad",
+  "milestone": "M0 项目管理基建",
+  "risk": "high",
+  "depends_on": [
+    "D940"
+  ],
+  "note": "D940 N8 自曝：降级发号（ls-remote 不可达时仍发号）不留标记 ⇒ 事后无法发现曾降级 = fail-open 家族。判据：降级发放必须落 issued_degraded=<原因>，并在 --json 暴露；夹具需构造 ls-remote 不可达 → 标记必现。"
+}

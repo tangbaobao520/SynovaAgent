@@ -1,0 +1,18 @@
+{
+  "task_id": "D956",
+  "title": "P1 CI 失败消息观测性——failure 断言行必须落进注解/日志",
+  "status": "spec_done",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-25",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": "dsh-squad",
+  "milestone": "M0 项目管理基建",
+  "risk": "high",
+  "depends_on": [],
+  "note": "实测（accept-b/A 组 + 线上注解原文）：.github/workflows/ci.yml:273 `MSG=$(tail -8 /tmp/ct-out.log | tr '\\n' '|' | tr -d '%' | cut -c1-450)` —— cut -c 在 runner locale 下按字节截断（中文≈150 字），450B 窗口只覆盖最后 8 行 ⇒ ❌ 断言行落在窗口外（#739 只报 `FAIL=1` 却不报哪条断言；#737 ubuntu 残留红至今无法定位）⇒ **门禁红了却拿不到失败名** = 诊断困难本身是缺陷（与静默失败同族）。判据：① 注解必须含失败断言所在行的原文（如 grep -E 'FAIL|❌|not ok' 命中行优先保留）② 长度上限可保留但不得挤掉失败行 ③ 判别夹具：构造多行失败输出 → 注解必须含失败断言行。归属 scripts/control-tower + ci.yml ⇒ 门禁变更必过 K3。"
+}

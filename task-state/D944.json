@@ -1,0 +1,22 @@
+{
+  "task_id": "D944",
+  "title": "mac 域全角标点残留清扫（D938 因 12 文件上限拆出的同域第二张）",
+  "status": "spec_done",
+  "spec": "docs/synova/coordination/派单-Mac小队-五卡-20260924.md",
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-24",
+  "updated_by": "synova-cto",
+  "risk": "medium",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": "dsh-squad",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [
+    "D938"
+  ],
+  "blocked": null,
+  "target": "2026-W40",
+  "note": "**因硬上限 ≤12 文件而拆，非按域拆**——15 个 mac 域文件同属一个 owner（Mac 侧），本应同域一起做，预算上限优先故拆两张同域串行卡。范围：6 个全角标点在 mac 域的全部残余（基线 20 文件 = 10 mac + 10 win；D938 交付其 9 文件）。判据：`scan-fullwidth-vars.sh --domain mac` 残留 = 0。取号事故备注：本卡号由两次失败调用重复分配（D944/D945），已收敛为 D944，D945 已删除——属 D940（名字统一分配）要治的同一 bug class。"
+}

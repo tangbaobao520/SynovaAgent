@@ -1,0 +1,23 @@
+{
+  "task_id": "D952",
+  "title": "spec 字段形态统一（object {path}）+ 禁写死 null + 消费者容忍 string",
+  "status": "spec_done",
+  "spec": "docs/synova/coordination/收件闸检查单.md",
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-24",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": "dsh-squad",
+  "milestone": "M0 项目管理基建",
+  "risk": "high",
+  "depends_on": [
+    "D940",
+    "D934",
+    "D936"
+  ],
+  "note": "D940 N3/N5 + **CTO 活体复现（2026-09-24）**：spec 形态不一（D928/D933=object，D934/D936=string），而唯一消费者 gen-cto-health.py:305 只读 (spec or {}).get('path') ⇒ **string 形态直接把它打崩**。活体证据：`python3 scripts/control-tower/gen-cto-health.py` → `AttributeError: 'str' object has no attribute 'get'`（line 305, in analyze_task_state）⇒ 第③面生成器（'打开即真相'）**当前不可用**，CTO-HEALTH.md 无法重生成。裁定：① spec 统一 object {path} ② 散文形态迁移或显式 {note,path:null} ③ **禁写死 null**（与未登记不可区分）④ 消费者必须**容忍 string 且可见降级**（不得崩、不得静默）⑤ 夹具须含'string spec → 不崩 + 显式降级'反例。**优先级 P1**：它是 B5 交付的既有卡（D934/D936）引发的真实退化。",
+  "evidence_repro": "python3 scripts/control-tower/gen-cto-health.py → AttributeError: 'str' object has no attribute 'get' (gen-cto-health.py:305 analyze_task_state)；触发源 = task-state/{D934,D936}.json 的 spec 为 string"
+}

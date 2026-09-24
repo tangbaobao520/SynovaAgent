@@ -1,0 +1,25 @@
+{
+  "task_id": "D954",
+  "title": "P1 CI 既有红棘轮空转——REF 改指 base + 对账对象可见 + 判别夹具",
+  "status": "spec_done",
+  "risk": "high",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": "dsh-squad",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [
+    "D940"
+  ],
+  "blocked": "M9(#741) 合入 main 后开工（同文件族）",
+  "spec": "docs/synova/coordination/规格-M9-门禁三件套-唯一事实源.md",
+  "write_set": [
+    "scripts/control-tower/check-gate-integrity.sh",
+    "tests/control-tower/check-gate-integrity.test.sh",
+    ".github/workflows/ci.yml",
+    "scripts/control-tower/ci-red-baseline.txt",
+    "task-state/D954.json"
+  ],
+  "note": "实测（D940/M9 侧自曝，CTO 在代码层确认）：ci.yml:364 `REF: ${{ github.event.pull_request.head.sha || github.sha }}` → push 事件下 REF=当前提交，而 base 三条红在 +71s/+119s/+27min 才定态 ⇒ 取数时全 in-progress ⇒ 失败检查恒 0、基线命中恒 0 ⇒ **棘轮在 CI 从未被行使**（'门禁在、判定恒 0'）。判据四条：① REF 改指 base（origin/main 或 PR base ref）② 输出必须打印『对账对象 = <ref> @ <sha>』③ 判别夹具『base 有红且未登记 → 必须红』④ **不许降级为占位**。",
+  "updated_at": "2026-09-24",
+  "updated_by": "synova-cto"
+}

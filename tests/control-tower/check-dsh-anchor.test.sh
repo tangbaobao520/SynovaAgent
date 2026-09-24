@@ -25,10 +25,11 @@ json.dump({"current":{"version":"0.1.7-rc.1","head":head,"tag":"dsh-v0.1.7-rc.1"
 PY
 }
 mk "$ROOT" "$HEAD" "$TMP/ok.json"            # 事实源绑定 checkout 自身 → 密闭
-mkdir -p "$TMP/empty" "$TMP/s1" "$TMP/s2" "$TMP/s3" "$TMP/s4" "$TMP/s5"
+mkdir -p "$TMP/empty" "$TMP/s1" "$TMP/s2" "$TMP/s3"
 echo 'DSH = 0.1.9-alpha.9' > "$TMP/s1/a.md"
 echo 'TS: 0.1.7-alpha.2 @ 00102833' > "$TMP/s2/b.md"
 printf '# x\n\n## 引用豁免\n\n- 0.1.7-alpha.2 @ 00102833 — 历史留档\n' > "$TMP/s3/c.md"
+mkdir -p "$TMP/empty" "$TMP/s1" "$TMP/s2" "$TMP/s3" "$TMP/s4" "$TMP/s5"
 # T11（K3 批次4 §1.4 逃逸向量原样复现）：行内含 superseded 字样但不在豁免段 → 不得触发豁免
 printf '# t11\nsuperseded 历史留档\n现状断面为 0.1.7-alpha.2 @ 00102833（本行含 superseded 逃逸字样）\n' > "$TMP/s4/a.md"
 # T12：`## 引用豁免` 段内的逐行显式条目 → 生效

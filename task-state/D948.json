@@ -1,0 +1,18 @@
+{
+  "task_id": "D948",
+  "title": "队列看板每日自动化（复用既有插件 + 官方 schedule，不新建生成器）",
+  "status": "spec_done",
+  "spec": "docs/synova/coordination/派单-B类并行与预规划-20260924.md",
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-24",
+  "updated_by": "alloc-task-id",
+  "risk": "medium",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": "dsh-squad",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [],
+  "note": "目标：把 CTO 手工『每日队列对账』变成自动看板。**方向已按调研修正**（原拟新写 gen-queue-board.py 撤销）：① 复用 @synova/dsh-dashboards（已有 host 路由 + lib/collect.js + client 面板）新增『队列』视图；② 复用 @synova/task-board-adapter 的 task-state→看板镜像通道（避免第二事实源）；③ 每日触发用**官方 schedule**（~/.dsh-trial-017/crons/tasks，已有 kind:daily 先例），不自写 launchd/cron。视图内容：槽位表 / 在制卡 / PR 绿红**及原因** / K3 待审 / 阻塞原因。**必带教训吸收**：官方 schedule 的既有每日任务 D796『交付纪律每日体检』**已连续 failed（错误恒为『目标工作区已不存在』）且无人发现** → 本卡必须：① 任务启动先自检工作区存在性 ② 失败**显式告警**（写台账 + 看板标红），禁止静默 ③ M9 三件套（模式自检／判别夹具／CI 登记）。"
+}
