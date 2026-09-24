@@ -1,0 +1,39 @@
+{
+  "task_id": "D948",
+  "title": "身份链补全：部门可见性恢复（服务端签发/接收链 + 桌面端身份通道切换）",
+  "status": "claimed",
+  "risk": "high",
+  "domain": "win(切片A) + mac(切片B, Win 代行)",
+  "owner": "win-codex-cto",
+  "executor": "synova-squad-lead（队长，不下场写码）+ 编码 code-a/code-b + 1 独立自验 + 1 独立复核",
+  "branch_a": "feat/d948-identity-chain-server",
+  "branch_b": "feat/d948-identity-chain-desktop",
+  "base_a": "feat/d947-middleware-default-posture @ ef5c8caa（栈式；D947 未合 main，实测 IN_MAIN=no）",
+  "depends_on": ["D947"],
+  "blocked": "① 前置 P0：ownership.yaml 缺 tests/electron/** 规则（实测判 win），而 electron-renderer/** 判 mac + vitest include 只收 tests/** → 桌面改动天然跨域，D734 门禁硬阻断。待 CTO 在 P0-a（推荐：tests/electron/** → mac）/ P0-b / P0-c 中裁定；裁定前切片 B 不开工。② 第 0 阶段 PLAN 待 CTO 复核放行。③ 本机无 GitHub PAT（~/.dsh/.credentials.yaml 缺失）→ PR 创建/合并需创始人补 token；push 走 SSH 部署钥可用。",
+  "spec": "docs/synova/dispatch/D948-win-identity-chain-department-20260924.md（派单即规格）",
+  "milestone": null,
+  "target": "2026-W40",
+  "write_set_a": [
+    "src/middleware/auth.ts",
+    "src/middleware/rbac.ts",
+    "src/routes/auth.ts",
+    "tests/middleware/auth.test.ts",
+    "tests/middleware/rbac.test.ts",
+    "tests/routes/auth.test.ts"
+  ],
+  "write_set_b": [
+    "electron-renderer/src/stores/auth-session.ts",
+    "electron-renderer/src/stores/ga-collab.ts",
+    "electron-renderer/src/components/RightPanel.tsx",
+    "electron-renderer/src/components/LoginPanel.tsx",
+    "electron-renderer/src/lib/api.ts",
+    "tests/electron/d948-*.test.ts（P0-a 落地后随 mac 域）"
+  ],
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "note": "来源：D947 PLAN-REV2 REV-8 登记的「JWT 用户部门级可见性恒 deny」功能回退。CTO 定稿时 REV-8 把它标成「Mac 域登录链」——经 check-ownership.py 实测系错标（JwtPayload/rbac/routes/auth 全判 win），本件为实体纠正。实测依据（ref=feat/d947-middleware-default-posture）：auth.ts:26-33 JwtPayload 无 department；rbac.ts:104-105 JWT 分支 department: undefined；routes/auth.ts:97/134 签发不带 department；electron-renderer 零 Bearer、零 /api/auth 调用；RightPanel.tsx:159 与 ga-collab.ts:60 仍在发自报头而服务端已忽略 → 桌面端请求无身份。创始人 2026-09-24 裁定：①客户端自报身份完全不允许 ②默认拒绝 ③提交时就该拦。执行形态：Agent Teams 组队、队长不下场写码、独立自验不得由编码兼任、两切片串行、重型验证串行 ≤1、每条修复带 1 个改坏即红反例、回执含团队成员运行记录。",
+  "updated_at": "2026-09-24",
+  "updated_by": "win-codex-cto"
+}
