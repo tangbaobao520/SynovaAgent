@@ -35,6 +35,7 @@ export LC_ALL=C.UTF-8 2>/dev/null || true
 # ═══════════════════════════════════════════════════════════════════════════════
 set -uo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+SELF_TS="$REPO/tests/control-tower/scan-fullwidth-vars.test.sh"   # 本文件自身（§7 自清覆盖它）
 SCAN="$REPO/scripts/control-tower/scan-fullwidth-vars.sh"
 CI_YML="$REPO/.github/workflows/ci.yml"
 MAC_VIOL_BASELINE=8    # 上限（棘轮）：全 mac 域违规**处**数，见文件头说明，非期望值
@@ -67,9 +68,9 @@ FW2='）'
 
 # 取扫描器输出里的计数: $1=输出 $2=匹配键（如 'viol'|'mac_resid'|'win_files'）
 grab_viol()      { printf '%s\n' "$1" | sed -n 's/^【违规（代码行）】\([0-9][0-9]*\) 处 \/ \([0-9][0-9]*\) 文件$/\1 \2/p' | head -1; }
-grab_mac_files() { printf '%s\n' "$1" | sed -n 's/^全 mac 域残余：\([0-9][0-9]*\) 文件 \/ \([0-9][0-9]*\) 处违规.*$/\1 \2/p' | head -1; }
+grab_mac_files() { printf '%s\n' "$1" | sed -n 's/^全 mac 域残余.*：\([0-9][0-9]*\) 文件 \/ \([0-9][0-9]*\) 处违规.*$/\1 \2/p' | head -1; }
 grab_win_files() { printf '%s\n' "$1" | sed -n 's/^win 域：\([0-9][0-9]*\) 文件待 .*$/\1/p' | head -1; }
-grab_win_full()  { printf '%s\n' "$1" | sed -n 's/^全 win 域残余：\([0-9][0-9]*\) 文件 \/ \([0-9][0-9]*\) 处违规.*$/\1 \2/p' | head -1; }
+grab_win_full()  { printf '%s\n' "$1" | sed -n 's/^全 win 域残余.*：\([0-9][0-9]*\) 文件 \/ \([0-9][0-9]*\) 处违规.*$/\1 \2/p' | head -1; }
 grab_ws_resid()  { printf '%s\n' "$1" | sed -n 's/^本卡写集内 mac 域残留：\([0-9][0-9]*\) 处 \/ \([0-9][0-9]*\) 文件$/\1 \2/p' | head -1; }
 grab_triage()    { printf '%s\n' "$1" | sed -n 's/^【需专项定性】\([0-9][0-9]*\) 处 \/ \([0-9][0-9]*\) 文件.*$/\1 \2/p' | head -1; }
 grab_comment()   { printf '%s\n' "$1" | sed -n 's/^【注释行（无害）】\([0-9][0-9]*\) 处 \/ \([0-9][0-9]*\) 文件$/\1 \2/p' | head -1; }
@@ -186,35 +187,46 @@ else
 fi
 chmod 600 "$UNR/f.sh" 2>/dev/null || true
 
-# ── 7. 自清: 扫描器自身零违规 ────────────────────────────────────────────────
+# ── 7. 自清: 扫描器自身 + **本测试文件自身** 零违规 ───────────────────────────
 echo ""
-echo "── 7. 自清: 扫描器自身文件在网内零违规 ──"
-OUT=$(bash "$SCAN" --paths "$SCAN" 2>&1); RC=$?
+echo "── 7. 自清: 扫描器自身 + 本测试文件自身 在网内零违规 ──"
+OUT=$(bash "$SCAN" --paths "$SCAN,$SELF_TS" 2>&1); RC=$?
 V=$(grab_viol "$OUT")
 if [ "$V" = "0 0" ] && [ "$RC" = "0" ]; then
-  ok "扫描器自身零违规（作者未把被测缺陷写进检测器）"
+  ok "扫描器自身 + 本测试文件自身零违规（作者未把被测缺陷写进检测器/夹具）"
 else
-  no "扫描器自身有 $V 违规（rc=${RC}）—— 检测器自身带病"
+  no "自清失败: $V 违规（rc=${RC}）—— 检测器或夹具自身带病（本文件曾漏扫自身，被 D938-v 抓到）"
 fi
 
 # ── 8. 判据②（CTO 裁定 A1 后口径）: **本卡写集内** mac 域残留 = 0 ──────────────
 # 卡面原文「mac 域已清 / 残留 0」在全 mac 域不可达（写集外 6 文件、超 PR 预算 12 → 裁定不扩写集）。
 # 故判红/绿的口径改为「本卡写集内残留 0」；**全 mac 域残余只作登记信息打印，不是失败条件**。
-D938_WS="scripts/control-tower/alloc-task-id.sh,scripts/control-tower/check-sentinel-type-net.sh,scripts/doc-system/check-doc-truth.sh,scripts/doc-system/doc-truth-probe.sh,scripts/control-tower/scan-fullwidth-vars.sh"
+# D938-v 复核 + CTO 裁定（第三次 reopen）: 本断言原先只覆盖 5 文件（c1 写集 4 + 扫描器自身）
+#   → **判据空转**（连本文件自己的 2 处同类缺陷都照不到）。现按 brief 的 **9 个 task 文件**全覆盖，
+#   并加**条数自检**（窄化即红）—— 使该断言真的等于「本卡写集内 mac 域残留 = 0」。
+D938_WS="scripts/control-tower/alloc-task-id.sh,scripts/control-tower/check-sentinel-type-net.sh,scripts/doc-system/check-doc-truth.sh,scripts/doc-system/doc-truth-probe.sh,scripts/control-tower/scan-fullwidth-vars.sh,tests/control-tower/scan-fullwidth-vars.test.sh,tests/control-tower/alloc-task-id.test.sh,tests/control-tower/alloc-task-id-lock.test.sh,.github/workflows/ci.yml"
+D938_WS_COUNT=$(printf '%s\n' "$D938_WS" | tr ',' '\n' | grep -c . || true)
 echo ""
 echo "── 8. 判据②: 本卡写集内 mac 域残留 = 0（严格判红/绿）──"
+if [ "$D938_WS_COUNT" = "9" ]; then
+  ok "写集断言覆盖面 = ${D938_WS_COUNT} 文件（brief 的 task 文件全集：4 scripts + 扫描器 + 3 测试 + ci.yml）"
+else
+  fail "写集断言只覆盖 ${D938_WS_COUNT} 文件（须 9）—— 窄化即判据空转（D938-v 实测过）"
+fi
 OUT=$(bash "$SCAN" --domain mac --paths "$D938_WS" 2>&1); RC=$?
 WS=$(grab_ws_resid "$OUT")
 if [ -z "$WS" ]; then
   no "写集模式未输出「本卡写集内 mac 域残留：…」（标签格式漂移）"
 elif [ "$WS" = "0 0" ]; then
-  ok "本卡写集内 mac 域残留 = 0 处 / 0 文件（5 文件：c1 写集 4 + 扫描器自身）"
+  ok "本卡写集内 mac 域残留 = 0 处 / 0 文件（${D938_WS_COUNT} 文件全覆盖：4 scripts + 扫描器 + 3 测试 + ci.yml）"
 else
-  no "本卡写集内 mac 域残留 = $WS（应为 '0 0'）—— 本卡写集内仍有违规"
+  # 红形态必须**点名 file:line**（否则判别信息丢失 —— 只有一句「仍有违规」等于没信号）
+  no "本卡写集内 mac 域残留 = ${WS}（应为 '0 0'）—— 本卡写集内仍有违规，逐行清单如下:"
+  printf '%s\n' "$OUT" | sed -n '/^【违规（代码行）】/,/^【注释行/p' | sed 's/^/      /' >&2
 fi
 [ "$RC" = "0" ] && ok "写集模式零违规 → rc=0" || no "写集模式应 rc=0，实得 ${RC}"
 
-# ── 8b. 登记信息: 全 mac 域残余（棘轮上限，非失败条件）──────────────────────
+# ── 8b. 登记信息: 全 mac 域残余（**scripts/ 半径内**，棘轮上限，非失败条件）──────
 echo ""
 echo "── 8b. 登记: 全 mac 域残余（棘轮上限 ${MAC_RES_BASELINE} 文件 / ${MAC_VIOL_BASELINE} 处）──"
 OUT=$(bash "$SCAN" --domain mac 2>&1); RC=$?
@@ -226,12 +238,24 @@ else
   if [ "$M_FILES" -le "$MAC_RES_BASELINE" ] && [ "$M_LINES" -le "$MAC_VIOL_BASELINE" ]; then
     ok "全 mac 域残余 $M_FILES 文件 / $M_LINES 处 ≤ 上限 $MAC_RES_BASELINE / $MAC_VIOL_BASELINE"
   else
-    no "全 mac 域残余 $M_FILES 文件 / $M_LINES 处 > 上限 $MAC_RES_BASELINE / $MAC_VIOL_BASELINE（**回退/新增**，真红）"
+    no "全 mac 域残余 ${M_FILES} 文件 / ${M_LINES} 处 > 上限 ${MAC_RES_BASELINE} / ${MAC_VIOL_BASELINE}（**回退/新增**，真红）"
   fi
   if [ "$M_LINES" -gt 0 ]; then
     visible_warn "全 mac 域残余 $M_FILES 文件 / $M_LINES 处（写集外，按 CTO 裁定 A1 归新 mac 卡，本卡不动）—— 见 --domain mac 逐行清单"
   fi
   [ "$RC" = "1" ] && ok "全 mac 域有残余时 rc=1" || no "全 mac 域有残余应 rc=1，实得 ${RC}"
+fi
+# 半径注记（防 K3 把 scripts/ 半径误读成全仓口径）: 默认半径 = scripts/**，不含 tests/**
+OUT=$(bash "$SCAN" --domain mac 2>&1)
+if printf '%s\n' "$OUT" | grep -q "scripts/ 半径内"; then
+  ok "残余标签带半径注记「scripts/ 半径内」（默认半径不含 tests/**，防误读为全仓口径）"
+else
+  no "残余标签缺半径注记 —— 会被误读为全仓口径（tests/** 另有存量，不在本卡半径内）"
+fi
+if printf '%s\n' "$OUT" | grep -qE '^扫描集: .*（默认 scripts/\*\*）'; then
+  ok "扫描集口径行明示默认半径 scripts/**"
+else
+  no "扫描集口径行未明示默认半径"
 fi
 
 # ── 9. 接口冒烟: --domain win（供 Win 侧新卡消费）────────────────────────────

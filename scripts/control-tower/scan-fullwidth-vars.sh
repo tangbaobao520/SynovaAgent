@@ -23,8 +23,10 @@
 #           `本卡写集内 mac 域残留：N 处 / F 文件`
 #       · 全量模式（默认 scripts/**）三段标签:
 #           `mac 域：C 文件已清 / 违规 N 处 / F 文件`
-#           `全 mac 域残余：R 文件 / N 处违规 → 待新卡（号由 CTO 发，Mac 侧）`
-#           `全 win 域残余：R 文件 / N 处违规（另有 T 文件落「需专项定性」桶）→ 待 Win 侧卡`
+#           `全 mac 域残余（scripts/ 半径内）：R 文件 / N 处违规 → 待新卡（号由 CTO 发，Mac 侧）`
+#           `全 win 域残余（scripts/ 半径内）：R 文件 / N 处违规（另有 T 文件落「需专项定性」桶）→ 待 Win 侧卡`
+#         **半径注记不可省**：默认半径 = scripts/**，**不含 tests/** 等其他树；
+#           tests/** 另有存量（不在本卡半径内）→ 无注记会被误读成全仓口径。
 #         残余文件 = **非注释命中行**的文件（纯注释命中在 shell/PowerShell 都无害，不算残余；
 #         `.ps1` 命中落 triage 桶不计违规，但**计入**残余供 Win 侧专项定性）。
 #         号一律**不由本工具起**（D# 只能经 alloc-task-id.sh 分配）。
@@ -351,7 +353,11 @@ else
   N_OUTSIDE_HITS="$(grep -c -v "^$ROOT/" "$TMPD/abs_hits.txt" 2>/dev/null || true)"
   N_OUTSIDE_HITS="$(printf '%s' "$N_OUTSIDE_HITS" | tr -d ' \r')"
   _rels < "$TMPD/abs_inside.txt" > "$TMPD/rel_hits.txt"
-  if [ ! -s "$TMPD/rel_hits.txt" ]; then
+  if [ ! -s "$TMPD/abs_hits.txt" ]; then
+    # **零命中**：域统计无意义但不是降级（三桶计数本就全 0）→ 不打告警，标签照常报 0
+    #   （此前误走 unavailable 分支 → 绿腿上打「命中文件全在仓库外」假告警，制造噪音）
+    DOM_STATUS="ok"
+  elif [ ! -s "$TMPD/rel_hits.txt" ]; then
     DOM_STATUS="unavailable"; LABEL_REASON="命中文件全在仓库外（无域归属）"
   elif _owners < "$TMPD/rel_hits.txt" > "$TMPD/own_hits.txt"; then
     # 逐域统计（mac / win）
@@ -476,9 +482,14 @@ else
     ok)
       echo "mac 域：$MAC_CLEAN 文件已清 / 违规 $MAC_VIOL 处 / $MAC_VF 文件"
       echo "win 域：$WIN_RES 文件待 <Win 侧新卡>（违规 $WIN_VIOL 处 / $WIN_VF 文件）"
-      # CTO 裁定的两段残余标签（号由 CTO 发，本工具不自行起号）
-      echo "全 mac 域残余：$MAC_RES 文件 / $MAC_VIOL 处违规 → 待新卡（号由 CTO 发，Mac 侧）"
-      echo "全 win 域残余：$WIN_RES 文件 / $WIN_VIOL 处违规（另有 $WIN_TRI 文件落「需专项定性」桶：非 POSIX shell，不计违规）→ 待 Win 侧卡"
+      if [ "$WRITESET_MODE" = "0" ]; then
+        # CTO 要求的残余标签。**半径注记必须留**：默认半径 = scripts/**（不含 tests/**）；
+        # 不加注记会被误读为全仓口径（tests/** 另有存量，不在本卡半径内）。号由 CTO 发。
+        echo "全 mac 域残余（scripts/ 半径内）：$MAC_RES 文件 / $MAC_VIOL 处违规 → 待新卡（号由 CTO 发，Mac 侧）"
+        echo "全 win 域残余（scripts/ 半径内）：$WIN_RES 文件 / $WIN_VIOL 处违规（另有 $WIN_TRI 文件落「需专项定性」桶：非 POSIX shell，不计违规）→ 待 Win 侧卡"
+      else
+        echo "（--paths 给定路径集 = 写集模式：不打印「全 X 域残余」标签 —— 防把子集数字挂上全域名义）"
+      fi
       [ "${N_OUTSIDE_HITS:-0}" -gt 0 ] && echo "域外文件：$N_OUTSIDE_HITS 文件命中（不在仓库内 → 无域归属，不计入 mac/win 标签）"
       ;;
     limited)
@@ -486,12 +497,12 @@ else
       # 免得把写集数字挂上「全 mac 域残余」的名字（那是假陈述）。
       if [ "$DOMAIN" = "mac" ]; then
         echo "mac 域：$MAC_CLEAN 文件已清 / 违规 $MAC_VIOL 处 / $MAC_VF 文件"
-        [ "$WRITESET_MODE" = "0" ] && echo "全 mac 域残余：$MAC_RES 文件 / $MAC_VIOL 处违规（本跑已限定 --domain mac）"
+        [ "$WRITESET_MODE" = "0" ] && echo "全 mac 域残余（scripts/ 半径内）：$MAC_RES 文件 / $MAC_VIOL 处违规（本跑已限定 --domain mac）"
         echo "win 域：未扫描（${LABEL_REASON}）"
       else
         echo "mac 域：未扫描（${LABEL_REASON}）"
         echo "win 域：$WIN_RES 文件待 <Win 侧新卡>（违规 $WIN_VIOL 处 / $WIN_VF 文件）"
-        [ "$WRITESET_MODE" = "0" ] && echo "全 win 域残余：$WIN_RES 文件 / $WIN_VIOL 处违规（另有 $WIN_TRI 文件落「需专项定性」桶：非 POSIX shell，不计违规）→ 待 Win 侧卡"
+        [ "$WRITESET_MODE" = "0" ] && echo "全 win 域残余（scripts/ 半径内）：$WIN_RES 文件 / $WIN_VIOL 处违规（另有 $WIN_TRI 文件落「需专项定性」桶：非 POSIX shell，不计违规）→ 待 Win 侧卡"
       fi
       ;;
     *)
