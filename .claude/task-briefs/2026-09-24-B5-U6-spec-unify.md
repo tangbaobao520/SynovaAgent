@@ -156,6 +156,8 @@ grep 本任务关键词在 expert/ sentinel/ extensions/ knowledge/ theory/ skil
 | `task-state/D936.json` | task |
 | `docs/synova/product-lines/evidence/B5-U6-改动清单.md` | task |
 | `memory/notes/proposed/2026-09-24-b5-u6-spec-unify.md` | task |
+| `docs/synova/product-lines/evidence/B5-U6-自验.md` | task（证据，写者 b5-v，独立自验） |
+| `docs/synova/product-lines/evidence/B5-U6-收尾与回执-20260924.md` | task（M6 收尾三件 + 成员运行记录，写者 lead，治理产物） |
 | `.claude/task-briefs/2026-09-24-B5-U6-spec-unify.md` | builtin（本认领 brief） |
 | `.claude/bypass.log` | builtin（hook 运行期账本，每次提交由 hook 追加） |
 
