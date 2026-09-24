@@ -378,6 +378,42 @@ describe('A5 · 无部门/空串一律 fail-closed（owner 析取被刻意排除
     expect(canModifyWorkspace(mkCtx('marketing'), { department: '', owner: 'admin-1' })).toBe(false);
   });
 
+  // ════════════════════════════════════════════════════════════════
+  // B-1 收口（复核 REVIEW-EXEC §2 B-1）—— 派单 §六 三路径的边界明写
+  //   「部门**大小写或空白差异** → 一律 fail-closed，不得命中」，此前**零判据**。
+  //   今天 `isSameDepartment` 是**严格相等**（行为正确），但无判据锁住 ⇒ 将来有人加
+  //   `.trim().toLowerCase()` 归一化**不会变红** ⇒ 部门隔离被静默放宽。
+  //   以下 4 条即该判据锁；可红证明见 task-10 回执（变异体：给 isSameDepartment
+  //   加 `.trim().toLowerCase()` → 这 4 条全红、其余断言保持绿）。
+  //   硬约束: owner='admin-1' ≠ ctx.userId='m-x'（否则 owner 析取把 false 救回 ⇒ 假红）。
+  // ════════════════════════════════════════════════════════════════
+
+  it('B-1 边界: 大小写差异（ctx="Marketing" vs ws="marketing"）→ 一律 deny', () => {
+    const ctx = mkCtx('Marketing');
+    expect(ctx.userId).not.toBe(WS_MKT.owner);   // 夹具自证: owner 析取不在射程内
+    expect(canAccessWorkspace(ctx, WS_MKT)).toBe(false);
+    expect(canModifyWorkspace(ctx, WS_MKT)).toBe(false);
+  });
+
+  it('B-1 边界: 大小写差异（反向 ctx="marketing" vs ws="Marketing"）→ 一律 deny', () => {
+    const ctx = mkCtx('marketing');
+    expect(canAccessWorkspace(ctx, { visibility: 'department', department: 'Marketing', owner: 'admin-1' })).toBe(false);
+    expect(canModifyWorkspace(ctx, { department: 'Marketing', owner: 'admin-1' })).toBe(false);
+  });
+
+  it('B-1 边界: 空白差异（ctx=" marketing" 首空格 vs ws="marketing"）→ 一律 deny', () => {
+    const ctx = mkCtx(' marketing');
+    expect(ctx.userId).not.toBe(WS_MKT.owner);   // 夹具自证: owner 析取不在射程内
+    expect(canAccessWorkspace(ctx, WS_MKT)).toBe(false);
+    expect(canModifyWorkspace(ctx, WS_MKT)).toBe(false);
+  });
+
+  it('B-1 边界: 空白差异（反向 ctx="marketing" vs ws="marketing " 尾空格）→ 一律 deny', () => {
+    const ctx = mkCtx('marketing');
+    expect(canAccessWorkspace(ctx, { visibility: 'department', department: 'marketing ', owner: 'admin-1' })).toBe(false);
+    expect(canModifyWorkspace(ctx, { department: 'marketing ', owner: 'admin-1' })).toBe(false);
+  });
+
   it('对照（防"恒 false"假绿）: 同部门且非属主 → 判据确实命中', () => {
     expect(canAccessWorkspace(mkCtx('marketing'), WS_MKT)).toBe(true);
     // 注意：同部门 ⇒ canModifyWorkspace 亦为 true（部门分支命中）。这正是 owner 必须错开的理由——
