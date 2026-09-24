@@ -69,7 +69,12 @@ fail() { # 记录断言首 token（供 CI 截断日志时仍能点出失败集�
   echo "  ❌ $1" >&2
   return 0
 }
-skip() { SKIP=$((SKIP + 1)); echo "  ⏭️  $1"; return 0; }
+skip() { # SKIP 也必须进公开摘要通道（CTO 卡内补件：不可见 = 隐性静默）；ASCII 前缀供证据步过滤
+  SKIP=$((SKIP + 1))
+  echo "  ⏭️  $1"
+  printf 'D922-FIXTURE-SKIP: %s\n' "$1" | cut -c1-200
+  return 0
+}
 assert_exit() { # <got> <want> <msg> ；返回 0/1（供状态聚合）
   if [ "$1" -eq "$2" ]; then pass "$3"; return 0; else fail "$3 (got exit=$1, want exit=$2)"; return 1; fi
 }

@@ -288,17 +288,18 @@ jobs:
         run: |
           set -uo pipefail
           OUT="$(bash tests/control-tower/install-dsh-preset.test.sh 2>&1 || true)"
-          # 无配额通道: 关键行 + 失败自证 dump 全量落 step summary（run 页面可读、可检索）
+          # 无配额通道: 关键行 + SKIP 原因 + 失败自证 dump 全量落 step summary（run 页面可读、可检索）
           {
             echo "## D922 preset fixture（B3）"
             echo '```'
-            echo "$OUT" | grep -E '^(T3|T3b|T3c|T3C-DUMP|D922-FIXTURE|=== 结果)' || true
+            echo "$OUT" | grep -E '^(T3|T3b|T3c|T3C-DUMP|D922-FIXTURE|D922-FIXTURE-SKIP|=== 结果)' || true
             echo '```'
           } >> "${GITHUB_STEP_SUMMARY:-/dev/null}" 2>/dev/null || true   # swallow-ok: 摘要写出失败不阻断发布（注解通道在下方独立执行）
-          # 有配额通道: 注解 ≤10 条（GitHub 限制）；失败时自证 dump 优先占前 6 条
+          # 有配额通道: 注解 ≤10 条（GitHub 限制）；优先级 = 失败 dump(≤6) → SKIP 原因 → 状态/汇总(≤4)
           DUMP="$(echo "$OUT" | grep -E '^T3C-DUMP-' | head -6 || true)"
-          KEYS="$(echo "$OUT" | grep -E '^(T3-STATUS|T3c-STATUS|=== 结果|D922-FIXTURE)' | head -4 || true)"
-          LINES="$(printf '%s\n%s\n' "$DUMP" "$KEYS" | grep -v '^$' | head -10 || true)"
+          SKIPS="$(echo "$OUT" | grep -E '^D922-FIXTURE-SKIP:' | head -2 || true)"
+          KEYS="$(echo "$OUT" | grep -E '^(T3-STATUS|T3c-STATUS|=== 结果|D922-FIXTURE:)' | head -4 || true)"
+          LINES="$(printf '%s\n%s\n%s\n' "$DUMP" "$SKIPS" "$KEYS" | grep -v '^$' | head -10 || true)"
           if [ -z "$LINES" ]; then
             echo "::warning title=b3-fixture::证据步未取到关键行（夹具可能未执行）——发布者不判红"
           else
