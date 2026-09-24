@@ -137,9 +137,44 @@
 | **B4** 登录成功 → 落存储 → 后续自动带 Bearer | `auth-session.ts`（新）：`login()` → `POST /api/auth/login` → 落 `localStorage['synova:auth-token']`（`synova:` 冒号族先例，**不落账号密码、不落 payload 明文**） | 桩服务端：`login()` 后键非空，**紧接第二个请求** `init.headers` 含 Bearer | 登录不落存储 / 落存储但第二请求无 Bearer → 红（"接线了≠被执行"） |
 
 **B 阶段三项已识别硬约束**（详见 §7）：
-- **B-①** 写集真实最小 = **8 文件（6 mac + 2 win）> 派单 ≤6**（缺 `app-store.ts` + `tests/ga-collab-logic.test.ts`，两条替代路径均不可取）。
-- **B-②** B2/B4 覆盖面：renderer **15 个真实 fetch 点仅 1 处带身份**，其余 14 处（含主路径 `useStreaming.ts:303` `/api/diagnosis/consult`、非白名单 `LeftPanel.tsx:63`）**均不在写集** ⇒ 只改 `apiFetch` 链则「后续请求自动带 Bearer」在真实链路上**不成立**。
+- **B-①** 写集真实最小 = **8 文件（6 mac + 2 win）> 派单 ≤6**；**CTO R3 已批准 8 文件**。两条缺口（`app-store.ts` / `tests/ga-collab-logic.test.ts`）实测是硬依赖，无替代路径。
+- **B-②** ✅ **CTO 要求交回的白名单对照表 → 见 §4-补（本轮新增，逐点实测）**。CTO 两处订正已采纳：`LeftPanel.tsx:63`（打 `/api/ga/clients`）与 `useStreaming.ts:303`（打 `/api/diagnosis/consult`｜`/api/conversations`）**均在白名单**，队长原判"非白名单"有误 ⇒ 覆盖面结论按 §4-补 重写。
 - **B-③** B4 依赖切片 A 的接口契约（`POST /api/auth/login` 路径 + 响应 `token` 字段名）⇒ **B 必须等 A 合入**。
+
+### §4-补 B-② 白名单对照表（**CTO 交付要求；队长逐点实测**，口径：`ref=ef5c8caa`，读取时刻 2026-09-25）
+
+分类依据（两套并列，缺一不可）：
+- **白名单**（`auth.ts:104-132` 的 `isWhitelisted`）：认证「**不要求**」——但仍会尝试解析 Bearer 并在有效时注入 `req.auth`（D947/L-20 修正后的语义）。
+- **挂载序豁免**：`server.ts:344 app.use(jwtAuthMiddleware)` **之前**挂载的路由（`:322` setupGuideGone / `:340` **llmConfigRoutes** / `:343` uploadV2Gone）——**根本不过 JWT 中间件**。
+- **受门禁**：既不在白名单、又挂载在 `:344` 之后 ⇒ 无 Bearer **必 401**。
+
+| # | 坐标 | 端点 | 分类 | 依据 |
+|---|---|---|---|---|
+| 1 | `App.tsx:52` | `/health` | **白名单** | `auth.ts:105 path === '/health'` |
+| 2 | `CenterPanel.tsx:39` | `/api/sessions/{id}` | **白名单** | `:124 startsWith('/api/sessions')` |
+| 3 | `LeftPanel.tsx:63` | `/api/ga/clients` | **白名单** ← **CTO 订正①** | `:127 startsWith('/api/ga/clients')`（队长原判"非白名单"**有误**） |
+| 4 | `LeftPanel.tsx:74` | `/api/sessions?limit=20` | **白名单** | `:124` |
+| 5 | `LeftPanel.tsx:100` | `/api/sentinel/signals` | **白名单** | `:119 startsWith('/api/sentinel/')` |
+| 6 | `LeftPanel.tsx:110` | `/api/loops/status` | **🚩 受门禁** | 不在白名单；`server.ts:422 app.use(loopRoutes)` 在 `:344` 之后 ⇒ 无 Bearer 401 |
+| 7 | `LeftPanel.tsx:123` | `/api/actions` | **🚩 受门禁** | 不在白名单；`server.ts:384 app.use(actionsApiRoutes)` 在 `:344` 之后 |
+| 8 | `LeftPanel.tsx:139` | `/api/ga/switch/{orgId}` | **白名单** | `:128 startsWith('/api/ga/switch')` |
+| 9 | `RightPanel.tsx:160` | apiFetch(path) — 12 个调用点 | **视 path** | 端点由实参决定；见 §4-补-注 |
+| 10 | `RightPanel.tsx:186` | `/api/diagnosis/reports?limit=1` | **白名单** | `:122 startsWith('/api/diagnosis/reports')` |
+| 11 | `RightPanel.tsx:352` | `/api/diagnosis/consult/{id}/report` | **白名单** | `:121 startsWith('/api/diagnosis/consult')` |
+| 12 | `useNotifications.ts:148` | `/api/sentinel/tickets` | **白名单** | `:119` |
+| 13 | `useNotifications.ts:195` | `/api/sentinel/tickets/{id}/transition` | **白名单** | `:119` |
+| 14 | `useStreaming.ts:303` | `/api/diagnosis/consult`（mode=diagnosis）｜`/api/conversations` | **两者均白名单** ← **CTO 订正②** | `:121` / `:123 startsWith('/api/conversations')`。**主用户路径（GA 诊断 / 对话）免认证** |
+| 15 | `llm-config.ts:134` | `/api/llm/config`｜`/api/llm/test` | **非白名单，但"挂载序豁免"** | `server.ts:340 app.use(llmConfigRoutes)` **早于** `:344` ⇒ 不过 JWT 中间件，实际可达（D575 首启向导豁免集） |
+
+> 说明：`lib/api.ts:5` 是**注释**（`fetch('/api/...')`），非调用点；故 16 命中 − 1 注释 = **15 真实调用点**，与 B-recon §3-2 计数一致。
+
+**§4-补-注（apiFetch 12 调用点的端点分类，逐点）**：`RightPanel.tsx` 内 apiFetch 的 path 实参需逐点核（写集内可改）；**这是 B2 覆盖面裁定的关键**，B 开工前须逐点标完。
+
+**§4-补-结论（重写 B-② 覆盖面）**：
+> 15 个真实 fetch 点中，**仅 3 个受 JWT 门禁**（#6 `/api/loops/status`、#7 `/api/actions`、#9 apiFetch 中指向受保护 path 者），**12 个免认证**（含**主用户路径** GA 诊断 / 对话 / 会话读回 / 哨兵 / 通知 / 解决方案 / GA 客户）。
+> ⇒ **B2/B4 的"后续请求自动带 Bearer"在真实链路上只覆盖极少流量**；B 的实际价值应重述为：**(a) 撤掉服务端已忽略的自报头，(b) 提供登录 UI 与 Bearer 装配点（供受门禁端点用），(c) 无 token 时显性呈现"需要登录"而非伪造身份**。
+> ⇒ **CTO §7-12 裁定**：B 只保证 **apiFetch 链 + 诚实登记**；渲染层统一封装（把 15 点收敛到单一 `authHeaders()`）**另立卡**。**但本表未交回前 B 不算完成**——本表即为该项交付。
+> ⇒ **B2/B3 靶端点必须选受门禁者**：推荐 **`/api/auth/refresh`**（非白名单、受门禁，实测）或 **`/api/loops/status`** 或 `GET /api/workspaces/:id/context`。**不得**用 `/api/ga/clients`、`/api/sentinel/*`、`/api/diagnosis/*`、`/api/solutions*`、`/api/conversations*`、`/api/sessions*`（全在白名单，无判别力）。
 
 ---
 
@@ -192,7 +227,7 @@
 | 9 | 未决 U3（内存回退路径） | CTO | 推荐 (a) 无部门 + degraded 留痕 |
 | 10 | **`bootUserRole` 目标取值域**（`app-store.ts:128`，今日二值 `'ga'`/`'admin'`） | CTO（权限语义） | 无会话应落何值？不得猜 `admin` |
 | 11 | **LoginPanel 挂载点**（`App.tsx` 无登录门；`WelcomeScreen` 已被 D575 占用） | CTO | 产品决策 |
-| 12 | **B2/B4 覆盖面**：14/15 fetch 点零身份且不在写集 | CTO | 确认"只保证 apiFetch 链"或扩写集（+6 mac 文件，仍 ≤12） |
+| 12 | **B2/B4 覆盖面** | ✅ **CTO 已裁（2026-09-25）** | **只保证 apiFetch 链 + 诚实登记**；渲染层统一封装（15 fetch 点收敛到单一 `authHeaders()`）**另立卡**。覆盖面表见 **§4-补**（15 点逐点实测：仅 **3 点受门禁**、12 点免认证）。**该表已交回** ⇒ 此项关闭 |
 | 13 | **N1 口径澄清**（code-b N-1 已被队长裁决推翻：`:58-61` 先设后断形态 **34/34 绿**） | 队长已裁 + CTO 知悉 | 按"先覆写再断言"执行；**不得**按 ambient 断言写 |
 | 14 | **B1 是 grep 型静态判据**（现值 5 处含 4 注释） | CTO 知悉 | 降级为辅助指纹，主验收用 B3 行为夹具 |
 | 15 | **`bash` 本机不可用**（WSL 未装）⇒ `scripts/**` 门禁与 `*.test.sh` 治理测试**本机无法复跑** | 队长/CTO | 治理实测一律改用 `python scripts/control-tower/check-ownership.py`；CI 侧为权威 |
@@ -297,3 +332,47 @@
 ### §12-3 复核员未覆盖面（与 §7 未清项合并）
 
 `tests/middleware/auth.test.ts` 34/34 未由复核员复跑（队长亲跑）；W3 未二次复核；P0-a+ 放行 B 未实测；`electron/**` 主进程与 `tests/electron/` 13 件连带改判未复核。**以上四项不得在回执中表述为"已验"。**
+
+---
+
+## §13 CTO 第 0 阶段复核结论（2026-09-25）与放行范围
+
+**结论：PLAN 通过。** 以下 R1–R6 **覆盖派单原文**，为本卡后续执行的唯一权威口径。
+
+| # | 裁定 | 落地 |
+|---|---|---|
+| **R1** | **P0 = P0-a+，规则扩为 glob**：`tests/electron/** → mac` **＋** `tests/ga-collab-*.test.ts → mac`（**不是只列 logic 一件**——`tests/ga-collab-ui.test.ts` 同以 `electron-renderer/src/**` 为被测主体）。`tests/electron/` 13 件连带改判 mac **一并批准**（D716 那件头注自陈断言对象是 mac 域资产，改判系纠正旧误标）。规则落点在 `**` 兜底行之后。**由 D949 单独落** | ✅ 已开 `task-7` / 分支 `fix/d949-ownership-electron-tests` / base `origin/main@6a714483` |
+| **R2** | A3/A4 夹具宿主 = **方案 (iii)**：新建 `tests/routes/d948-department-visibility.test.ts`（判 win）。A 写集 7→8，仍 ≤12 | ✅ 已开 `task-6`，写集 8 文件 |
+| **R3** | 切片 B 写集 = **8 文件，批准**（两条缺口是硬依赖，无替代路径） | ✅ PLAN §4 B-① 已更新；B 仍 hold |
+| **R4** | **register 不取 body 的 department**，定 (a)。决策①「客户端自报身份完全不允许」**无例外**；W1 的正解是**管理动作写入**（邀请携带部门 / 管理员分配），不是注册期自报 | ✅ 已写入 `task-6` 约束 |
+| **R5** | 无会话 `bootUserRole` 定 **`'staff'`**（今日 `app-store.ts:128` 无会话落 `'admin'`，与 D947 治的是同一类病）。有 token 取 token 角色；无 token 取 `'staff'` 且 UI 显性呈现"需要登录"。**夹具：无 token 时 `!== 'admin' && !== 'ga'`** | ⛔ B hold；已登记待 B 开工 |
+| **R6** | `LoginPanel` 挂载 = **`App.tsx` 顶层门**，放在 app-body **外层**、保留 TitleBar（无边框窗口要能拖动/关闭）。顺序 = 登录 → LLM 向导(D575) → 主界面。**外加硬要求：LoginPanel 必须含注册入口**（`POST /api/auth/register` 在白名单内可达），否则新装机用户没账号又进不了门 = **被锁死** | ⛔ B hold；已登记待 B 开工 |
+
+### §13-1 口径追认（CTO）
+
+§八-6「三条 fetch 坐标三方值」= **三条待核对坐标 × 三方值**（派单件声明 / ls-remote / 本地检出）。**队长与 verifier 的做法正确，无需重做；错的是派单措辞。**
+
+### §13-2 两处必须订正 → 处置
+
+| # | CTO 订正 | 处置 |
+|---|---|---|
+| ① | §4 B-② 把 `LeftPanel.tsx:63` 标"非白名单"——它打 `/api/ga/clients`，**在白名单里**；`useStreaming.ts:303` 打 `/api/diagnosis/consult`，**也在白名单**。要求**重跑 15 点清单、逐点标 whitelist/非 whitelist，以那张表写覆盖面** | ✅ **已交回：§4-补**（15 点逐点实测 + 分类 + 重写覆盖面结论）。**重跑结果比原判更严重：15 点中仅 3 点受门禁、12 点免认证** |
+| ② | §7-12 覆盖面裁定：**只保证 apiFetch 链 + 诚实登记**，渲染层统一封装另立卡 | ✅ 已写入 §4-补-结论 + §7-12 更新；**本表已交回，B 的前提满足**（仍待 D949 落地） |
+
+### §13-3 三项纪律（登记，不追溯，均记正向）
+
+1. **编制 5 人 vs 预设上限 4**：**派单为准**。
+2. **`reviewer` 直提 3 commit 到队长分支**：登记；后续收紧为「**成员产出交队长提交**」。
+3. **PLAN 编码事故 + 前向修正**：处置正确（不 force push、事故写进 §0）；**新增纪律——中文 UTF-8 文件禁 PowerShell 管道原地改写，一律走 edit 工具**。
+
+### §13-4 放行范围
+
+| 项 | 状态 |
+|---|---|
+| **PR-1 切片 A**（win，8 文件，base `ef5c8caa`） | ✅ **立即开工**（task-6 已派 code-a） |
+| **D949 P0-a+ 治理**（mac，3 件 + 卡片，base `origin/main@6a714483`） | ✅ **立即开工**（task-7 已派 code-b）；**它是 B 的前置** |
+| **PR-2 切片 B** | ⛔ **hold**：等 **D949 落地 + §4-补 表交回**（表已交回，尚差 D949） |
+
+**基准纪律（不改）**：回执 `git diff --stat` 必须写明基准——**切片 A 用 `ef5c8caa`；其余用合后 `origin/main`**；**禁用本地 `main`**。
+
+**功能回退登记（口径已批）**：D948 交付登记为「**功能回退（部分恢复，未闭环）**」——W1 `department` 无生产写入者 / W2 `/mine` 恒 404 / W3 桌面无部门工作区消费点。**严禁**写成"已知限制"或"部门可见性已可用"。**派单 §一 症状表第 3 行已作废**（实测是页面永停加载态）。
