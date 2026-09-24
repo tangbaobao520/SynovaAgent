@@ -29,20 +29,31 @@
 # A 模式哨兵（方言分判是硬要求，否则误报）:
 #   ERE = flags 含 E / --extended-regexp；BRE = 其余（含 -v / --invert-match）；-F 固定串跳过；-P PCRE 不可校验。
 #   哨兵: `printf '' | grep [-E] -- "$PAT"` → rc 0/1 = 合法；rc ≥2 = 语法非法 → 违规（点名 file:line + 模式原文）。
-#   实测判别样例（本机 BSD grep，写死为注释证据）:
-#     scripts/pre-commit-check.sh:991 `grep -Ev "...|^+++|..."` → rc=2（ERE 里 `^+` 无操作数 → 非法）
-#     scripts/pre-commit-check.sh:492 `grep -v '^+++'`            → rc=1（BRE 合法：+ 是字面量）
-#   存量棘轮（CTO 裁定 2026-09-24，与 B2 同口径：既有红可存在，但必须显式登记；未登记即违规）:
+#   方言判别样例（**同一坐标跨方言判定不同** —— 跨平台陷阱的根源）:
+#     scripts/pre-commit-check.sh:991 `grep -Ev "...|^+++|..."`:
+#       · BSD grep（macOS 本机）: rc=2 —— ERE 里 `^+` 无操作数 → **非法 = 违规**
+#       · GNU grep（CI / Ubuntu）: `^+++` **合法且匹配一切** → rc 0/1 → **不违规**
+#       依据出处: K3 批次2 报告附录 GNU grep 3.11 实证（CTO 2026-09-24 本地复现并认可根因）。
+#     即同一条 `:991` 两端"是否违规"结论相反 → "已不再违规"绝不能一律判红（见下方 STALE 规则）。
+#     scripts/pre-commit-check.sh:492 `grep -v '^+++'` → BRE 合法（rc=1），两端一致（方言分判避免误报）。
+#   存量棘轮（CTO 裁定 2026-09-24，二次裁定 A: STALE 去平台陷阱）:
 #     PATTERN-BASELINE 段（在 $SYNO_GATE_BASELINE 同一文件内）登记既有非法模式，每条:
 #       <脚本相对路径>:<行号> | owner=<D#/角色> | expires=YYYY-MM-DD | evidence=<引用>
-#     · 命中基线的既有违规 → **不判违规**（打印 `PATTERN-BASELINE: registered <n>`）
+#     · 命中基线的既有违规 → 不判违规；输出 `PATTERN-BASELINE: registered <n>；STALE(<n>)` 计数
 #     · 不在基线内的新非法模式 → **必红**（点名 file:line + 模式原文）
-#     · 条目 expires < 今天 → exit 1（PATTERN 基线过期，须修或延期）
-#     · 条目已不再违规（如 D937 修好后）→ exit 1（基线过期，须删条目）
+#     · 条目坐标在**本平台**已不再违规（如 :991 在 GNU 上）→ 记 **STALE**，输出
+#       `PATTERN-BASELINE: STALE(<gnu|bsd>) <key>`：**可见 + 计数，但不影响退出码**
+#       （跨方言判定不同，不能当"新增红"追责；本地 BSD 绿 / CI GNU 红 正是本规则要消除的陷阱）
+#     · **expires 仍是硬门（STALE 不放行）**: 缺 `expires` 键 → exit 2 degrade；
+#       expires < 今天 → exit 1（不论该条 registered 还是 STALE —— 防"拔牙"）
 #     · 基线文件缺失/不可读 → exit 2（fail-closed：无登记簿 = 无法区分存量与新增）
-#   实测 2026-09-24（D938 base 416b4667 + 本卡 + coder-b 交件后）: 既有违规**仅 1 处** ——
-#     scripts/pre-commit-check.sh:991 的 ERE `...|^+++|...`（rc=2）已登记 → `--patterns-only` exit 0；
-#     该处修归 D937，本卡不改 pre-commit-check.sh。同文件 :492 的 BRE `grep -v '^+++'` 合法（方言分判，避免误报）。
+#   平台方言由**行为探针**判定（不用 `grep --version` 文案）:
+#     `printf 'test\n' | grep -Ev '^+++'` → rc=2 ⇒ **bsd**；rc 0/1 ⇒ **gnu**。
+#   CI step summary: 若环境变量 $GITHUB_STEP_SUMMARY 存在且可写 → 追加 `## Gate Integrity` 块
+#     （PATTERN-SENTINEL / PATTERN-BASELINE / CI-REGISTRY / CI-RED-CHECK / 末行判定）；
+#     变量存在但不可写 → **显式 degrade（exit 2，不静默）**。
+#   实测 2026-09-24（D938 base 416b4667 + coder-b 交件后）: 既有违规**仅 1 处** —— scripts/pre-commit-check.sh:991
+#     （BSD rc=2）已登记 → 本机 `--patterns-only` exit 0（registered 1 / STALE 0）。该处修归 D937，本卡不改 pre-commit-check.sh。
 #     扫描脚本 29 个 / 解析模式 268 个 / 可校验 236（ERE 124 · BRE 112）/ 不可校验 32（数字随文件增删漂移，以运行时输出为准）。
 #   本器有效性证明由 tests/control-tower/check-gate-integrity.test.sh 用自造样本承担（不依赖仓库现状）。
 #   已知静态边界（诚实声明，非违规）: 整行注释不扫（注释示例不执行）；变量/命令替换模式（如 "$PAT"）
@@ -106,6 +117,25 @@ violation() { VIOLATIONS=$((VIOLATIONS + 1)); printf 'VIOLATION: %s\n' "$1"; }
 info() { printf '%s\n' "$1"; }
 vprint() { [ "$VERBOSE" = 1 ] && printf '%s\n' "$1"; }
 
+# ── 平台方言行为探针（不用 `grep --version` 文案）: `^+++` 在 BSD ERE 非法(rc=2)，GNU 合法(rc 0/1) ──
+# 注: 探针模式用**拼接**构造 —— 本器会扫描自身，若把这条"故意非法"的 ERE 字面量写死，
+#     会把自己判成新增违规（红证落入扫描面）；拼接后该调用是变量模式 → 计"不可校验"，不判违规。
+_PROBE_PAT='^++'"+"           # = ^+++；BSD 下 rc=2 是**探针预期结果**，不是缺陷
+grep_dialect() {
+  printf 'test\n' | grep -Ev "$_PROBE_PAT" >/dev/null 2>&1
+  case $? in
+    2) printf '%s\n' "bsd" ;;
+    *) printf '%s\n' "gnu" ;;
+  esac
+}
+GREP_DIALECT="$(grep_dialect)"
+
+# ── step summary 状态（CI 各面统计；未运行的模式留空 → 摘要写 not run）──
+SUM_PARSED=""; SUM_CHECKABLE=""; SUM_ERE=""; SUM_BRE=""
+SUM_PAT_REG=""; SUM_PAT_STALE=""
+SUM_REG_SEALED=""; SUM_REG_LISTED=""; SUM_REG_UNREG=""; SUM_REG_BASE=""
+SUM_CIRED=""
+
 # ── 基线行取值（C1/C2 缺陷教训：**按键取值，绝不按字段序号**）──
 _re_escape() { # 把 name 里的 ERE 元字符转义（检查名含中文/全角括号/点号等）
   printf '%s' "$1" | sed 's/[][\\.^$*+?(){}|]/\\&/g'
@@ -114,12 +144,54 @@ _key_value() { # $1=基线行 $2=键名（expires / owner / first_seen ...）→
   printf '%s' "$1" | grep -oE "$2=[^|]*" 2>/dev/null | head -1 | cut -d= -f2- | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'   # swallow-ok: 键缺失=正常情形（调用方按空值走 degrade/违规分支，非静默通过）
 }
 
-# ── 降级出口（铁律 11/32）: stderr 显式 + degraded 日志 JSON + exit 2（绝不当作通过）──
-degrade() { # $1=code $2=phase $3=原因
-  printf 'degraded: %s\n' "$3" >&2
+# ── 降级事件日志（铁律 11/32；供 degrade 与 step-summary 不可写共用）──
+_degrade_log() { # $1=code $2=phase $3=原因
   mkdir -p "$(dirname "$DEGRADED_LOG")" 2>/dev/null || true
   printf '{"time":"%s","component":"check-gate-integrity","code":"%s","phase":"%s","retryable":false}\n' \
     "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$1" "$2" >> "$DEGRADED_LOG" 2>/dev/null || true
+}
+
+# ── CI step summary（$GITHUB_STEP_SUMMARY 存在且可写 → 追加；存在但不可写 → 显式 degrade，不静默）──
+# 实现注记（实测坑）: 把写文件的复合命令直接放进 `if ! { ... } >> "$f" …` 条件里时，
+#   本机 bash 3.2 **重定向失败判不出来**（错误照打，条件仍走"成功"分支）——
+#   故改为「显式 -w 判定 + 写函数 rc 判定」双保险，绝不靠重定向错误码。
+_write_summary_block() { # $1=path $2=verdict；rc=写入结果（0=成功）
+  {
+    printf '\n## Gate Integrity\n'
+    printf -- '- PATTERN-SENTINEL: parsed=%s checkable=%s (ERE %s / BRE %s)\n' "${SUM_PARSED:-not run}" "${SUM_CHECKABLE:-not run}" "${SUM_ERE:-0}" "${SUM_BRE:-0}"
+    printf -- '- PATTERN-BASELINE: registered=%s STALE=%s\n' "${SUM_PAT_REG:-not run}" "${SUM_PAT_STALE:-not run}"
+    if [ -z "$SUM_REG_SEALED" ]; then
+      printf -- '- CI-REGISTRY: not run\n'
+    else
+      printf -- '- CI-REGISTRY: 密封面=%s 登记=%s 未登记=%s 基线=%s\n' "$SUM_REG_SEALED" "$SUM_REG_LISTED" "$SUM_REG_UNREG" "$SUM_REG_BASE"
+    fi
+    printf -- '- CI-RED-CHECK: %s\n' "${SUM_CIRED:-SKIPPED}"
+    printf -- '- GATE-INTEGRITY: %s\n' "$2"
+  } >> "$1" 2>/dev/null   # swallow-ok: 返回值即判据（调用方按 rc 走显式 degrade），非静默吞错
+}
+
+write_step_summary() { # $1=判定（OK | VIOLATION(n) | DEGRADED）；不可写时 exit 2
+  local path="${GITHUB_STEP_SUMMARY:-}"
+  [ -n "$path" ] || return 0                      # 未设置（本地运行）→ 正常跳过
+  local wrc=0
+  if [ -e "$path" ] && [ ! -w "$path" ]; then
+    wrc=1                                         # 存在但不可写：显式判 -w，不靠重定向错误
+  else
+    _write_summary_block "$path" "$1"; wrc=$?
+  fi
+  if [ "$wrc" -ne 0 ]; then
+    printf 'degraded: GITHUB_STEP_SUMMARY 存在但不可写: %s（step summary 无法落地，不静默跳过）\n' "$path" >&2
+    _degrade_log "STEP_SUMMARY_UNWRITABLE" "summary" "GITHUB_STEP_SUMMARY 不可写: $path"
+    printf 'GATE-INTEGRITY: DEGRADED\n'
+    exit 2
+  fi
+}
+
+# ── 降级出口（铁律 11/32）: stderr 显式 + degraded 日志 JSON + exit 2（绝不当作通过）──
+degrade() { # $1=code $2=phase $3=原因
+  printf 'degraded: %s\n' "$3" >&2
+  _degrade_log "$1" "$2" "$3"
+  write_step_summary "DEGRADED" >/dev/null 2>&1 || true   # swallow-ok: 摘要写出错已由 write_step_summary 自己显式 degrade；此处不掩盖退出码
   printf 'GATE-INTEGRITY: DEGRADED\n'
   exit 2
 }
@@ -416,6 +488,7 @@ run_patterns() {
   fi
 
   : > "$TMPD/pat_matched.txt"
+  : > "$TMPD/pat_stale.txt"
   local parsed=0 checked=0 unverifiable=0 ere_n=0 bre_n=0 registered=0
   local p_file p_line p_dialect p_pattern rc label key
   while IFS=$'\t' read -r p_file p_line p_dialect p_pattern; do
@@ -446,7 +519,7 @@ run_patterns() {
     fi
   done < "$TMPD/patterns.tsv"
 
-  local n_entries today
+  local n_entries today n_stale=0
   n_entries=$(wc -l < "$TMPD/pat_entries.txt" | tr -d ' ')
   today="$(date -u +%F)"
   info "PATTERN-SENTINEL: 解析 ${parsed} 个模式；可校验 ${checked}（ERE ${ere_n} / BRE ${bre_n}）；不可校验 ${unverifiable}；扫描脚本 $(printf '%s' "$existing" | wc -w | tr -d ' ') 个"
@@ -454,22 +527,36 @@ run_patterns() {
     degrade "A_NO_CHECKABLE_PATTERN" "patterns" \
       "可校验 grep 模式数=0（解析 ${parsed} 个）——扫描器疑似失效，fail-closed 不报绿"
   fi
-  info "PATTERN-BASELINE: registered ${registered}；条数 ${n_entries}"
   if [ "$n_entries" -gt 0 ]; then
     while IFS='|' read -r pkey pexpires; do
       [ -n "$pkey" ] || continue
-      if ! grep -F -x -q -- "$pkey" "$TMPD/pat_matched.txt" 2>/dev/null; then   # swallow-ok: 探测型（条目本轮是否命中）；文件缺失=未命中 → 判"基线过期"违规（fail-closed）
-        violation "基线过期，须删条目: ${pkey}（已不再违规或文件已删）"
-        continue
-      fi
+      # 硬门 1: 缺 expires 键 → degrade（STALE / registered 都不放行）
       if [ -z "$pexpires" ]; then
         degrade "A_PATTERN_BASELINE_NO_EXPIRES" "patterns" "PATTERN-BASELINE 条目缺 expires 键（不可静默当 0）: ${pkey}"
       fi
+      local is_stale=0
+      if ! grep -F -x -q -- "$pkey" "$TMPD/pat_matched.txt" 2>/dev/null; then   # swallow-ok: 探测型（条目本轮是否命中）；文件缺失=未命中 → 判 STALE（可见+计数，不判违规）
+        is_stale=1
+        n_stale=$((n_stale + 1))
+        printf '%s\n' "$pkey" >> "$TMPD/pat_stale.txt"
+      fi
+      # 硬门 2: expires < 今天 → exit 1（不论该条 registered 还是 STALE —— 防"拔牙"）
       if [[ "$pexpires" < "$today" ]]; then
-        violation "PATTERN 基线过期（须修或延期）: ${pkey}（expires ${pexpires} < ${today}）"
+        if [ "$is_stale" = 1 ]; then
+          violation "PATTERN 基线过期（须修或延期；条目本平台已 STALE(${GREP_DIALECT})）: ${pkey}（expires ${pexpires} < ${today}）"
+        else
+          violation "PATTERN 基线过期（须修或延期）: ${pkey}（expires ${pexpires} < ${today}）"
+        fi
+      elif [ "$is_stale" = 1 ]; then
+        # STALE: 本平台已不再违规（跨方言判定不同）→ 可见 + 计数，但**不影响退出码**
+        info "PATTERN-BASELINE: STALE(${GREP_DIALECT}) ${pkey}（本平台已不再违规；不影响退出码；expires ${pexpires} 前须删条目或重修）"
+        vprint "  PATTERN-BASELINE: STALE(${GREP_DIALECT}) ${pkey}（registered=0 / 本平台无违规坐标）"
       fi
     done < "$TMPD/pat_entries.txt"
   fi
+  info "PATTERN-BASELINE: registered ${registered}；STALE(${n_stale})"
+  SUM_PARSED="$parsed"; SUM_CHECKABLE="$checked"; SUM_ERE="$ere_n"; SUM_BRE="$bre_n"
+  SUM_PAT_REG="$registered"; SUM_PAT_STALE="$n_stale"
 }
 
 # ═══ B CI 清单登记 gate ═══════════════════════════════════════════════════════
@@ -535,6 +622,7 @@ run_registry() {
   n_stale=$(wc -l < "$TMPD/stale_baseline.txt" | tr -d ' ')
   info "CI-REGISTRY: 测试文件 ${n_all}（密封面 sh/py ${n_ci}；ts 面 ${n_ts}）；ci.yml 登记（密封面）${n_reg}；密封面未登记 ${n_unreg}；基线 ${n_base} 条；基线外新增 ${n_new}；基线过期 ${n_stale}"
   info "CI-REGISTRY: NOTE unregistered-ts=$(wc -l < "$TMPD/unregistered_ts_face.txt" | tr -d ' ')（vitest glob 自动覆盖，不计密封面违规）"
+  SUM_REG_SEALED="$n_ci"; SUM_REG_LISTED="$n_reg"; SUM_REG_UNREG="$n_unreg"; SUM_REG_BASE="$n_base"
   if [ "$VERBOSE" = 1 ]; then
     while IFS= read -r item; do
       [ -n "$item" ] || continue
@@ -614,6 +702,7 @@ PYEOF
   done < "$failing"
 
   info "CI-RED-CHECK: 失败检查 ${n_fail} 项；基线命中 ${matched} 项；基线条目 $(wc -l < "$red_norm" | tr -d ' ') 条；今天 ${today}"
+  SUM_CIRED="失败检查 ${n_fail} 项；基线命中 ${matched} 项"
 }
 
 # ═══ 主流程 ═══════════════════════════════════════════════════════════════════
@@ -650,8 +739,10 @@ fi
 
 info ""
 if [ "$VIOLATIONS" -gt 0 ]; then
+  write_step_summary "VIOLATION(${VIOLATIONS})"
   printf 'GATE-INTEGRITY: VIOLATION(%d)\n' "$VIOLATIONS"
   exit 1
 fi
+write_step_summary "OK"
 printf 'GATE-INTEGRITY: OK\n'
 exit 0

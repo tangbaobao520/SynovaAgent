@@ -28,3 +28,17 @@ Anthropic 工程基线（门禁须可自证 + fail-closed 三态）／第一性�
 - 上游：K3 批次2 §五 #1/#2/#7；派单-K3回执-批次2 待修 #1/#3
 - 同族：D937（组 7a 修复，本卡仅在 `[P]` 登记其坐标）；B3（D922 夹具登记）；B4（D925 调用面接线）
 - 交付证据：`/tmp/m9-verify-20260924-1828.md`（独立自验 V1–V10 + M1–M6 变异体）
+
+## 修订 1（2026-09-24 晚，CTO 裁定 A）：棘轮 STALE 去平台陷阱
+
+**触发**：本卡首版在 CI（GNU grep）红、本地（BSD grep）绿。根因——`scripts/pre-commit-check.sh:991` 的 `^+++` 在 BSD 是非法 ERE（rc=2，视为"仍违规"→ 命中 `[P]` 豁免），在 GNU 是**合法模式**（匹配一切 → 坐标"已不再违规"）→ 触发首版「条目已不再违规 → exit 1」规则 → CI job 恒红。**同一坐标跨方言判定不同**。
+
+**决策**（CTO 四条约束）：
+1. 「已不再违规」→ **可见 STALE 警告 + 计数**（`PATTERN-BASELINE: registered <n>；STALE(<n>)`，逐条 `STALE(gnu|bsd) <坐标>`），**不再 exit 1**；
+2. **`expires` 仍是硬门**：缺键 → exit 2；过期 → exit 1（registered / STALE 皆然，防"拔牙"）；
+3. STALE 标注平台，方言由**行为探针**判定（不用 `grep --version` 文案）；跨方言差异写入脚本头注释；
+4. `GITHUB_STEP_SUMMARY` 可写则落 step summary，存在但不可写 → 显式 degraded exit 2。
+
+**理由（第一性原理）**：棘轮防"永久豁免"的属性应由**时间（expires）**承担；"已不再违规"在跨平台下混淆了"方言差异"与"真实修复"，把它判红等于制造门禁自阻断（本卡首版即被它堵在 CI）。
+
+**同时**（CTO 第四条）：`ci-red-baseline.txt` 补齐 **base（分支/PR push）三条既有红**（TypeScript + Lint + Iron Laws / Control Tower Gate Tests ubuntu / windows），与 main-push 两条共 5 条，每条带 `owner=`（暂 UNASSIGNED，待指派）与 `expires=`。
