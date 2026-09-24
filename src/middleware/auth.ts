@@ -27,6 +27,21 @@ export interface JwtPayload {
   sub: string;   // userId
   role: string;  // WorkspaceRole | 'ga'
   orgId: string; // tenant/org ID
+  /**
+   * D948: 载荷内部门（可选）。**唯一授权来源 = 签发端**（routes/auth.ts 的 login/refresh，
+   * 取值来自 UserStore 记录）；客户端 body/header 永不进入本字段（创始人决策①）。
+   *
+   * 必须保持 **optional**（不得设为必填）：无部门的合法 JWT 仍是**合法凭证**
+   * （D948 决策②「安全判据默认拒绝」——拒绝的是**部门工作区访问**，不是凭证本身）；
+   * 若设为必填，「无部门 token」在类型上不可表达，且 tsc 会强制所有签发点带值
+   * ⇒ 反过来逼迫签发端"凑一个值"，属默认放行姿态。
+   *
+   * 缺失 / 空串语义一致 = 「无部门」⇒ 部门可见性判据一律 fail-closed
+   * （rbac.ts 的 isSameDepartment：双方均须为非空字符串且相等）。
+   * 签发端写入前统一归一（`department || undefined`），使 token 内「无部门」只有一种表示
+   * （键缺失），避免 `''` 与 `undefined` 两种形态在同一语义上分叉。
+   */
+  department?: string;
   iat: number;   // issued at (Unix seconds)
   exp: number;   // expires at (Unix seconds)
   jti: string;   // JWT ID (唯一，用于撤销)
@@ -36,6 +51,11 @@ export interface AuthRequestContext {
   role: WorkspaceRole | 'ga';
   userId: string;
   orgId: string;
+  /**
+   * D948: 与 {@link JwtPayload.department} 同源透传（验签后的 req.auth）。
+   * 调用方（rbac / 路由）据此做部门判据；缺失时一律 fail-closed。
+   */
+  department?: string;
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -495,6 +515,9 @@ export function extractAuthFromRequest(req: {
       role: req.auth.role as WorkspaceRole | 'ga',
       userId: req.auth.sub,
       orgId: req.auth.orgId,
+      // D948: 部门与其余身份字段同源透传。**不做默认值填充**——缺失即「无部门」，
+      // 由消费方（rbac 部门判据）fail-closed 处理，绝不在读取侧补一个"看似合理"的部门。
+      department: req.auth.department,
     };
   }
 

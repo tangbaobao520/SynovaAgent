@@ -115,16 +115,21 @@ export interface RbacContext {
  * 本函数**不再读取** `x-synova-token` / `query.token` 等自报凭据——此类字符串
  * 不经验签即可自封 `role=admin`，属默认放行姿态，已删除。
  * 无凭据时返回 `authenticated: false` 的匿名上下文（fail-closed，绝不回退 admin）。
+ *
+ * D948: 部门与其余身份字段**同源透传**（`req.auth.department`）。这是 D947 登记的
+ * 「功能回退 R5/REV-8」的还原点：此前该行写死 `department: undefined`，使部门可见性
+ * 判据恒不命中 ⇒ 部门工作区对任何非 admin 恒拒绝。透传后语义仍为 fail-closed——
+ * 载荷无 department 时该值为 `undefined`，`isSameDepartment` 要求双方非空且相等，必不命中。
  */
 export function extractRbacContext(req: {
   headers?: Record<string, unknown>;
   query?: Record<string, unknown>;
-  auth?: { sub: string; role: string; orgId: string; gaConstraints?: GAConstraints };
+  auth?: { sub: string; role: string; orgId: string; department?: string; gaConstraints?: GAConstraints };
 }): RbacContext {
   if (req.auth) {
     return {
       role: req.auth.role as WorkspaceRole,
-      department: undefined,
+      department: req.auth.department,
       userId: req.auth.sub,
       authenticated: true,
       gaConstraints: req.auth.gaConstraints,

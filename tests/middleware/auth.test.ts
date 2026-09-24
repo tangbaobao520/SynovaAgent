@@ -662,3 +662,95 @@ describe('D947/L-20 — 白名单路径的凭据注入', () => {
     }
   });
 });
+
+// ════════════════════════════════════════════════════════════════
+// D948 切片 A — 载荷 department 透传（A1/A7 的 token 载荷级判据）
+//   N1 已由文件头 beforeAll（:57-62）覆写并自证；本组不再断言 ambient env。
+// ════════════════════════════════════════════════════════════════
+
+/** 签发（返回 null 即判空转，绝不静默跳过） */
+function signOrThrow(payload: Parameters<typeof signJwtToken>[0]): string {
+  const token = signJwtToken(payload);
+  if (!token) throw new Error('signJwtToken 返回 null — JWT_SECRET 未就位（夹具应判空转）');
+  return token;
+}
+
+/** 解码 token 第二段（**载荷级**断言；不依赖 HTTP 码，对齐决策③「提交时就该拦」） */
+function decodePayload(token: string): Record<string, unknown> {
+  const parts = token.split('.');
+  expect(parts.length, 'JWT 必须为三段').toBe(3);
+  const parsed: unknown = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
+  if (typeof parsed !== 'object' || parsed === null) throw new Error('载荷非对象');
+  return parsed as Record<string, unknown>;
+}
+
+describe('D948/A1·A7 — 签发/验签的 department 透传', () => {
+  it('带 department 签发 → 载荷含该值，且 verifyJwtToken 同值读回', () => {
+    const token = signOrThrow({ sub: 'u-d948-1', role: 'manager', orgId: 'org-d948', department: 'marketing' });
+    expect(decodePayload(token)['department']).toBe('marketing');
+    expect(verifyJwtToken(token).payload?.department).toBe('marketing');
+  });
+
+  it('不传 department → 载荷**无该键**（无部门只有一种表示，不写 null/空串）', () => {
+    const token = signOrThrow({ sub: 'u-d948-2', role: 'manager', orgId: 'org-d948' });
+    expect('department' in decodePayload(token)).toBe(false);
+    // 决策②: 无部门 token 仍是**合法凭证**（拒绝的是部门工作区访问，不是凭证本身）
+    expect(verifyJwtToken(token).payload?.sub).toBe('u-d948-2');
+  });
+
+  it('显式传 department: undefined → 同样不产生键', () => {
+    const token = signOrThrow({ sub: 'u-d948-3', role: 'staff', orgId: 'org-d948', department: undefined });
+    expect('department' in decodePayload(token)).toBe(false);
+  });
+
+  it('必填字段校验不受影响: 缺 sub → 验签拒绝（新增可选字段未放宽校验）', () => {
+    const token = signOrThrow({ sub: '', role: 'manager', orgId: 'org-d948', department: 'marketing' });
+    const r = verifyJwtToken(token);
+    expect(r.payload).toBeNull();
+    expect(r.error).toBe('Missing required fields in token');
+  });
+});
+
+describe('D948/A6 — extractAuthFromRequest 透传 department（否则新字段成死字段）', () => {
+  it('有 department → 原样透传', () => {
+    const ctx = extractAuthFromRequest({
+      auth: { sub: 'u-mkt', role: 'manager', orgId: 'org-d948', department: 'marketing', iat: 0, exp: 0, jti: 'j1' },
+    });
+    expect(ctx?.department).toBe('marketing');
+    expect(ctx?.userId).toBe('u-mkt');
+    expect(ctx?.role).toBe('manager');
+  });
+
+  it('无 department → 不补默认值（缺失即无部门，由消费方 fail-closed）', () => {
+    const ctx = extractAuthFromRequest({
+      auth: { sub: 'u-nod', role: 'manager', orgId: 'org-d948', iat: 0, exp: 0, jti: 'j2' },
+    });
+    expect(ctx).not.toBeNull();
+    expect(ctx?.department).toBeUndefined();
+  });
+});
+
+// ════════════════════════════════════════════════════════════════
+// D948/A6 — 自报头单元级**判别性**判据（改坏即红）
+//   判别对象：任何「把 x-synova-token 的值当身份来源」的复活实现。
+//   本组断言在 D947 后必须为绿；若有人恢复自报分支，第一条必红（返回非 null）+ 留痕断言必红。
+//   注：`auth.ts:503-508` 的显式拒绝分支**必须保留**（D947-RULINGS:109），本组正是它的判据。
+// ════════════════════════════════════════════════════════════════
+
+describe('D948/A6 — 自报头不产生身份 + 显式拒绝留痕', () => {
+  it('仅 x-synova-token=admin:marketing:u1 → 返回 null 且留痕 AUTH_REJECTED', () => {
+    const mark = logCapture.calls.length;
+    const ctx = extractAuthFromRequest({ headers: { 'x-synova-token': 'admin:marketing:u1' } });
+    expect(ctx).toBeNull();
+    expect(codesSince(mark)).toContain('AUTH_REJECTED');
+  });
+
+  it('对照: 验签 auth 在场时正常返回（拒绝不是一刀切）', () => {
+    const ctx = extractAuthFromRequest({
+      auth: { sub: 'u-ok', role: 'manager', orgId: 'org-d948', iat: 0, exp: 0, jti: 'j3' },
+      headers: { 'x-synova-token': 'admin:marketing:u1' },
+    });
+    expect(ctx?.userId).toBe('u-ok');
+    expect(ctx?.role).toBe('manager');
+  });
+});

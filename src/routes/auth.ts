@@ -25,6 +25,12 @@ const router = Router();
 interface UserRecord {
   userId: string; email: string; passwordHash: string; role: string; orgId: string;
   status: 'active' | 'disabled'; createdAt: string;
+  /**
+   * D948: 部门。与 UserStore.UserRecord.department（growth/user-store.ts:37）同形，
+   * 供 login 签发时取用。内存回退路径（下方 users Map）**永不写入**本字段
+   * ⇒ 恒 undefined ⇒ 「无部门」⇒ 部门工作区访问 fail-closed（登记为降级语义，见 §回执）。
+   */
+  department?: string;
   phone?: string; wechatId?: string;
 }
 const users = new Map<string, UserRecord>();
@@ -131,7 +137,16 @@ router.post('/api/auth/login', async (req: Request, res: Response) => {
     const passwordMatch = await bcrypt.compare(password, foundUser.passwordHash);
     if (!passwordMatch) return res.status(401).json({ ok: false, code: 'AUTH_FAILED', message: '账户不存在或密码错误' });
 
-    const token = signJwtToken({ sub: foundUser.userId, role: foundUser.role, orgId: foundUser.orgId });
+    // D948: 部门来源 = UserStore 记录（授权来源），**不是**请求 body（创始人决策①）。
+    //   归一：'' / undefined 一律写成 undefined ⇒ token 内「无部门」只有一种表示（键缺失）。
+    //   注意：graph 路径的 createUser 写 `extra?.department || ''`（user-store.ts:99），
+    //   故空串是**常态**，必须归一，否则 token 会携带无意义的 `department: ""`。
+    const token = signJwtToken({
+      sub: foundUser.userId,
+      role: foundUser.role,
+      orgId: foundUser.orgId,
+      department: foundUser.department || undefined,
+    });
     if (!token) return res.status(500).json({ ok: false, code: 'AUTH_CONFIG_ERROR', message: 'JWT_SECRET 未配置', degraded: true });
 
     const result = verifyJwtToken(token);
@@ -173,10 +188,15 @@ router.post('/api/auth/refresh', (req: Request, res: Response) => {
     }
 
     // 签发新 token（保留原有信息）
+    // D948/A7: department 必须随刷新保留，否则「刷新即丢部门」⇒ 用户在 token 到期后被
+    //   静默降级为无部门（fail-closed 变成功能不可用）。旧 token 无 department 时
+    //   此处为 undefined ⇒ 新 token 同样无该键（不得 fail-closed 拒绝刷新：
+    //   无部门 JWT 是**合法凭证**，拒绝刷新属可达性收窄而非安全收窄）。
     const newToken = signJwtToken({
       sub: result.payload.sub,
       role: result.payload.role,
       orgId: result.payload.orgId,
+      department: result.payload.department || undefined,
     });
 
     if (!newToken) {

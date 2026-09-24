@@ -406,3 +406,88 @@ describe('D242 — RoleTemplateStore CRUD', () => {
     expect(custom!.isBuiltin).toBe(false);
   });
 });
+
+// ════════════════════════════════════════════════════════════════
+// D948 切片 A — A2 / A5 / A6
+//   N1 已由文件头 beforeAll（:11-16）覆写并自证。
+//   全部经 extractRbacContext（即**生产中间件路径**）构造 ctx，不手搓 department 值。
+// ════════════════════════════════════════════════════════════════
+
+/** 经生产路径（JWT 分支）取 context —— 手搓 ctx 无法证明 D948 的接线 */
+const ctxOf = (department?: string): RbacContext =>
+  extractRbacContext({ auth: { sub: 'm-x', role: 'manager', orgId: 'org-d948', department } });
+
+const DEPT_WS_MKT = { visibility: 'department' as const, department: 'marketing', owner: 'admin-1' };
+
+describe('D948/A2 — extractRbacContext 的 JWT 分支返回**真实**部门', () => {
+  it('载荷带 department → ctx.department 同值，authenticated=true', () => {
+    const ctx = extractRbacContext({
+      auth: { sub: 'mkt-1', role: 'manager', orgId: 'org-d948', department: 'marketing' },
+    });
+    expect(ctx.department).toBe('marketing');
+    expect(ctx.role).toBe('manager');
+    expect(ctx.userId).toBe('mkt-1');
+    expect(ctx.authenticated).toBe(true);
+  });
+
+  it('载荷无 department → ctx.department undefined（不补值、不放行）', () => {
+    const ctx = extractRbacContext({ auth: { sub: 'nod-1', role: 'manager', orgId: 'org-d948' } });
+    expect(ctx.department).toBeUndefined();
+    expect(ctx.authenticated).toBe(true);   // 无部门 ≠ 未认证（凭证合法）
+  });
+
+  it('成对判据（防"恒真/恒假"）: 同部门命中 / 异部门不命中', () => {
+    const mkt = extractRbacContext({ auth: { sub: 'm', role: 'manager', orgId: 'o', department: 'marketing' } });
+    expect(canAccessWorkspace(mkt, DEPT_WS_MKT)).toBe(true);
+    expect(canAccessWorkspace(mkt, { visibility: 'department', department: 'sales', owner: 'admin-1' })).toBe(false);
+  });
+});
+
+describe('D948/A5 — 无 department / 空串：默认拒绝（owner 析取被刻意排除）', () => {
+  it('无 department + 部门工作区 + 非属主 → canAccess=false 且 canModify=false', () => {
+    expect(canAccessWorkspace(ctxOf(undefined), DEPT_WS_MKT)).toBe(false);
+    expect(canModifyWorkspace(ctxOf(undefined), DEPT_WS_MKT)).toBe(false);
+  });
+
+  it('边界 双空串（ctx="" + ws=""）→ 不得因 "" === "" 命中', () => {
+    expect(canAccessWorkspace(ctxOf(''), { visibility: 'department', department: '', owner: 'admin-1' })).toBe(false);
+    expect(canModifyWorkspace(ctxOf(''), { department: '', owner: 'admin-1' })).toBe(false);
+  });
+
+  it('边界 单侧空串（ctx="" ws=marketing / ctx=marketing ws=""）→ 均不命中', () => {
+    expect(canAccessWorkspace(ctxOf(''), DEPT_WS_MKT)).toBe(false);
+    expect(canAccessWorkspace(ctxOf('marketing'), { visibility: 'department', department: '', owner: 'admin-1' })).toBe(false);
+    expect(canModifyWorkspace(ctxOf('marketing'), { department: '', owner: 'admin-1' })).toBe(false);
+  });
+
+  it('对照（防"恒 false"假绿）: 同部门且非属主 → 命中；owner 析取为既有语义不回改', () => {
+    expect(canAccessWorkspace(ctxOf('marketing'), DEPT_WS_MKT)).toBe(true);
+    expect(canModifyWorkspace(ctxOf('marketing'), DEPT_WS_MKT)).toBe(true);
+    // A5-b: owner 析取既有语义保留 —— 无部门但属主本人仍可改
+    expect(canModifyWorkspace(extractRbacContext({ auth: { sub: 'owner-1', role: 'manager', orgId: 'o' } }),
+      { department: 'marketing', owner: 'owner-1' })).toBe(true);
+  });
+});
+
+describe('D948/A6 — 自报头不产生 RBAC 身份（单元级判别）', () => {
+  it('仅 x-synova-token=admin:marketing:u1 → 角色≠admin、未认证、部门 undefined', () => {
+    const ctx = extractRbacContext({ headers: { 'x-synova-token': 'admin:marketing:u1' }, query: {} });
+    expect(ctx.role).not.toBe('admin');
+    expect(ctx.authenticated).toBe(false);
+    expect(ctx.department).toBeUndefined();
+    expect(ctx.userId).not.toBe('u1');
+    // 自报里的部门同样不得被采信为判据依据
+    expect(canAccessWorkspace(ctx, DEPT_WS_MKT)).toBe(false);
+  });
+
+  it('对照: 验签 auth 在场 → 正常返回（拒绝不是一刀切）', () => {
+    const ctx = extractRbacContext({
+      auth: { sub: 'u-ok', role: 'manager', orgId: 'org-d948', department: 'marketing' },
+      headers: { 'x-synova-token': 'admin:marketing:u1' },
+      query: {},
+    });
+    expect(ctx.role).toBe('manager');
+    expect(ctx.authenticated).toBe(true);
+    expect(ctx.department).toBe('marketing');
+  });
+});
