@@ -8,29 +8,41 @@ export LC_ALL=C.UTF-8 2>/dev/null || true
 #   但全局改成 LC_ALL=C 又会引发第二个坑: bash 3.2 把 `$VAR` 后紧跟的多字节首字节
 #   吞进变量名 → "unbound variable" 直接崩测试。
 #   故：环境保持约定值，只对本夹具自己的解析/编译检查**定点**加 LC_ALL=C（见 family_scan）。
+#   ⚠ 写法硬约束（本文件已按此写，勿改回去）：凡是 `$VAR` **后面紧跟非 ASCII 字符**（如全角
+#     `（）、：`）的地方，一律写成 `${VAR}`。否则 bash 3.2 会把多字节首字节并进变量名 →
+#     "unbound variable" 直接崩——**且只在某些分支上崩**（2026-09-24 实测：变量名后紧跟全角
+#     `）` 的那种写法，恰好只在"平台不判 ^+++ 非法"的 GNU 分支上崩，本地 BSD 分支永远看不到）。
+#     自查命令：`LC_ALL=C grep -nE '\$[A-Za-z_][A-Za-z0-9_]*[^ -~]' <本文件>` → 必须 0 命中。
 # ═══════════════════════════════════════════════════════════════════════════════
 # gate-failopen-net.test.sh — D937 门禁 fail-open 假绿判别夹具 + grep -E 家族回归网
 #
 # 病根（D937，台账第三批）:
-#   组 7a（scripts/pre-commit-check.sh）的排除管道含未转义 `^+++`（非法 ERE——
-#   `+` 无前置原子）→ grep exit 2 → `grep -Ev` 拿不到模式 → 管道失败 →
-#   NEW_DIAG 恒空 → 检查恒判 ✅。自 D467 BRE→ERE 迁移起长期假绿。
+#   组 7a（scripts/pre-commit-check.sh）的排除管道含未转义 `^+++`。
+#   ⚠ 方言订正（2026-09-24，CI #737 实证）：`^+++` **不是**"两方言都非法"的构造 ——
+#     BSD grep 判其非法（exit 2，"repetition-operator operand invalid"）；
+#     **GNU grep 接受**（rc 0/1）。故该假绿机制是 **BSD 侧**成立的：grep exit 2 →
+#     `grep -Ev` 拿不到模式 → 管道失败 → NEW_DIAG 恒空 → 检查恒判 ✅（自 D467 起长期假绿）。
+#   → 本夹具因此**不再拿 `^+++` 当判据**（CTO 新规范第 5 条：夹具禁依赖平台方言，
+#     且本件是当日第 3 例方言同族）；改用与方言无关的非法 ERE（见 OVR_UNLAWFUL），
+#     `^+++` 降级为**可见观测**（平台探针 + 条件化金丝雀），不参与任何 pass/fail。
 #
-# 改前基线（本夹具作者亲测，可原样复现，T2 即钉死这一条）:
+# 改前基线（本夹具作者亲测，**测量机 = macOS / BSD grep**；T2 即钉死这一条）:
 #   SYNO_TEST_ARM=1 SYNO_CI=1 SYNO_GATEKEEPER_ACK=1 SYNO_SKIP_PARALLEL_WARN=1 \
 #     SYNO_GATE_HITS_LOG="$(mktemp)" \
 #     SYNO_GIT_CACHED_DIFF='+const x = new DiagnosticModule();' \
 #     bash scripts/pre-commit-check.sh
 #   → exit 0 + "✅ 禁止 DiagnosticModule: ..." + "✅ 全部 13 组通过"
-#     stderr 仅 "grep: repetition-operator operand invalid"
+#     stderr 仅 "grep: repetition-operator operand invalid"（该 stderr 为 BSD 措辞）
 #   = 注入了一个货真价实的违规用法，门禁却全绿。修好后必须是 exit 1 + 点名组 7a。
 #
 # 覆盖矩阵（铁律 48 三路径 + 判别性）:
 #   T1  正常 — 干净 diff（无注入）→ 组 7a ✅ 且 exit 0
 #   T2  判别 — 注入被禁模块用法（一票判据）→ CI strict 下 exit 1 且点名组 7a
 #   T2b 判别 — 同一命中带 `+++ b/src/x.ts` 头（真实 diff 形态）→ 仍 exit 1
+#   T3p 前置 — 本平台必须**实测**拒收 OVR_UNLAWFUL（rc=2）；不成立则 fail loud（不靠方言假设）
 #   T3  降级 — 排除模式非法（武装缝覆盖）→ 显式降级、该检查行无 ✅
 #   T3f 无缝合 — 不设 SYNO_TEST_ARM 时覆盖变量必须被忽略（生产 fail-closed，两次）
+#   T3d 方言观测 — 历史模式 `^+++` 的平台探针（**可见、不参与判据**）
 #   T4  边界 — // # * 三注释形态不得误报
 #   T5  边界 — 文档（.html）正文不得误伤 + 真实样本 git show 58a19796 零命中
 #   家族网 — scripts/**/*.sh 的 grep -E 字面模式逐个行为编译检查（rc==2 = 非法 ERE）
@@ -56,8 +68,13 @@ ESC="$(printf '\033')"
 
 # 被禁模块名（拆写，见头注 ①）——运行时值为原名
 BANNED="Diagnostic""Module"
-# 复刻台账记录的原始故障模式：+ 无前置原子 → 非法 ERE（BSD/GNU 均 exit 2）
-OVR_BAD='^+++'
+# ═══ 非法 ERE 覆盖模式 —— **必须与方言无关**（CTO 新规范第 5 条；CI #737 返修）═══
+# 选「括号不平衡」：BSD grep = "parentheses not balanced"；GNU grep = "Unmatched ( or \("
+# → 两方言一律 exit 2。**不假设、要实测**：下方 T3p 会先探本平台是否真的 rc=2，不成立即红。
+OVR_UNLAWFUL='a(b'
+# 历史模式 `^+++`（D467 病根）**是方言相关的**（BSD 非法 / GNU 接受）→ **不作判据**，
+# 仅保留在 T3d 平台探针与条件化金丝雀里做**可见观测**。
+OVR_HISTORIC='^+++'
 
 # ── 驱动: 跑生产脚本本体（禁测副本，铁律 0-2）────────────────────────────────
 # 用法: run_pc <strict|soft> <注入 diff 文本> [额外 ENV=VAL ...]
@@ -143,8 +160,26 @@ else
   no "T2b 判别: 应 exit 1 + 组 7a ❌，实际 exit=$RC 行=[${L:-<无 7a 行>}]"
 fi
 
-# ── T3 降级: 排除模式非法（武装缝覆盖）→ 显式降级，不得判 ✅ ─────────────────
-OUT=$(run_pc strict "+const x = new ${BANNED}();" "SYNO_DIAG_EXCL_OVERRIDE=$OVR_BAD"); RC=$?
+# ── T3p 前置 + T3d 方言观测（**先探后判**，不靠方言假设）──────────────────────
+# T3p: 判据前提 = 本平台真的拒收 OVR_UNLAWFUL。若某平台接受它 → 判据不成立 → **fail loud**
+#      （绝不静默跳过，也绝不放宽成假绿）。
+grep -E -e "$OVR_UNLAWFUL" /dev/null >/dev/null 2>&1; PRC_UNLAWFUL=$?
+if [ "$PRC_UNLAWFUL" -eq 2 ]; then
+  ok "T3p 前置: 本平台 grep 拒收非法 ERE '$OVR_UNLAWFUL'（rc=2）—— T3 判据与方言无关"
+else
+  no "T3p 前置: 本平台对 '$OVR_UNLAWFUL' 返回 rc=${PRC_UNLAWFUL}（应 2）—— 判据前提不成立，fail loud"
+fi
+# T3d: 历史模式 `^+++` 的方言差异 —— **可见观测，不参与判据**（CTO 规范第 5 条：
+#      与方言无关 或 显式探针 + 双分支期望；此处选"探针 + 只观测"）。
+grep -E -e "$OVR_HISTORIC" /dev/null >/dev/null 2>&1; PRC_HISTORIC=$?
+if [ "$PRC_HISTORIC" -eq 2 ]; then
+  echo "      （T3d 方言观测: grep -E -e '$OVR_HISTORIC' /dev/null → rc=2 = 本平台判其非法；GNU grep 接受之）"
+else
+  echo "      ⚠️ PLATFORM-DIFF: 本平台 grep 未把 '$OVR_HISTORIC' 判为非法 ERE（rc=${PRC_HISTORIC}）—— 历史模式方言相关，故本夹具只用 '$OVR_UNLAWFUL' 作判据"
+fi
+
+# ── T3 降级: 排除模式非法（武装缝覆盖，**与方言无关的非法 ERE**）→ 显式降级，不得判 ✅ ──
+OUT=$(run_pc strict "+const x = new ${BANNED}();" "SYNO_DIAG_EXCL_OVERRIDE=$OVR_UNLAWFUL"); RC=$?
 L=$(seven_a_lines "$OUT")
 if [ -n "$L" ] && ! has_ok "$L"; then
   ok "T3 降级: 排除模式非法 → 组 7a 不判 ✅"
@@ -166,10 +201,12 @@ fi
 # 判别原理: grep 在读输入前先编译模式。若生产路径真的采纳了非法覆盖模式，
 # 即使 diff 为空，grep -Ev 也会 exit 2 → 必然打出「降级」。故"无降级 + 7a ✅"
 # 即为"覆盖变量未被采纳"的行为证据（不需改仓库、不需造真暂存）。
+# ⚠ 返修要点: 覆盖模式必须用 **OVR_UNLAWFUL**（方言无关）—— 若用 `^+++`，GNU 平台下
+#   即使覆盖真的泄漏进生产也不会产生 exit 2 ⇒ 本断言在 GNU 上**恒绿 = 判别力归零**。
 OUT=$( cd "$REPO" && env -u SYNO_TEST_ARM -u SYNO_GIT_CACHED_DIFF \
         GITHUB_ACTIONS=true SYNO_DIFF_BASE=HEAD SYNO_CI=1 \
         SYNO_GATEKEEPER_ACK=1 SYNO_SKIP_PARALLEL_WARN=1 \
-        SYNO_GATE_HITS_LOG="$(mktemp)" "SYNO_DIAG_EXCL_OVERRIDE=$OVR_BAD" \
+        SYNO_GATE_HITS_LOG="$(mktemp)" "SYNO_DIAG_EXCL_OVERRIDE=$OVR_UNLAWFUL" \
         bash "$PC" 2>&1 ); RC=$?
 L=$(seven_a_lines "$OUT")
 if ! printf '%s' "$OUT" | grep -q "降级" && has_ok "$L"; then
@@ -181,14 +218,14 @@ fi
 OUT=$( cd "$REPO" && env -u SYNO_TEST_ARM -u GITHUB_ACTIONS -u SYNO_DIFF_BASE \
         -u SYNO_GIT_CACHED_DIFF SYNO_CI=1 \
         SYNO_GATEKEEPER_ACK=1 SYNO_SKIP_PARALLEL_WARN=1 \
-        SYNO_GATE_HITS_LOG="$(mktemp)" "SYNO_DIAG_EXCL_OVERRIDE=$OVR_BAD" \
+        SYNO_GATE_HITS_LOG="$(mktemp)" "SYNO_DIAG_EXCL_OVERRIDE=$OVR_UNLAWFUL" \
         bash "$PC" 2>&1 ); RC=$?
 if printf '%s' "$OUT" | grep -q "降级"; then
   no "T3f 无缝合: 真实暂存区路径下覆盖变量生效（fail-open）"
 else
   ok "T3f 无缝合: 真实暂存区路径下覆盖变量同样被忽略"
 fi
-echo "      （无缝合依据: 非法覆盖='^+++' 若被采纳, grep 编译期即 exit 2 → 必出「降级」）"
+echo "      （无缝合依据: 非法覆盖='$OVR_UNLAWFUL' 若被采纳, grep 编译期即 exit 2 → 必出「降级」；该 exit 2 已由 T3p 在本平台实测）"
 
 # ── T4 边界: 三注释形态不得误报 ─────────────────────────────────────────────
 DIFF_T4="$(printf 'diff --git a/src/y.ts b/src/y.ts\n--- a/src/y.ts\n+++ b/src/y.ts\n@@ -1,3 +1,6 @@\n+// %s 已废弃\n+# %s 只在注释里\n+ * %s 也只在注释里\n' "$BANNED" "$BANNED" "$BANNED")"
@@ -435,16 +472,20 @@ else
 fi
 
 # ── 金丝雀: 临时 .sh 塞非法 ERE → 网必须抓到 ────────────────────────────────
+# 判别性设计（铁律 0-2「接线了≠被执行」的前置）:
+#   ① canary-paren.sh（${OVR_UNLAWFUL}，括号不平衡）= **方言无关的强制金丝雀**，任何平台都必须抓到
+#   ② canary-caret.sh（$OVR_HISTORIC = `^+++`）= **条件化**：仅当本平台判其非法时才设；
+#      平台差异以 PLATFORM-DIFF 行**显式可见**（不静默）—— 它只是历史模式的观测，不是判据。
 echo ""
 echo "── 金丝雀: 网必须能抓到非法 ERE（防空转网）──"
 CAN="$TMP/canary"; mkdir -p "$CAN"
-printf '#!/bin/bash\ngrep -E "a(b" /dev/null\n' > "$CAN/canary-paren.sh"
-grep -E -e '^+++' /dev/null >/dev/null 2>&1; PRC=$?
-echo "  平台探针: grep -E -e '^+++' /dev/null → rc=$PRC （2 = 本平台按非法 ERE 拒收）"
+printf '#!/bin/bash\ngrep -E "%s" /dev/null\n' "$OVR_UNLAWFUL" > "$CAN/canary-paren.sh"
+grep -E -e "$OVR_HISTORIC" /dev/null >/dev/null 2>&1; PRC=$?
+echo "  平台探针: grep -E -e '$OVR_HISTORIC' /dev/null → rc=$PRC （2 = 本平台按非法 ERE 拒收）"
 if [ "$PRC" -eq 2 ]; then
-  printf '#!/bin/bash\ngrep -Ev "x|^+++" /dev/null\n' > "$CAN/canary-caret.sh"
+  printf '#!/bin/bash\ngrep -Ev "x|%s" /dev/null\n' "$OVR_HISTORIC" > "$CAN/canary-caret.sh"
 else
-  echo "  ⚠️ PLATFORM-DIFF: 本平台 grep 未把 '^+++' 判为非法 ERE → 仅以括号不平衡做金丝雀"
+  echo "  ⚠️ PLATFORM-DIFF: 本平台 grep 未把 '$OVR_HISTORIC' 判为非法 ERE → 仅以括号不平衡（${OVR_UNLAWFUL}）做金丝雀（该条已由 T3p 实测，方言无关）"
 fi
 family_scan "$CAN" canary
 if grep -q "canary-paren.sh" "$TMP/fs-canary.viol"; then
