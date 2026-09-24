@@ -2,6 +2,9 @@
 
 > 复核人：reviewer（task-5，独立复核，**非**自验员 verifier-tv）｜ 写者：reviewer ｜ 唯一写文件 = 本文件
 > 复核对象：`.synova-wt-d948-lead/docs/synova/product-lines/evidence/D948-20260924/PLAN.md`（task-4 产出）
+> **复核对象修订号（pin，必须按此对账）**：`PLAN.md` @ commit **`48d860af`**（blob `0b564815`），与 HEAD 同源（后续 `edca5b3a` 只改本文件、`0c5e40c8` 只改 `.claude/bypass.log`）。
+> ⚠️ **复核期间 PLAN.md 被再次修改**（收口完成时工作树 `PLAN.md` 的 SHA256 = `31C446DA…6816` ≠ 上列 blob）⇒ **本轮结论只对 `0b564815` 这一版负责**；若 PLAN 已出新版，本文件须按 diff 复算后再采信。
+> **本件落地状态**：commit `edca5b3a`（本地）；`git rev-list --left-right --count origin/docs/d948-plan...HEAD` = **`0  2`** ⇒ **本地领先 origin 2 提交、尚未 push**（`ls-remote` 回执：`37861bbe0192e3f6adfeb90eeacd450a607bd4e3	refs/heads/docs/d948-plan`）。**推送由队长执行**（本文件 §3.1 建议单点提交）。
 > 派单件：`.synova-wt-d948-dispatch/docs/synova/dispatch/D948-win-identity-chain-department-20260924.md`（`origin/docs/d948-identity-chain-dispatch` tip `df9dc5ed`，内容提交 `129a0f53`）
 > 基线口径：`ref=ef5c8caa`（feat/d947-middleware-default-posture）；命令口径均标"截至时刻"
 > 复核时间：**2026-09-25 00:37 +08:00** ｜ 工作树 HEAD `11458279` = `origin/main` `11458279`
