@@ -8,6 +8,12 @@
   ④ 被扫描文档不得出现"未登记"的 DSH 版本串 否则 exit 1
 输出: DSH-ANCHOR: OK | VIOLATION(n) | DEGRADED
 """
+  ⑤ 豁免（D943-FIX，K3 批次4 §1.4 逃逸向量收口）——旧断面引用只有两条出清路径：
+       a) 入 DSH-断面.json 的 known_versions（沿革/史料可提及，见 policy.known_versions_note）；
+       b) 显式写 `## 引用豁免` 段，且段内**至少一条逐行显式条目**（`-`/`*`/`+`/`1.` 列表项）→ 该段内逐行豁免；
+          段内无条目的标题不生效（fail-closed）。
+       **任何"行内含 superseded / 已作废口径表 字样"都不再触发豁免**（原实现：一行命中 → 免检至下一个 `## ` 标题）。
+# D520/V5: 纯 python 实现，无裸 python3/date +%s/date -v/grep -P 调用（已对照 PLATFORM-CHECKLIST.md）
 import argparse, io, json, os, re, subprocess, sys
 
 # Windows 兼容（windows-compat）：CI 控制台非 UTF-8 时中文输出会抛 UnicodeEncodeError
@@ -18,6 +24,33 @@ for _s in ("stdout", "stderr"):
         pass
 
 OK, VIOL, DEG = 0, 1, 2
+
+# 豁免段语义（见 docstring ⑤）
+EXEMPT_HEAD = "## 引用豁免"
+EXEMPT_ENTRY_RE = re.compile(r"^\s*(?:[-*+]|\d+[.)])\s+\S")
+
+def exempt_lines(lines):
+    """返回被豁免的行号集合（1-based）。
+
+    契约:
+      输入  lines: list[str]（单份被扫描文档的行）
+      输出  set[int]：`## 引用豁免` 标题行起、至下一个 `## ` 标题前止的段内行号（含标题行）
+      规则  段内必须至少一条逐行显式条目（列表项）；无条目则该段不生效 → 返回空（fail-closed）
+      降级  无豁免段 → 空集合（不抛异常；文档行数不变）
+    """
+    ex = set()
+    i, n = 0, len(lines)
+    while i < n:
+        if lines[i].strip().startswith(EXEMPT_HEAD):
+            j = i + 1
+            while j < n and not lines[j].strip().startswith("## "):
+                j += 1
+            if any(EXEMPT_ENTRY_RE.match(lines[k]) for k in range(i + 1, j)):
+                ex.update(range(i + 1, j + 1))
+            i = j
+        else:
+            i += 1
+    return ex
 
 def sh(cmd):
     try:
@@ -55,6 +88,10 @@ def main():
     sup_versions = {s["version"] for s in sup}
     known = set(anchor.get("known_versions") or []) | {cur["version"]} | sup_versions
     ver_re = re.compile(r"\b\d+\.\d+\.\d+-[A-Za-z0-9.]+\b")  # 任意 semver prerelease（原只匹配 0.1.7-* → 将来版本静默放过）
+    # 任意 semver prerelease（原只匹配 0.1.7-* → 将来版本静默放过）
+    # 尾部 `(?!-)`：排除"版本号后紧跟连字符"的伪命中——实测台账里 SynovaAgent-0.1.0-win32-x64.exe
+    #   被旧正则截成 0.1.0-win32（D943-FIX 收紧豁免后暴露的误报，非 DSH 版本串）。
+    ver_re = re.compile(r"\b\d+\.\d+\.\d+-[A-Za-z0-9.]+\b(?!-)")
     head_re = re.compile(r"\b(00102833|46a7f68b|[0-9a-f]{8})\b")
     viol = []
     scanned = 0
@@ -75,6 +112,8 @@ def main():
                 if ln.strip().startswith("## 引用豁免") or "已作废口径表" in ln or "superseded" in ln: exempt = True
                 if ln.strip().startswith("## ") and "引用豁免" not in ln: exempt = False
                 if exempt: continue
+            ex = exempt_lines(lines)          # D943-FIX: 豁免只认显式 `## 引用豁免` 段（无关键字触发）
+                if i in ex: continue
                 for v in ver_re.findall(ln):
                     if v not in known:
                         viol.append("%s:%d 未登记的 DSH 版本串 %s" % (rel, i, v))

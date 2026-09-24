@@ -2,6 +2,9 @@
 # D948 — CTO 每日自动看板（官方 schedule 触发；吸收 D796 每日体检静默失败的教训）
 # 三态：0=OK 1=有红项(已告警) 2=degraded(环境不可用, fail-closed，绝不静默通过)
 set -uo pipefail
+
+# D520/V5 平台敏感命令规避：Windows 可能无 python3.exe（仅 python / py -3）
+PYBIN="$(command -v python3 2>/dev/null || command -v python 2>/dev/null || echo python3)"
 REPO="${SYNO_REPO:-/Users/wane/SynovaAgent}"
 OUT="$REPO/docs/synova/coordination/CTO-看板-自动.md"
 LOG="$REPO/.codex/control-tower/logs/daily-board.log"
@@ -25,6 +28,7 @@ line() { body="$body- $1
 
 # 1) DSH 断面
 if a=$(python3 scripts/control-tower/check-dsh-anchor.py --repo . 2>&1); then line "✅ DSH 断面: $(echo "$a"|tail -1)"
+if a=$("$PYBIN" scripts/control-tower/check-dsh-anchor.py --repo . 2>&1); then line "✅ DSH 断面: $(echo "$a"|tail -1)"
 else rc=$?; line "❌ DSH 断面: $(echo "$a"|tail -1) (rc=$rc)"; red=1; fi
 # 2) 卡状态
 tot=$(ls task-state/D*.json 2>/dev/null | wc -l | tr -d ' ')
@@ -39,6 +43,7 @@ else line "⚠️ 本地门禁: 有非通过项（详见 .codex/control-tower/lo
 LEDGER="$REPO/docs/synova/coordination/审计发现台账-DSH-CTO.md"
 if [ -f "$LEDGER" ]; then
   aged=$(python3 - "$LEDGER" "$REPO" <<'PYEOF'
+  aged=$("$PYBIN" - "$LEDGER" "$REPO" <<'PYEOF'
 import datetime, os, re, sys
 p, repo = sys.argv[1], sys.argv[2]
 today = datetime.date.today()

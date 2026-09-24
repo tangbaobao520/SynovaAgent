@@ -1492,6 +1492,27 @@ else
   soft_pass "V5 平台检查: PLATFORM-CHECKLIST.md 不存在(跳过)"
 fi
 
+# ── D943: DSH 断面一致性（唯一源 docs/synova/coordination/DSH-断面.json）──
+# ① 位置：**必须在上方 if/else 之外**——放进 PLATFORM-CHECKLIST 的 if 块内会随该文件缺失而永不执行（M1 fail-open）。
+# ② 语义：soft_check 第二参是「命中/失败描述串」而非命令——直接传命令串会恒判 1 命中，
+#    本地恒 ⚠️、CI（SYNO_CI=1）恒 ❌ 硬阻断。故先跑命令取结论，仅失败时喂入描述。
+# ③ --no-tree-check：CI 无本地 DSH 树（DSH-断面.json 记的是绝对路径）→ 带树跑必 DEGRADED 假红。
+#    带树校验由本机显式命令与 scripts/control-tower/daily-cto-board.sh 承担（每日跑）。
+_DSH_PYBIN=""
+for _c in python3 python py; do  # PYBIN 三级探测（PLATFORM-CHECKLIST #1，禁裸 python3）
+  if command -v "$_c" >/dev/null 2>&1 && "$_c" -c "import sys" >/dev/null 2>&1; then _DSH_PYBIN="$_c"; break; fi
+done
+if [ -z "$_DSH_PYBIN" ]; then
+  soft_check "DSH 断面一致性 (D943): 无可用 python（fail-closed，不静默跳过）" "1"
+elif [ ! -f "$ROOT/scripts/control-tower/check-dsh-anchor.py" ]; then
+  soft_check "DSH 断面一致性 (D943): 门禁脚本缺失 scripts/control-tower/check-dsh-anchor.py" "1"
+else
+  _DSH_ANCHOR_OUT="$("$_DSH_PYBIN" "$ROOT/scripts/control-tower/check-dsh-anchor.py" --repo "$ROOT" --no-tree-check 2>&1)"
+  _DSH_ANCHOR_RC=$?
+  if [ "$_DSH_ANCHOR_RC" -eq 0 ]; then _DSH_ANCHOR_HITS=""; else _DSH_ANCHOR_HITS="$(printf '%s' "$_DSH_ANCHOR_OUT" | tail -8) (rc=$_DSH_ANCHOR_RC)"; fi
+  soft_check "DSH 断面一致性 (D943)" "${_DSH_ANCHOR_HITS}"
+fi
+
 # V3: 写 CP3 检查点
 mkdir -p "$ROOT/.codex/checkpoints"
 G10_FAIL=$([ -n "$MISMATCH" ] && echo "true" || echo "false")
