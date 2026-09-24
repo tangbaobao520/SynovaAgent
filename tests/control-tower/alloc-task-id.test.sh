@@ -101,17 +101,25 @@ assert_exit 0 "$EXIT" "正常流程不误触发 (exit 0)"
 echo ""
 
 echo "── 6. D550: origin/main 占用合并（落后本地不漏号——D547/D548 撞号实证）──"
-MAIN_MAX=$(git ls-tree --name-only origin/main task-state/ 2>/dev/null | grep -oE 'D[0-9]+\.json' | sed 's/D\([0-9]*\)\.json/\1/' | sort -n | tail -1)
-rm -rf "$TMP_DIR/ts-empty"; mkdir -p "$TMP_DIR/ts-empty"
-cp "$REPO_DIR/task-state/TEMPLATE.json" "$TMP_DIR/ts-empty/TEMPLATE.json"
-OUT=$(SYNO_TASK_STATE_DIR="$TMP_DIR/ts-empty" SYNO_BRIEF_DIR="$TMP_DIR/task-briefs" bash "$TOOL" "空目录测试" 2>&1)
+# D940返工(#743): 改**自带 origin/main 的夹具仓**（判别性构造）——
+#   原版以真仓 origin/main 为期望源，实际依赖「工具读 CWD 真仓」这一被 #743 修掉的污染行为
+#   （工具现按 TS_TOP 归属读 origin/main，沙箱非 git 仓时正确降级本地发号 → 原断言必红）。
+#   夹具: 本地空 task-state + 本仓 origin/main 预置 D600 → 期望发 D601（D550 语义经 TS_TOP 生效）。
+F6=$(mktemp -d); CLEANUP_DIRS+=("$F6")
+git init -q "$F6/w"
+mkdir -p "$F6/w/task-state"
+cp "$REPO_DIR/task-state/TEMPLATE.json" "$F6/w/task-state/TEMPLATE.json"
+printf '{"task_id":"D600","status":"claimed"}\n' > "$F6/w/task-state/D600.json"
+( cd "$F6/w" && git add -A && git -c user.name=t -c user.email=t@t commit -q -m init )
+git -C "$F6/w" update-ref refs/remotes/origin/main HEAD
+rm -f "$F6/w/task-state/D600.json"   # 本地抹掉 → 只剩 origin/main 占用 600
+OUT=$(SYNO_TASK_STATE_DIR="$F6/w/task-state" SYNO_BRIEF_DIR="$F6/briefs" \
+      SYNO_ALLOC_NO_WORKTREE=1 SYNO_ALLOC_NO_BRANCH=1 bash "$TOOL" "空目录测试" 2>&1)
 GOT=$(echo "$OUT" | grep -oE 'D[0-9]+' | head -1 | sed 's/D//')
-if [ -n "$MAIN_MAX" ] && [ -n "$GOT" ] && [ "$GOT" -gt "$MAIN_MAX" ]; then
-  pass "origin/main 合并: 空本地发 D${GOT} > main max D${MAIN_MAX}（不漏号）"
-elif [ -z "$MAIN_MAX" ]; then
-  pass "origin/main 不可读 → 降级本地发号（CI 无 origin 时预期路径）"
+if [ "$GOT" = "601" ]; then
+  pass "origin/main 合并: 本地空 + 夹具 origin/main 占 D600 → 发 D601（不漏号，经 TS_TOP 归属）"
 else
-  fail "origin/main 合并失败: 发 D$GOT 应 > main max $MAIN_MAX"
+  fail "origin/main 合并失败: 发 D${GOT:-<空>} 应 = 601（夹具 origin/main 占 D600）"
 fi
 echo ""
 

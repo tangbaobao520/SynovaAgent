@@ -140,6 +140,8 @@ _lock_release() {
 # 为什么在锁外: 真仓 `git ls-remote --heads origin` 实测 6.08s / 666 分支。放进临界区会把
 #   并发分配串行成 6s/次，撞 LOCK_WAIT_SEC=30 上限（并发锁失效）。快照只用于发号前校验。
 # 读法: git -C "$TS_TOP" ls-remote --heads origin —— 走 repo 自身 remote 配置（不写死 URL/remote 名）
+# D940返工(#743 K3 P0): TS_TOP 在此统算一次，后续全源（origin-main 合并/worktree/branch）沿用——
+#   占用表任何源都不得混入 CWD 所在仓（原 origin/main 合并无 -C → 夹具/CI 读真仓 main，K3 实测发 D944）。
 TS_TOP="$(git -C "$TASK_STATE_DIR" rev-parse --show-toplevel 2>/dev/null || echo "")"
 REMOTE_BRANCH_REFS=""
 if [ "${SYNO_ALLOC_NO_BRANCH:-0}" = "1" ]; then
@@ -248,13 +250,15 @@ fi
 
 # 提取已用 D 号: 唯一占用表 = task-state/D*.json（先登记后使用；brief 不参与发号）
 USED=$(ls "$TASK_STATE_DIR"/D*.json 2>/dev/null | sed 's/.*\/D\([0-9]*\)\.json/\1/' | grep -E '^[0-9]+$' || true)  # swallow-ok: 空目录 ls 无匹配=正常（D# 从 1 开始）
-# D550: 合并 origin/main 的 task-state 占用（防落后主工作区漏号——D547/D548 撞号实证：
-#   本地 task-state 无 D547.json 而 main 已有 → alloc 重发 D547）。降级：无 origin 时仅本地 + 显式提示。
+# D940返工(#743 K3 P0): 占用表全源必须跟随 task-state 所属仓库（TS_TOP，已在远端快照段统算），
+#   不得混入 CWD 所在仓。原实现 `git ls-tree origin/main`（无 -C）在夹具/CI 下读的是
+#   **CWD 真仓**的 main → 真仓大号混入 MAX → NEXT≠夹具期望号 → D940 跨位置拒绝永不触发
+#   （K3 实测"发 D944"即此）。生产环境 CWD=本仓时 `-C "$TS_TOP"` 行为不变。
 REMOTE_USED=""
 if [ "${SYNO_ALLOC_NO_REMOTE:-0}" = "1" ]; then
   :  # 测试注入缝: 禁用 remote 合并（隔离 origin/main 依赖，测本地发号语义）
-elif git ls-tree --name-only origin/main task-state/ >/dev/null 2>&1; then
-  REMOTE_USED=$(git ls-tree --name-only origin/main task-state/ 2>/dev/null | sed 's/.*\/D\([0-9]*\)\.json/\1/' | grep -E '^[0-9]+$' || true)
+elif [ -n "$TS_TOP" ] && git -C "$TS_TOP" ls-tree --name-only origin/main task-state/ >/dev/null 2>&1; then
+  REMOTE_USED=$(git -C "$TS_TOP" ls-tree --name-only origin/main task-state/ 2>/dev/null | sed 's/.*\/D\([0-9]*\)\.json/\1/' | grep -E '^[0-9]+$' || true)
 else
   echo "⚠ alloc-task-id: origin/main 不可读——仅按本地 task-state 发号（可能漏号，建议先 git fetch）" >&2
 fi
@@ -269,7 +273,7 @@ WORKTREE_USED=""
 if [ "${SYNO_ALLOC_NO_WORKTREE:-0}" = "1" ]; then
   :  # 测试注入缝: 禁用 worktree 扫描
 else
-  TS_TOP="$(git -C "$TASK_STATE_DIR" rev-parse --show-toplevel 2>/dev/null || echo "")"
+  # D940返工: TS_TOP 已在远端快照段统算，此处沿用（同归属，不重算）
   if [ -z "$TS_TOP" ]; then
     :  # task-state 目录不在 git 仓库内（测试沙箱/非常规布局）→ 无 worktree 语义，跳过
   elif WORKTREE_LIST=$(git -C "$TS_TOP" worktree list --porcelain 2>/dev/null); then
@@ -308,7 +312,7 @@ BRANCH_USED=""
 if [ "${SYNO_ALLOC_NO_BRANCH:-0}" = "1" ]; then
   :  # 测试注入缝
 else
-  TS_TOP="$(git -C "$TASK_STATE_DIR" rev-parse --show-toplevel 2>/dev/null || echo "")"
+  # D940返工: TS_TOP 已在远端快照段统算，此处沿用（同归属，不重算）
   if [ -n "$TS_TOP" ]; then
     BRANCH_IDS=$(git -C "$TS_TOP" branch -r --format='%(refname:short)' 2>/dev/null | grep -ioE 'D[0-9]+' | tr '[:lower:]' '[:upper:]' | sed 's/D//' | grep -E '^[0-9]+$' || true)
     [ -n "$BRANCH_IDS" ] && BRANCH_USED="$BRANCH_IDS"
