@@ -15,13 +15,26 @@
 # 隔离: mktemp 沙箱 + --home/--standard-from 测试注入, 不碰真实 ~/.dsh。
 # 用法: bash tests/control-tower/install-dsh-preset.test.sh
 # 退出码: 0 = 全部通过
+#
+# ── 跨平台审计（B3 返修 #3；结论写在此处备查，勿重复修）─────────────────────────
+#   · `.gitattributes:24` 为 `*.sh text eol=lf` → 本文件在 Windows runner 上**也是 LF**
+#      （实查 `git check-attr eol text` → eol: lf；`tr -cd '\r' | wc -c` → 0），
+#      故"CRLF 导致 $ 锚不命中"的假设被证伪，**不需要 CRLF 分支**。
+#    · 本文件内的 `$` 锚写法已清零：元变异改为 python3 字面量替换（无锚、无 sed -i 平台差异）；
+#      其余 grep 全部是**子串匹配**（无 `^`/`$` 锚），行尾 CR 不影响命中。
+#    · 仍存在的行首锚 `^# *synova-devdoc\|`（T11）与 `- id: persona` 首行断言：`^` 锚不受行尾 CR 影响。
+#    · `sed -i` 已全部移除（T3b 旧判据替换改用 python3），避免 BSD/GNU `-i` 语法分歧与 stderr 噪音。
+#    · 路径假设：`$_self_path` 绝对化 + `SYNO_IDP_REPO_DIR` 注入缝 → /tmp 副本可运行（否则 T11 两处伪失败）。
+#    · 平台能力：POSIX 权限位（T6）在 Windows 不强制 → 显式 `T6-SKIP-PLATFORM` 跳过，不静默算通过。
 # ═══════════════════════════════════════════════════════════════════════════════
 set -uo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
-# 注入缝（仅元变异 M1/M4 用）: 变异体在 /tmp 副本运行，靠本缝指回真实仓库（红证只落 /tmp，不入仓库）
-REPO_DIR="${SYNO_IDP_REPO_DIR:-$REPO_DIR}"
+# BASH_SOURCE **绝对化**：主运行（`bash tests/...` 相对路径）与 /tmp 变异体（绝对路径）
+# 两种语义都要稳 —— 用 cd+pwd 而非直接使用可能相对的 ${BASH_SOURCE[0]}（跨平台脆点，B3 返修 #2）。
+_self_path="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")"
+SCRIPT_DIR="$(cd "$(dirname "$_self_path")" && pwd)"
+# 仓库定位：注入缝优先（元变异体在 /tmp 运行 → 指回真仓库）；缺省回落 BASH_SOURCE/../..
+REPO_DIR="${SYNO_IDP_REPO_DIR:-$(cd "$SCRIPT_DIR/../.." && pwd)}"
 INSTALL="$REPO_DIR/scripts/control-tower/install-dsh-preset.sh"
 DRAFT="$REPO_DIR/docs/synova/coordination/dsh-preset-draft"
 # 注入标记（**拼接构造**：夹具源码内不出现该标记的字面量 →
@@ -29,22 +42,33 @@ DRAFT="$REPO_DIR/docs/synova/coordination/dsh-preset-draft"
 MARKER="INJECTED""-RED"
 MARKER_LINE="      # ${MARKER} persona-drift-marker"
 
-# T3c 期望值 —— **M4 变异点**（变异用 `s|^EXPECT_MARKERS=1$|EXPECT_MARKERS=0|`；置 0 后 T3c 必须失败 = 防恒真）
-# 注意：本行**不得带行尾注释**，否则锚定 `$` 的变异 sed 不命中（M4 会假绿）。
+# T3c 期望值 —— **M4 变异点**（变异用 python3 定点替换该字面量 1→0；置 0 后 T3c 必须失败 = 防恒真）
+# 跨平台注记（B3 返修 #1/#3）: 变异**不用 sed**（BSD/GNU `-i`、`$` 锚在不同 sed 上语义有差异）；
+#   改用 python3 字面量替换 + "命中数 ≥ 1" 守卫 —— 未命中即 `MUTATION_NOT_APPLIED` 响亮失败，
+#   绝不静默产出"未变异的变异体"（那会把守卫缺失误读成断言恒真，正是 Windows 侧红态的成因链）。
 EXPECT_MARKERS=1
 
 PASS=0
 FAIL=0
-pass() { PASS=$((PASS + 1)); echo "  ✅ $1"; }
-fail() { FAIL=$((FAIL + 1)); echo "  ❌ $1" >&2; }
-assert_exit() { # <got> <want> <msg>
-  if [ "$1" -eq "$2" ]; then pass "$3"; else fail "$3 (got exit=$1, want exit=$2)"; fi
+SKIP=0
+FAILED_IDS=""
+pass() { PASS=$((PASS + 1)); echo "  ✅ $1"; return 0; }
+fail() { # 记录断言首 token（供 CI 截断日志时仍能点出失败集）
+  FAIL=$((FAIL + 1))
+  local tok="${1%% *}"; tok="${tok%:}"
+  FAILED_IDS="${FAILED_IDS}${FAILED_IDS:+|}${tok}"
+  echo "  ❌ $1" >&2
+  return 0
+}
+skip() { SKIP=$((SKIP + 1)); echo "  ⏭️  $1"; return 0; }
+assert_exit() { # <got> <want> <msg> ；返回 0/1（供状态聚合）
+  if [ "$1" -eq "$2" ]; then pass "$3"; return 0; else fail "$3 (got exit=$1, want exit=$2)"; return 1; fi
 }
 assert_grep() { # <file> <pattern> <msg>
-  if grep -q "$2" "$1" 2>/dev/null; then pass "$3"; else fail "$3 (grep 未命中: $2)"; fi
+  if grep -q "$2" "$1" 2>/dev/null; then pass "$3"; return 0; else fail "$3 (grep 未命中: $2)"; return 1; fi
 }
 assert_eq_int() { # <got> <want> <msg>
-  if [ "$1" -eq "$2" ]; then pass "$3"; else fail "$3 (got=$1, want=$2)"; fi
+  if [ "$1" -eq "$2" ]; then pass "$3"; return 0; else fail "$3 (got=$1, want=$2)"; return 1; fi
 }
 
 # ── T3/T3c 注入实现（**与文案无关**的结构锚）──────────────────────────────────
@@ -94,6 +118,14 @@ STD_MOCK="$TMP/standard"
 mkdir -p "$HOME_MOCK" "$STD_MOCK"
 trap 'rm -rf "$TMP"' EXIT
 
+# ── 平台能力探针: POSIX 权限位是否被强制（决定 T6 是否可判定）──
+PERM_PROBE="$TMP/perm-probe"
+mkdir -p "$PERM_PROBE"
+chmod 555 "$PERM_PROBE"
+if (touch "$PERM_PROBE/x") 2>/dev/null; then POSIX_PERM_ENFORCED=0; else POSIX_PERM_ENFORCED=1; fi   # swallow-ok: 探测型（平台是否强制 POSIX 权限位）；成败由 if/else 两分支显式处理，非静默吞错
+chmod 755 "$PERM_PROBE" 2>/dev/null || true
+rm -rf "$PERM_PROBE"
+
 cat > "$STD_MOCK/preset.yml" << 'YAML'
 name: standard
 description: fake standard preset
@@ -127,9 +159,9 @@ assert_grep "$INSTALLED/preset.yml" "纪律模式" "T1: preset.yml 已替换为�
 #   ① 默认安装集**不再**装 devdoc（退役生效）② 退役在注册表以注释留痕（可逆）③ 能力已技能化保留
 DEVDOC_INSTALLED="$HOME_MOCK/.agent-presets/synova-devdoc"
 [ ! -f "$DEVDOC_INSTALLED/agent.cordis.yml" ] && pass "T11: devdoc 默认不再安装（退役生效）" || fail "T11: devdoc 仍被安装（退役未生效）"
-grep -qE '^# *synova-devdoc\|' "$(cd "$SCRIPT_DIR/../.." && pwd)/scripts/control-tower/install-dsh-preset.sh" \
+grep -qE '^# *synova-devdoc\|' "$REPO_DIR/scripts/control-tower/install-dsh-preset.sh" \
   && pass "T11: 退役在注册表留痕（注释行，可逆）" || fail "T11: 退役无留痕（不可逆）"
-RP="$(cd "$SCRIPT_DIR/../.." && pwd)"; [ -f "$RP/.claude/skills/dev-doc-spec/SKILL.md" ] && [ -f "$RP/.dsh/skills/dev-doc-spec/SKILL.md" ] \
+RP="$REPO_DIR"; [ -f "$RP/.claude/skills/dev-doc-spec/SKILL.md" ] && [ -f "$RP/.dsh/skills/dev-doc-spec/SKILL.md" ] \
   && pass "T11: 能力技能化保留（dev-doc-spec 双写齐备）" || fail "T11: 能力未保留（skill 缺失）"
 
 # ── T2: --check 安装后 → exit 0（正常）──
@@ -140,18 +172,23 @@ echo "$OUT2" | grep -qi "SYNC-OK" && pass "T2: 输出含 SYNC-OK" || fail "T2: �
 
 # ── T3（**承重 / LOAD-BEARING**）: persona 漂移 → --check exit 1 + 点名 ──
 #   注入 = 结构锚（块内插标记行），与文案无关；D926 重写后仍成立。
+#   T3-STATUS 行是 **ASCII** 状态令牌，供元变异体用（不 grep emoji/中文，避免 locale/编码差异）。
+T3_STATUS=PASS
 inject_persona_drift "$INSTALLED/agent.cordis.yml"
 T3_INJECT_RC=$?
 OUT3=$(RUN --check 2>&1)
 EXIT3=$?
-assert_exit "$EXIT3" 1 "T3(承重): 结构锚注入 persona 漂移 → --check exit 1"
-echo "$OUT3" | grep -q "agent.cordis.yml" && pass "T3(承重): 输出点名 agent.cordis.yml" || fail "T3(承重): 未点名漂移文件"
-echo "T3 LOAD-BEARING: inject=structural(块内) inject_rc=${T3_INJECT_RC} check_rc=${EXIT3} 点名=$(printf '%s\n' "$OUT3" | grep -c 'agent.cordis.yml' || true)"
+assert_exit "$EXIT3" 1 "T3(承重): 结构锚注入 persona 漂移 → --check exit 1" || T3_STATUS=FAIL
+echo "$OUT3" | grep -q "agent.cordis.yml" && pass "T3(承重): 输出点名 agent.cordis.yml" || { T3_STATUS=FAIL; fail "T3(承重): 未点名漂移文件"; }
+printf 'T3-STATUS: %s\n' "$T3_STATUS"
+echo "T3 LOAD-BEARING: inject=structural(块内) inject_rc=${T3_INJECT_RC} check_rc=${EXIT3} 点名=$(printf '%s\n' "$OUT3" | grep -c 'agent.cordis.yml' || true) status=${T3_STATUS}"
 
 # ── T3c（**承重 / LOAD-BEARING**）: 落点证明 —— 标记必须落在判据面（persona 块）内 ──
+T3C_STATUS=PASS
 MARKERS=$(extract_persona_probe "$INSTALLED/agent.cordis.yml" | grep -c -- "$MARKER" || true)
-assert_eq_int "$MARKERS" "$EXPECT_MARKERS" "T3c(承重): 判据面内 ${MARKER} 计数 == ${EXPECT_MARKERS}"
-echo "T3c LOAD-BEARING: extract_persona 面内 ${MARKER}=${MARKERS}（期望 ${EXPECT_MARKERS}）→ 注入落在判据面内"
+assert_eq_int "$MARKERS" "$EXPECT_MARKERS" "T3c(承重): 判据面内 ${MARKER} 计数 == ${EXPECT_MARKERS}" || T3C_STATUS=FAIL
+printf 'T3c-STATUS: %s\n' "$T3C_STATUS"
+echo "T3c LOAD-BEARING: extract_persona 面内 ${MARKER}=${MARKERS}（期望 ${EXPECT_MARKERS}）→ 注入落在判据面内 status=${T3C_STATUS}"
 
 # ── M2（判别性元变异）: 注入插到**块外** → T3c 面内计数必须为 0（证明 T3c 对落点敏感）──
 RUN --install >/dev/null 2>&1
@@ -169,11 +206,17 @@ fi
 #   承重 = T3（漂移被抓）+ T3c（落点在判据面内）。
 RUN --install >/dev/null 2>&1
 OLD_LITERAL_HITS=$(grep -c 'DeepSeek Harness 编码代理' "$INSTALLED/agent.cordis.yml" || true)
-sed -i '' 's/DeepSeek Harness 编码代理/被篡改的代理/' "$INSTALLED/agent.cordis.yml" 2>/dev/null \
-  || sed -i 's/DeepSeek Harness 编码代理/被篡改的代理/' "$INSTALLED/agent.cordis.yml"
+# 旧判据的字面量替换用 python3 落地（语义与旧 `sed -i 's/…/…/'` 等价；避开 BSD/GNU `-i` 语法分歧
+#   与失败分支的 stderr 噪音）。本断言要证明的只是"该字面量已不存在 → 替换空转 → 旧判据已死"。
+OLD_LITERAL='DeepSeek Harness 编码代理' NEW_LITERAL='被篡改的代理' TARGET="$INSTALLED/agent.cordis.yml" python3 - <<'PY'
+import os
+p = os.environ["TARGET"]
+s = open(p, encoding="utf-8").read()
+open(p, "w", encoding="utf-8", newline="\n").write(s.replace(os.environ["OLD_LITERAL"], os.environ["NEW_LITERAL"]))
+PY
 OUT3B=$(RUN --check 2>&1)
 EXIT3B=$?
-assert_exit "$EXIT3B" 0 "T3b(NEGATIVE-CONTROL): 旧字面量 sed 空转 → --check exit 0（旧判据已死）"
+assert_exit "$EXIT3B" 0 "T3b(NEGATIVE-CONTROL): 旧字面量替换空转 → --check exit 0（旧判据已死）"
 echo "T3b NEGATIVE-CONTROL: 旧字面量现存命中=${OLD_LITERAL_HITS}；sed 后 --check rc=${EXIT3B}（非承重，仅证明旧判据失效）"
 RUN --install >/dev/null 2>&1    # 复原，供后续 T7 幂等断言
 
@@ -197,14 +240,20 @@ EXIT5=$?
 assert_exit "$EXIT5" 2 "T5: 无 persona 行 exit 2 (不产出坏预设)"
 echo "$OUT5" | grep -qi "degraded\|persona" && pass "T5: 降级有显式日志" || fail "T5: 降级无日志"
 
-# ── T6: DSH home 不可写 → exit 2 降级（降级）──
-RO_HOME="$TMP/ro-home"
-mkdir -p "$RO_HOME"
-chmod 555 "$RO_HOME"
-OUT6=$(bash "$INSTALL" --home "$RO_HOME/.agent-presets" --standard-from "$STD_MOCK" --install 2>&1)
-EXIT6=$?
-chmod 755 "$RO_HOME"
-assert_exit "$EXIT6" 2 "T6: home 不可写 exit 2"
+# ── T6: DSH home 不可写 → exit 2 降级（降级；**POSIX 权限语义平台相关**）──
+#   平台能力探针: Windows/Git Bash 不强制 chmod 555（无 POSIX 权限位语义）→ 该断言不可判定，
+#   显式 SKIP 并写明原因（不静默当通过）；POSIX（macOS 本地 / ubuntu CI）仍为硬断言。
+if [ "$POSIX_PERM_ENFORCED" = "1" ]; then
+  RO_HOME="$TMP/ro-home"
+  mkdir -p "$RO_HOME"
+  chmod 555 "$RO_HOME"
+  OUT6=$(bash "$INSTALL" --home "$RO_HOME/.agent-presets" --standard-from "$STD_MOCK" --install 2>&1)
+  EXIT6=$?
+  chmod 755 "$RO_HOME"
+  assert_exit "$EXIT6" 2 "T6: home 不可写 exit 2"
+else
+  skip "T6-SKIP-PLATFORM(no-posix-perm): 平台不强制 chmod 555 → home 不可写路径不可判定（Windows Git Bash）；POSIX/ubuntu 侧仍是硬断言"
+fi
 
 # ── T9: DSH_INSTALL_DIR 环境探测路径（不注入 --standard-from, D370 fix: set -u unbound）──
 FAKE_INSTALL="$TMP/fake-install"
@@ -241,35 +290,91 @@ fi
 # ── M1/M4 判别性元变异（变异体在 /tmp 副本运行；红证只落 /tmp，不入仓库）──
 #   M1: 注入器置 no-op → 变异体的 T3 必须红（证明 T3 依赖真实注入，不是恒真）。
 #   M4: 期望值 EXPECT_MARKERS 1→0 → 变异体的 T3c 必须失败（证明断言与期望值绑定，防恒真）。
+#   机制（B3 返修 #1/#2/#4）:
+#     · 变异 = python3 **字面量定点替换**（不用 sed：BSD/GNU `-i`/`$` 锚语义有平台差异）；
+#     · 守卫 1: 替换命中数 ≥ 1，否则 `MUTATION_NOT_APPLIED` 响亮失败（禁止静默产出未变异体）；
+#     · 守卫 2: 变异体生成物必须含新文本；
+#     · 守卫 3: 变异体必须产出 `D922-FIXTURE:` 汇总行，否则 `MUTANT_RUN_FAILED`（防"变异体没跑起来"被误读）；
+#     · 判据读 **ASCII 状态令牌**（`T3-STATUS:` / `T3c-STATUS:`），不 grep emoji/中文（locale/编码无关）；
+#     · 源路径用 `$_self_path`（绝对化），主运行相对调用与 /tmp 变异体两种语义都稳。
 if [ "${SYNO_IDP_NO_META:-0}" = "1" ]; then
   echo "  (元变异副本: 跳过 M1/M4 元断言 —— 防递归)"
 else
-  run_mutant() { # <sed 表达式> → 变异体输出（stdout+stderr）
-    local mut="$TMP/fixture-mutant-$$.sh"
-    sed "$1" "${BASH_SOURCE[0]}" > "$mut"
-    SYNO_IDP_REPO_DIR="$REPO_DIR" SYNO_IDP_NO_META=1 bash "$mut" 2>&1
+  META_ASSERTIONS=0
+  # 锚用「前后带换行」的整行形态 → 命中数恰为 1（避免把调用处的同名字面量也替换掉）
+  M1_OLD_ANCHOR=$'\n  _inject_impl "$f" "$where"'
+  M1_NEW_ANCHOR=$'\n  return 0'
+  M4_OLD_ANCHOR=$'\nEXPECT_MARKERS=1\n'
+  M4_NEW_ANCHOR=$'\nEXPECT_MARKERS=0\n'
+  make_mutant() { # $1=tag $2=旧文本 $3=新文本 → stdout=变异体路径；未命中即 fail 且 return 1
+    local tag="$1"
+    local hits=""
+    local out="$TMP/fixture-mutant-${tag}.sh"      # 注意: 不在同一 local 语句里引用刚赋值的变量（bash 3.2 下会 unbound）
+    hits="$(SRC="$_self_path" DST="$out" OLD="$2" NEW="$3" python3 - <<'PY' 2>"$TMP/mut-${tag}.err"
+import os
+import sys
+src = os.environ["SRC"]; dst = os.environ["DST"]
+old = os.environ["OLD"]; new = os.environ["NEW"]
+text = open(src, encoding="utf-8").read()
+n = text.count(old)
+if n < 1:
+    sys.stderr.write("命中 0 次\n")
+    sys.exit(3)
+open(dst, "w", encoding="utf-8", newline="\n").write(text.replace(old, new))
+print(n)
+PY
+)"
+    if [ $? -ne 0 ] || [ -z "$hits" ]; then
+      fail "MUTATION_NOT_APPLIED: ${tag}（python 定点替换命中 0 次——锚文本与实际文件不匹配，变异未生效；判据不可信）"
+      return 1
+    fi
+    grep -q -F -- "$3" "$out" || { fail "MUTATION_NOT_APPLIED: ${tag}（生成物未含新文本）"; return 1; }
+    printf '%s\n' "$out"
   }
-  M1_OUT="$(run_mutant 's|^  _inject_impl "\$f" "\$where".*|  return 0|')"
-  if printf '%s\n' "$M1_OUT" | grep -q '❌ T3(承重)'; then
-    pass "M1 判别性: 注入器置 no-op → 变异体 T3 必红（T3 依赖真注入）"
+  run_mutant() { # $1=变异体路径 → 输出（stdout+stderr）；注入缝指回真仓库
+    SYNO_IDP_REPO_DIR="$REPO_DIR" SYNO_IDP_NO_META=1 bash "$1" 2>&1
+  }
+  M1_MUT="$(make_mutant 'M1' "$M1_OLD_ANCHOR" "$M1_NEW_ANCHOR")"
+  if [ -n "$M1_MUT" ]; then
+    M1_OUT="$(run_mutant "$M1_MUT")"
+    printf '%s\n' "$M1_OUT" | grep -q '^D922-FIXTURE:' \
+      || fail "MUTANT_RUN_FAILED: M1（变异体未产出汇总行）"
+    if printf '%s\n' "$M1_OUT" | grep -q '^T3-STATUS: FAIL'; then
+      pass "M1 判别性: 注入器置 no-op → 变异体 T3 必红（T3 依赖真注入）"
+    else
+      fail "M1 判别性失败: 注入器 no-op 后 T3 仍绿（T3 未依赖注入）"
+    fi
+    META_ASSERTIONS=$((META_ASSERTIONS + 1))
   else
-    fail "M1 判别性失败: 注入器 no-op 后 T3 仍绿（T3 未依赖注入）"
+    fail "MUTANT_BUILD_FAILED: M1（变异体路径为空 —— 见上方 MUTATION_NOT_APPLIED 明细）"
   fi
-  M4_OUT="$(run_mutant 's|^EXPECT_MARKERS=1$|EXPECT_MARKERS=0|')"
-  if printf '%s\n' "$M4_OUT" | grep -q '❌ T3c(承重)'; then
-    pass "M4 判别性: 期望值改 0 → 变异体 T3c 必失败（断言与期望绑定，防恒真）"
+  M4_MUT="$(make_mutant 'M4' "$M4_OLD_ANCHOR" "$M4_NEW_ANCHOR")"
+  if [ -n "$M4_MUT" ]; then
+    M4_OUT="$(run_mutant "$M4_MUT")"
+    printf '%s\n' "$M4_OUT" | grep -q '^D922-FIXTURE:' \
+      || fail "MUTANT_RUN_FAILED: M4（变异体未产出汇总行）"
+    if printf '%s\n' "$M4_OUT" | grep -q '^T3c-STATUS: FAIL'; then
+      pass "M4 判别性: 期望值改 0 → 变异体 T3c 必失败（断言与期望绑定，防恒真）"
+    else
+      fail "M4 判别性失败: 期望值改 0 后 T3c 仍绿（断言可能恒真）"
+    fi
+    META_ASSERTIONS=$((META_ASSERTIONS + 1))
   else
-    fail "M4 判别性失败: 期望值改 0 后 T3c 仍绿（断言可能恒真）"
+    fail "MUTANT_BUILD_FAILED: M4（变异体路径为空 —— 见上方 MUTATION_NOT_APPLIED 明细）"
   fi
+  # 元变异自检: 两条元断言必须真的跑过（防"元段静默空转 → 全绿"这一整类假绿）
+  [ "$META_ASSERTIONS" -eq 2 ] \
+    || fail "META_SECTION_INCOMPLETE: 只跑了 ${META_ASSERTIONS}/2 条元断言（元段自身可能静默失败）"
 fi
 
 # ── 汇总 ──
 if [ "$FAIL" -eq 0 ]; then FINAL_EXIT=0; else FINAL_EXIT=1; fi
 echo "T3 LOAD-BEARING: T3+T3c 为承重判据；T3b 为 NEGATIVE-CONTROL（非承重）"
-echo "=== 结果: PASS=$PASS FAIL=$FAIL exit=$FINAL_EXIT ==="
-echo "D922-FIXTURE: preset=install-dsh-preset T3/T3c=承重 T3b=负控 PASS=$PASS FAIL=$FAIL exit=$FINAL_EXIT"
+echo "=== 结果: PASS=$PASS FAIL=$FAIL SKIP=$SKIP exit=$FINAL_EXIT ==="
+# FAILED_IDS 让 CI 截断日志（tail -8 / 450 字符）也能一次点出失败集，不必再靠拉全量日志
+echo "D922-FIXTURE: preset=install-dsh-preset T3/T3c=承重 T3b=负控 PASS=$PASS FAIL=$FAIL SKIP=$SKIP exit=$FINAL_EXIT FAILED_IDS=[${FAILED_IDS}]"
 echo ""
 echo "═══════════════════════════════════════"
-echo "  PASS=$PASS  FAIL=$FAIL"
+echo "  PASS=$PASS  FAIL=$FAIL  SKIP=$SKIP"
 echo "═══════════════════════════════════════"
 [ "$FAIL" -eq 0 ]

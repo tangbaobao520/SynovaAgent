@@ -284,6 +284,7 @@ jobs:
       #   runner 为 bash -e：取行管道一律 `|| true`；空捕获时发 ::warning 可见回落——发布者不判红。
       - name: Publish D922 preset fixture summary (public evidence via annotations)
         if: always()
+        shell: bash          # B3 返修 #3: windows-latest 上 run: 默认 pwsh → 必须显式 bash（否则 step 失败、注解 0 条）
         run: |
           set -uo pipefail
           OUT="$(bash tests/control-tower/install-dsh-preset.test.sh 2>&1 || true)"
