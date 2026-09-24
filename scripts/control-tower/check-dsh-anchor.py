@@ -62,7 +62,12 @@ def main():
         if "/." in root or "node_modules" in root: continue
         for fn in sorted(files):
             if not fn.endswith(".md"): continue
-            p = os.path.join(root, fn); rel = os.path.relpath(p, a.repo); scanned += 1
+            p = os.path.join(root, fn)
+            try:
+                rel = os.path.relpath(p, a.repo)
+            except ValueError:          # Windows: 扫描目录与仓库不同盘符（CI: tmp=C: 而 checkout=D:）
+                rel = p
+            scanned += 1
             try: lines = open(p, encoding="utf-8").read().splitlines()
             except Exception: continue
             exempt = False
