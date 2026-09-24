@@ -1,0 +1,83 @@
+{
+  "task_id": "D1000",
+  "title": "身份链补全：部门可见性恢复（服务端签发/接收链 + 桌面端身份通道切换）",
+  "status": "in_progress",
+  "risk": "high",
+  "domain": "win",
+  "owner_side": "win",
+  "domain_note": "本卡含两个单域切片；顶层 domain 取切片 A（win）。切片域见 slices。",
+  "slices": [
+    { "id": "A", "domain": "win", "owner_side": "win", "scope": "服务端身份链：JwtPayload +department / rbac JWT 分支 / 签发链", "branch": "feat/d948-identity-chain-server", "base": "ef5c8caa", "head": "59f52e3a", "status": "implemented_and_verified_pending_cto" },
+    { "id": "B", "domain": "mac", "owner_side": "win", "cross_domain_reason": "桌面端身份通道切换（electron-renderer/**）属 mac 域；创始人 2026-09-24 授权「两个都在 win 侧执行」", "branch": "feat/d948-identity-chain-desktop", "status": "hold" }
+  ],
+  "renumber": "原 D948（与 Mac 侧 D948 = 队列看板每日自动化撞号）→ D1000；Mac-CTO 2026-09-25 裁定批准。正文内 D948 引用一律按 D1000 读；D949→D1001、D950→D1002。D947 为历史保留号（代码内 // D947: 锚点、K3 报告、PR #754/#755 命名保留）。",
+  "branch_note": "分支名沿用 d948 前缀（feat/d948-identity-chain-server / -desktop），仅作载体不改名以不打断在跑 worktree；卡号以 D1000 为准。",
+  "owner": "win-codex-cto",
+  "executor": "synova-squad-lead（队长，不下场写码）+ code-a（切片A）+ code-b（切片B）+ 1 独立自验 + 1 独立复核",
+  "branch_a": "feat/d948-identity-chain-server",
+  "branch_b": "feat/d948-identity-chain-desktop",
+  "base_a": "feat/d947-middleware-default-posture @ ef5c8caa（栈式；D947 未合 main，实测 IN_MAIN=no）",
+  "depends_on": ["D947"],
+  "blocked": "① 前置 P0（**范围已变更，见 D1000 §〇之二 三，覆盖派单件原 §四**）：`docs/synova/coordination/ownership.yaml` 是 **Mac-CTO 单写者**，**Win 方不得直接改**；该前置独立成卡 **D1001**，交付物 = 「改判建议 + 证据」，由 Mac-CTO 执行改表。**D1001 的建议件被采纳并改表落地之前，切片 B 不得开工（硬依赖不变）**。② 本机无 GitHub PAT（~/.dsh/.credentials.yaml 缺失）→ PR 创建/合并需创始人补 token；push 走 SSH 部署钥可用。",
+  "blocked_resolved": "第 0 阶段 PLAN 已于 2026-09-25 获 CTO 复核通过（R1–R6 覆盖派单原文）；切片 A 与 D1001 已放行开工。",
+  "spec": "docs/synova/dispatch/D1000-win-identity-chain-department-20260924.md（派单即规格；§〇之二 效力优先于全文其余处）@ origin/docs/d948-identity-chain-dispatch tip 41bba326",
+  "milestone": null,
+  "target": "2026-W40",
+  "write_set_a": [
+    "src/middleware/auth.ts",
+    "src/middleware/rbac.ts",
+    "src/routes/auth.ts",
+    "tests/middleware/auth.test.ts",
+    "tests/middleware/rbac.test.ts",
+    "tests/routes/auth.test.ts"
+  ],
+  "write_set_a_actual": [
+    "src/middleware/auth.ts",
+    "src/middleware/rbac.ts",
+    "src/routes/auth.ts",
+    "tests/middleware/auth.test.ts",
+    "tests/middleware/rbac.test.ts",
+    "tests/routes/auth.test.ts",
+    "tests/routes/d948-department-visibility.test.ts",
+    ".claude/task-briefs/2026-09-25-D948-slice-a-identity-chain.md"
+  ],
+  "write_set_a_note": "R2 裁定新增 tests/routes/d948-department-visibility.test.ts（A3/A4 宿主）→ 7→8 文件；切片 A 实际变更 9 件 = 8 写集 + .claude/bypass.log（D521 hook 自动产物，非人工写集）。",
+  "write_set_b": [
+    "electron-renderer/src/stores/auth-session.ts",
+    "electron-renderer/src/stores/ga-collab.ts",
+    "electron-renderer/src/components/RightPanel.tsx",
+    "electron-renderer/src/components/LoginPanel.tsx",
+    "electron-renderer/src/lib/api.ts",
+    "electron-renderer/src/stores/app-store.ts",
+    "tests/ga-collab-logic.test.ts",
+    "tests/electron/d948-identity-chain.test.ts"
+  ],
+  "write_set_b_note": "R3 裁定批准 8 文件（两条缺口 app-store.ts / tests/ga-collab-logic.test.ts 是硬依赖，无替代路径）；待 D1001 改表落地后方可开工。",
+  "evidence": {
+    "plan": "docs/synova/product-lines/evidence/D948-20260924/PLAN.md",
+    "recons": [
+      "docs/synova/product-lines/evidence/D948-20260924/A-recon.md",
+      "docs/synova/product-lines/evidence/D948-20260924/B-recon.md",
+      "docs/synova/product-lines/evidence/D948-20260924/T-V-premise-2nd.md"
+    ],
+    "reviews": [
+      "docs/synova/product-lines/evidence/D948-20260924/REVIEW-PLAN.md",
+      "docs/synova/product-lines/evidence/D948-20260924/REVIEW-EXEC.md"
+    ],
+    "self_verification": [
+      "docs/synova/product-lines/evidence/D948-20260924/T-V-slice-a.md",
+      "docs/synova/product-lines/evidence/D948-20260924/T-V-b1-recheck.md"
+    ],
+    "d1001_recommendation": "docs/synova/product-lines/evidence/D1001-20260925/D1001-ownership-reclass-recommendation.md",
+    "evidence_branch": "docs/d948-plan"
+  },
+  "goal_reachability": "三堵墙 W1(department 无生产写入者)/W2(/mine 恒 404，已独立成卡 D1002)/W3(桌面端无部门工作区消费点) ⇒ 本卡只到「签发/验签/RBAC 上下文层」，用户可见目标不可达 → 交付须登记为「功能回退（部分恢复，未闭环）」，禁写「已知限制」或「部门可见性已可用」。",
+  "functional_regression": "D1000 交付 = 功能回退（部分恢复，未闭环）：W1/W2/W3 均未解；D947 登记的桌面 GA 自报通道断链亦因切片 B hold 而未闭环。",
+  "impl": "切片 A：feat/d948-identity-chain-server @ 59f52e3a（已实现 + 队内自验 + 独立复核完成，待 CTO 收件闸）",
+  "audit": null,
+  "fix_task_id": null,
+  "note": "来源：D947 PLAN-REV2 REV-8 登记的「JWT 用户部门级可见性恒 deny」功能回退（D947 为历史保留号）。创始人 2026-09-24 裁定：①客户端自报身份完全不允许 ②默认拒绝 ③提交时就该拦。执行形态：Agent Teams 组队、队长不下场写码、自验不得由编码兼任、两切片串行、重型验证串行 ≤1、每条修复带 1 个改坏即红反例、回执含团队成员运行记录。",
+  "card_copy_note": "本卡为 synova-squad-lead 在分支 docs/d948-plan 维护的副本，按 D1000 §〇之二 二 对齐字段规范（domain/owner_side/slices）。权威卡：origin/docs/d948-identity-chain-dispatch:task-state/D1000.json。**已知滞后**：权威卡的 blocked 字段仍写「待 CTO 在 P0-a/b/c 中裁定…本卡按选中执行」，与 §〇之二 三 的范围变更（D1001 + Mac-CTO 单写者）不一致，已在回执中登记。",
+  "updated_at": "2026-09-25",
+  "updated_by": "synova-squad-lead"
+}
