@@ -1,0 +1,26 @@
+{
+  "task_id": "D937",
+  "title": "P0 门禁 fail-open 假绿：pre-commit 组 7a ERE 非法致检查恒过",
+  "status": "spec_done",
+  "risk": "high",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": "dsh-squad",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [],
+  "blocked": null,
+  "target": "2026-W40",
+  "spec": "docs/synova/coordination/派单-Mac小队-五卡-20260924.md",
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "write_set": [
+    "docs/synova/coordination/派单-Mac小队-五卡-20260924.md",
+    "task-state/D937.json"
+  ],
+  "priority": 1,
+  "wip_rule": "WIP=1：五卡已开，按 priority 一次开工一张；前一张未通过收件闸不放行下一张",
+  "note": "实测：echo test | grep -Ev \"^+++\" → exit 2（非法 ERE）→ NEW_DIAG 恒空 → 「禁止新 DiagnosticModule」本地与 CI strict 均恒过。修：改正则 + 判别性夹具（构造含 DiagnosticModule 的新增 → 必须红）。",
+  "updated_at": "2026-09-24",
+  "updated_by": "synova-cto"
+}
