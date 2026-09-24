@@ -44,7 +44,7 @@ def main():
     sup_pairs = {(s["version"], s["head"]) for s in sup}
     sup_versions = {s["version"] for s in sup}
     known = set(anchor.get("known_versions") or []) | {cur["version"]} | sup_versions
-    ver_re = re.compile(r"0\.1\.7-[a-z0-9.]+")
+    ver_re = re.compile(r"\b\d+\.\d+\.\d+-[A-Za-z0-9.]+\b")  # 任意 semver prerelease（原只匹配 0.1.7-* → 将来版本静默放过）
     head_re = re.compile(r"\b(00102833|46a7f68b|[0-9a-f]{8})\b")
     viol = []
     scanned = 0
