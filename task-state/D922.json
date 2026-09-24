@@ -28,7 +28,10 @@
     ".claude/skills/dev-doc-spec/SKILL.md",
     ".dsh/skills/dev-doc-spec/SKILL.md",
     "scripts/control-tower/install-dsh-preset.sh",
-    "docs/synova/coordination/TASK-ROUTING.md"
+    "docs/synova/coordination/TASK-ROUTING.md",
+    "tests/control-tower/install-dsh-preset.test.sh",
+    ".github/workflows/ci.yml",
+    ".claude/task-briefs/2026-09-24-B3-d922-fixture-registry.md"
   ],
   "program": {
     "source": "docs/synova/research/研究院交接-20260922/双DSH执行提升清单.md（121 行）+ docs/synova/coordination/裁定-双DSH提升清单-20260922.md（99 行，含创始人三项裁决）",
