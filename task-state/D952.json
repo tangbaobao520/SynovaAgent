@@ -1,0 +1,20 @@
+{
+  "task_id": "D952",
+  "title": "spec 字段形态统一（object {path}）+ 禁写死 null + 消费者容忍 string",
+  "status": "spec_done",
+  "spec": "docs/synova/coordination/收件闸检查单.md",
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-24",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": "dsh-squad",
+  "milestone": "M0 项目管理基建",
+  "risk": "medium",
+  "depends_on": [
+    "D940"
+  ],
+  "note": "D940 N3/N5：spec 形态不一（D928/D933=object，D934/D936=string），而唯一消费者 gen-cto-health.py:305 只读 (spec or {}).get('path') ⇒ string 形态对它不可见=静默失效。裁定：统一 object {path}; 散文形态迁移或显式 {note,path:null}; 禁写死 null（与未登记不可区分）; 消费者须容忍 string 并可见降级。"
+}

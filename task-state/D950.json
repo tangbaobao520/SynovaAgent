@@ -1,0 +1,20 @@
+{
+  "task_id": "D950",
+  "title": "116 卡归一（字段/重号/孤儿扫描）",
+  "status": "spec_done",
+  "spec": "docs/synova/coordination/收件闸检查单.md",
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-24",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": "dsh-squad",
+  "milestone": "M0 项目管理基建",
+  "risk": "medium",
+  "depends_on": [
+    "D940"
+  ],
+  "note": "用 alloc 的 --check-id + 字段校验批量扫 116 张卡：出「缺字段／重号／孤儿」清单并归一到统一 schema。属治理簿记，不计代码卡槽位。判据：清单零缺字段、零重号、孤儿有归属结论。"
+}
