@@ -1,0 +1,47 @@
+{
+  "task_id": "D1000",
+  "title": "身份链补全：部门可见性恢复（服务端签发/接收链 + 桌面端身份通道切换）",
+  "status": "claimed",
+  "risk": "high",
+  "domain": "win",
+  "owner_side": "win",
+  "domain_note": "本卡含两个单域切片；顶层 domain 取切片 A（win）。切片域见 slices。",
+  "slices": [
+    { "id": "A", "domain": "win", "owner_side": "win", "scope": "服务端身份链：JwtPayload +department / rbac JWT 分支 / 签发链" },
+    { "id": "B", "domain": "mac", "owner_side": "win", "cross_domain_reason": "桌面端身份通道切换（electron-renderer/**）属 mac 域；创始人 2026-09-24 授权「两个都在 win 侧执行」" }
+  ],
+  "renumber": "原 D948（与 Mac 侧 D948 = 队列看板每日自动化撞号）→ D1000；Mac-CTO 2026-09-25 裁定批准。正文内 D948 引用一律按 D1000 读；D949→D1001、D950→D1002。",
+  "branch_note": "分支名沿用 d948 前缀（feat/d948-identity-chain-server / -desktop），仅作载体不改名以不打断在跑 worktree；卡号以 D1000 为准。",
+  "owner": "win-codex-cto",
+  "executor": "synova-squad-lead（队长，不下场写码）+ 编码 code-a/code-b + 1 独立自验 + 1 独立复核",
+  "branch_a": "feat/d948-identity-chain-server",
+  "branch_b": "feat/d948-identity-chain-desktop",
+  "base_a": "feat/d947-middleware-default-posture @ ef5c8caa（栈式；D947 未合 main，实测 IN_MAIN=no）",
+  "depends_on": ["D947"],
+  "blocked": "① 切片 B 前置已具备待落表：D1001 改判建议件已入库（docs/d948-plan @ cfedc975，evidence/D1001-20260925/D1001-ownership-reclass-recommendation.md），**待 Mac-CTO 采纳落表；落表前切片 B 不开工**。② 切片 A 已交付 59f52e3a，PLAN 已复核放行，待 CTO 收件闸 + K3 终审。③ 越权分支 fix/d949-ownership-electron-tests @ f828311c **保留为作废样本、不合并**（内容已一字不减转入 D1001 建议件）；该分支卡号仍是旧 D949，不得再引用。④ GitHub PAT 已就位（2026-09-25 实测 /user 与 repo API 均 200）。",
+  "spec": "docs/synova/dispatch/D1000-win-identity-chain-department-20260924.md（派单即规格；§〇之二为改号与字段说明，效力优先）",
+  "milestone": null,
+  "target": "2026-W40",
+  "write_set_a": [
+    "src/middleware/auth.ts",
+    "src/middleware/rbac.ts",
+    "src/routes/auth.ts",
+    "tests/middleware/auth.test.ts",
+    "tests/middleware/rbac.test.ts",
+    "tests/routes/auth.test.ts"
+  ],
+  "write_set_b": [
+    "electron-renderer/src/stores/auth-session.ts",
+    "electron-renderer/src/stores/ga-collab.ts",
+    "electron-renderer/src/components/RightPanel.tsx",
+    "electron-renderer/src/components/LoginPanel.tsx",
+    "electron-renderer/src/lib/api.ts",
+    "tests/electron/d948-*.test.ts（P0-a 落地后随 mac 域）"
+  ],
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "note": "来源：D947 PLAN-REV2 REV-8 登记的「JWT 用户部门级可见性恒 deny」功能回退。CTO 定稿时 REV-8 把它标成「Mac 域登录链」——经 check-ownership.py 实测系错标（JwtPayload/rbac/routes/auth 全判 win），本件为实体纠正。实测依据（ref=feat/d947-middleware-default-posture）：auth.ts:26-33 JwtPayload 无 department；rbac.ts:104-105 JWT 分支 department: undefined；routes/auth.ts:97/134 签发不带 department；electron-renderer 零 Bearer、零 /api/auth 调用；RightPanel.tsx:159 与 ga-collab.ts:60 仍在发自报头而服务端已忽略 → 桌面端请求无身份。创始人 2026-09-24 裁定：①客户端自报身份完全不允许 ②默认拒绝 ③提交时就该拦。执行形态：Agent Teams 组队、队长不下场写码、独立自验不得由编码兼任、两切片串行、重型验证串行 ≤1、每条修复带 1 个改坏即红反例、回执含团队成员运行记录。",
+  "updated_at": "2026-09-24",
+  "updated_by": "win-codex-cto"
+}
