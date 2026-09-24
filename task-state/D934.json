@@ -4,7 +4,7 @@
   "status": "impl_done",
   "executor": "dsh-cto",
   "writer": "synova-squad-b5",
-  "writer_note": "按 CTO 2026-09-24 口径记（writer=谁写这个文件；updated_by=最后改动者=本队），文件位于 .synova-wt-squad-b5。物理 provenance 备查（供 D940 判据取证）：本文件 birth=2026-09-24 17:57:02；b5-c1 该 session 对其零字节写入（全程只读核验 + 停写待命），实际写入由 CTO session 在该工作树内驱动——归属以 CTO 裁定为准。",
+  "writer_note": "按 CTO 2026-09-24 口径记（writer=谁写这个文件；updated_by=最后改动者）。归属以 CTO 裁定为准。【自述·一手观察，仓库不可取证】本 session（b5-c1）对该文件零字节写入（全程只读核验 + 停写待命）。【不可取证，见 B5-自验.md §9.4 U5】提交身份在本仓恒为 synova-cto，无法区分代理；birth 因每次写入重置，故 17:4x 期间的物理写入者无法由仓库证据判定 → 归 D940 判据取证。【可核】本版本 birth=2026-09-24 18:08:04（复核命令：stat -f '%N birth=%SB' task-state/D934.json）。",
   "root_cause_field_alias": "backfill_reason",
   "domain": "mac",
   "milestone": "M0 项目管理基建",
