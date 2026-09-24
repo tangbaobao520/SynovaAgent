@@ -16,9 +16,10 @@
  *     —— 合成值既不反映 A1/A2 的改动，又制造假红/假绿（复核 B-0b）。
  *
  * ── 判别性（改坏即报红）─────────────────────────────────────────────────
- *   · A3: 把 rbac.ts:127 改回 `department: undefined` ⇒ A3 两条腿全红
- *   · A4: 把 workspaces-api.ts:286 的 `w.department === dept` 改 `true`（**过宽型**）⇒ A4 红、A3 仍绿
- *     （收窄型变异体对 A4 无效：负向断言只会更绿 —— 复核 §18.2）
+ *   · A3: rbac.ts:127 改回 `department: undefined` ⇒ A3 两条腿全红
+ *   · A3: 删 workspaces-api.ts:286 的 `w.department === dept` 析取（**收窄型**）⇒ A3 红、A4 绿
+ *   · A4: 把 workspaces-api.ts:286 的 `w.department === dept` 改成恒真（**过宽型**）⇒ A4 红、A3 绿
+ *     （收窄型变异体对 A4 无效：负向断言只会更绿 —— 复核 §18.2；故 A4 组专设两条对称负控）
  *   · A5: 去掉 rbac.ts isSameDepartment 的非空收窄（天真 `a === b`）⇒ 空串/双空边界红
  *   · FG-6: 把环境切成 dev-admin 姿态（DEV_MODE='true' 且无 JWT_SECRET）⇒ 「无效 Bearer → 401」
  *     与「身份 ≠ dev-admin」两条断言红（证明走的是验签分支 auth.ts:369 起，不是 :348-365 逃生口）
@@ -292,8 +293,11 @@ describe('A3 · 同部门 manager 可见本部门工作区', () => {
     expect(r.status).toBe(200);
     expect(r.body['department']).toBe('marketing');
     const ids = pickWorkspaceIds(r.body);
+    // 本判据（A3）只断言**正面**事实（派单件原文「结果含本部门工作区」）；
+    // 跨部门**不可见**的负向断言归 A4（下组），使「过宽型」变异体有干净归属：
+    //   · 收窄型（删部门析取）→ A3 红、A4 绿
+    //   · 过宽型（部门析取恒真）→ A4 红、A3 绿
     expect(ids).toContain(subMktId);          // 本部门 → 命中
-    expect(ids).not.toContain(subSalesId);    // 他部门 → 不命中
     expect(ids).toContain(parentId);          // 对照：global 对非 admin 可见（防"恒空"假绿）
   });
 });
@@ -331,6 +335,17 @@ describe('A4 · 异部门 manager 看不到该部门工作区', () => {
     const r = await api(`/api/workspaces/${subSalesId}/context`, { token: T_SALES });
     expect(r.status).toBe(200);
     expect(r.body['department']).toBe('sales');
+  });
+
+  it('反向负控（对称方向）: marketing manager 的 /mine 亦不含 sales 子工作区', async () => {
+    // 与本组第 2 条对称：跨部门不可见的**负向断言全部归 A4**（A3 只留正面断言），
+    // 使"过宽型"变异体（部门析取恒真）在本组报红、在 A3 组保持绿。
+    const req = await captureReq(T_MKT);
+    const r = await callMine(req);
+    expect(r.status).toBe(200);
+    const ids = pickWorkspaceIds(r.body);
+    expect(ids).not.toContain(subSalesId);
+    expect(ids).toContain(subMktId);
   });
 });
 
