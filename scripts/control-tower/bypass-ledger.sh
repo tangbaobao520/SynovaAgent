@@ -8,12 +8,16 @@ export LC_ALL=C.UTF-8 2>/dev/null || true
 # 背景（D735 派单 §三）: bypass 证据账本 `.claude/bypass.log` 是 **git 跟踪文件**，
 #   每次提交都被 post-commit hook 追加一行 → 每个分支必带 bypass.log 变更
 #   （实测：origin 上抽样 3 个分支，100% 出现），多 PR 并发合并还要靠 union driver 兜冲突。
-#   本脚本提供 **per-session 落点**（`.sessions/<sid>/bypass.log`，`.gitignore:83` 已忽略
+#   本脚本提供 **per-session 落点**（`.sessions/<sid>/bypass.log`，`.gitignore` 已忽略
 #   → 写入不产生任何 git status 变更）。
 #
-# Stage 1 = 兼容并存（派单硬要求「不许一个 PR 切完」）:
-#   新落点**可写可读**，旧路径 `.claude/bypass.log` 仍是权威 —— 本阶段零行为变化，
-#   目的是把新链路先跑起来并留下证据，切换与清理留给 Stage 2。
+# Stage 1（已并入 main，PR #541 / e484ae8b）= 双写兼容并存。
+# **Stage 2（D970，本文件当前形态）**:
+#   - 旧路径 `.claude/bypass.log` **已出库**（不再被 git 跟踪，.gitignore 已忽略）
+#     → 多写者写同一被跟踪文件导致的真冲突（GitHub 服务端不认 merge=union，实测 5 条 PR
+#       dirty 唯一冲突文件就是它）从根上消失；
+#   - 历史证据**保全** = 冻结归档 `docs/authority/bypass-ledger-archive/*.txt`（随仓、任一 clone 可读）；
+#   - 写入 = **仅** per-session（见 hooks/post-commit.sh）；读取 = 归档 + 旧路径（若仍存在）+ 全部 per-session。
 #
 # 契约（铁律 47）:
 #   @input  — 子命令 + 参数；环境变量:
@@ -21,9 +25,11 @@ export LC_ALL=C.UTF-8 2>/dev/null || true
 #               SYNO_BYPASS_LEDGER_DIR   落点目录覆盖（测试注入缝；默认 $ROOT/.sessions/<sid>）
 #               SYNO_LEGACY_BYPASS_LOG   旧账本路径覆盖（测试注入缝；默认 $ROOT/.claude/bypass.log）
 #               SYNO_BYPASS_SESSIONS_ROOT 仓库级 .sessions 根覆盖（测试注入缝；默认 $ROOT/.sessions）
+#               SYNO_BYPASS_ARCHIVE_DIR  冻结归档目录覆盖（测试注入缝；默认 $ROOT/docs/authority/bypass-ledger-archive）
 #   @output — path:    一行，本 session 账本绝对路径（默认 $ROOT/.sessions/<sid>/bypass.log）
 #             append:  无 stdout（追加成功即 exit 0）
-#             sources: 逐行，对账应读的**全部**账本路径（旧路径在前，per-session 按名排序；只列已存在的）
+#             sources: 逐行，对账应读的**全部**账本路径（Stage 2 读面 = 冻结归档 `*.txt`
+#                      + 旧路径（若存在）+ 全部 per-session；全量 sort -u 去重 + 稳定排序；只列已存在的）
 #             read:    全部来源的合并内容（顺序同 sources）
 #   @exit   — 0 成功；1 用法错误 / append 缺内容；2 落点无法解析或写入失败（fail-closed）
 #   @degraded — 会话标识全不可解析 → 依次回退 git 分支名 → 仓库目录名 → "default"，
@@ -62,12 +68,16 @@ _resolve_sid() {
 _ledger_dir() { printf '%s' "${SYNO_BYPASS_LEDGER_DIR:-$ROOT/.sessions/$(_resolve_sid)}"; }
 _ledger_path() { printf '%s' "$(_ledger_dir)/bypass.log"; }
 
-# ── 对账来源（旧路径在前；per-session 按名排序，稳定可复现）──
+# ── 对账来源（Stage 2 读面 = 冻结归档 + 旧路径(若存在) + 全部 per-session；
+#    全量 sort -u 去重 + 稳定排序，可复现）──
 _sources() {
+  # ① 冻结归档（历史证据保全；随仓、任一 clone 可读）
+  ls -1 "${SYNO_BYPASS_ARCHIVE_DIR:-$ROOT/docs/authority/bypass-ledger-archive}"/*.txt 2>/dev/null   # swallow-ok: 归档为空/不存在属正常（探测型）
+  # ② 旧路径（Stage 2 后已出库；本机若仍有该文件则纳入读面 —— 出库不清除磁盘证据）
   [ -f "$LEGACY_LOG" ] && printf '%s\n' "$LEGACY_LOG"
-  # per-session 账本：当前落点目录（可能被 SYNO_BYPASS_LEDGER_DIR 覆盖到仓库外）
+  # ③ per-session 账本：当前落点目录（可能被 SYNO_BYPASS_LEDGER_DIR 覆盖到仓库外）
   # + 仓库内全部 .sessions/*/bypass.log（D331 要覆盖本分支全部提交，
-  #   而提交可能由别的 session 产生过登记）。两处会重叠 → sort -u 去重（否则 read 会重复输出）。
+  #   而提交可能由别的 session 产生过登记）。各处会重叠 → 末行 sort -u 去重（否则 read 会重复输出）。
   {
     local d; d="$(_ledger_dir)"
     ls -1 "$d"/*.log 2>/dev/null   # swallow-ok: 目录为空/不存在时 ls 报错属正常（探测型）
@@ -94,7 +104,10 @@ case "${1:-}" in
   sources)
     _sources; exit 0 ;;
   read)
-    _sources | while IFS= read -r f; do [ -n "$f" ] && cat "$f" 2>/dev/null; done
+    # 去重（保持首次出现顺序）：冻结归档是旧路径的**副本**，两源并存时同一行会出现两次，
+    #   不去重会让 Gatekeeper / 组 7c 的**计数翻倍**（实测：今日 1 条记录被读成 2）。
+    #   awk 保留首次出现顺序（不用 sort —— read 契约是「顺序同 sources」）。
+    _sources | while IFS= read -r f; do [ -n "$f" ] && cat "$f" 2>/dev/null; done | awk '!seen[$0]++'
     exit 0 ;;
   ""|-h|--help)
     echo "用法: bash bypass-ledger.sh {path|append <行>|sources|read}" >&2

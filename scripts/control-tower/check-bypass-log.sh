@@ -20,15 +20,26 @@
 set -uo pipefail
 
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
-LOG="$ROOT/.claude/bypass.log"
-# D735 Stage 1: 对账来源 = 旧路径 + per-session 新落点（union）。
-# Stage 1 旧路径仍权威；union 读保证「登记写在新落点、对账只读旧路径」不会误判缺记录。
+# 注入缝（测试隔离；未设即生产路径）: SYNO_LEGACY_BYPASS_LOG 与 bypass-ledger.sh 同名同义
+LOG="${SYNO_LEGACY_BYPASS_LOG:-$ROOT/.claude/bypass.log}"
+# D735 Stage 2（D970）: 账本**不随仓走** —— 旧路径已出库（.gitignore 忽略 + git rm --cached，
+#   文件保留在磁盘）。对账来源 = 冻结归档 + 旧路径（若本机仍存在）+ 全部 per-session
+#   （见 bypass-ledger.sh sources）。
+#   ⚠️ 语义 / exit code / fail-closed **不变**: 0=全有记录 / 1=有提交缺记录或证据链整体不可读 /
+#      2=base 或 git log 不可用（fail-closed，不当作通过）。
 LEDGER_SH="$ROOT/scripts/control-tower/bypass-ledger.sh"
 LEDGER_SOURCES="$LOG"
 if [ -f "$LEDGER_SH" ]; then
   _SRC_OUT="$(bash "$LEDGER_SH" sources 2>/dev/null)" || _SRC_OUT="$LOG"  # swallow-ok: 解析器失败即回退旧路径（显式赋值，非静默跳过对账）
   [ -n "$_SRC_OUT" ] && LEDGER_SOURCES="$_SRC_OUT"
 fi
+# 至少一个来源真实存在，否则对账无据可依（fail-closed）
+_source_exists() {
+  local f
+  # shellcheck disable=SC2086  # 有意分词: LEDGER_SOURCES 是换行分隔的多文件列表
+  for f in $LEDGER_SOURCES; do [ -f "$f" ] && return 0; done
+  return 1
+}
 BASE="${SYNO_BASE_REF:-${1:-origin/feat/prompt-architecture}}"
 
 # D513/③(Win 37dc1cae 根因): 防御性刷新 base —— `git push <URL>` 不更新本地
@@ -45,9 +56,11 @@ if [ -n "$_base_remote" ] && [ "$_base_remote" != "$_base_branch" ] && [ "${SYNO
 fi
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RESET='\033[0m'
 
-if [[ ! -f "$LOG" ]]; then
-  echo -e "${RED}❌ bypass.log 不存在: $LOG${RESET}"
-  echo "  执行证据链缺失 — 请确认提交均经 synova-commit（含 COMMITTED 记录）或一次性补记"
+if ! _source_exists; then
+  echo -e "${RED}❌ 执行证据链整体不可读 — 无任何可用来源${RESET}"
+  echo "  已查来源: $(printf '%s' "$LEDGER_SOURCES" | tr '\n' ' ')"
+  echo "  Stage 2 后账本不随仓走：请确认 .sessions/<sid>/bypass.log 或 docs/authority/bypass-ledger-archive/*.txt 存在；"
+  echo "  并确认提交均经 synova-commit（含 COMMITTED 记录）或一次性补记"
   exit 1
 fi
 

@@ -8,6 +8,8 @@ export LC_ALL=C.UTF-8 2>/dev/null || true
 # 缺陷 B 回归 (dev doc §4 RED 场景 2): 全局单例 marker 被并发 session 的
 #   post-commit rm 后, 另一 session 的正常提交被误判 detected-bypass。
 #
+# D970（D735 Stage 2）: 证据落点 = **per-session** `.sessions/<sid>/bypass.log`（旧路径已出库、停写；
+#   影子登记提交已删除）——故本文件的账本断言一律经 ledger() 指向 per-session。
 # 测试策略: 在临时 git 仓库运行**真实** scripts/hooks/post-commit.sh
 #   (cp 到 .githooks + core.hooksPath), 不 mock 判定逻辑。
 #   覆盖: head 匹配=pass / head 不匹配=detected-bypass / 无 marker=detected-bypass /
@@ -33,6 +35,10 @@ log_lines() { # bypass.log 行数, 不存在 = 0
   if [ -f "$1" ]; then wc -l < "$1" | tr -d ' \r'; else echo 0; fi
 }
 
+# D970: 账本落点 = per-session（沙箱内由 SYNO_SESSION_ID 固定，避免依赖宿主 env）
+export SYNO_SESSION_ID="marker-test"
+ledger() { printf '%s' "$REPO/.sessions/$SYNO_SESSION_ID/bypass.log"; }
+
 if [ ! -f "$REAL_HOOK" ]; then
   echo "  ✗ 生产脚本缺失: $REAL_HOOK"
   exit 1
@@ -55,8 +61,9 @@ new_repo() { # new_repo <名字> — init + 初始提交 (无 hook) + .claude + 
   echo "x" > "$REPO/f.txt"
   git -C "$REPO" add f.txt
   git -C "$REPO" -c core.hooksPath="$NO_HOOKS" commit -q -m "init"
-  mkdir -p "$REPO/.claude" "$REPO/.githooks"
+  mkdir -p "$REPO/.claude" "$REPO/.githooks" "$REPO/scripts/control-tower"
   cp "$REAL_HOOK" "$REPO/.githooks/post-commit"
+  cp "$TEST_ROOT/scripts/control-tower/bypass-ledger.sh" "$REPO/scripts/control-tower/bypass-ledger.sh"
   chmod +x "$REPO/.githooks/post-commit"   # macOS/Linux 需可执行位, git 才认 hook (Windows 无此位)
 }
 commit_hooked() { git -C "$REPO" -c core.hooksPath="$REPO/.githooks" commit -q --allow-empty -m "$1"; }
@@ -69,8 +76,8 @@ echo "$HEAD_B|$(date +%s)" > "$REPO/.claude/last-precommit-success"
 MARKER_BEFORE=$(cat "$REPO/.claude/last-precommit-success")
 commit_hooked m1
 # D543: D521/不变量2 hook 层登记（D537 #4 恢复）— pass → bypass.log 新增恰好 1 行 COMMITTED + 影子提交
-check "S1a: pass → bypass.log 新增恰好 1 行 (hook 层 COMMITTED 登记)" "1" "$(log_lines "$REPO/.claude/bypass.log")"
-check_contains "S1a+: 登记行含 COMMITTED (hook 层)" "$REPO/.claude/bypass.log" "COMMITTED"
+check "S1a: pass → bypass.log 新增恰好 1 行 (hook 层 COMMITTED 登记)" "1" "$(log_lines "$(ledger)")"
+check_contains "S1a+: 登记行含 COMMITTED (hook 层)" "$(ledger)" "COMMITTED"
 if [ -f "$REPO/.claude/last-precommit-success" ]; then
   ok "S1b: pass 后 marker 仍存在 (不 rm)"
 else
@@ -83,13 +90,13 @@ echo "── S2. head 不匹配 → detected-bypass ──"
 new_repo r2
 echo "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef|$(date +%s)" > "$REPO/.claude/last-precommit-success"
 commit_hooked m2
-check_contains "S2: head 不匹配 → detected-bypass" "$REPO/.claude/bypass.log" "detected-bypass head-mismatch"
+check_contains "S2: head 不匹配 → detected-bypass" "$(ledger)" "detected-bypass head-mismatch"
 
 echo ""
 echo "── S3. 无 marker → detected-bypass no-precommit-marker ──"
 new_repo r3
 commit_hooked m3
-check_contains "S3: 无 marker → detected-bypass" "$REPO/.claude/bypass.log" "detected-bypass no-precommit-marker"
+check_contains "S3: 无 marker → detected-bypass" "$(ledger)" "detected-bypass no-precommit-marker"
 
 echo ""
 echo "── S4. head 匹配 + 超时 (diff>300s) → possible-bypass ──"
@@ -97,18 +104,18 @@ new_repo r4
 HEAD_B=$(git -C "$REPO" rev-parse HEAD)
 echo "$HEAD_B|$(( $(date +%s) - 600 ))" > "$REPO/.claude/last-precommit-success"
 commit_hooked m4
-check_contains "S4: 超时 → possible-bypass" "$REPO/.claude/bypass.log" "possible-bypass diff="
+check_contains "S4: 超时 → possible-bypass" "$(ledger)" "possible-bypass diff="
 
 echo ""
 echo "── S5. legacy 纯时间戳格式 (安装旧 hook 过渡期兼容) ──"
 new_repo r5a
 echo "$(date +%s)" > "$REPO/.claude/last-precommit-success"
 commit_hooked m5a
-check "S5a: legacy 新鲜 → pass (不新增)" "0" "$(log_lines "$REPO/.claude/bypass.log")"
+check "S5a: legacy 新鲜 → pass (不新增)" "0" "$(log_lines "$(ledger)")"
 new_repo r5b
 echo "$(( $(date +%s) - 600 ))" > "$REPO/.claude/last-precommit-success"
 commit_hooked m5b
-check_contains "S5b: legacy 超时 → possible-bypass" "$REPO/.claude/bypass.log" "possible-bypass diff="
+check_contains "S5b: legacy 超时 → possible-bypass" "$(ledger)" "possible-bypass diff="
 
 echo ""
 echo "── S6. CT-29 交错时序 (dev doc §4 场景 2) ──"
@@ -124,9 +131,9 @@ A1=$(git -C "$REPO" rev-parse HEAD)
 echo "$A1|$(date +%s)" > "$REPO/.claude/last-precommit-success"   # B 的 pre-commit 覆盖
 commit_hooked B1                                                 # B 提交 + post-commit 正常执行
 # D543: B pass → hook 层登记 +1 行（同 S1a 新行为）
-check "S6a: B 的 post-commit pass (无误判, 登记 1 行)" "1" "$(log_lines "$REPO/.claude/bypass.log")"
+check "S6a: B 的 post-commit pass (无误判, 登记 1 行)" "1" "$(log_lines "$(ledger)")"
 (cd "$REPO" && bash "$REAL_HOOK")                                # A 的 post-commit 迟到
-check "S6b: A 的迟到 post-commit pass (CT-29 修复, 不误判不 rm)" "1" "$(log_lines "$REPO/.claude/bypass.log")"
+check "S6b: A 的迟到 post-commit pass (CT-29 修复, 不误判不 rm)" "1" "$(log_lines "$(ledger)")"
 if [ -f "$REPO/.claude/last-precommit-success" ]; then
   ok "S6c: marker 未被任何 post-commit 删除"
 else
@@ -144,7 +151,7 @@ A1=$(git -C "$REPO" rev-parse HEAD)
 echo "$A1|$(date +%s)" > "$REPO/.claude/last-precommit-success"  # amend 的 pre-commit 写 marker=A1
 git -C "$REPO" -c core.hooksPath="$NO_HOOKS" commit -q --amend --allow-empty -m "A-amended"
 (cd "$REPO" && bash "$REAL_HOOK")                          # HEAD=A2, HEAD^=X, marker=A1
-check "S7: amend → ② 同父 pass (无误报, 登记 1 行)" "1" "$(log_lines "$REPO/.claude/bypass.log")"
+check "S7: amend → ② 同父 pass (无误报, 登记 1 行)" "1" "$(log_lines "$(ledger)")"
 
 echo ""
 echo "── S8. D421 并发三判: marker 停在旧祖先 → ③ 祖先 pass ──"
@@ -154,7 +161,7 @@ commit_nohook A1
 commit_nohook B1                                          # HEAD=B1 (parent A1)
 echo "$X|$(date +%s)" > "$REPO/.claude/last-precommit-success"   # marker 停在旧 X (X 是 HEAD 祖先)
 (cd "$REPO" && bash "$REAL_HOOK")                          # HEAD=B1, HEAD^=A1
-check "S8: 并发祖先 → ③ 祖先 pass (无误报, 登记 1 行)" "1" "$(log_lines "$REPO/.claude/bypass.log")"
+check "S8: 并发祖先 → ③ 祖先 pass (无误报, 登记 1 行)" "1" "$(log_lines "$(ledger)")"
 
 echo ""
 echo "── S9. D421 真绕过: marker 停在旧祖先 + 时间戳过旧 → freshness 抓 possible-bypass ──"
@@ -164,7 +171,7 @@ commit_nohook A1
 commit_nohook B1                                          # HEAD=B1
 echo "$X|$(( $(date +%s) - 600 ))" > "$REPO/.claude/last-precommit-success"   # stale marker (真 --no-verify)
 (cd "$REPO" && bash "$REAL_HOOK")
-check_contains "S9: 真绕过 stale marker → possible-bypass" "$REPO/.claude/bypass.log" "possible-bypass diff="
+check_contains "S9: 真绕过 stale marker → possible-bypass" "$(ledger)" "possible-bypass diff="
 
 echo ""
 echo "── S10. CT-45: merge 提交豁免 — HEAD^2 存在时不写 detected-bypass ──"
@@ -180,7 +187,7 @@ else
   fail "S10a: 未能构造 merge 提交"
 fi
 (cd "$REPO" && bash "$REAL_HOOK")                              # merge 提交 + 无 marker → 应豁免 (CT-45)
-check "S10b: merge 提交豁免 (不写 detected-bypass)" "0" "$(log_lines "$REPO/.claude/bypass.log")"
+check "S10b: merge 提交豁免 (不写 detected-bypass)" "0" "$(log_lines "$(ledger)")"
 
 echo ""
 echo "结果: 通过 $PASS / 失败 $FAIL"

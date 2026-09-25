@@ -234,12 +234,38 @@ _GATE_BRANCH="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)"
 #   缺省仍硬阻断, 但 SYNO_GATEKEEPER_ACK=1 表示人工已复核该绕过记录 → 降级为告警放行。
 #   与组 7c 共享同一逃生舱语义 (逃生舱写入 degraded-events.log, 铁律 11)。
 BYPASS_LOG="$ROOT/.claude/bypass.log"
+# ── D970（D735 Stage 2）读面: 账本**已出库**（.claude/bypass.log 不再随仓走）──
+# 合并来源 = 冻结归档 docs/authority/bypass-ledger-archive/*.txt + 旧路径（若存在）+ 全部 per-session
+#   （唯一解析源 = scripts/control-tower/bypass-ledger.sh read，落点逻辑不在此重复）。
+# 契约（铁律 47 / 11）:
+#   @input  — 无参
+#   @output — stdout: 合并后的账本内容（可能为空）
+#   @degraded — 解析器缺失 → stderr 显式提示 + 回落旧路径单源（与出库前逐字一致）；
+#               来源全空 → stderr 显式提示 + 输出空（计数按 0，**不静默**）
+#   @exit   — 恒 0（调用方按内容计数判定；本函数不改变任何判定语义）
+BYPASS_LEDGER_SH="$ROOT/scripts/control-tower/bypass-ledger.sh"
+_bypass_read() {
+  local _o
+  if [ -f "$BYPASS_LEDGER_SH" ]; then
+    _o="$(bash "$BYPASS_LEDGER_SH" read 2>/dev/null)" || _o=""   # swallow-ok: 解析器失败在下方分支显式提示并回落（非静默）
+    if [ -n "$_o" ]; then printf '%s\n' "$_o"; return 0; fi
+    if [ -f "$BYPASS_LOG" ]; then
+      echo "⚠️  bypass 合并来源为空 — 回落旧路径单源 [degraded]" >&2
+      cat "$BYPASS_LOG"; return 0
+    fi
+    echo "⚠️  bypass 账本合并来源为空（归档/旧路径/per-session 均无）— 计数按 0 [degraded]" >&2
+    return 0
+  fi
+  echo "⚠️  bypass-ledger.sh 缺失 — 回落旧路径单源 [degraded]" >&2
+  [ -f "$BYPASS_LOG" ] && cat "$BYPASS_LOG"
+  return 0
+}
 # 方案1挪CI(D467)后：本地 pre-commit 软提示 + CI 权威，本地 --no-verify 不再是"绕过"（CI 兜底）。
 # GATEKEEPER 检测"本地 --no-verify"只在本地跑；CI 上跳过（否则 CI 检测 git 跟踪的本地 bypass.log 痕迹 → 自阻断）。
-if [ -f "$BYPASS_LOG" ] && [ "${GITHUB_ACTIONS:-}" != "true" ]; then
+if [ "${GITHUB_ACTIONS:-}" != "true" ]; then
   TODAY=$(date +%Y-%m-%d)
   # V4.5.1: 只匹配 detected-bypass 行。COMMITTED 行是正常提交成功标记，不是绕过。
-  BYPASS_COUNT=$(grep -c "${TODAY}.*detected-bypass" "$BYPASS_LOG" 2>/dev/null | tr -d '\n\r' || echo 0)
+  BYPASS_COUNT=$(_bypass_read | grep -c "${TODAY}.*detected-bypass" | tr -d '\n\r' || echo 0)
   if [ "$BYPASS_COUNT" -gt 0 ]; then
     echo "[GATEKEEPER] 检测到今日 ${BYPASS_COUNT} 次 --no-verify 绕过记录"
     if [ "${SYNO_GATEKEEPER_ACK:-0}" = "1" ]; then
@@ -1076,14 +1102,16 @@ else
 fi
 
 # ── 绕过审计 (硬阻断) ──
-# 检测方法: post-commit hook 检测 --no-verify 并写入 bypass.log
+# 检测方法: post-commit hook 检测 --no-verify 并写入 bypass 账本
+#   D970（D735 Stage 2）: 账本已出库 → 读面改用 _bypass_read（合并来源），不再只读旧路径文件。
 # 强弱信号分离 (D438): detected-bypass=强信号(head 不匹配, 真绕过)→阻断;
 #   possible-bypass=弱信号(stale marker, 可能慢提交/merge 产物)→只告警, U1 推送对账才是真兜底。
 BYPASS_COUNT=0
 POSSIBLE_COUNT=0
-if [ -f "$BYPASS_LOG" ]; then
-  BYPASS_COUNT=$(grep -cE "$(date +%Y-%m-%d).*detected-bypass" "$BYPASS_LOG" 2>/dev/null | tr -d '\n\r' || echo 0)
-  POSSIBLE_COUNT=$(grep -cE "$(date +%Y-%m-%d).*possible-bypass" "$BYPASS_LOG" 2>/dev/null | tr -d '\n\r' || echo 0)
+BYPASS_CONTENT="$(_bypass_read)"
+if [ -n "$BYPASS_CONTENT" ]; then
+  BYPASS_COUNT=$(printf '%s\n' "$BYPASS_CONTENT" | grep -cE "$(date +%Y-%m-%d).*detected-bypass" | tr -d '\n\r' || echo 0)
+  POSSIBLE_COUNT=$(printf '%s\n' "$BYPASS_CONTENT" | grep -cE "$(date +%Y-%m-%d).*possible-bypass" | tr -d '\n\r' || echo 0)
   BYPASS_COUNT=${BYPASS_COUNT//[^0-9]/}
   POSSIBLE_COUNT=${POSSIBLE_COUNT//[^0-9]/}
   [ -z "$BYPASS_COUNT" ] && BYPASS_COUNT=0

@@ -7,8 +7,9 @@ export LC_ALL=C.UTF-8 2>/dev/null || true
 #
 # 覆盖矩阵（铁律 48 三路径 + 接线）:
 #   正常 — 无新提交（origin/main..HEAD 空）→ exit 0
+#   正常 — **账本已出库**：旧路径缺失但归档/per-session 仍在 → exit 0（D970 Stage 2 契约）
 #   降级 — git log 执行失败 → exit 2（fail-closed, 不当作通过）
-#   边界 — bypass.log 缺失 → exit 1；显式 SYNO_BASE_REF 不可解析 → exit 1
+#   边界 — **全部来源不可读** → exit 1（fail-closed）；显式 SYNO_BASE_REF 不可解析 → exit 1
 #   接线 — git log 失败 fail-closed 代码真实存在于脚本（铁律 0-2）
 # ═══════════════════════════════════════════════════════════════
 set -uo pipefail
@@ -35,12 +36,20 @@ SYNO_BASE_REF=origin/main bash "$GATE" >/dev/null 2>&1
 rc=$?
 [ "$rc" -eq 0 ] && ok "无新提交对账 → exit 0" || no "无新提交应 exit 0, 实际 $rc"
 
-# ── 边界: bypass.log 缺失 → exit 1 ──
+# ── 正常（Stage 2 契约）: 账本已出库 —— 旧路径缺失但仍有来源 → exit 0 ──
 mv "$BYPASS" "$BYPASS.u1bak" 2>/dev/null || true  # swallow-ok: bypass.log 备份/还原操作, 测试隔离可忽略
 SYNO_BASE_REF=origin/main bash "$GATE" >/dev/null 2>&1
 rc=$?
 cleanup
-[ "$rc" -eq 1 ] && ok "bypass.log 缺失 → exit 1" || no "bypass.log 缺失应 exit 1, 实际 $rc"
+[ "$rc" -eq 0 ] && ok "旧路径缺失（账本已出库）→ exit 0，不误判证据链缺失" || no "旧路径缺失应 exit 0, 实际 $rc"
+
+# ── 边界: 全部来源不可读（旧路径/归档/per-session 全指不存在）→ exit 1（fail-closed）──
+NOPE="$REPO/.nonexistent-d970"
+SYNO_LEGACY_BYPASS_LOG="$NOPE/legacy.log" SYNO_BYPASS_LEDGER_DIR="$NOPE/led" \
+  SYNO_BYPASS_SESSIONS_ROOT="$NOPE/sessions" SYNO_BYPASS_ARCHIVE_DIR="$NOPE/archive" \
+  SYNO_BASE_REF=origin/main bash "$GATE" >/dev/null 2>&1
+rc=$?
+[ "$rc" -eq 1 ] && ok "全部来源不可读 → exit 1（fail-closed，不与通过混同）" || no "全来源不可读应 exit 1, 实际 $rc"
 
 # ── 边界: 显式 SYNO_BASE_REF 不可解析 → exit 1（硬错误, 非 fail-open）──
 SYNO_BASE_REF="nonexistent-ref-xyz" bash "$GATE" >/dev/null 2>&1
