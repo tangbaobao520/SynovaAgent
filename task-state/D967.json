@@ -1,22 +1,53 @@
 {
   "task_id": "D967",
-  "title": "P0 measurements 时序层（建表+接线+基线改名+修零值污染+产品价值验证）",
-  "status": "spec_done",
+  "title": "measurements 时序层（栈式两支 PR：A=存储 win / B=哨兵 mac）+ P7 graph_triples 整表重建",
+  "status": "in_progress",
   "risk": "high",
-  "domain": "mac",
+  "domain": "mac+win（栈式两支，各自单域）",
   "owner": "mac-coding",
   "executor": "dsh-squad",
   "milestone": "哨兵体系整改（十环判据）",
   "spec": "docs/synova/architecture/SYNOVA-哨兵体系-最终版-v1-20260925.md",
+  "structure": "CTO 2026-09-25 裁定：D967 拆**栈式两支 PR**（不新增 ownership 规则、不开书面例外）。PR-B 的 base = PR-A 分支（栈式声明）。",
+  "branches": {
+    "PR-A": {
+      "branch": "feat/D967a-measurements-store",
+      "worktree": ".synova-wt-D967a",
+      "domain": "win",
+      "base": "origin/main",
+      "scope": "src/store/measurements.ts、src/store/migrations/**、src/store/schema-migration.ts、src/agent/post-diagnosis-processor.ts、tests/store/**",
+      "done_items": ["① measurements 表 + 索引 + store API", "② append-only（UPDATE/DELETE=0）", "⑥ P7 graph_triples 整表重建 + 验收三条", "⑦ 测试只用内存/临时库（禁动 data/synova.db）"]
+    },
+    "PR-B": {
+      "branch": "feat/D967b-sentinel-alert-stats",
+      "worktree": ".synova-wt-D967b",
+      "domain": "mac",
+      "base": "feat/D967a-measurements-store（栈式）",
+      "scope": "src/sentinel/baseline-store.ts、src/sentinel/runner.ts、src/agent/sentinel-health-service.ts、tests/sentinel/measurements*.test.ts",
+      "done_items": ["③ 跑一次哨兵 ⇒ measurements 有行（**跨 PR 联合验收**，依赖 PR-A 先合）", "④ sentinel_baselines → sentinel_alert_stats 改名 + 5 消费点全绿", "⑤ 产品价值：同 metric 两个 computed_at 可相减"]
+    }
+  },
   "write_set": [
     "src/store/measurements.ts",
-    "src/sentinel/**",
+    "src/store/migrations/**",
+    "src/store/schema-migration.ts",
     "src/agent/post-diagnosis-processor.ts",
+    "tests/store/**",
     "src/sentinel/baseline-store.ts",
-    "tests/**",
-    "task-state/D967.json"
+    "src/sentinel/runner.ts",
+    "src/agent/sentinel-health-service.ts",
+    "tests/sentinel/measurements*.test.ts",
+    "task-state/D967.json",
+    ".claude/task-briefs/2026-09-25-D967a-measurements-store.md",
+    ".claude/task-briefs/2026-09-25-D967b-sentinel-alert-stats.md",
+    "docs/synova/product-lines/evidence/D967a-measurements-store-evidence.md",
+    "docs/synova/product-lines/evidence/D967b-sentinel-alert-stats-evidence.md",
+    "docs/synova/product-lines/evidence/D967a-measurements-store/**",
+    "docs/synova/product-lines/evidence/D967b-sentinel-alert-stats/**"
   ],
+  "write_set_note": "按 CTO 硬要求 ②：写集 = **两 PR 的并集**。D708 判据是『变更 ⊆ 声明』（超集安全）⇒ 分 PR 后每支都能过对账。",
+  "cross_line_note": "按 CTO 硬要求 ⑥：PR-A 的文件属 **win 域**，由 **mac 小队代做**（跨线代做 + CTO 已批）。已在 PR-A 的 evidence 与 brief 中显式声明，不使其看起来像越域偷做。",
   "updated_at": "2026-09-25",
-  "updated_by": "synova-cto",
-  "note": "依据派单 docs/synova/coordination/派单-哨兵体系整改-20260925.md；判据见该文档逐卡 Done 段。"
+  "updated_by": "sentinel-coder-a",
+  "note": "派单红线遵守：不改 scripts/audit/**、docs/synova/audit-reports/**、ci.yml、pre-commit-check.sh、scripts/control-tower/**；不新增哨兵；不并发跑重型验证。data/synova.db 全程只读（迁移只在 /tmp 副本与 :memory: 上验证）。"
 }

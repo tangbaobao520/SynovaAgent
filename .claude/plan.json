@@ -2,7 +2,7 @@
   "version": "1.0",
   "created": "2026-09-08T00:00:00Z",
   "approved_by": "founder",
-  "current_phase": 2,
+  "current_phase": 3,
   "principles": [
     "原则2: 测试先行 red→green，spec DS1-DS8 机器可验契约",
     "数组整值替换 > 逐元素合并（DSH mergeLayers 范式，哨兵阈值数组禁止产生不可控混合）",
@@ -46,6 +46,28 @@
         "docs/plans/codex/implementation/SYNOVA-IMPL-D599-customer-config-package-20260908.md"
       ],
       "checks": { "wiring": "enforce", "test_pairing": "enforce" }
+    },
+    {
+      "step": 3,
+      "action": "D967 PR-A（win 域，栈底）：measurements 存储层 + P7 graph_triples 整表重建 + schema_version 版本解析抗污染。本支 API 的消费者是 PR-B（src/sentinel/runner.ts，mac 域，base = 本支）⇒ 接线在后续阶段；栈式两支拆分经 CTO 2026-09-25 裁定。",
+      "note": "授权来源：CTO（人类）2026-09-25 对本 session 的明确批准（选项 A）；执行者 coder-a；本 phase 仅**放宽**（wiring deferred）不新增阻断。",
+      "files": [
+        "src/store/measurements.ts",
+        "src/store/migrations/002-graph-triples-rebuild.ts",
+        "src/store/migrations/003-measurements-table.ts"
+      ],
+      "exports": [
+        "recordMeasurement",
+        "recordMeasurements",
+        "queryMeasurements",
+        "latestMeasurement",
+        "diffMeasurement",
+        "MEASUREMENTS_TABLE_DDL",
+        "MEASUREMENTS_INDEX_DDL",
+        "graphTriplesRebuildMigration",
+        "measurementsTableMigration"
+      ],
+      "checks": { "wiring": "deferred", "test_pairing": "enforce" }
     }
   ]
 }

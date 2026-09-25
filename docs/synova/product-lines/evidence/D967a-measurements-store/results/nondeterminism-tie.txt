@@ -1,0 +1,18 @@
+=== 非确定性证据：updated_at 并列行（同一秒的文本行 + 数值行）===
+2026-09-25T23:36:43+0800
+
+$ SELECT rowid, version, typeof(version), updated_at FROM schema_version WHERE updated_at = (SELECT MAX(updated_at) FROM schema_version) ORDER BY rowid;
+rowid|version|typeof(version)|updated_at
+17|d93b_actor_role|text|2026-09-13 01:52:53
+18|2|integer|2026-09-13 01:52:53
+
+$ 同一并列集里，'ORDER BY updated_at DESC LIMIT 1' 实际取到哪一行（原实现口径）
+d93b_actor_role [text]
+
+$ 对照：若取数值最大行（修复口径）
+2
+
+$ 结论：并列 ⇒ 取哪行取决于 SQLite 行序 ⇒ **迁移有时跑、有时不跑**（非确定性），非'恒失效'
+
+$ 反例边界：迁移 001 产物 graph_nodes.props 存在（=1）⇒ 历史上确实跑过
+1

@@ -1,0 +1,2 @@
+$ grep -rn 'UPDATE measurements\|DELETE FROM measurements' src/  # ② append-only
+命中数=0

@@ -1,0 +1,13 @@
+# ── 迁移前 graph_triples（生产副本实际结构）──
+CREATE TABLE graph_triples ( id INTEGER PRIMARY KEY AUTOINCREMENT, subject_type TEXT NOT NULL, subject_id TEXT NOT NULL, predicate TEXT NOT NULL, object_type TEXT NOT NULL, object_id TEXT NOT NULL, gr
+{"level":30,"time":1790350139572,"pid":99243,"hostname":"192.168.1.7","name":"synova-agent","service":"store/schema-migration","schemaVersion":4,"msg":"Schema 版本已初始化"}
+
+# ── 迁移后 graph_triples（canonical）──
+CREATE TABLE graph_triples ( id INTEGER PRIMARY KEY AUTOINCREMENT, subject_type TEXT NOT NULL, subject_id TEXT NOT NULL, predicate TEXT NOT NULL, object_type TEXT NOT NULL, object_id TEXT NOT NULL, gr
+FAIL  (a) SELECT props 失败: no such column: props
+{"level":40,"time":1790350139573,"pid":99243,"hostname":"192.168.1.7","name":"synova-agent","service":"adapters/sqlite-graph-store","err":"no such column: props","msg":"查询图边失败"}
+FAIL  (b) 结构未回 canonical: props=false idIsText=false
+{"level":40,"time":1790350139573,"pid":99243,"hostname":"192.168.1.7","name":"synova-agent","service":"adapters/sqlite-graph-store","err":"table graph_triples has no column named props","type":"P7_REBUILD_PROBE","from":"node-a6e6ba9b-5953-490f-f281-401dc4b1749c","to":"node-45dfa7bf-b79f-457b-808c-0157197e1342","msg":"创建图边失败"}
+FAIL  (c) createEdge 失败: table graph_triples has no column named props
+
+=== P7 ACCEPTANCE: FAILED (3) ===

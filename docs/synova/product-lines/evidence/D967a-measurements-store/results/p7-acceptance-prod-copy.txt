@@ -1,0 +1,14 @@
+# ── 迁移前 graph_triples（生产副本实际结构）──
+CREATE TABLE graph_triples ( id INTEGER PRIMARY KEY AUTOINCREMENT, subject_type TEXT NOT NULL, subject_id TEXT NOT NULL, predicate TEXT NOT NULL, object_type TEXT NOT NULL, object_id TEXT NOT NULL, gr
+{"level":30,"time":1790350165703,"pid":99355,"hostname":"192.168.1.7","name":"synova-agent","service":"store/schema-migration","version":3,"name":"graph-triples-rebuild","msg":"执行迁移 3: graph-triples-rebuild"}
+{"level":30,"time":1790350165705,"pid":99355,"hostname":"192.168.1.7","name":"synova-agent","service":"store/schema-migration","version":3,"msg":"迁移 3 完成"}
+{"level":30,"time":1790350165705,"pid":99355,"hostname":"192.168.1.7","name":"synova-agent","service":"store/schema-migration","version":4,"name":"measurements-table","msg":"执行迁移 4: measurements-table"}
+{"level":30,"time":1790350165705,"pid":99355,"hostname":"192.168.1.7","name":"synova-agent","service":"store/schema-migration","version":4,"msg":"迁移 4 完成"}
+
+# ── 迁移后 graph_triples（canonical）──
+CREATE TABLE graph_triples ( id TEXT PRIMARY KEY, graph TEXT NOT NULL DEFAULT 'default', subject_type TEXT NOT NULL, subject_id TEXT NOT NULL, predicate TEXT NOT NULL, object_type TEXT NOT NULL, objec
+PASS  (a) `SELECT props FROM graph_triples` 成功
+PASS  (b) queryEdges 无报错（返回 0 行）；props=true id=TEXT=true
+PASS  (c) createEdge 读写全通（id=edge-ebe79569-39ba-4…, props={"probe":true}）
+
+=== P7 ACCEPTANCE: ALL PASS ===

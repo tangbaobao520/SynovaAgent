@@ -1,0 +1,21 @@
+$ # 改坏即红：把版本解析临时还原为原实现（ORDER BY updated_at DESC LIMIT 1）
+$ vitest run tests/store/schema-migration.test.ts
+     ✓ SCHEMA_VERSION 应 >= 1 28ms
+     ✓ reconcileSchema 应创建 schema_version 表 6ms
+     ✓ 首次调用应写入版本号 1ms
+     ✓ 重复调用不应报错 1ms
+     ✓ 已有 schema_version 表应跳过创建 0ms
+     ✓ SCHEMA_VERSION 应为有效数值且 >= 2（含 D355 迁移） 0ms
+     ✓ 旧库（props_json 无 props）reconcile 后补 props 列并回填数据 1ms
+     ✓ schema_version 已到 v1 的库增量执行 v2 并推进版本 1ms
+     ✓ v2 迁移失败必须抛（fail-closed — 迁移失败阻止启动） 1ms
+     × 最新一行是文本版本标记时，>当前数值版本的迁移仍必须执行（不得静默空转） 4ms
+     ✓ 版本解析取"数值行最大值"，不受文本行影响 1ms
+     × 判别性: 污染库上 measurements 表也必须被建出（P7 同源守卫） 1ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  tests/store/schema-migration.test.ts > SchemaMigration — 版本解析抗污染（D967 P7 实测缺陷） > 最新一行是文本版本标记时，>当前数值版本的迁移仍必须执行（不得静默空转）
+AssertionError: expected false to be true // Object.is equality
+ FAIL  tests/store/schema-migration.test.ts > SchemaMigration — 版本解析抗污染（D967 P7 实测缺陷） > 判别性: 污染库上 measurements 表也必须被建出（P7 同源守卫）
+AssertionError: expected +0 to be 1 // Object.is equality
+ Test Files  1 failed (1)
+      Tests  2 failed | 10 passed (12)

@@ -1,0 +1,5 @@
+$ cp <备份> src/store/schema-migration.ts   # 还原
+$ vitest run tests/store/migrations/002-graph-triples-rebuild.test.ts
+ ✓ tests/store/migrations/002-graph-triples-rebuild.test.ts (7 tests) 13ms
+ Test Files  1 passed (1)
+      Tests  7 passed (7)

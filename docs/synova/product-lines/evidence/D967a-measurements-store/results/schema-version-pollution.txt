@@ -1,0 +1,33 @@
+=== schema_version 污染 + 迁移生效边界（生产库只读副本实测）===
+2026-09-25T23:32:40+0800
+
+$ sqlite3 <副本> 'SELECT rowid, version, typeof(version), updated_at FROM schema_version ORDER BY rowid'
+1|2|integer|2026-09-02 04:42:38
+2|d93b_actor_role|text|2026-09-02 04:42:41
+3|2|integer|2026-09-02 04:42:41
+4|2|integer|2026-09-04 06:31:19
+5|d551_memory_type|text|2026-09-04 06:31:19
+6|d93b_actor_role|text|2026-09-04 06:31:26
+7|d551_target_type|text|2026-09-04 06:31:26
+8|2|integer|2026-09-04 06:31:27
+9|d93b_actor_role|text|2026-09-04 06:33:26
+10|2|integer|2026-09-04 06:33:26
+11|2|integer|2026-09-04 14:19:16
+12|d93b_actor_role|text|2026-09-04 14:22:47
+13|2|integer|2026-09-13 01:51:25
+14|d93b_actor_role|text|2026-09-13 01:51:45
+15|2|integer|2026-09-13 01:51:45
+16|2|integer|2026-09-13 01:52:28
+17|d93b_actor_role|text|2026-09-13 01:52:53
+18|2|integer|2026-09-13 01:52:53
+
+$ 数值行最大版本
+2
+
+$ 迁移产物边界（1=存在 0=不存在）
+graph_nodes.props (迁移001产物): 1
+graph_triples.props (迁移002目标): 0
+measurements 表 (迁移003/004目标): 0
+
+$ 原实现读取结果（ORDER BY updated_at DESC LIMIT 1）
+d93b_actor_role [text]

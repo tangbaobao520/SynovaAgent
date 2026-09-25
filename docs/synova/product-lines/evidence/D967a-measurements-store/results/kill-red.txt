@@ -1,0 +1,25 @@
+$ sed -i '' 's|^  graphTriplesRebuildMigration,$|  // graphTriplesRebuildMigration,|' src/store/schema-migration.ts
+$ grep -n graphTriplesRebuild src/store/schema-migration.ts
+13:import { graphTriplesRebuildMigration } from './migrations/002-graph-triples-rebuild';
+39:  // graphTriplesRebuildMigration,  // ← 改坏即红实验：临时撤掉
+
+$ vitest run tests/store/migrations/002-graph-triples-rebuild.test.ts
+{"level":40,"time":1790350123895,"pid":99176,"hostname":"192.168.1.7","name":"synova-agent","service":"adapters/sqlite-graph-store","err":"table graph_triples has no column named props","type":"DEPLOYS","from":"node-e7bfe0c9-8776-49d3-d12d-e46b518bb1fe","to":"node-1da9b880-5704-4e05-8729-9591850ea562","msg":"创建图边失败"}
+     ✓ 判别性红侧：漂移库上写路径失败（缺 props 列）——迁移是负载项 4ms
+     × 迁移后：读路径通（SELECT props 成功、queryEdges 不报缺列） 5ms
+     × 迁移后：写路径通（createEdge 读写全通）——P7 验收 (c) 2ms
+     × 数据搬运：漂移库既有行不丢，props_json → props 映射正确 1ms
+     ✓ 幂等：连续两次 reconcileSchema 不报错、不重复搬行 1ms
+     ✓ 边界-全新库：无 graph_triples 表 → 迁移 no-op，initSchema 建 canonical 表 1ms
+     × 形态守卫：graph_triples 非 TABLE（视图）→ fail-closed 抛错，不静默跳过 1ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  tests/store/migrations/002-graph-triples-rebuild.test.ts > P7 graph_triples 整表重建（002） > 迁移后：读路径通（SELECT props 成功、queryEdges 不报缺列）
+AssertionError: expected false to be true // Object.is equality
+ FAIL  tests/store/migrations/002-graph-triples-rebuild.test.ts > P7 graph_triples 整表重建（002） > 迁移后：写路径通（createEdge 读写全通）——P7 验收 (c)
+SqliteError: table graph_triples has no column named props
+ FAIL  tests/store/migrations/002-graph-triples-rebuild.test.ts > P7 graph_triples 整表重建（002） > 数据搬运：漂移库既有行不丢，props_json → props 映射正确
+SqliteError: no such column: props
+ FAIL  tests/store/migrations/002-graph-triples-rebuild.test.ts > P7 graph_triples 整表重建（002） > 形态守卫：graph_triples 非 TABLE（视图）→ fail-closed 抛错，不静默跳过
+AssertionError: expected [Function] to throw an error
+ Test Files  1 failed (1)
+      Tests  4 failed | 3 passed (7)

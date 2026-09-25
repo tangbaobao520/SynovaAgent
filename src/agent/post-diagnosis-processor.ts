@@ -266,13 +266,9 @@ export async function runPostDiagnosisProcessing(
     log.warn({ err: msg, teamId }, 'L0 组织自适应失败 — 降级 (不阻断诊断)');
   }
 
-  // Codex #8: record baseline count after each diagnosis
-  try {
-    const { getBaselineStore } = await import('../sentinel/baseline-store');
-    getBaselineStore().record('org-baseline-' + teamId, []);
-  } catch (blErr: unknown) {
-    log.warn({ err: blErr, teamId }, 'baseline record failed — degraded');
-  }
-
+  // D967: 原此处曾执行 `getBaselineStore().record('org-baseline-' + teamId, [])` ——
+  // 它写入 finding_count=0 的**伪条目**：诊断路径并不运行哨兵，"0 条 finding" 是
+  // **"没测"而非"测到 0"**，会让 sentinel_alert_stats 的「最近一次运行」读数失真。
+  // 已删除；真基线由哨兵运行路径自己写入（src/sentinel/runner.ts）。
   return result;
 }

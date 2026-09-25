@@ -1,0 +1,28 @@
+$ git diff --stat -M HEAD
+ .../evidence/D817-capture-20260918.json            | 70 +++++++++++++-------
+ .../evidence/D819-capture-20260919.json            |  2 +-
+ extensions/industries/saas-tech/thresholds.json    |  2 +-
+ extensions/industries/test-write/thresholds.json   |  2 +-
+ src/agent/post-diagnosis-processor.ts              | 12 ++--
+ src/store/schema-migration.ts                      | 26 ++++++--
+ task-state/D967.json                               | 49 +++++++++++---
+ tests/store/schema-migration.test.ts               | 74 ++++++++++++++++++++--
+ 8 files changed, 184 insertions(+), 53 deletions(-)
+
+$ git status --short
+ M docs/synova/product-lines/evidence/D817-capture-20260918.json
+ M docs/synova/product-lines/evidence/D819-capture-20260919.json
+ M extensions/industries/saas-tech/thresholds.json
+ M extensions/industries/test-write/thresholds.json
+ M src/agent/post-diagnosis-processor.ts
+ M src/store/schema-migration.ts
+ M task-state/D967.json
+ M tests/store/schema-migration.test.ts
+?? .claude/task-briefs/2026-09-25-D967a-measurements-store.md
+?? docs/synova/product-lines/evidence/D967a-measurements-store/
+?? src/store/measurements.ts
+?? src/store/migrations/002-graph-triples-rebuild.ts
+?? src/store/migrations/003-measurements-table.ts
+?? tests/store/measurements-append-only.test.ts
+?? tests/store/measurements.test.ts
+?? tests/store/migrations/002-graph-triples-rebuild.test.ts

@@ -1,0 +1,13 @@
+$ vitest run tests/store/ tests/agent/post-diagnosis-processor.test.ts
+ ✓ tests/store/measurements-append-only.test.ts (3 tests) 47ms
+ ✓ tests/store/session-event-log.test.ts (17 tests) 23ms
+ ✓ tests/store/session-projection.test.ts (7 tests) 14ms
+ ✓ tests/store/schema-migration.test.ts (12 tests) 78ms
+ ✓ tests/store/migrations/002-graph-triples-rebuild.test.ts (7 tests) 21ms
+ ✓ tests/store/retry-projection.test.ts (6 tests) 17ms
+ ✓ tests/store/session-store.test.ts (3 tests) 3ms
+ ✓ tests/store/migrations/001-graph-nodes-props.test.ts (6 tests) 9ms
+ ✓ tests/store/measurements.test.ts (9 tests) 10ms
+ ✓ tests/agent/post-diagnosis-processor.test.ts (8 tests) 226ms
+ Test Files  10 passed (10)
+      Tests  78 passed (78)

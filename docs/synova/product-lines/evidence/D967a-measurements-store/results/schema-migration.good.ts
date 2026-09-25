@@ -61,20 +61,10 @@ export function reconcileSchema(db: Database.Database): void {
     )
   `);
 
-  // 读取当前版本（D967 P7 修复）
-  //
-  // ⚠ 为何不能再用 `ORDER BY updated_at DESC LIMIT 1`：
-  //   实测生产库 `schema_version` 表被**多模块共用**，行内混有**文本**版本标记
-  //   （`d93b_actor_role` / `d551_memory_type` …）。原文案取"最近一行"，一旦最近一行是文本：
-  //     · `currentVersion = 'd93b_actor_role'` → `>= SCHEMA_VERSION` 为 NaN 比较 ⇒ false（不早退）
-  //     · 随后 `m.version > currentVersion` 亦为 NaN 比较 ⇒ **pending 恒空**
-  //     · 走到 `pending.length === 0` 分支 ⇒ 只写版本号、**一个迁移都不执行**
-  //   ⇒ 结果是"迁移静默不跑"的**假绿**（P7 验收实测：真实生产库副本上迁移零执行、结构不变）。
-  //   正解：只认**数值**行，取**最大**版本（= 已真正应用到的最高版本）。
-  const row = db
-    .prepare("SELECT MAX(version) AS version FROM schema_version WHERE typeof(version) IN ('integer','real')")
-    .get() as { version: number | null } | undefined;
-  const currentVersion = typeof row?.version === 'number' && Number.isFinite(row.version) ? row.version : 0;
+  // 读取当前版本
+  const row = db.prepare('SELECT version FROM schema_version ORDER BY updated_at DESC LIMIT 1').get() as
+    { version: number } | undefined;
+  const currentVersion = row?.version ?? 0;
 
   if (currentVersion >= SCHEMA_VERSION) {
     log.debug({ currentVersion, schemaVersion: SCHEMA_VERSION }, 'Schema 已是最新');

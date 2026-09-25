@@ -1,0 +1,13 @@
+$ check-ownership.py <PR-A 文件表>
+win  extensions/industries/test-write/thresholds.json
+win  src/agent/post-diagnosis-processor.ts
+win  src/store/schema-migration.ts
+win  tests/store/schema-migration.test.ts
+win  src/store/measurements.ts
+win  src/store/migrations/002-graph-triples-rebuild.ts
+win  src/store/migrations/003-measurements-table.ts
+win  tests/store/measurements-append-only.test.ts
+win  tests/store/measurements.test.ts
+win  tests/store/migrations/002-graph-triples-rebuild.test.ts
+
+✅ PASS 11 个文件同域: win（无归属 0，域判定豁免 5）
