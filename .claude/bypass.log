@@ -1796,9 +1796,43 @@ Binary file .claude/bypass.log matches
 2026-09-25T14:07:54+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=f0d43129fb27f65284f30998e10510271c24f20b
 2026-09-25T14:13:07+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=bf3d91b3b0224a0f15b20847ebeda0e96b6bb1f7
 2026-09-25T15:02:13+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=d99e048c561bbc0d39ba70914fbcb61a37a31aa9
+2026-09-25T13:42:05+08:00 | GATE_FAIL_SOFT | exit=1 | branch=chore/cto-doc-slim-phase1b-citations-archive
+2026-09-25T13:42:07+08:00 | GATE_FAIL_SOFT | exit=1 | branch=chore/cto-doc-slim-phase1b-citations-archive
+2026-09-25T13:42:07+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=7904aceb0db1ed66b39d4d72424d8561f810c423
+2026-09-25T13:43:15+08:00 | GATE_FAIL_SOFT | exit=1 | branch=chore/cto-doc-slim-phase1b-citations-archive
+2026-09-25T13:43:16+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=9e231cd134c7ee3484c1d39b578a7ad50e06e868
+2026-09-25T13:35:02+08:00 | GATE_FAIL_SOFT | exit=1 | branch=chore/cto-doc-slim-ledger-k3req
+2026-09-25T13:35:07+08:00 | GATE_FAIL_SOFT | exit=1 | branch=chore/cto-doc-slim-ledger-k3req
+2026-09-25T13:35:08+08:00 | GATE_FAIL_SOFT | exit=1 | branch=chore/cto-doc-slim-ledger-k3req
+2026-09-25T13:35:17+08:00 | GATE_FAIL_SOFT | exit=1 | branch=chore/cto-doc-slim-ledger-k3req
+2026-09-25T13:35:17+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=9c99f96fd41611afe0aeaf5d5c36c9b606307866
+2026-09-25T13:43:12+08:00 | GATE_FAIL_SOFT | exit=1 | branch=chore/cto-doc-slim-ledger-k3req
+2026-09-25T13:43:13+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=6cf0c23e178cb322997449d127912349a266393a
+2026-09-25T14:25:57+08:00 | GATE_FAIL_SOFT | exit=1 | branch=chore/cto-doc-slim-ledger-k3req
+2026-09-25T14:25:58+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=23ab9b311f9a1f4d0fcbe18308d7ff87608e4e9b
+2026-09-25T13:22:39+08:00 | GATE_FAIL_SOFT | exit=1 | branch=chore/cto-doc-slim-phase5-daily-ratio
+2026-09-25T13:22:42+08:00 | GATE_FAIL_SOFT | exit=1 | branch=chore/cto-doc-slim-phase5-daily-ratio
+2026-09-25T13:22:45+08:00 | GATE_FAIL_SOFT | exit=1 | branch=chore/cto-doc-slim-phase5-daily-ratio
+2026-09-25T13:22:46+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=723dfeb7a30b5a20002b2d732693dcffe210447f
+2026-09-25T13:43:08+08:00 | GATE_FAIL_SOFT | exit=1 | branch=chore/cto-doc-slim-phase5-daily-ratio
+2026-09-25T13:43:08+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=f5a9ef79d8d5c2f06f8eb57490d30880e3511745
+2026-09-25T14:29:23+08:00 | GATE_FAIL_SOFT | exit=1 | branch=chore/cto-doc-slim-phase5-daily-ratio
+2026-09-25T14:29:23+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=c00125057c103bebd191622052e9c51d8fbd654b
 2026-09-25T13:32:20+08:00 | GATE_FAIL_SOFT | exit=1 | branch=chore/cto-doc-slim-phase4-archive-briefs-1
 2026-09-25T13:32:20+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=63dc2fe80ef74ad83a14271e189e2f18b9599a05
 2026-09-25T13:43:10+08:00 | GATE_FAIL_SOFT | exit=1 | branch=chore/cto-doc-slim-phase4-archive-briefs-1
 2026-09-25T13:43:10+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=ca880226878e06378d8740f746afa450effa6842
 2026-09-25T14:27:42+08:00 | GATE_FAIL_SOFT | exit=1 | branch=chore/cto-doc-slim-k3-index
 2026-09-25T14:27:42+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=4bd48d6bc3f303bfa6fd8a7a122a3f678a19f94a
+2026-09-25T16:02:35+08:00 | GATE_FAIL_SOFT | exit=1 | branch=chore/d964-ledger-row6
+2026-09-25T16:02:35+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=1153518d2532fdfd2bde464763b3270f84906901
+2026-09-25T15:50:41+08:00 | GATE_FAIL_SOFT | exit=1 | branch=chore/cto-doc-slim-phase1b-citations-archive
+2026-09-25T15:50:41+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=a209231e6e0a1ffbbd0ba2b0f809b1074730af7f
+2026-09-25T15:50:39+08:00 | GATE_FAIL_SOFT | exit=1 | branch=chore/cto-doc-slim-ledger-k3req
+2026-09-25T15:50:39+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=e11ff0663c5bbb34385c8c44230dca6f5a613d79
+2026-09-25T16:41:08+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=f60f32caa540ed879e6374e70816741948bcfb74
+2026-09-25T16:39:49+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=7d9143fa9d804a78f7cdd3297840215bc8a1cc4c
+2026-09-25T16:40:34+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=ddc3d71e646ee9333647cac1c71967547f2f51b8
+2026-09-25T17:39:52+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D1007 | AGENT=cto
+2026-09-25T17:39:59+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=0df1860e2de7e9e0f2c653b5f600615290e65945
+2026-09-25T21:20:47+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=83e7ad9d65bf9e4c6cd446a84c63d4161439a58b
