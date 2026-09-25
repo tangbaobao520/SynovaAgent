@@ -319,8 +319,8 @@ test("注册契约：sidebar.panellist 入口行与 main keyed cell 成对，且
       0,
       "右栏已并入中央面板，不得再注册 shell.overlay"
     );
-    // 除这两个槽位外不得注册任何其它槽位
-    const names = p.registrations.filter((r) => r.options).map((r) => r.options.name).sort();
+    // 除这两个槽位外不得注册任何其它槽位（D963 起第二面板宪章三问复用同两槽位，按名去重）
+    const names = [...new Set(p.registrations.filter((r) => r.options).map((r) => r.options.name))].sort();
     assert.deepEqual(names, ["main", "sidebar.panellist"], "只允许注册 main + sidebar.panellist 两个槽位");
   } finally {
     p.restore();

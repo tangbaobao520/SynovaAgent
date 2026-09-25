@@ -78,7 +78,21 @@ window.__ModuleLoader__.load({
 			".spo-tag-green{background:#16a34a;color:#fff}.spo-tag-amber{background:#d97706;color:#fff}.spo-tag-blue{background:#2563eb;color:#fff}.spo-tag-gray{background:#6b7280;color:#fff}",
 			".spo-item{display:flex;align-items:center;gap:8px;padding:6px 12px;border-top:1px solid var(--dsw-alias-border-l1);font-size:12px;min-width:0}",
 			".spo-itemTitle{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--dsw-alias-label-secondary)}",
-			".spo-id{flex:none;font-size:10px;font-weight:700;padding:1px 6px;border-radius:6px;background:var(--dsw-alias-interactive-bg-hover-solid);color:var(--dsw-alias-label-primary);font-variant-numeric:tabular-nums}"
+			".spo-id{flex:none;font-size:10px;font-weight:700;padding:1px 6px;border-radius:6px;background:var(--dsw-alias-interactive-bg-hover-solid);color:var(--dsw-alias-label-primary);font-variant-numeric:tabular-nums}",
+			// ── 「宪章三问」中央面板（D963）——scg- 前缀 ──
+			".scg-root{position:fixed;z-index:40;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);border:1px solid var(--dsw-alias-border-l2);border-radius:12px;box-shadow:var(--dsw-shadow-lv3,0 8px 32px rgba(0,0,0,.28))}",
+			".scg-body{flex:1;min-height:0;overflow-y:auto;padding:16px 18px;display:flex;flex-direction:column;gap:12px}",
+			".scg-body>*{flex:none}",
+			".scg-grid{display:grid;grid-template-columns:minmax(120px,1.4fr) repeat(3,minmax(90px,1fr));gap:0;border:1px solid var(--dsw-alias-border-l1);border-radius:10px;overflow:hidden;font-size:12px}",
+			".scg-cell{padding:6px 10px;border-top:1px solid var(--dsw-alias-border-l1);border-left:1px solid var(--dsw-alias-border-l1);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}",
+			".scg-cellHead{font-weight:600;background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-secondary);border-top:none}",
+			".scg-cell:nth-child(-n+4){border-top:none}",
+			".scg-cell:nth-child(4n+1){border-left:none}",
+			".scg-rowName{color:var(--dsw-alias-label-secondary);font-weight:600}",
+			".scg-pill{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;padding:1px 7px;border-radius:999px}",
+			".scg-pill-green{background:#16a34a;color:#fff}.scg-pill-blue{background:#2563eb;color:#fff}.scg-pill-amber{background:#d97706;color:#fff}.scg-pill-red{background:#dc2626;color:#fff}.scg-pill-gray{background:#6b7280;color:#fff}",
+			".scg-legend{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:11px;color:var(--dsw-alias-label-tertiary)}",
+			".scg-note{font-size:10px;color:var(--dsw-alias-label-tertiary)}"
 		].join("");
 
 		// ── 小工具 ─────────────────────────────────────────────────────────────
@@ -610,6 +624,150 @@ window.__ModuleLoader__.load({
 			}, "📊");
 		}
 
+		// ── 「宪章三问」中央面板（D963；只读一条 GET，独立降级） ──────────────────
+		// 契约（铁律 47）：
+		//   @input GET /synova/charter/grid
+		//            成功 → { ...grid, ok:true, source } 其中 grid = {
+		//              questions: string[3]（加了吗/接上了吗/生效了吗）,
+		//              rows: [{ id, name, cells: [{ status, note }] }]（16 行 × 3 列 = 48 格）
+		//            }
+		//            降级 → { ok:false, degraded:true, error, missing }（文件未产出是当前正常态）
+		//   @output 48 格矩阵 + 四色图例（绿=通过 / 蓝=进行中 / 黄=待核 / 红=失败 / 灰=待办）
+		//   @degraded 三态显式（铁律 24/31）：网络失败 → error 横幅；路由 ok:false →
+		//            「数据源未就绪（缺 宪章三问-48格.json）」横幅；面板结构始终在场不白屏。
+		//   @X27 铁律：空/缺失/未知 status 一律渲染为「待办」（灰），绝不着绿/显示为通过。
+		//   @write  零写入：只 GET。
+		const CHARTER_URL = "/synova/charter/grid";
+
+		/**
+		 * 格子状态归一化（X27）：只有显式已知的通过词才给绿；
+		 * 空/undefined/未知词一律「待办」灰 —— 缺数据永不冒充通过。
+		 */
+		function charterCell(status) {
+			const s = String(status ?? "").trim().toLowerCase();
+			if (/^(done|yes|verified|effective|complete[d]?|passed|ok)$/.test(s)) return { tone: "green", text: "通过" };
+			if (/^(partial|in_progress|running|impl|wired|dispatched|claimed|spec)$/.test(s)) return { tone: "blue", text: s === "partial" ? "部分" : "进行中" };
+			if (/^(warn|stale|audit|pending_k3|degraded)$/.test(s)) return { tone: "amber", text: "待核" };
+			if (/^(fail|failed|no|red|blocked|rejected)$/.test(s)) return { tone: "red", text: "失败" };
+			return { tone: "gray", text: "待办" };
+		}
+
+		function CharterGridPanel(props) {
+			const onBack = props && props.onBack;
+			const [data, setData] = useState(null);
+			const [error, setError] = useState(null);
+			const [busy, setBusy] = useState(false);
+			const [at, setAt] = useState(null);
+
+			const load = useCallback(async () => {
+				setBusy(true);
+				try {
+					const r = await fetch(CHARTER_URL, { cache: "no-store" });
+					if (!r.ok) throw new Error("HTTP " + r.status);
+					const j = await r.json();
+					setData(j);
+					setError(null);
+				} catch (err) {
+					setData(null);
+					setError(String(err && err.message ? err.message : err));
+					console.warn("[宪章三问] 取数失败: " + (err && err.message ? err.message : err));
+				}
+				setAt(new Date().toLocaleTimeString("zh-CN", { hour12: false }));
+				setBusy(false);
+			}, []);
+
+			useEffect(() => {
+				load();
+				const timer = setInterval(load, 60000);
+				const onVis = () => {
+					if (document.visibilityState === "visible") load();
+				};
+				document.addEventListener("visibilitychange", onVis);
+				return () => {
+					clearInterval(timer);
+					document.removeEventListener("visibilitychange", onVis);
+				};
+			}, [load]);
+
+			const routeDegraded = data !== null && data.ok === false;
+			const usable = data !== null && data.ok !== false;
+			const questions = usable && Array.isArray(data.questions) && data.questions.length === 3
+				? data.questions : ["加了吗", "接上了吗", "生效了吗"];
+			const rows = usable && Array.isArray(data.rows) ? data.rows : [];
+			const source = usable && typeof data.source === "string" ? data.source : null;
+
+			// 四色统计（矩阵图例 + 顶部概览）
+			const toneCount = { green: 0, blue: 0, amber: 0, red: 0, gray: 0 };
+			for (const row of rows) {
+				const cells = Array.isArray(row.cells) ? row.cells : [];
+				for (let q = 0; q < 3; q++) {
+					toneCount[charterCell(cells[q] && cells[q].status).tone]++;
+				}
+			}
+
+			const body = [];
+			if (routeDegraded) {
+				body.push(jsx("div", { className: "spo-degraded", key: "deg", children: "⚠ 数据源未就绪（缺 " + (data.missing ?? "宪章三问-48格.json") + "）——" + (data.error ?? "") }));
+			} else if (error !== null) {
+				body.push(jsx("div", { className: "spo-degraded", key: "err", children: "⚠ 降级：" + error + "（面板仍可用，稍后自动重试）" }));
+			}
+			body.push(jsx("div", { className: "scg-legend", key: "legend", children: [
+				jsx("span", { children: "四色：" }),
+				jsx("span", { className: "scg-pill scg-pill-green", children: "通过 " + toneCount.green }),
+				jsx("span", { className: "scg-pill scg-pill-blue", children: "进行中 " + toneCount.blue }),
+				jsx("span", { className: "scg-pill scg-pill-amber", children: "待核 " + toneCount.amber }),
+				jsx("span", { className: "scg-pill scg-pill-red", children: "失败 " + toneCount.red }),
+				jsx("span", { className: "scg-pill scg-pill-gray", children: "待办 " + toneCount.gray }),
+				jsx("span", { children: "· " + rows.length + " 个扩展点 × 3 问" })
+			] }));
+			body.push(jsx("div", { className: "scg-grid", key: "grid", children: [
+				jsx("div", { className: "scg-cell scg-cellHead", key: "h0", children: "扩展点" }),
+				...questions.map((q, i) => jsx("div", { className: "scg-cell scg-cellHead", key: "h" + (i + 1), children: q })),
+				...rows.flatMap((row, ri) => {
+					const cells = Array.isArray(row.cells) ? row.cells : [];
+					const nodes = [jsx("div", { className: "scg-cell scg-rowName", key: "r" + ri, title: esc(row.name), children: (row.id ? row.id + " · " : "") + (row.name ?? "") })];
+					for (let q = 0; q < 3; q++) {
+						const c = charterCell(cells[q] && cells[q].status);
+						const note = cells[q] && cells[q].note ? String(cells[q].note) : "";
+						nodes.push(jsx("div", { className: "scg-cell", key: "r" + ri + "c" + q, title: esc(note), children: [
+							jsx("span", { className: "scg-pill scg-pill-" + c.tone, children: c.text }),
+							note ? jsx("span", { className: "scg-note", children: " " + note }) : null
+						] }));
+					}
+					return nodes;
+				})
+			] }));
+			if (usable && rows.length === 0) {
+				body.push(jsx("div", { className: "spo-empty", key: "empty", children: "数据已就绪但 rows 为空（等宪章 48 格产出方补数）" }));
+			}
+
+			return jsx("div", { className: "scg-root", style: { left: "160px", top: "90px", width: "880px", height: "600px" }, children: [
+				jsx("div", { className: "spo-head", children: [
+					jsx("div", { className: "spo-title", children: "宪章三问" }),
+					source ? jsx("span", { className: "spo-tag" + (source === "worktree" ? "" : " spo-tag-blue"), children: "源 " + source }) : null,
+					jsx("span", { className: "spo-muted", children: "加了吗 / 接上了吗 / 生效了吗 —— 16 扩展点 × 3 问" }),
+					busy ? jsx("div", { className: "spo-spin" }) : null,
+					jsx("button", { type: "button", className: "spo-iconBtn", title: "刷新", onClick: load, children: "↻" }),
+					onBack ? jsx("button", { type: "button", className: "spo-iconBtn", title: "返回会话", onClick: onBack, children: "»" }) : null
+				] }),
+				jsx("div", { className: "scg-body", children: body }),
+				jsx("div", { className: "spo-head", style: { borderTop: "1px solid var(--dsw-alias-border-l1)", borderBottom: "none", padding: "6px 18px" }, children: [
+					jsx("span", { className: "spo-muted", children: "只读视图 · 数据源 docs/synova/coordination/宪章三问-48格.json · 更新 " + (at ?? "—") }),
+					jsx("span", { className: "spo-spacer" }),
+					jsx("span", { className: "spo-muted", children: routeDegraded || error !== null ? "降级" : "60s 自动刷新" })
+				] })
+			] });
+		}
+
+		/** 侧栏入口图标（宪章三问）。 */
+		function CharterGridIcon(props) {
+			const size = (props && props.size) || 16;
+			return jsx("span", {
+				style: { fontSize: Math.round(size * 0.9), lineHeight: 1 },
+				title: "宪章三问"
+			}, "🧭");
+		}
+
 		// ── 插件体 ────────────────────────────────────────────────────────────
 		const inject = ["slots", "layout"];
 
@@ -641,6 +799,16 @@ window.__ModuleLoader__.load({
 				{ name: "sidebar.panellist", id: PANEL_ID, order: 50, label: "项目总览" },
 				ProjectOverviewIcon
 			)), "synova-project-overview: sidebar entry");
+		// ③ 「宪章三问」第二面板（D963）：同样成对注册，先 main 后入口行；order 60 与项目总览(50)错开
+		const CHARTER_PANEL_ID = "synova-charter-grid";
+		ctx.effect(() => slots.inject("main", () => slots.register(
+			{ name: "main", key: CHARTER_PANEL_ID },
+			() => jsx(CharterGridPanel, { onBack: () => ctx.layout.selectPanel(null) })
+		)), "synova-charter-grid: main cell");
+		ctx.effect(() => slots.inject("sidebar.panellist", () => slots.register(
+			{ name: "sidebar.panellist", id: CHARTER_PANEL_ID, order: 60, label: "宪章三问" },
+			CharterGridIcon
+		)), "synova-charter-grid: sidebar entry");
 		}
 
 		exports.apply = apply;
