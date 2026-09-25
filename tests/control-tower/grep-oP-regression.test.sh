@@ -131,7 +131,9 @@ eq '\d→[0-9] (brief 日期, resolve-commit-brief 真身)' "scripts/workflow/re
 
 # ── 类 4: 简单直译（-oP → -oE，语义本就 ERE 兼容）──
 # (D962-B2: 根目录 check-brief-vs-code.sh 专属模式条目随脚本退役移除)
-eq 'backtick 路径（workflow brief-vs-code）' "scripts/workflow/check-brief-vs-code.sh" '\`[^\`]+\.[a-z]{2,5}\`' \
+# D962 task-32 R1: 模式改方括号包裹反引号（POSIX 等价）—— 原 '\`' 转义在 GNU grep 是扩展锚点，
+#   实测在 GNU 下恒不匹配（ubuntu 腿红）、BSD 下恰好命中（macOS 腿绿）⇒ 两方言必须同式才能跨平台。
+eq 'backtick 路径（workflow brief-vs-code）' "scripts/workflow/check-brief-vs-code.sh" '[`][^`]+\.[a-z]{2,5}[`]' \
    '改 `src/routes/a.ts` 完成' '`src/routes/a.ts`'
 eq 'tags 词表' "scripts/check-file-driven.sh" '"[a-z_]+"' '"finance", "cash_flow"' '"finance"
 "cash_flow"'

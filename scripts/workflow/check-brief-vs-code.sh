@@ -54,12 +54,15 @@ export LC_ALL=C.UTF-8 2>/dev/null || true
  DECLARED_FILES=$(python3 "$REPO_ROOT_BCV/scripts/control-tower/brief_parser.py" --q2-include "$BRIEF" 2>/dev/null \
    | grep -v 'node_modules\|\.test\.' | sort -u || true)
  if [ -z "$DECLARED_FILES" ]; then
-   # 兜底: 反引号路径（旧格式 brief 兼容）
-   DECLARED_FILES=$(sed -n '/^## Q2:/,/^## Q3:/p' "$BRIEF" 2>/dev/null \
-     | grep -oE '\`[^\`]+\.[a-z]{2,5}\`' \
-     | sed 's/\`//g' \
-     | grep -v 'node_modules\|\.test\.' \
-     | sort -u || true)
+    # 兜底: 反引号路径（旧格式 brief 兼容）
+    # D962 task-32 R1（跨方言修复）: 原模式依赖『转义反引号 = 字面反引号』，该语义**两方言不一致** ——
+    #   GNU grep 把 \` 当扩展锚点（缓冲区起始）⇒ **实测在 GNU 下恒不匹配**、Q2 兜底抽取恒返空
+    #   （ubuntu 腿=GNU grep；macOS 腿=BSD grep）。改用方括号包裹反引号：POSIX 等价、两方言一致。
+    DECLARED_FILES=$(sed -n '/^## Q2:/,/^## Q3:/p' "$BRIEF" 2>/dev/null \
+      | grep -oE '[`][^`]+\.[a-z]{2,5}[`]' \
+      | sed 's/`//g' \
+      | grep -v 'node_modules\|\.test\.' \
+      | sort -u || true)
  fi
  
  # 实际变更的源文件 (排除 test/non-src)
