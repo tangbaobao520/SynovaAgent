@@ -35,7 +35,52 @@
    "ref": "附注口径（含 detached）",
    "worktrees_with_unmerged": 221,
    "unmerged_commits_total": 2167
-  }
+  },
+  "c16_remote": {
+   "role": "primary（CTO 2026-09-26 裁定：C16 主判据取远端分支口径）",
+   "definition": "远端所有含未合并提交的分支（refs/remotes/origin/**，排除 origin/main）",
+   "command": "for b in $(git for-each-ref --format='%(refname:short)' refs/remotes/origin | sed 's#^origin/##' | grep -v '^\\(HEAD\\|main\\)$'); do git rev-list --count origin/main..origin/$b; done | awk '{s+=$1; if($1>0)n++} END{print n, s}'",
+   "readings": [
+    {
+     "as_of": "2026-09-26T02:48:38+08:00",
+     "n": 457,
+     "total": 3630,
+     "source": "CTO 同刻重取（Mac-CTO 落件）"
+    },
+    {
+     "as_of": "2026-09-26T02:58:28+08:00",
+     "n": 457,
+     "total": 3644,
+     "source": "本报告复核复跑（附录 A.3，逐字输出 457 3644）"
+    }
+   ],
+   "caveat": "给定命令的 grep -v 过滤不掉 refs/remotes/origin/HEAD（本机 git 的 %(refname:short) 展开为 origin）→ 循环产生 1 行 stderr fatal 且该条不计入；对总数无影响（独立复算同为 457/3644）。修订建议：过滤 '^(origin|main)$' 或改用 %(refname)。"
+  },
+  "c16_worktree": {
+   "role": "secondary（副指标，不作主判据）",
+   "definition": "含 branch 行的 worktree，逐支算 origin/main..<branch>",
+   "readings": [
+    {
+     "as_of": "2026-09-26T01:13:03+08:00",
+     "worktrees": 158,
+     "commits": 1546,
+     "source": "本报告分类快照（metrics.lane_A）"
+    },
+    {
+     "as_of": "2026-09-26T02:48:38+08:00",
+     "worktrees": 167,
+     "commits": 1838,
+     "source": "CTO 同刻重取（Mac-CTO 落件）"
+    },
+    {
+     "as_of": "2026-09-26T02:58:28+08:00",
+     "worktrees": 167,
+     "commits": 1846,
+     "source": "本报告复核复跑（附录 A.3）"
+    }
+   ]
+  },
+  "rule": "两指标不可混用（分母不同：远端分支 vs 工作树）；每值必须绑定 as_of；主判据 = c16_remote 单调下降"
  },
  "reconciliation": {
   "blueprint_frozen": {
