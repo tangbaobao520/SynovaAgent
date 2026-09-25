@@ -1,0 +1,19 @@
+{
+  "task_id": "D962",
+  "title": "pre-commit/check-* 门禁收敛（46→20 + 1529→≤400 + 死分支修复）",
+  "status": "in_progress",
+  "write_set": {
+    "2a①": ["scripts/pre-commit-check.sh", "docs/synova/coordination/D962-phase2-plan.md", "task-state/D962.json"],
+    "2a①测试随动": ["tests/control-tower/hard-gate-convergence.test.sh", "tests/control-tower/ci-strict-mode.test.sh", "tests/control-tower/ci-strict-visible.test.sh", "tests/control-tower/fastlane-bypass-only.test.sh", "tests/control-tower/g9-contract.test.sh", "tests/control-tower/g10-cp3.test.sh"],
+    "2a②③⑥": ["scripts/ (除 pre-commit-check.sh 与 audit/**)", ".oxlintrc.json", "tests/control-tower/", "package.json"],
+    "D964": ["package.json", ".oxlintrc.json", "scripts/workflow/verify-incremental.sh", "tests/control-tower/d964-linter-wiring.test.sh"]
+  },
+  "branches": {
+    "2a-scripts": "chore/d962-2a-scripts (rebased main@519edadf)",
+    "2a-precommit": "feat/d962-2a-precommit-b (base main@0ab457f2)",
+    "d964": "chore/d964-linter-wiring (rebased main@519edadf)"
+  },
+  "spec": {"path": "docs/synova/coordination/D962-phase2-plan.md"},
+  "impl": {"v53_precommit_lines": 399, "check_scripts_phase1": 28, "phase2_pending_delete": 7},
+  "audit": null
+}
