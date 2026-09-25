@@ -1881,3 +1881,4 @@ Binary file .claude/bypass.log matches
 2026-09-26T01:41:22+0800 | COMMITTED | D962 task-26 一次性补记（rebase 改写 hash 后 D331 对账断裂，按 D451 纯补记豁免路径） | HASH=64a603f11569fc77261c425c70f36a5fe999786a
 2026-09-26T01:41:22+0800 | COMMITTED | D962 task-26 一次性补记（rebase 改写 hash 后 D331 对账断裂，按 D451 纯补记豁免路径） | HASH=f0e473b6f5567703cb9b29e38b67aeddbfb0f7d3
 2026-09-26T01:41:22+0800 | COMMITTED | D962 task-26 一次性补记（rebase 改写 hash 后 D331 对账断裂，按 D451 纯补记豁免路径） | HASH=2fa0c098e4734e06cf1a294cf11b0c07d294fccc
+2026-09-26T01:41:33+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=ac0ad90a53eb93473bccccb73896ce062c51eb56
