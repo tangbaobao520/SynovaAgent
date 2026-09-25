@@ -1,0 +1,15 @@
+{
+  "task_id": "D961",
+  "title": "P1 队列上限与退役（53 open PR 无界堆积 → 上限+逐条处置）",
+  "status": "spec_done",
+  "risk": "high",
+  "domain": "mac",
+  "owner": "synova-cto",
+  "executor": "cto",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [],
+  "spec": "docs/synova/coordination/队列处置-待办.md",
+  "updated_at": "2026-09-25",
+  "updated_by": "synova-cto",
+  "note": "实测（survey-global）：**53 个 open PR**（dirty 16 / 有强制检查未绿 23 / clean 2），最老 updated 2026-09-15 ⇒ **无界堆积**。按 DSH 原则1「上限即纪律」（dsh-experimental-agent-team/lib/index.js:564 TEAM_MEMBER_LIMIT、:1327 TEAM_TASK_LIMIT —— 超限**抛错**）与决策四步③「超限即退役」：① **设在飞 PR 上限（建议 ≤12）**，超限时**禁止新开 PR**，第一动作是退役 ② 逐条给**关闭理由**（合并 / 作废 / 转卡 / 续期+理由），**不许留悬案** ③ 输出一张处置表（PR / 结论 / 理由 / 归谁）④ 与 D957（栈式触发）配合：栈式链要么给门禁要么拆平。判据：open PR 数 ≤ 上限；每条无悬案（结论非空）；表可复核。"
+}

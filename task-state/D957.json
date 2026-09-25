@@ -1,0 +1,18 @@
+{
+  "task_id": "D957",
+  "title": "P1 栈式 PR 无 CI 证据（结构性盲区）——触发器根治",
+  "status": "spec_done",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-25",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": "dsh-squad",
+  "milestone": "M0 项目管理基建",
+  "risk": "high",
+  "depends_on": [],
+  "note": "实测：ci.yml `on.push.branches=[main, feat/*]` + `on.pull_request.branches=[main]` ⇒ ① fix/** 分支 push 不触发 CI（今天多条 PR 因此 total_count=0，被误判为“推送异常”）② **base≠main 的栈式 PR 拿不到任何 PR CI**（#747 至今 0 run，实证）⇒ 栈式交付**无门禁证据**。判据：① 触发器覆盖所有分支（push）与所有 base（pull_request）② 判别夹具：构造 base≠main 的 PR 场景 → 必须有 run ③ 保留既有语义不回归。归属 ci.yml ⇒ 门禁变更必过 K3。暂代纪律：栈式 PR 在 rebase 到 main 之前**一律不得判过闸**。"
+}

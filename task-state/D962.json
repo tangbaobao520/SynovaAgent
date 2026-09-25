@@ -1,0 +1,18 @@
+{
+  "task_id": "D962",
+  "title": "P1 门禁减负——48 项→≤15 正交 / check-* 46→≤20 / pre-commit 1529 行→≤400",
+  "status": "spec_done",
+  "risk": "high",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": "dsh-squad",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [
+    "D956",
+    "D957"
+  ],
+  "spec": ".dsh/skills/ctrl-tower-change/SKILL.md",
+  "updated_at": "2026-09-25",
+  "updated_by": "synova-cto",
+  "note": "【CTO 实测对比，2026-09-25】DSH（60 包/5774 源文件）：独立 check-* 脚本 **4–7 个**；门禁承重 = linter(oxlint/sonarjs/stylistic) + 类型 + **publint** + 宿主级 compat-preflight + 包自有 invariant；CI 20 工作流为主门禁面；脚本个位数。我们：**check-* 脚本 46**（≈7–11×）、**pre-commit 48 项 / 1529 行**、tests/control-tower 124、scripts/ 286 文件；近 7 天 src/=2 vs scripts/=15（治理:产品=7.5:1）。判断：**显著冗余，形态=补丁式堆积**（一类事故加一条检查）——正是 DSH 镜头反模式「❌ 用再加一道门禁回应某类错」。\n【一次做完，不分期】目标：48→≤15 正交项；check-* 46→≤20；pre-commit 1529→≤400 行；本地 pre-commit 时间 ≤30s（现 ~50s）。\n【判据】① 每一项必须能回答「挡哪一类错 + DSH 怎么做 + 为什么 linter 做不到」② 被裁项逐项给去向（linter 规则／CI／旁路看板／退役理由），**防护不得丢失** ③ **历史事故回归集**：用历史真实事故样本回归——缩后原样本仍必须被拦（这是本卡最高风险点：改错=全线误拦/漏拦）④ 保留五类正交核心：类型+风格／架构边界／契约+测试非空壳／**真实接线（穿生产入口用例）**／治理元数据最小集；补丁式治理卫生**合并为 1–2 项或降为旁路看板指标** ⑤ **凡能变 linter 规则的不得写成脚本**（铁律 35 + DSH 实践）。\n【归属】控制塔线（Mac 小队）；**门禁语义变更 ⇒ 必过 K3**；执行前加载 ctrl-tower-change + windows-compat；验收链按模式 6 全走。\n\n【2026-09-25 CTO 裁定 — 前提修正（小队实测打回，CTO 认错）】实测：`grep -cE 'oxlint|eslint' package.json` = 0；`node_modules/.bin/` 无 linter（573 包零命中）；`npx oxlint` EPERM（沙箱无网装不了）⇒ **Synova 从未接线任何 linter 体系**。本卡与 DSH 对比里引用的 oxlint/sonarjs/stylistic 是 **DSH 仓的依赖，不是我们的**（CTO 事实错误，已认）。⇒ **裁定选 A**：阶段 2a 只交 `.oxlintrc.json` 草案 + `package.json` script 行，**交付物必须在三处显式标注「未生效、待接线」**（规则文件头注释／卡的交付清单／回执），**并禁止把它计为「linter 化完成」**（防『机制建成不接线』与 X27『缺失≠通过』）。⇒ 过渡验证边界：可用与 node_modules 无关的静态断言验证规则文件形态，**但必须同时写明『形态通过 ≠ 规则生效』**。⇒ 接线另立范围：装依赖 + 真跑 + 进 iron-laws job + **改坏即红**（造硬编码样例必须被拦）→ 归阶段 2b 或另卡（见 D964），且 **2b 完成标准必须显式包含它**。⇒ **序改写**：『能 linter 化的交给 linter』的前提是**我们真有 linter** ⇒ 正确顺序 = **① 真接线 linter（D964）→ ② 才谈把检查交给它**；本卡其余部分（pre-commit 瘦身／check-* 合并退役／三态修复／历史事故回归）不受影响，继续 2a。"
+}

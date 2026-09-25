@@ -1,0 +1,18 @@
+{
+  "task_id": "D959",
+  "title": "P2 归档 gen-cto-health.py 与 CTO-HEALTH.md（移除全部引用）",
+  "status": "spec_done",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-25",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": "dsh-squad",
+  "milestone": "M0 项目管理基建",
+  "risk": "medium",
+  "depends_on": [],
+  "note": "创始人 2026-09-24 指令：CTO-HEALTH.md 早已过时、不在旧基础上做；第③面改为观测式看板（daily-cto-board.sh + CTO-看板-自动.md，已在 main）。现状：① main 上 gen-cto-health.py:305 仍崩（AttributeError，accept-b 在 6a714483 独立复现）② CTO-HEALTH.md 停 2026-08-29（26 天）且**无新鲜度门禁**③ 它此前被列为“CTO 开工先读”（已由 CTO 改为指向看板）。判据：① 两文件移入归档位（或删除）并在引用处改为看板 ② `grep -rn 'CTO-HEALTH' scripts/ docs/synova/ .claude/ .dsh/` 仅剩归档说明 ③ 不再作为任何判据/生成物被消费。"
+}
