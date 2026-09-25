@@ -482,34 +482,23 @@ fi
 
 # ── 金丝雀: 临时 .sh 塞非法 ERE → 网必须抓到 ────────────────────────────────
 # 判别性设计（铁律 0-2「接线了≠被执行」的前置）:
-#   ① canary-paren.sh（${OVR_UNLAWFUL}，括号不平衡）= **方言无关的强制金丝雀**，任何平台都必须抓到
-#   ② canary-caret.sh（$OVR_HISTORIC = `^+++`）= **条件化**：仅当本平台判其非法时才设；
-#      平台差异以 PLATFORM-DIFF 行**显式可见**（不静默）—— 它只是历史模式的观测，不是判据。
-echo ""
-echo "── 金丝雀: 网必须能抓到非法 ERE（防空转网）──"
+#   金丝雀 = canary-paren.sh（${OVR_UNLAWFUL}，括号不平衡）—— **方言无关强制判据**，
+#   BSD/GNU/msys 的 grep -E 对括号不平衡一律 rc=2，任何平台都必须被网抓到。
+# D937返修-2(#762 创始人解锁): 撤掉 `^+++` 条件化金丝雀（canary-caret.sh 及其 pass/fail）——
+#   它平台相对（BSD 非法 / GNU 合法），CI ubuntu 下判据与期望分叉（注解实证）。
+#   `^+++` 仅保留**探针打印**（可见观测），不参与任何 pass/fail。
+#   顺带压缩本段输出行数，保证 tail-8|cut-450 窗口内 FIRST_FAIL（结果行）可见。
+echo "── 金丝雀: 网必须能抓到非法 ERE（防空转网，方言无关 a(b）──"
 CAN="$TMP/canary"; mkdir -p "$CAN"
 printf '#!/bin/bash\ngrep -E "%s" /dev/null\n' "$OVR_UNLAWFUL" > "$CAN/canary-paren.sh"
 grep -E -e "$OVR_HISTORIC" /dev/null >/dev/null 2>&1; PRC=$?
-echo "  平台探针: grep -E -e '$OVR_HISTORIC' /dev/null → rc=$PRC （2 = 本平台按非法 ERE 拒收）"
-if [ "$PRC" -eq 2 ]; then
-  printf '#!/bin/bash\ngrep -Ev "x|%s" /dev/null\n' "$OVR_HISTORIC" > "$CAN/canary-caret.sh"
-else
-  echo "  ⚠️ PLATFORM-DIFF: 本平台 grep 未把 '$OVR_HISTORIC' 判为非法 ERE → 仅以括号不平衡（${OVR_UNLAWFUL}）做金丝雀（该条已由 T3p 实测，方言无关）"
-fi
+echo "  探针(仅观测): grep -E '$OVR_HISTORIC' → rc=${PRC}（BSD=2 非法 / GNU=1 合法，不作判据）"
 family_scan "$CAN" canary
 if grep -q "canary-paren.sh" "$TMP/fs-canary.viol"; then
   ok "金丝雀: 括号不平衡非法 ERE 被网抓到（网非空转）"
 else
   no "金丝雀: 网抓不到非法 ERE —— 网是空转的"
 fi
-if [ "$PRC" -eq 2 ]; then
-  if grep -q "canary-caret.sh" "$TMP/fs-canary.viol"; then
-    ok "金丝雀: '^+++'（本期病根模式）被网抓到"
-  else
-    no "金丝雀: '^+++' 未被网抓到"
-  fi
-fi
-echo "  金丝雀扫描: $FS_FILES 个 .sh ｜ 可判 $FS_PAT ｜ 未解析 $FS_BAD ｜ 非法 $FS_VIOL"
 
 # ── 接线: 本测试必须在 ci.yml 密封清单内（M3「机制建成未接线」）──────────────
 if grep -qF 'tests/control-tower/gate-failopen-net.test.sh' "$CIY" 2>/dev/null; then
