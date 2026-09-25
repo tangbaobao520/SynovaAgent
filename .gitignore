@@ -34,6 +34,13 @@ docs/research/*.md
 .claude/gate-hits.log
 .claude/backup-health.json
 
+# D735 Stage 2（D970）: bypass 证据账本出库 —— 运行期产物不再入库。
+# 病根: 每个 session 每次提交都追加一行 → 每个分支必带该文件变更 → 多 PR 并发合并真冲突
+#   （GitHub 服务端不认 .gitattributes 的 merge=union ⇒ 5 条 PR 长期 dirty）。
+# 新落点: .sessions/<sid>/bypass.log（本文件下方 .sessions/ 已忽略）。
+# 历史证据: docs/authority/bypass-ledger-archive/（冻结归档，随仓可读）。
+.claude/bypass.log
+
 # D296 (L3-2): 控制塔生成物不入 git — 运行时重新生成, 防止 "git 有、磁盘无" 中间态
 # 重新生成命令: python scripts/audit/check-gates-v2.py && python scripts/audit/self-diagnosis.py
 # 组件信号: 各 control-tower 组件脚本运行后经 emit-signal.py 写入

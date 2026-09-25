@@ -11,20 +11,21 @@ export LC_ALL=C.UTF-8 2>/dev/null || true
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 MARKER="$ROOT/.claude/last-precommit-success"
 
-# ═══ D735 Stage 1: bypass 账本双写（旧路径权威 + per-session 并存）═══
+# ═══ D735 Stage 2（D970）: bypass 账本单一落点 = per-session（旧路径已出库）═══
 # 契约(铁律 47):
 #   @input  — stdin 一行证据文本
-#   @output — 同一行追加到 ① $ROOT/.claude/bypass.log（旧路径；Stage 1 仍是权威，行为不变）
-#                           ② $ROOT/.sessions/<sid>/bypass.log（新落点；.gitignore:83 已忽略）
-#   @degraded — 新落点写入失败 → stderr 显式点名 + 不阻断（旧路径已登记，证据不丢；铁律 11 不静默）
+#   @output — 追加到 $ROOT/.sessions/<sid>/bypass.log（.gitignore 已忽略 → 零 git status 变更）
+#   @degraded — 写入失败 → stderr 显式点名 + .claude/degraded-events.log 留痕；
+#               **不回退旧路径**（Stage 2 已停写 .claude/bypass.log）——fail-closed 不静默，
+#               该提交将在 push 时被 D331（check-bypass-log.sh）以 exit 1 拦下。
 _bypass_append() {
   local line out rc
   line="$(cat)"
-  printf '%s\n' "$line" >> "$ROOT/.claude/bypass.log"
   out="$(bash "$ROOT/scripts/control-tower/bypass-ledger.sh" append "$line" 2>&1)"; rc=$?
   if [ "$rc" -ne 0 ]; then
-    echo "  ⚠️  post-commit: per-session 账本写入失败 (exit=$rc): $out" >&2
-    echo "      旧路径已登记（证据不丢）——新落点未写属 Stage 1 并存降级" >&2
+    echo "  ❌ post-commit: bypass 账本写入失败 (exit=$rc): $out" >&2
+    echo "      Stage 2 单落点 ⇒ 无旧路径可回退，本次证据未登记（D331 将在 push 时 fail-closed）" >&2
+    echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) post-commit degraded: bypass 账本写入失败 (exit=$rc) line=$(printf '%s' "$line" | cut -c1-80)" >> "$ROOT/.claude/degraded-events.log" 2>/dev/null || true
   fi
 }
 
@@ -83,32 +84,22 @@ if [ -f "$MARKER" ]; then
         esac
         # pass — D366: 不 rm, marker 只由 pre-commit 覆盖 (并发 session 互不误删)
 
-        # ═══ D521/不变量2: COMMITTED 登记（hook 层——commit 后立即成对登记，树永干净）═══
-        # 病根（D537 #4 恢复）: D508 登记只在 synova-commit 路径且在 commit 后追加 →
-        #   bypass.log 永脏 → 挡 merge → 逼裸 git → 对账失败 → D451 补记循环（D520 复盘病根 2）。
-        #   该段在 D530（734ab32e CT-45 merge 豁免）重写 post-commit.sh 时被覆盖丢失——
-        #   post-commit.test.sh 红态（登记段缺失/HASH 未登记/仍脏/影子提交缺失）。
-        # 解法: 任何 commit（裸 git / synova-commit）过检后，hook 立即把本提交 HASH 的
-        #   COMMITTED 行追加 + 成对登记提交（marker message 防递归）——bypass.log 永不脏。
+        # ═══ D521/不变量2: COMMITTED 登记（hook 层）═══
+        # Stage 2（D970）变更: 登记只落 per-session 账本（_bypass_append）；**影子登记提交已删除**
+        #   —— 影子提交的唯一目的是让被跟踪的 .claude/bypass.log「永不脏」，旧路径出库后该目的消失，
+        #   保留只会产生「登记提交失败」噪音（git add 对已忽略文件必然失败）。
         # 只在 PASS_WAY≠0（pre-commit 真跑过）时登记；--no-verify 提交不登记（不洗白绕过）。
-        LAST_MSG=$(git log -1 --format=%s 2>/dev/null || true)
-        case "$LAST_MSG" in
-          *"bypass COMMITTED 登记"*) : ;;  # 登记提交自身 → 跳过（防递归）
-          *)
-            HASH_NOW=$(git rev-parse HEAD 2>/dev/null || true)
-            if [ -n "$HASH_NOW" ]; then
-              echo "$(date -Iseconds) | COMMITTED | pre-commit PASS (hook 层登记) | HASH=$HASH_NOW" | _bypass_append
-              # CT-43（D554）: `-o -m ... -- <path>` 限定登记提交只含 bypass.log——不卷走暂存区遗留文件
-              # （D552 实证: D311 guard 阻断后遗留 staged 文件被本提交整体卷入 8b6deaf4，M8 变体；
-              #   注意 -m 必须在 -- 之前，否则被当 pathspec）
-              if git add "$ROOT/.claude/bypass.log" 2>/dev/null && git commit --no-verify -q -o -m "chore: bypass COMMITTED 登记 (auto hook, D521)" -- "$ROOT/.claude/bypass.log" 2>/dev/null; then
-                :  # 登记提交完成——bypass.log 保持干净
-              else
-                echo "  ⚠️  post-commit: bypass 登记提交失败（identity 未配置?）— 降级，对账时按 D451 补记" >&2
-              fi
-            fi
-            ;;
-        esac
+        HASH_NOW=$(git rev-parse HEAD 2>/dev/null || true)
+        if [ -n "$HASH_NOW" ]; then
+          # 幂等: 同一 HEAD 只登记一次。旧代码靠「影子提交 message 递归守卫」顺带防重；
+          #   Stage 2 删除影子提交后守卫一并消失 ⇒ 迟到/重复 post-commit（同一 HEAD 二次触发，
+          #   见 post-commit-marker.test.sh S6）会重复登记，故这里显式做幂等判定。
+          if bash "$ROOT/scripts/control-tower/bypass-ledger.sh" read 2>/dev/null | grep -qF "HASH=$HASH_NOW"; then
+            :  # 已登记 → 跳过（幂等）
+          else
+            echo "$(date -Iseconds) | COMMITTED | pre-commit PASS (hook 层登记) | HASH=$HASH_NOW" | _bypass_append
+          fi
+        fi
       else
         echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) detected-bypass head-mismatch marker=$MARKER_HEAD parent=$PARENT" | _bypass_append
       fi
