@@ -146,13 +146,17 @@ case "$_SELF_ABS" in
   *) [ -f "$_PHYS_ROOT/$_SRC_RAW" ] && _SELF_REL="$_SRC_RAW" ;;
 esac
 code_added_lines() {  # @output 仅「源面代码文件」的 added 行（含前导 +）
+  # task-26 收窄: 原第 4 条把 `docs/**` **整目录**排除 ⇒ `docs/*.ts|py|sh` 这类**代码**文件
+  #   也被跳过 = 判定面漏面（gate-failopen-net T5b 判别对照实测：同正文挂 .ts 头应 ❌ 实得 ✅）。
+  #   改为「docs/ 下**非代码扩展名**才跳过」；memory/.claude/task-state 维持整目录跳过（治理产物）。
   awk -v self="$_SELF_REL" '
     /^\+\+\+ / {
       p=$2; sub(/^b\//, "", p)
       skip = (p==self) || (p=="/dev/null") \
           || (p ~ /(^|\/)tests\//) || (p ~ /\.test\.[A-Za-z]+$/) \
-          || (p ~ /(^|\/)(docs|memory|\.claude|task-state)\//) \
-          || (p ~ /\.(md|txt|html)$/)
+          || (p ~ /(^|\/)(memory|\.claude|task-state)\//) \
+          || (p ~ /(^|\/)docs\// && p !~ /\.(ts|tsx|js|jsx|py|sh)$/) \
+          || (p ~ /\.(md|txt|html|json|yaml|yml|log)$/)
       next
     }
     skip { next }
@@ -276,8 +280,36 @@ fi
 soft_check "硬编码业务数据/类型 (#3 保留·本地)" "${HARDCODE_DATA:-}"
 
 # ── #30 禁止新 DiagnosticModule（FIX-015: 判定面 = 源面代码 added 行，按路径排除自伤面）──
-NEW_DIAG=$(code_added_lines | grep "DiagnosticModule" | grep -Ev "//|@deprecated|import type|hard_check|禁止新 DiagnosticModule|不要再使用 DiagnosticModule" || true)
-soft_check "禁止 DiagnosticModule: 新模块须实现 Sentinel 接口" "${NEW_DIAG:-}"
+# task-26 补回 V5.2.x 的 **grep 三态降级**（V5.3 重写时退化为 `… || true` = 静默吞错，铁律11）:
+#   排除模式非法/grep 不可用（rc≥2）⇒ 显式「检查降级」+ degraded-events 登记 + CI strict 计 HARD_FAIL，
+#   绝不以静默方式当作通过。判据载体 = tests/control-tower/gate-failopen-net.test.sh T3。
+# 注释形态用**行首锚**（`^\+[[:space:]]*(//|/*|*|#)`），不用裸 `//`——裸 `//` 会把
+#   代码行内注释前的真命中一并放过（gate-failopen-net T4/T5b 成对判据：注释三形态零误报 ∧ .ts 正文必判 ❌）。
+_DIAG_EXCL='@deprecated|import type|^\+[[:space:]]*(//|/\*|\*|#)|hard_check|禁止 ?新? ?DiagnosticModule|不要再使用 DiagnosticModule'
+# D390 武装缝: 排除模式覆盖仅 SYNO_TEST_ARM=1 时生效（生产路径忽略该变量，fail-closed — T3f 判据）
+if [ "${SYNO_TEST_ARM:-0}" = "1" ]; then
+  _DIAG_EXCL="${SYNO_DIAG_EXCL_OVERRIDE:-$_DIAG_EXCL}"
+fi
+_DIAG_RC=0
+if command -v grep >/dev/null 2>&1; then
+  NEW_DIAG=$(code_added_lines | grep "DiagnosticModule" | grep -Ev -- "$_DIAG_EXCL"); _DIAG_RC=$?
+else
+  NEW_DIAG=""; _DIAG_RC=127
+fi
+if [ "$_DIAG_RC" -ge 2 ]; then
+  echo -e "  ${YELLOW}⚠️  禁止新 DiagnosticModule: 检查降级 — grep 不可用或排除模式非法 (rc=${_DIAG_RC})；本项未判定${RESET}"
+  mkdir -p "$ROOT/.codex/control-tower/logs" 2>/dev/null || true
+  echo "{\"time\": \"$(date -u +%Y-%m-%dT%H:%M:%S+00:00)\", \"component\": \"pre-commit-group7a-diagnosticmodule\", \"reason\": \"grep rc=${_DIAG_RC} — 排除模式非法或 grep 不可用 (degraded, 非通过)\"}" >> "$ROOT/.codex/control-tower/logs/degraded-events.log" 2>/dev/null || true
+  if [ "${SYNO_CI:-0}" = "1" ]; then
+    echo -e "  ${RED}❌ 禁止新 DiagnosticModule: 检查降级  [CI strict——降级即失败]${RESET}"
+    HARD_FAIL=$((HARD_FAIL + 1))
+  else
+    SOFT_COUNT=$((SOFT_COUNT + 1))
+  fi
+  log_gate "禁止 DiagnosticModule: 新模块须实现 Sentinel 接口" degraded
+else
+  soft_check "禁止 DiagnosticModule: 新模块须实现 Sentinel 接口" "${NEW_DIAG:-}"
+fi
 
 # ── #38 G10 / #39 G11（D260 CP3 — 死分支已修活，首次真实执行）──
 MISMATCH=""
@@ -352,6 +384,12 @@ if [ "${SYNO_CI:-0}" = "1" ]; then
   done
   soft_check "接线审计: 新 export 必须被引用 (铁律4/5)" "${UNWIRED:-}"
   # D296/D749 G12 认领制写集（brief_parser 单源 + D506 ±1 天窗 + 认领制 v2）
+  # task-26: python 不可用 → **fail-closed 显式降级**。原实现（V5.3）在 $PYBIN 为空/失败时
+  #   命令替换产出空集 ⇒ SCOPE_VIOLATION 恒空 ⇒ 打印「所有文件均在 Q2 范围内」= 静默假绿
+  #   （铁律 11 静默降级禁止；旧 V5.2.x 有单日 glob 回退，重写时丢失）。此处补显式三态分支。
+  if [ -z "$PYBIN" ]; then
+    soft_check "G12: 无可用 python — fail-closed（不静默当作范围全通过，D328 三态）" "fail-closed"
+  else
   SCOPE_TSV=$(mktemp); EXCL_TSV=$(mktemp)
   for B in $("$PYBIN" -c "
 import datetime,glob
@@ -393,12 +431,52 @@ print('\n'.join(viol))
   else
     soft_pass "G12: 所有文件均在 Q2 范围内"
   fi
+  fi
   # D547 骨架 brief 占位符（第三次复发 → 物理硬阻断）
   SKEL_BRIEF=""
   for bf in $(echo "$STAGED_ALL" | grep -E '^\.claude/task-briefs/.*\.md$' || true); do
     [ -f "$ROOT/$bf" ] && grep -q '认领: <agent>\|<本任务在哪一层' "$ROOT/$bf" 2>/dev/null && SKEL_BRIEF="${SKEL_BRIEF}  ${bf}（骨架占位符未填）\n"
   done
   hard_check "骨架 brief 占位符检测（D547）" "${SKEL_BRIEF:-}"
+
+  # ═══ D782: 文档真相防线 D1/D2（本块即 W1/W2 接线断言的落点）═══
+  # 背景: K3 2026-09-14 §7.2 收割 2/3 —— D1 check-doc-truth.sh 与 D2 doc-registry-gate.sh
+  #   建成即零调用（M3「机制建成未接线」）；D782（3622a3d1）补调用点使 W1/W2 转绿。
+  # D962 2a①（0889eb16）重写时该块**被移除且未落 CI 侧** ⇒ W1/W2 断言红（真警报）。
+  # task-26 按 plan §一 #47「check-doc-truth 保留，调用随 33 项迁 CI」接入 **CI 权威区**：
+  #   活点 = `iron-laws` job（ci.yml:111，无 needs）——本块三态: 0过 / 1判定红（SYNO_CI=1 转硬）
+  #   / 其它=执行失败显式降级（D328，不静默当作通过）。
+  echo -e "${CYAN}── D782: 文档真相防线（D1 真相验证 + D2 登记门禁）──${RESET}"
+  if [ -f "$ROOT/scripts/doc-system/check-doc-truth.sh" ]; then
+    DOC_TRUTH_OUT="$(bash "$ROOT/scripts/doc-system/check-doc-truth.sh" 2>&1)"; DOC_TRUTH_EXIT=$?
+    _ANSI=$'\033'
+    if [ "$DOC_TRUTH_EXIT" -eq 0 ]; then
+      soft_pass "D1 文档真相: 全部硬检查通过 ($(printf '%s' "$DOC_TRUTH_OUT" | grep -c '✅' || true) ✅)"
+    elif [ "$DOC_TRUTH_EXIT" -eq 1 ]; then
+      DOC_TRUTH_FAILS="$(printf '%s' "$DOC_TRUTH_OUT" | grep '❌' | sed "s/${_ANSI}\\[[0-9;]*m//g" | sed 's/^ *//' || true)"
+      soft_check "D1 文档真相: 导航层文档与代码事实不一致 — 修正后重试（bash scripts/doc-system/check-doc-truth.sh）" "$DOC_TRUTH_FAILS"
+    else
+      soft_check "D1 文档真相: 检查执行失败 (exit=$DOC_TRUTH_EXIT, D328 三态)" "exit=$DOC_TRUTH_EXIT"
+    fi
+  else
+    soft_check "D1 文档真相: 脚本缺失 scripts/doc-system/check-doc-truth.sh" "1"
+  fi
+  # D2 输入集 = untracked 新增 + git add 未提交的新增（脚本契约如此）。
+  #   ⚠ 已知空转面（如实登记，不当作加分）: CI checkout 两者皆空 ⇒ 本项在 CI 恒过（0 文档）；
+  #   要 CI 真判需给 doc-registry-gate.sh 加 PR-diff 输入缝（scripts/doc-system/ 不在本卡写集）。
+  if [ -f "$ROOT/scripts/doc-system/doc-registry-gate.sh" ]; then
+    DOC_REG_OUT="$(bash "$ROOT/scripts/doc-system/doc-registry-gate.sh" 2>&1)"; DOC_REG_EXIT=$?
+    if [ "$DOC_REG_EXIT" -eq 0 ]; then
+      soft_pass "D2 登记门禁: $(printf '%s' "$DOC_REG_OUT" | grep '汇总' | sed 's/^ *//' || true)"
+    elif [ "$DOC_REG_EXIT" -eq 1 ]; then
+      DOC_REG_FAILS="$(printf '%s' "$DOC_REG_OUT" | grep '未登记' | sed 's/^ *//' || true)"
+      soft_check "D2 登记门禁: 有未登记文档 — 登记 docs/authority/DOCS-REGISTRY.yaml 或核对排除规则" "$DOC_REG_FAILS"
+    else
+      soft_check "D2 登记门禁: 检查执行失败 (exit=$DOC_REG_EXIT, D328 三态)" "exit=$DOC_REG_EXIT"
+    fi
+  else
+    soft_check "D2 登记门禁: 脚本缺失 scripts/doc-system/doc-registry-gate.sh" "1"
+  fi
 fi
 
 # ── D943: DSH 断面一致性（唯一源 DSH-断面.json；条件块外防 M1；--no-tree-check——带树校验归 daily-cto-board）──

@@ -97,13 +97,14 @@
     ]
   },
   "branches": {
-    "merge_candidate": "feat/d962-2a-merge @ 7a8ef9af (base main@0ab457f2)",
+    "merge_candidate": "feat/d962-2a-merge @ 9fd034dd（task-26 并入 2b + 4 处标记修复 + 写集闭合；base main@ee721b0a）",
     "phase1": "chore/d962-2a-scripts (已并入候选)",
     "v53_precommit": "feat/d962-2a-precommit-b (已并入候选)",
     "d964_linter": "chore/d964-linter-wiring (不在本合并，候选入 main 后 rebase 重验)"
   },
   "spec": {
-    "path": "docs/synova/coordination/D962-phase2-plan.md"
+    "path": "docs/synova/coordination/D962-phase2-plan.md",
+    "note": "task-26: 完整版 §〇-§八 已并回本分支（逐字取自 origin/docs/d962-disposition@120f65ea，sha256 d21113c10000a043…）；此前候选分支仅 14 行 §九 stub，评审者读不到判定面去向依据"
   },
   "impl": {
     "v53_precommit_lines": 399,
