@@ -19,7 +19,7 @@
 //   @write   零写入：只 readFile/execFile 只读 git，不写工作区/仓库（D794 红线）
 import { collectDashboards } from "./collect.js";
 import { readLedger } from "./ledger.js";
-import { readCharter } from "./charter.js";
+import { readCharter, adaptCharterGrid } from "./charter.js";
 
 export const name = "synova-dashboards";
 export const inject = ["webServer"];
@@ -104,10 +104,10 @@ export function apply(ctx, config = {}) {
           return;
         }
         if (result.fallback_note) ctx.logger.warn(`synova-dashboards/charter: ${result.fallback_note}`);
-        const p = result.parsed;
-        const body = p !== null && typeof p === "object" && !Array.isArray(p)
-          ? Object.assign({}, p, { ok: true, source: result.source, ...(result.fallback_note ? { source_detail: result.fallback_note } : {}) })
-          : { ok: true, source: result.source, grid: p };
+        // D963 退回项：真源 cells[] 在 Host 半经 adaptCharterGrid 映射为面板契约
+        // （rows[]×3 + 四色 tone），前端只管渲染——路由与面板单一契约，不再各自猜形状。
+        const grid = adaptCharterGrid(result.parsed);
+        const body = Object.assign({}, grid, { ok: true, source: result.source, ...(result.fallback_note ? { source_detail: result.fallback_note } : {}) });
         res.writeHead(200, HEADERS);
         res.end(JSON.stringify(body));
       }

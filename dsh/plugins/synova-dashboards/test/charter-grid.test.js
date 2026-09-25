@@ -11,16 +11,21 @@
 //     · 正常：工作区文件存在 → 200 + ok:true + source=worktree + 原字段保留
 //     · 降级：文件缺失（当前 main 正常态）→ 200 + ok:false + degraded + missing
 //     · 边界：坏 JSON → 200 + degraded + JSON 解析失败原因，不抛异常
-// fixture 内嵌本文件，不写进生产路径冒充数据源。
+// fixture：真源 origin/main 原样内嵌 test/fixtures/charter-48.json（shasum 与 git show 一致），
+// 混色夹具由真源深拷贝只改 status/judgement 派生——禁自造简化形状（D963 退回项）。
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, mkdtempSync, writeFileSync, mkdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { tmpdir } from "node:os";
-import { CHARTER_REL_PATH, CHARTER_MISSING } from "../lib/charter.js";
+import { CHARTER_REL_PATH, CHARTER_MISSING, adaptCharterGrid } from "../lib/charter.js";
 
 const SRC = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "../lib/client.js"), "utf8");
+
+// ── 真源 fixture（与 origin/main:docs/synova/coordination/宪章三问-48格.json 逐字节一致，shasum 0672fd0a）──
+const REAL_RAW = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "fixtures/charter-48.json"), "utf8");
+const REAL = JSON.parse(REAL_RAW);
 
 // ── 迷你 React 装载/渲染夹具（同 test/client-panel.test.js 手法，聚焦宪章面板）──
 function loadPlugin() {
@@ -142,30 +147,26 @@ function loadPlugin() {
   };
 }
 
-// ── fixture（3 扩展点 × 3 问；内嵌测试文件，不进生产路径）──
-const CHARTER_OK = {
-  schema: "charter-grid/1",
-  ok: true,
-  source: "worktree",
-  questions: ["加了吗", "接上了吗", "生效了吗"],
-  rows: [
-    { id: "E01", name: "专家文件驱动", cells: [
-      { status: "done", note: "expert/ 8 文件" },
-      { status: "wired", note: "ExpertDispatcher" },
-      { status: "verified", note: "K3 已核" },
-    ] },
-    { id: "E02", name: "哨兵文件驱动", cells: [
-      { status: "partial", note: "45/60" },
-      { status: "", note: "" },
-      { status: undefined },
-    ] },
-    { id: "E03", name: "桌面端", cells: [
-      { status: "fail", note: "Win 未装" },
-      { status: "pending_k3" },
-      { status: "unknown-word" },
-    ] },
-  ],
-};
+// ── fixture（D963 退回项：真源形状，禁自造）──
+// REAL = origin/main 真源原样（48 格全 empty）；
+// ROUTE_EMPTY = 真源经真实 adapter 后的路由 body（面板实际收到的形状）；
+// MIXED = 真源深拷贝只改 status/judgement（green×2 / yellow×2 / red×1，其余 empty）。
+const ROUTE_EMPTY = Object.assign({}, adaptCharterGrid(REAL), { ok: true, source: "origin/main" });
+function makeMixedSource() {
+  const mixed = JSON.parse(REAL_RAW);
+  const set = (i, status, judgement) => {
+    mixed.cells[i].status = status;
+    mixed.cells[i].judgement = judgement;
+  };
+  set(0, "green", "端到端用例 EG-1 过");   // C01 q1 green
+  set(3, "green", "端到端用例 EG-2 过");   // C04 q1 green
+  set(4, "yellow", "接上了未生效：缺用例"); // C04 q2 yellow
+  set(6, "yellow", "接线在、结果未核");     // C05? q1 yellow（序号即源顺序）
+  set(8, "red", "注册表无此节点");          // red
+  return mixed;
+}
+const MIXED = makeMixedSource();
+const ROUTE_MIXED = Object.assign({}, adaptCharterGrid(MIXED), { ok: true, source: "worktree" });
 
 test("注册契约：宪章面板 main cell 与 sidebar 入口行成对（id 相同、main 先注册、order=60 错开）", () => {
   const p = loadPlugin();
@@ -187,45 +188,64 @@ test("注册契约：宪章面板 main cell 与 sidebar 入口行成对（id 相
   }
 });
 
-test("正常路径：3×3 fixture → 表头/三问列/扩展点行/note/四色图例全渲染", async () => {
+test("正常路径（真源·当前态全 empty）：16 行 × 3 列全「未填」，不是空板", async () => {
   const p = loadPlugin();
   try {
-    const r = await p.render(CHARTER_OK);
+    const r = await p.render(ROUTE_EMPTY);
     assert.match(r.text, /宪章三问/);
     assert.match(r.text, /扩展点/);
     assert.match(r.text, /加了吗/);
     assert.match(r.text, /接上了吗/);
     assert.match(r.text, /生效了吗/);
-    assert.match(r.text, /E01 · 专家文件驱动/);
-    assert.match(r.text, /expert\/ 8 文件/);
-    assert.match(r.text, /K3 已核/);
-    // 四色图例计数：done+verified=2 绿；wired+partial=2 蓝；pending_k3=1 黄；fail=1 红；待办=3
-    assert.match(r.text, /通过 2/);
-    assert.match(r.text, /进行中 2/);
-    assert.match(r.text, /待核 1/);
-    assert.match(r.text, /失败 1/);
-    assert.match(r.text, /待办 3/);
-    assert.match(r.text, /3 个扩展点 × 3 问/);
+    // 行标签：层 · 扩展点名（真源 16 项之一）
+    assert.match(r.text, /对象层 · 节点（要素）/);
+    // 16 个扩展点 × 3 问（当前真源全 empty ⇒ 48 格全部显式「未填」，绝不是 0 行空板）
+    assert.match(r.text, /16 个扩展点 × 3 问/);
+    assert.match(r.text, /⚪ 未填 48/);
+    assert.match(r.text, /🟢 生效 0/);
+    // 矩阵格：48 格全部 pill「未填」（排除图例计数 pill）
+    const emptyCells = r.nodes.filter((n) => n.className.includes("scg-pill-empty") && n.props.children === "未填");
+    assert.equal(emptyCells.length, 48, "48 格必须全部渲染为「未填」");
+    // 未填格不得有绿
+    assert.equal(r.nodes.filter((n) => n.className.includes("scg-pill-green") && n.props.children === "生效了").length, 0);
     assert.doesNotMatch(r.text, /数据源未就绪/);
-    // 数据来源标注
+    assert.match(r.text, /源 origin\/main/);
+  } finally {
+    p.restore();
+  }
+});
+
+test("正常路径（混色）：green/yellow/red 计数正确，note=judgement 渲染", async () => {
+  const p = loadPlugin();
+  try {
+    const r = await p.render(ROUTE_MIXED);
+    assert.match(r.text, /🟢 生效 2/);
+    assert.match(r.text, /🟡 接了未生效 2/);
+    assert.match(r.text, /🔴 缺失 1/);
+    assert.match(r.text, /⚪ 未填 43/);
+    // judgement 作为 note 渲染（真源 judgement 字段）
+    assert.match(r.text, /端到端用例 EG-1 过/);
+    assert.match(r.text, /接上了未生效：缺用例/);
     assert.match(r.text, /源 worktree/);
   } finally {
     p.restore();
   }
 });
 
-test("X27 边界：空/缺失/未知 status 一律「待办」，绝不显示为通过", async () => {
+test("X27 边界：缺 tone/未知 tone 一律「未填」，绝不显示为通过", async () => {
   const p = loadPlugin();
   try {
-    const r = await p.render(CHARTER_OK);
-    const gray = r.nodes.filter((n) => n.className.includes("scg-pill-gray") && !n.className.includes("scg-legend"));
-    // 排除图例 pill（其 children 是「待办 N」计数），只数矩阵格（children 恰为「待办」）
-    const cells = gray.filter((n) => n.props.children === "待办");
-    assert.equal(cells.length, 3, "空串/undefined/未知词 3 格必须全部落灰");
-    for (const pill of cells) assert.match(pill.props.children, /待办/);
-    // 待办格子绝不着绿（图例 pill「通过 2」排除，只数矩阵格「通过」）
-    const greenCells = r.nodes.filter((n) => n.className.includes("scg-pill-green") && n.props.children === "通过");
-    assert.equal(greenCells.length, 2, "只有显式 done/verified 才绿");
+    // 混色基础上注入两格非法值：tone 缺失 / tone 未知词（adapter 白名单外由 adapter 兜底，
+    // 这里直接喂客户端，验证客户端 X27 归一化独立成立）。选最后一行（MIXED 中全 empty）避免覆盖既有 green。
+    const payload = JSON.parse(JSON.stringify(ROUTE_MIXED));
+    const lastRow = payload.rows[payload.rows.length - 1];
+    lastRow.cells[0] = { status: "green" };            // 缺 tone
+    lastRow.cells[1] = { tone: "super-green", text: "大成功" }; // 未知 tone
+    const r = await p.render(payload);
+    const emptyCells = r.nodes.filter((n) => n.className.includes("scg-pill-empty") && n.props.children === "未填");
+    assert.ok(emptyCells.length >= 2, "缺 tone 与未知 tone 都必须落「未填」");
+    assert.equal(r.nodes.filter((n) => n.className.includes("scg-pill-green") && n.props.children === "生效了").length, 2, "其余 2 个真 green 不受影响");
+    assert.doesNotMatch(r.text, /大成功/, "未知 tone 的 text 不得透出");
   } finally {
     p.restore();
   }
@@ -239,7 +259,7 @@ test("降级①：路由 ok:false → 显式横幅「数据源未就绪（缺 �
     assert.match(r.text, /工作区无/);
     assert.match(r.text, /宪章三问/, "面板标题仍在，不白屏");
     assert.match(r.text, /加了吗/, "矩阵表头仍在");
-    assert.match(r.text, /待办 0/, "无数据时计数全 0，不冒充");
+    assert.match(r.text, /未填 0/, "无数据时计数全 0，不冒充");
     assert.match(r.text, /降级/);
   } finally {
     p.restore();
@@ -260,7 +280,7 @@ test("降级②：网络失败 → error 横幅，不抛错不白屏", async () 
 test("零写入：宪章面板只发 GET /synova/charter/grid", async () => {
   const p = loadPlugin();
   try {
-    await p.render(CHARTER_OK);
+    await p.render(ROUTE_EMPTY);
     assert.ok(p.fetchCalls.length > 0);
     for (const c of p.fetchCalls) {
       assert.equal(c.url, "/synova/charter/grid");
@@ -309,14 +329,8 @@ function charterRoute(routes) {
   return r;
 }
 
-const GOOD_CHARTER = JSON.stringify({
-  schema: "charter-grid/1",
-  questions: ["加了吗", "接上了吗", "生效了吗"],
-  rows: [{ id: "E01", name: "x", cells: [{ status: "done" }, { status: "done" }, { status: "todo" }] }],
-});
-
-test("Host 正常路径：工作区文件存在 → 200 + ok:true + source=worktree + 原字段保留", async () => {
-  const root = makeRepo({ [CHARTER_REL_PATH]: GOOD_CHARTER });
+test("Host 正常路径（真源 fixture）：工作区文件存在 → 200 + ok:true + adapter 契约（16 行×3 列）", async () => {
+  const root = makeRepo({ [CHARTER_REL_PATH]: REAL_RAW });
   const { routes } = await loadHost(root);
   const res = fakeRes();
   await charterRoute(routes).handler({}, res);
@@ -325,8 +339,13 @@ test("Host 正常路径：工作区文件存在 → 200 + ok:true + source=workt
   const body = JSON.parse(res.body);
   assert.equal(body.ok, true);
   assert.equal(body.source, "worktree");
-  assert.equal(body.schema, "charter-grid/1");
-  assert.equal(body.rows.length, 1);
+  // adapter 契约（不再是真源 cells[] 原样透传）
+  assert.equal(body.rows.length, 16, "16 个扩展点行");
+  assert.ok(body.rows.every((row) => row.cells.length === 3), "每行 3 列");
+  assert.deepEqual(body.questions.map((q) => q.text), ["加了吗", "接上了吗", "生效了吗"]);
+  assert.deepEqual(body.counts, REAL.counts);
+  // 真源原始 cells 不再下发（前端不接触真源形状）
+  assert.equal(body.cells, undefined);
 });
 
 test("Host 降级：文件缺失（当前 main 正常态）→ 200 + ok:false + degraded + missing 标注，不 500", async () => {
@@ -522,4 +541,97 @@ test("框架态④（框架侧声明）：service 级缺失/插件未装 → 插
   assert.match(readme, /插件未装/, "README 必须声明「插件未装」为框架侧态");
   assert.match(readme, /runtime\.ts:393/, "README 必须给出 waitingFor 依据 file:line");
   assert.match(readme, /静默不执行回调/, "README 必须记录 inject 静默等待语义");
+});
+
+// ── adapter 单测 + 契约一致性（D963 退回项 1/4/5：真源 cells[] → 面板 rows[]×3）──
+test("adapter·真源当前态（48 格全 empty）→ 16 行 × 3 列，全部 tone=empty", () => {
+  const g = adaptCharterGrid(REAL);
+  assert.equal(g.rows.length, 16);
+  assert.ok(g.rows.every((row) => row.cells.length === 3));
+  for (const row of g.rows) {
+    for (const cell of row.cells) {
+      assert.equal(cell.tone, "empty");
+      assert.equal(cell.text, "未填");
+    }
+  }
+  // 行标签 = layer + ext_point（与权威生成器 (layer, ext_point) 分组键一致），保持源顺序
+  assert.equal(g.rows[0].layer, "对象层");
+  assert.equal(g.rows[0].name, "节点（要素）");
+  // 列头取真源 question_text
+  assert.deepEqual(g.questions, [{ key: "q1", text: "加了吗" }, { key: "q2", text: "接上了吗" }, { key: "q3", text: "生效了吗" }]);
+  assert.deepEqual(g.counts, REAL.counts);
+  assert.equal(g.filled, 0);
+});
+
+test("adapter·四色口径（照权威生成器 gen-charter-grid.py:17-18）：green/yellow/red/empty，未知→empty", () => {
+  const g = adaptCharterGrid(MIXED);
+  const tones = g.rows.flatMap((r) => r.cells.map((c) => c.tone));
+  assert.equal(tones.filter((t) => t === "green").length, 2);
+  assert.equal(tones.filter((t) => t === "yellow").length, 2);
+  assert.equal(tones.filter((t) => t === "red").length, 1);
+  assert.equal(tones.filter((t) => t === "empty").length, 43);
+  // 文案口径
+  const texts = g.rows.flatMap((r) => r.cells.map((c) => c.text));
+  assert.ok(texts.includes("生效了"));
+  assert.ok(texts.includes("接了未生效"));
+  assert.ok(texts.includes("缺失"));
+  // note = judgement（非空时）
+  const greenCell = g.rows.flatMap((r) => r.cells).find((c) => c.tone === "green");
+  assert.equal(greenCell.note, "端到端用例 EG-1 过");
+  // 未知 status → empty（X27；生成器 COL.get 默认同款）
+  const weird = JSON.parse(REAL_RAW);
+  weird.cells[0].status = "super-done";
+  const wg = adaptCharterGrid(weird);
+  assert.equal(wg.rows[0].cells[0].tone, "empty", "白名单外 status 必须落 empty");
+  // note 空时回退 question_desc（生成器同款）
+  const emptyCell = wg.rows[0].cells[0];
+  assert.equal(emptyCell.note, weird.cells[0].question_desc);
+});
+
+test("adapter·边界：非对象/无 cells → rows=[] + 默认列头，不抛错", () => {
+  for (const bad of [null, [], "string", 42, {}, { cells: "not-array" }]) {
+    const g = adaptCharterGrid(bad);
+    assert.deepEqual(g.rows, []);
+    assert.deepEqual(g.questions.map((q) => q.text), ["加了吗", "接上了吗", "生效了吗"]);
+  }
+  // 某扩展点缺一问 → 补齐 empty 不塌列
+  const missing = JSON.parse(REAL_RAW);
+  missing.cells = missing.cells.filter((c) => c.id !== "C02"); // 去掉第 1 行的 q2
+  const mg = adaptCharterGrid(missing);
+  assert.equal(mg.rows.length, 16);
+  assert.equal(mg.rows[0].cells.length, 3);
+  assert.equal(mg.rows[0].cells[1].tone, "empty");
+});
+
+test("契约一致性：adapter 输出形状 vs 客户端读取字段逐项吻合（本次漏网的判据）", async () => {
+  // 客户端 lib/client.js 实际读取：rows[].layer/name/cells[].tone/text/note、questions[].text、filled
+  // （charterCell 只认 tone 白名单；questions 兼容 string 但主形状是 {key,text}）
+  for (const src of [REAL, MIXED]) {
+    const g = adaptCharterGrid(src);
+    for (const row of g.rows) {
+      assert.equal(typeof row.layer, "string", "row.layer 必须是 string（客户端拼行标签）");
+      assert.equal(typeof row.name, "string", "row.name 必须是 string");
+      assert.ok(Array.isArray(row.cells) && row.cells.length === 3, "row.cells 必须 3 元数组");
+      for (const cell of row.cells) {
+        assert.ok(["green", "yellow", "red", "empty"].includes(cell.tone), "cell.tone 必须在四色白名单: " + cell.tone);
+        assert.equal(typeof cell.text, "string");
+        assert.equal(typeof cell.note, "string");
+      }
+    }
+    for (const q of g.questions) {
+      assert.equal(typeof q.text, "string", "questions[].text 必须是 string（客户端列头直读）");
+    }
+    assert.ok(g.filled === null || typeof g.filled === "number");
+  }
+  // 端到端闭环：adapter 输出直接喂客户端渲染不塌（混色源）
+  const p = loadPlugin();
+  try {
+    const r = await p.render(Object.assign({}, adaptCharterGrid(MIXED), { ok: true, source: "worktree" }));
+    assert.match(r.text, /16 个扩展点 × 3 问/);
+    assert.match(r.text, /🟢 生效 2/);
+    const emptyCells = r.nodes.filter((n) => n.className.includes("scg-pill-empty") && n.props.children === "未填");
+    assert.equal(emptyCells.length, 43);
+  } finally {
+    p.restore();
+  }
 });

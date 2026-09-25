@@ -90,7 +90,8 @@ window.__ModuleLoader__.load({
 			".scg-cell:nth-child(4n+1){border-left:none}",
 			".scg-rowName{color:var(--dsw-alias-label-secondary);font-weight:600}",
 			".scg-pill{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;padding:1px 7px;border-radius:999px}",
-			".scg-pill-green{background:#16a34a;color:#fff}.scg-pill-blue{background:#2563eb;color:#fff}.scg-pill-amber{background:#d97706;color:#fff}.scg-pill-red{background:#dc2626;color:#fff}.scg-pill-gray{background:#6b7280;color:#fff}",
+			".scg-pill-green{background:#0a7d32;color:#fff}.scg-pill-yellow{background:#b8860b;color:#fff}.scg-pill-red{background:#b3261e;color:#fff}.scg-pill-empty{background:#6b7280;color:#fff}",
+			".scg-cell-green{background:#e8f5e9}.scg-cell-yellow{background:#fff8e1}.scg-cell-red{background:#fdecea}.scg-cell-empty{background:#fafafa}",
 			".scg-legend{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:11px;color:var(--dsw-alias-label-tertiary)}",
 			".scg-note{font-size:10px;color:var(--dsw-alias-label-tertiary)}"
 		].join("");
@@ -625,31 +626,30 @@ window.__ModuleLoader__.load({
 		}
 
 		// ── 「宪章三问」中央面板（D963；只读一条 GET，独立降级） ──────────────────
-		// 契约（铁律 47）：
+		// 契约（铁律 47；D963 退回项：单一契约，形状由 Host 半 adaptCharterGrid 产出）：
 		//   @input GET /synova/charter/grid
-		//            成功 → { ...grid, ok:true, source } 其中 grid = {
-		//              questions: string[3]（加了吗/接上了吗/生效了吗）,
-		//              rows: [{ id, name, cells: [{ status, note }] }]（16 行 × 3 列 = 48 格）
-		//            }
-		//            降级 → { ok:false, degraded:true, error, missing }（文件未产出是当前正常态）
-		//   @output 48 格矩阵 + 四色图例（绿=通过 / 蓝=进行中 / 黄=待核 / 红=失败 / 灰=待办）
+		//            成功 → { ok:true, source, counts, filled,
+		//                      questions: [{key:"q1",text:"加了吗"},...],
+		//                      rows: [{ id, layer, name, cells: [{ status, tone, text, note }] }] }
+		//                      （16 行 × 3 列 = 48 格；tone 四色口径照权威生成器
+		//                        scripts/control-tower/gen-charter-grid.py:17-18 COL 表）
+		//            降级 → { ok:false, degraded:true, error, missing }（文件未产出时的正常态）
+		//   @output 48 格矩阵 + 四色图例（green=生效了 / yellow=接了未生效 / red=缺失 / empty=未填）
 		//   @degraded 三态显式（铁律 24/31）：网络失败 → error 横幅；路由 ok:false →
 		//            「数据源未就绪（缺 宪章三问-48格.json）」横幅；面板结构始终在场不白屏。
-		//   @X27 铁律：空/缺失/未知 status 一律渲染为「待办」（灰），绝不着绿/显示为通过。
+		//   @X27 铁律：格子缺 tone/text 或未知 tone → 一律 empty「未填」，绝不显示为通过。
 		//   @write  零写入：只 GET。
 		const CHARTER_URL = "/synova/charter/grid";
+		const CHARTER_TONE_TEXT = { green: "生效了", yellow: "接了未生效", red: "缺失", empty: "未填" };
 
 		/**
-		 * 格子状态归一化（X27）：只有显式已知的通过词才给绿；
-		 * 空/undefined/未知词一律「待办」灰 —— 缺数据永不冒充通过。
+		 * 格子渲染值归一化（X27）：tone 必须是四色白名单（green/yellow/red/empty），
+		 * 缺失/未知一律 empty「未填」——缺数据永不冒充通过。
 		 */
-		function charterCell(status) {
-			const s = String(status ?? "").trim().toLowerCase();
-			if (/^(done|yes|verified|effective|complete[d]?|passed|ok)$/.test(s)) return { tone: "green", text: "通过" };
-			if (/^(partial|in_progress|running|impl|wired|dispatched|claimed|spec)$/.test(s)) return { tone: "blue", text: s === "partial" ? "部分" : "进行中" };
-			if (/^(warn|stale|audit|pending_k3|degraded)$/.test(s)) return { tone: "amber", text: "待核" };
-			if (/^(fail|failed|no|red|blocked|rejected)$/.test(s)) return { tone: "red", text: "失败" };
-			return { tone: "gray", text: "待办" };
+		function charterCell(cell) {
+			const tone = cell && typeof cell.tone === "string" ? cell.tone : "empty";
+			if (!Object.prototype.hasOwnProperty.call(CHARTER_TONE_TEXT, tone)) return { tone: "empty", text: "未填" };
+			return { tone, text: cell && typeof cell.text === "string" && cell.text ? cell.text : CHARTER_TONE_TEXT[tone] };
 		}
 
 		function CharterGridPanel(props) {
@@ -691,17 +691,20 @@ window.__ModuleLoader__.load({
 
 			const routeDegraded = data !== null && data.ok === false;
 			const usable = data !== null && data.ok !== false;
+			// questions 形状：[{key,text}]（adapter 产出）；异常时退回三问默认头
+			const qDefault = [{ key: "q1", text: "加了吗" }, { key: "q2", text: "接上了吗" }, { key: "q3", text: "生效了吗" }];
 			const questions = usable && Array.isArray(data.questions) && data.questions.length === 3
-				? data.questions : ["加了吗", "接上了吗", "生效了吗"];
+				? data.questions : qDefault;
 			const rows = usable && Array.isArray(data.rows) ? data.rows : [];
 			const source = usable && typeof data.source === "string" ? data.source : null;
+			const filled = usable && typeof data.filled === "number" ? data.filled : null;
 
-			// 四色统计（矩阵图例 + 顶部概览）
-			const toneCount = { green: 0, blue: 0, amber: 0, red: 0, gray: 0 };
+			// 四色统计（矩阵图例 + 顶部概览；口径照权威生成器）
+			const toneCount = { green: 0, yellow: 0, red: 0, empty: 0 };
 			for (const row of rows) {
 				const cells = Array.isArray(row.cells) ? row.cells : [];
 				for (let q = 0; q < 3; q++) {
-					toneCount[charterCell(cells[q] && cells[q].status).tone]++;
+					toneCount[charterCell(cells[q]).tone]++;
 				}
 			}
 
@@ -712,24 +715,24 @@ window.__ModuleLoader__.load({
 				body.push(jsx("div", { className: "spo-degraded", key: "err", children: "⚠ 降级：" + error + "（面板仍可用，稍后自动重试）" }));
 			}
 			body.push(jsx("div", { className: "scg-legend", key: "legend", children: [
-				jsx("span", { children: "四色：" }),
-				jsx("span", { className: "scg-pill scg-pill-green", children: "通过 " + toneCount.green }),
-				jsx("span", { className: "scg-pill scg-pill-blue", children: "进行中 " + toneCount.blue }),
-				jsx("span", { className: "scg-pill scg-pill-amber", children: "待核 " + toneCount.amber }),
-				jsx("span", { className: "scg-pill scg-pill-red", children: "失败 " + toneCount.red }),
-				jsx("span", { className: "scg-pill scg-pill-gray", children: "待办 " + toneCount.gray }),
-				jsx("span", { children: "· " + rows.length + " 个扩展点 × 3 问" })
+				jsx("span", { children: "四色（未填=待办，不伪装成绿）：" }),
+				jsx("span", { className: "scg-pill scg-pill-green", children: "🟢 生效 " + toneCount.green }),
+				jsx("span", { className: "scg-pill scg-pill-yellow", children: "🟡 接了未生效 " + toneCount.yellow }),
+				jsx("span", { className: "scg-pill scg-pill-red", children: "🔴 缺失 " + toneCount.red }),
+				jsx("span", { className: "scg-pill scg-pill-empty", children: "⚪ 未填 " + toneCount.empty }),
+				jsx("span", { children: "· " + rows.length + " 个扩展点 × 3 问" + (filled !== null ? " · 已填 " + filled + "/48" : "") })
 			] }));
 			body.push(jsx("div", { className: "scg-grid", key: "grid", children: [
 				jsx("div", { className: "scg-cell scg-cellHead", key: "h0", children: "扩展点" }),
-				...questions.map((q, i) => jsx("div", { className: "scg-cell scg-cellHead", key: "h" + (i + 1), children: q })),
+				...questions.map((q, i) => jsx("div", { className: "scg-cell scg-cellHead", key: "h" + (i + 1), children: typeof q === "string" ? q : (q.text ?? qDefault[i].text) })),
 				...rows.flatMap((row, ri) => {
 					const cells = Array.isArray(row.cells) ? row.cells : [];
-					const nodes = [jsx("div", { className: "scg-cell scg-rowName", key: "r" + ri, title: esc(row.name), children: (row.id ? row.id + " · " : "") + (row.name ?? "") })];
+					const rowLabel = (row.layer ? row.layer + " · " : "") + (row.name ?? "");
+					const nodes = [jsx("div", { className: "scg-cell scg-rowName", key: "r" + ri, title: esc(rowLabel), children: rowLabel })];
 					for (let q = 0; q < 3; q++) {
-						const c = charterCell(cells[q] && cells[q].status);
+						const c = charterCell(cells[q]);
 						const note = cells[q] && cells[q].note ? String(cells[q].note) : "";
-						nodes.push(jsx("div", { className: "scg-cell", key: "r" + ri + "c" + q, title: esc(note), children: [
+						nodes.push(jsx("div", { className: "scg-cell scg-cell-" + c.tone, key: "r" + ri + "c" + q, title: esc(note), children: [
 							jsx("span", { className: "scg-pill scg-pill-" + c.tone, children: c.text }),
 							note ? jsx("span", { className: "scg-note", children: " " + note }) : null
 						] }));
@@ -738,7 +741,7 @@ window.__ModuleLoader__.load({
 				})
 			] }));
 			if (usable && rows.length === 0) {
-				body.push(jsx("div", { className: "spo-empty", key: "empty", children: "数据已就绪但 rows 为空（等宪章 48 格产出方补数）" }));
+				body.push(jsx("div", { className: "spo-empty", key: "empty", children: "数据已就绪但 rows 为空（真源 cells 缺失或为空——等宪章 48 格产出方补数）" }));
 			}
 
 			return jsx("div", { className: "scg-root", style: { left: "160px", top: "90px", width: "880px", height: "600px" }, children: [
