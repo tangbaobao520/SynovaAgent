@@ -2,9 +2,20 @@ name: CI �� SynovaAgent
 
 on:
   push:
-    branches: [main, feat/*]
+    # N12 根治（D1014）: 去掉 feat/* —— 每次 feature push 都跑全量 CI 是队列放大器。
+    # 依赖 push 的检查改为「开/更新 PR 时触发」（pull_request 面已覆盖）。
+    branches: [main]
   pull_request:
     branches: [main]
+    # D1014 ⒞: 触发类型显式化（原为默认 opened/synchronize/reopened + 新增 ready_for_review）
+    types: [opened, synchronize, reopened, ready_for_review]
+
+# N12 根治（D1014 · CTO 已批）: 同 workflow + 同 ref 只保留最新一条 run。
+# 依据: 全仓此前 concurrency = 0 ⇒ 同分支反复 push 无限排队（实测 feat/d962-2a-merge 独占 18 条，
+# 全队列一度 38 queued 不消费）。cancel-in-progress 让"新 run 取消旧 run"。
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   quality:
