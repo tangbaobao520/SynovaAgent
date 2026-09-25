@@ -1840,3 +1840,5 @@ Binary file .claude/bypass.log matches
 2026-09-25T13:43:00+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=2177a0a002c0feb9edb1277e3f89bc8c9aaa7c54
 2026-09-26T01:07:36+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=3fe73726677661f693edf32ed7647d7eb107bc7e
 2026-09-25T13:50:24+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=85a2e96d13c509863dd3d56d6ef8969bf971189c
+2026-09-25T13:58:39+0800 | COMMITTED | merge candidate D962 (git merge, B 手动补记同 auto-hook 语义) | HASH=ab0ebbaf
+2026-09-25T13:58:39+0800 | COMMITTED | merge candidate D962 (git merge, B 手动补记同 auto-hook 语义) | HASH=b67983b1

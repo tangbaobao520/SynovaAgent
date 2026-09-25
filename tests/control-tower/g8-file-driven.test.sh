@@ -82,7 +82,8 @@ if grep -q "SOGNodeType" "$FD"; then pass "enum SOGNodeType 硬编码回归守�
 # 5c. tags.json 引用完整性检查存在
 if grep -q "tags.json\|tags 引用" "$FD"; then pass "tags 引用完整性检查存在"; else fail "tags 检查缺失"; fi
 # 5d. pre-commit 组 8 调用点存在（接线断言）
-if grep -q "check-file-driven" "$REPO_DIR/scripts/pre-commit-check.sh"; then pass "pre-commit 组 8 接线存在"; else fail "组 8 接线断"; fi
+# (V5.3: 组 8 判定迁 CI iron-laws——本地 pre-commit 不再调用；接线判据=脚本在位且可独立运行，CI 挂载归 2b)
+if [ -f "$REPO_DIR/scripts/check-file-driven.sh" ] && bash "$REPO_DIR/scripts/check-file-driven.sh" >/dev/null 2>&1; then pass "check-file-driven.sh 在位且自过（组 8 判定迁 CI，2b 挂载）"; else fail "check-file-driven.sh 缺失或自跑红"; fi  # -f 非 -x: main 惯例 100644 + bash 调用
 echo ""
 
 echo "═══════════════════════════════════════════════════════════"

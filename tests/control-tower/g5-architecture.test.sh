@@ -8,7 +8,8 @@
 #          SYNO_CI=0 → 本地软提示 exit 0 但输出含 ❌（D515 分工）
 #   降级 — SYNO_ARCH_SRC 指向不存在目录 → exit 2 fail-closed（不静默当绿）
 #   边界 — 基线棘轮机制存在（存量只减不增）; LC_ALL=C 防御存在（D962-B2 教训）;
-#          pre-commit 组 5 桥接块（铁律 46 三重匹配 + 壳包检测）结构存在（改坏即红）
+#          pre-commit V5.3 CI 区桥接判定（铁律 46 三重匹配；壳包启发式随 2a① 迁移收窄——
+#          packages/ 下 engine-core 引用仍被三重匹配覆盖，纯 re-export 形态判定归 2b iron-laws）
 #
 # 平台中立: 无 sed -i / 无 grep -P / UTF-8 头块; PYBIN 三级探测（组 5 判定为纯
 # bash+grep，PYBIN 仅备扩展位）。零真实仓库污染: 沙箱经 SYNO_ARCH_SRC 注入。
@@ -84,11 +85,11 @@ if grep -qE "import\\(|require\\(" "$ARCH"; then pass "动态 import/require 锚
 if grep -q "SYNO_TYPE_NET_ROOT" "$ARCH" && grep -q "D752" "$ARCH"; then pass "D752 哨兵类型网段已合并（注入缝+判定体）"; else fail "D752 合并段缺失"; fi
 # 4d. LC_ALL=C 防御（D962-B2 教训: macOS bash 3.2 多字节解析假红）
 if grep -q "export LC_ALL=C" "$ARCH"; then pass "LC_ALL=C 防御存在（BSD bash 3.2 假红防线）"; else fail "LC_ALL=C 防御缺失（unbound variable 假红风险）"; fi
-# 4e. pre-commit 组 5 桥接块（铁律 46: 三重匹配 + 壳包，改坏即红）
-if grep -q "engine-core" "$PRE_COMMIT" && grep -q "壳包" "$PRE_COMMIT"; then
-  pass "pre-commit 组 5 桥接块结构存在（铁律 46 三重匹配+壳包）"
+# 4e. pre-commit V5.3 CI 区桥接判定（铁律 46 三重匹配，改坏即红；V5.3 语义同步）
+if grep -qF 'packages/engine-core' "$PRE_COMMIT" && grep -qF '\.\./engine-core' "$PRE_COMMIT"; then  # -F: 判定体中为带反斜杠转义的字面模式
+  pass "pre-commit CI 区铁律 46 三重匹配存在（V5.3）"
 else
-  fail "pre-commit 组 5 桥接块缺失"
+  fail "铁律 46 三重匹配缺失（V5.3 CI 区）"
 fi
 echo ""
 
