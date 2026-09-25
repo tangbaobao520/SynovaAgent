@@ -100,7 +100,10 @@ last_line() { printf '%s\n' "$1" | tail -1; }
 d_viol()   { printf '%s' "${OUT:-}" | grep -c 'VIOLATION' || true; }
 d_stale()  { printf '%s' "${OUT:-}" | grep -oE 'STALE\([a-z]+\)' | head -1; }
 d_counts() { printf '%s' "${OUT:-}" | grep -oE 'registered [0-9]+；STALE\([0-9]+\)' | head -1; }
-d_pt()     { printf '%s' "${OUT:-}" | grep -c 'm1-scan.sh:3' || true; }
+d_pt()     { printf '%s' "${OUT:-}" | grep -oE 'm1-scan\.sh:[0-9]+' | wc -l | tr -d ' '; }
+# 检查器**自报**的坐标原文（ASCII 定长摘取；绝不用 {} 量词/cut -b/'head -c' ——
+#   实测 BSD grep 的 `.{0,N}` 按**字节**截，会把中文切成坏 UTF-8，故一律摘 ASCII 片段）。
+d_coord()  { printf '%s' "${OUT:-}" | grep -oE '[^ 	]*m1-scan\.sh:[0-9]+' | head -1; }
 
 RUN() { # $1=scan $2=tests_dir $3=ci_yml $4=baseline $5=red_baseline $6=degraded_log ；其后 = 检查器参数
   local scan="$1" tests="$2" ciyml="$3" base="$4" redbase="$5" dlog="$6"
@@ -297,19 +300,36 @@ SCAN_M1="$SB/scripts/m1-scan.sh"
   printf 'echo a | grep -E %s\n' "'^alpha'"
   printf 'X=$(echo a | grep -Ev "%s")  # %s M1\n' "$BAD_RE" "$MARK"
 } > "$SCAN_M1"
+# ── 坐标自洽（#774 windows 红1 治本）──────────────────────────────────────────
+#   夹具原先**自己拼**坐标 `$SCAN_M1:3` 写进基线；但检查器的匹配键是
+#     key="${p_file#"$ROOT"/}:${p_line}"      （check-gate-integrity.sh:551）
+#   路径形态或行号任一处与检查器自算的不同，条目就匹配不上 → 该条判 **STALE** 而非
+#   "过期违规" → 断言在"消息不匹配"上红（windows 实测: rc=1 但 stale=STALE(gnu)）。
+#   修法（方言无关、不猜形态）: 先用**空 [P] 段**基线跑一次，让检查器把非法模式坐标
+#   **自己报出来**，再取它报的原文写回夹具基线 → 坐标必然自洽，不再依赖平台路径形态。
+cat > "$SB/baseline-nopat.txt" <<'EOBNOPAT'
+# 夹具基线（[P] 段故意留空 → 非法模式均为"未登记"，检查器会在 VIOLATION 行报出坐标）
+# ═══ REGISTRY-BASELINE（夹具）═══
+tests/control-tower/beta.test.sh
+# ═══ PATTERN-BASELINE（夹具：空）═══
+# 格式：<路径>:<行号> | owner=<D#> | expires=YYYY-MM-DD | evidence=<引用>
+EOBNOPAT
+OUT_C="$(RUN "$SCAN_M1" "$SB/tests" "$SB/ci.yml" "$SB/baseline-nopat.txt" "$SB/red-baseline.txt" "$SB/logs/coord.log" --patterns-only 2>&1)"
+M1_COORD="$(printf '%s\n' "$OUT_C" | grep -oE '[^ 	]*m1-scan\.sh:[0-9]+' | head -1)"   # swallow-ok: 探测型摘取；取不到由下一行退路兜住并在载荷里可见
+[ -n "$M1_COORD" ] || M1_COORD="$SCAN_M1:3"   # 退路: 取不到坐标则沿用旧形态（断言载荷会把它报出来）
 cat > "$SB/baseline-pat-expired.txt" <<EOB
 # 夹具基线
 # ═══ REGISTRY-BASELINE（夹具）═══
 tests/control-tower/beta.test.sh
 # ═══ PATTERN-BASELINE（夹具：过期条目）═══
 # 格式：<路径>:<行号> | owner=<D#> | expires=YYYY-MM-DD | evidence=<引用>
-$SCAN_M1:3 | owner=fixture | expires=2020-01-01 | evidence=夹具-过期
+$M1_COORD | owner=fixture | expires=2020-01-01 | evidence=夹具-过期
 EOB
 OUT="$(RUN "$SCAN_M1" "$SB/tests" "$SB/ci.yml" "$SB/baseline-pat-expired.txt" "$SB/red-baseline.txt" "$SB/logs/r2.log" --patterns-only 2>&1)"; rc=$?
 if [ "$rc" -eq 1 ] && printf '%s\n' "$OUT" | grep -q "VIOLATION: PATTERN 基线过期（须修或延期）"; then
   ok "棘轮: PATTERN 条目 expires 过期 → exit 1"
 else
-  no "PATTERN 过期未触发: rc=$rc [badre_rc=$BADRE_RC stale=$(d_stale) viol=$(d_viol)]"
+  no "PATTERN 过期未触发: rc=$rc [badre_rc=$BADRE_RC stale=$(d_stale) viol=$(d_viol) coord=$(d_coord)]"
 fi
 
 # ── 判别性 ① STALE 去平台陷阱: 修好副本（^\+\+\+ = GNU 下 :991 的等价合法形态）→ rc=0 + STALE(方言) ──
@@ -359,14 +379,14 @@ cat > "$SB/baseline-mixed.txt" <<EOB
 tests/control-tower/beta.test.sh
 # ═══ PATTERN-BASELINE（夹具：1 条命中违规 + 1 条 STALE）═══
 # 格式：<路径>:<行号> | owner=<D#> | expires=YYYY-MM-DD | evidence=<引用>
-$SCAN_M1:3 | owner=fixture | expires=2099-12-31 | evidence=夹具-registered
+$M1_COORD | owner=fixture | expires=2099-12-31 | evidence=夹具-registered
 $SCAN_OK:2 | owner=fixture | expires=2099-12-31 | evidence=夹具-STALE
 EOB
 OUT="$(RUN "$SCAN_M1" "$SB/tests" "$SB/ci.yml" "$SB/baseline-mixed.txt" "$SB/red-baseline.txt" "$SB/logs/r5.log" --patterns-only 2>&1)"; rc=$?
 if [ "$rc" -eq 0 ] && printf '%s\n' "$OUT" | grep -q "PATTERN-BASELINE: registered 1；STALE(1)"; then
   ok "⑩ 混合: registered 1 + STALE 1 → rc=0（计数准确且 STALE 不入违规）"
 else
-  no "⑩ 混合计数断言失败: rc=$rc [badre_rc=$BADRE_RC $(d_counts)]"
+  no "⑩ 混合计数断言失败: rc=$rc [badre_rc=$BADRE_RC $(d_counts) coord=$(d_coord)]"
 fi
 
 # ── 分段隔离 A: [R] 段里的 key 不给 [P] 面生效（新非法模式仍必红）──
@@ -374,7 +394,7 @@ cat > "$SB/baseline-cross.txt" <<EOB
 # 夹具基线
 # ═══ REGISTRY-BASELINE（夹具：把 M1 的 key 错放在 [R] 段）═══
 tests/control-tower/beta.test.sh
-$SCAN_M1:3
+$M1_COORD
 # ═══ PATTERN-BASELINE（夹具：空）═══
 # 格式：<路径>:<行号> | owner=<D#> | expires=YYYY-MM-DD | evidence=<引用>
 EOB
@@ -392,7 +412,7 @@ cat > "$SB/baseline-both.txt" <<EOB
 tests/control-tower/beta.test.sh
 # ═══ PATTERN-BASELINE（夹具：M1 的 key 正确放在 [P] 段）═══
 # 格式：<路径>:<行号> | owner=<D#> | expires=YYYY-MM-DD | evidence=<引用>
-$SCAN_M1:3 | owner=fixture | expires=2099-12-31 | evidence=夹具-M1
+$M1_COORD | owner=fixture | expires=2099-12-31 | evidence=夹具-M1
 EOB
 OUT="$(RUN "$SCAN_OK" "$SB/tests" "$SB/ci.yml" "$SB/baseline-both.txt" "$SB/red-baseline.txt" "$SB/logs/r5.log" --registry-only 2>&1)"; rc=$?
 [ "$rc" -eq 0 ] && ok "分段隔离: [P] 段条目不进 registry 面 → exit 0（无跨段串行）" || no "分段隔离 B 失败: rc=$rc"
@@ -400,14 +420,14 @@ OUT="$(RUN "$SCAN_M1" "$SB/tests" "$SB/ci.yml" "$SB/baseline-both.txt" "$SB/red-
 if [ "$rc" -eq 0 ] && printf '%s\n' "$OUT" | grep -q "PATTERN-BASELINE: registered 1；STALE(0)"; then
   ok "分段隔离: [P] 段条目正确豁免既有非法模式 → exit 0（registered 1 / STALE 0）"
 else
-  no "分段隔离([P] 豁免)失败: rc=$rc [badre_rc=$BADRE_RC $(d_counts)]"
+  no "分段隔离([P] 豁免)失败: rc=$rc [badre_rc=$BADRE_RC $(d_counts) coord=$(d_coord)]"
 fi
 
 # ── 判别性 M1: 未登记的新非法 ERE（临时脚本）→ 必红 + 点名 file:line ──
 OUT="$(RUN "$SCAN_M1" "$SB/tests" "$SB/ci.yml" "$SB/baseline.txt" "$SB/red-baseline.txt" "$SB/logs/m1.log" --patterns-only 2>&1)"; rc=$?
 if [ "$rc" -eq 1 ] && printf '%s\n' "$OUT" | grep -q "VIOLATION: 非法 ERE 模式" \
-  && printf '%s\n' "$OUT" | grep -q "m1-scan.sh:3" && printf '%s\n' "$OUT" | grep -q -F "$BAD_RE"; then
-  ok "M1: 新注入非法 ERE（未登记）→ exit 1 + 点名 m1-scan.sh:3 + 模式原文"
+  && printf '%s\n' "$OUT" | grep -q -F "$M1_COORD" && printf '%s\n' "$OUT" | grep -q -F "$BAD_RE"; then
+  ok "M1: 新注入非法 ERE（未登记）→ exit 1 + 点名检查器自报坐标 + 模式原文"
 else
   no "M1 判别性失败: rc=${rc} [badre_rc=$BADRE_RC viol=$(d_viol) pts=$(d_pt)]"
 fi
@@ -620,23 +640,24 @@ grep -qF "pull_request.base.sha" "$CIY" \
   || no "接线缺失: ci.yml 未取 pull_request.base.sha"
 grep -qF "pull_request.head.sha" "$CIY" \
   && no "接线回退: ci.yml 仍用 pull_request.head.sha（K3 定罪的空转取数形态）" \
-  || ok "接线: ci.yml 已无 head.sha"
+  || ok "接线: 无 head.sha"
 
-# ⚠️ 可见性预算（#768 红2）: 本文件末尾 6 条 ✅ 文案受 ci.yml:278 `tail -8 | tr '\n' '|' | cut -c1-450`
-#   约束——超 450B 则**含 FIRST_FAIL 的结果行被挤出注解**，CI 上只见 ❌ 名不到（本卡实测：原长 530B 被截）。
-#   实测 tail-8 合并 = 265B（全绿）/ 398B（最坏 FIRST_FAIL，最长断言名 121B）→ 余 52B。
+# ⚠️ 可见性预算（#768 红2 / #774 红1）: 本文件末尾 6 条 ✅ 文案受 ci.yml:278
+#   `tail -8 | tr '\n' '|' | cut -c1-450` 约束——超 450B 则**含 FIRST_FAIL 的结果行被挤出注解**，
+#   CI 上只见 ❌ 名不到（实测：原长 530B 被截）。#774 为给断言载荷腾预算，这 6 条已二次压缩。
+#   实测 tail-8 合并 = **200B**（全绿）/ **372B**（最坏 = 载荷最长那条，含 `coord=<检查器自报坐标>`）。
 #   **改这些话务必保持合计 < 450B**，否则可见性回退（建议后续卡加"预算自检"断言，非本卡范围）。
 # ── J6a/J6b/J6c: --root 护栏（ROOT 随 cwd 漂移 → 会读错树的基线）──
 OUT="$(bash "$GATE" --root "$REPO" --patterns-only 2>&1)"; rc=$?
 if [ "$rc" -eq 0 ] && printf '%s\n' "$OUT" | grep -qF "root=$REPO"; then
-  ok "J6a: --root 定根本 worktree"
+  ok "J6a: --root 定根"
 else
   no "J6a 异常: rc=$rc"
 fi
 mkdir -p "$TMPD/non-git"
 OUT="$(cd "$TMPD/non-git" && bash "$GATE" --root "$REPO" --patterns-only 2>&1)"; rc=$?
 if [ "$rc" -eq 0 ] && printf '%s\n' "$OUT" | grep -qF "root=$REPO"; then
-  ok "J6b: cwd 非 git --root 仍定根"
+  ok "J6b: 非 git 定根"
 else
   no "J6b 异常: rc=$rc"
 fi
@@ -646,7 +667,7 @@ if git -C "$OTHER" init -q 2>/dev/null; then
   OUT_NO="$(cd "$OTHER" && bash "$GATE" --registry-only 2>&1 || true)"
   OUT_YES="$(cd "$OTHER" && bash "$GATE" --registry-only --root "$REPO" 2>&1 || true)"
   if printf '%s\n' "$OUT_YES" | grep -qF "root=$REPO" && ! printf '%s\n' "$OUT_NO" | grep -qF "root=$REPO"; then
-    ok "J6c: --root 真的改变定根"
+    ok "J6c: --root 判别"
   else
     no "J6c: --root 未改变定根结果（护栏可能失效）"
   fi
@@ -656,10 +677,10 @@ fi
 
 # ── 收尾: 红证不残留（仓库内零命中）──
 HITS="$(grep -rl -- "$MARK" "$REPO/scripts" "$REPO/tests" 2>/dev/null | wc -l | tr -d ' ')"   # swallow-ok: 探测型 grep（红证残留检查）；无命中=期望结果 0，grep rc=1 不是错误
-[ "$HITS" = "0" ] && ok "红证不残留: scripts/+tests/ 命中 0" \
+[ "$HITS" = "0" ] && ok "红证不残留 scripts+tests:0" \
   || no "红证残留: scripts/ + tests/ 内命中 ${HITS} 个文件"
 TMP_HITS="$(grep -rl -- "$MARK" "$TMPD" 2>/dev/null | wc -l | tr -d ' ')"   # swallow-ok: 探测型 grep（/tmp 副本存在性）；无命中即判 FAIL，非放行
-[ "$TMP_HITS" -ge 1 ] && ok "红证只在 /tmp: ${TMP_HITS} 文件" || no "红证样本未落在 /tmp 副本"
+[ "$TMP_HITS" -ge 1 ] && ok "红证只在 /tmp: ${TMP_HITS}" || no "红证样本未落在 /tmp 副本"
 
 echo ""
 if [ "$FAIL" -gt 0 ] && [ -z "$FIRST_FAIL" ]; then
