@@ -29,7 +29,8 @@
     "docs/synova/product-lines/evidence/D945-preset-bundle/consistency-report.md",
     ".claude/task-briefs/2026-09-25-D945-preset-bundle-migration.md",
     "task-state/D945.json",
-    "memory/notes/proposed/2026-09-25-d945-preset-bundle-migration.md"
+    "memory/notes/proposed/2026-09-25-d945-preset-bundle-migration.md",
+    "tests/control-tower/precommit-groups-injection.test.sh"
   ],
   "priority": 1,
   "wip_rule": "WIP=1：本卡为当前唯一在制代码卡；C 段空转（D954）等 M9(#741) 合入 main 后另行开工",

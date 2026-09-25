@@ -35,6 +35,7 @@ L0 控制塔/D SH 运行态治理面，不动 src/**。目标：把「预设载�
 - .claude/task-briefs/2026-09-25-D945-preset-bundle-migration.md — 本 brief
 - task-state/D945.json — 卡（write_set 含本 brief 路径）
 - memory/notes/proposed/2026-09-25-d945-preset-bundle-migration.md — 决策 Note
+- tests/control-tower/precommit-groups-injection.test.sh — 改：M9 注入夹具 b 面残留基线 7→8（登记本卡新增的 cordis.patch.yml 命中）+ 脆弱性升级为 P2-2 待办（本卡 CI 红修复所需）
 
 不做什么（含文件路径）：
 - 不删 legacy 目录（`~/.dsh/.agent-presets/synova-*`、`~/.dsh-trial-017/.agent-presets/synova-*`）
