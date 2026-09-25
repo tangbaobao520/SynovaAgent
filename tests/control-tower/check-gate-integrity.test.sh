@@ -64,10 +64,14 @@ PROBE_RE='^+'"++"           # 拼接构造方言探针模式（= ^+++；BSD rc=2
 NAME_CN='门禁完整性（gate-integrity）检查 v1.2'   # 含中文/全角括号/点号 → 转义回归
 
 PASS=0; FAIL=0
+FIRST_FAIL=""
 ok() { echo "  ✅ $1"; PASS=$((PASS + 1)); }
+# D938-CI-2(可见性): FIRST_FAIL 压进结果行——ci.yml 注解 tail-8|cut -c1-450 会截掉散落的 ❌
+#   （本测试 55+ 断言，#741 CI 注解盲区实证）。no() 会紧跟打印原始输出块，失败名更易被顶出窗口。
 no() {
   echo "  ❌ $1"
   FAIL=$((FAIL + 1))
+  if [ -z "$FIRST_FAIL" ]; then FIRST_FAIL="$1"; fi
   echo "  ----- 原始输出 -----"
   printf '%s\n' "${OUT:-（空）}"
   echo "  --------------------"
@@ -542,22 +546,41 @@ else
 fi
 
 # ── M3（判别性自证）: 删「对账对象」打印行 → 变异体不再输出该行（夹具断言具备判别性）──
+# M9-P1 返修(#741 K3 实证): 旧实现两缺陷叠加 = 空跑假绿——
+#   ① 锚用子串「对账对象 = 」：门禁脚本里该子串出现 3 次（2 处注释 + 1 处真打印行）→
+#      `assert len(src)-1` 必炸（Traceback），变异体根本没生成；
+#   ② PYBIN 的 rc/产物完全没查 → `bash <缺失文件>` 的报错被 `|| true` 吞 →
+#      输出里自然没有「对账对象」→ 反向断言空跑判 ✅（K3: Traceback 与 ✅ 同屏实锤）。
+# 修法: ① 锚精确到唯一真打印行（含 'info "对账对象 = ' 的行——注释行不含此串）；
+#       ② 施加硬校验: rc≠0 / 产物缺失或为空 / 与原文件逐字节相同 → MUTATION_NOT_APPLIED 响亮红。
 if [ -n "$PYBIN" ] && [ -n "$BASE_SHA_FIX" ]; then
   MUT_G="$TMPD/gate-no-account-line.sh"
-  "$PYBIN" - "$GATE" "$MUT_G" <<'PYD954'
+  rm -f "$MUT_G"
+  M3_PY_RC=0
+  "$PYBIN" - "$GATE" "$MUT_G" <<'PYD954' || M3_PY_RC=$?
 import io
 import sys
 
 src = io.open(sys.argv[1], encoding="utf-8").read().splitlines(True)
-out = [ln for ln in src if "对账对象 = " not in ln]
-assert len(out) == len(src) - 1, "变异失败：未恰好删掉 1 行"
+anchor = 'info "对账对象 = '
+out = [ln for ln in src if anchor not in ln]
+assert len(out) == len(src) - 1, "变异失败：真打印行（%s）未恰好命中 1 行（实际 %d 行）" % (
+    anchor, len(src) - len(out))
 io.open(sys.argv[2], "w", encoding="utf-8").write("".join(out))
 PYD954
-  OUT_M="$(bash "$MUT_G" --root "$REPO" --patterns-only --base-ref "$BASE_REF_FIX" --ci-reds "$SB/d954-rogue.json" 2>&1 || true)"
-  if printf '%s\n' "$OUT_M" | grep -qF "对账对象 = "; then
-    no "M3: 删行变异体仍输出该行（变异无效）"
+  if [ "$M3_PY_RC" -ne 0 ]; then
+    no "M3: MUTATION_NOT_APPLIED（变异器 rc=${M3_PY_RC}: 锚未命中/多命中——判别性自证无效，禁止空跑判绿）"
+  elif [ ! -s "$MUT_G" ]; then
+    no "M3: MUTATION_NOT_APPLIED（变异产物缺失或为空——变异器静默失败，禁止空跑判绿）"
+  elif cmp -s "$GATE" "$MUT_G"; then
+    no "M3: MUTATION_NOT_APPLIED（变异产物与原文件逐字节相同——变异未施加，禁止空跑判绿）"
   else
-    ok "M3: 删「对账对象」打印行 → 变异体无该行 ⇒ D1 的「行存在」断言有判别性（非空壳）"
+    OUT_M="$(bash "$MUT_G" --root "$REPO" --patterns-only --base-ref "$BASE_REF_FIX" --ci-reds "$SB/d954-rogue.json" 2>&1 || true)"
+    if printf '%s\n' "$OUT_M" | grep -qF "对账对象 = "; then
+      no "M3: 删行变异体仍输出该行（变异无效）"
+    else
+      ok "M3: 删「对账对象」打印行（真施加，cmp 验异）→ 变异体无该行 ⇒ D1 断言有判别性（非空壳）"
+    fi
   fi
 else
   no "M3: PYBIN 或对账对象 sha 不可用，无法构造变异体"
@@ -611,6 +634,10 @@ TMP_HITS="$(grep -rl -- "$MARK" "$TMPD" 2>/dev/null | wc -l | tr -d ' ')"   # sw
 [ "$TMP_HITS" -ge 1 ] && ok "红证只在 /tmp 副本（命中 ${TMP_HITS} 个文件）" || no "红证样本未落在 /tmp 副本"
 
 echo ""
-echo "=== 结果: PASS=${PASS} FAIL=${FAIL} ==="
+if [ "$FAIL" -gt 0 ] && [ -z "$FIRST_FAIL" ]; then
+  echo "  ❌ SELF-CHECK: FAIL=$FAIL 但 FIRST_FAIL 为空（no() 记名机制缺陷）"
+  exit 2
+fi
+echo "=== 结果: PASS=${PASS} FAIL=${FAIL}${FIRST_FAIL:+ FIRST_FAIL=${FIRST_FAIL}} ==="
 [ "$FAIL" -eq 0 ] || exit 1
 exit 0
