@@ -596,19 +596,23 @@ grep -qF "pull_request.base.sha" "$CIY" \
   || no "接线缺失: ci.yml 未取 pull_request.base.sha"
 grep -qF "pull_request.head.sha" "$CIY" \
   && no "接线回退: ci.yml 仍用 pull_request.head.sha（K3 定罪的空转取数形态）" \
-  || ok "接线: ci.yml 已无 pull_request.head.sha（旧空转取数形态已移除）"
+  || ok "接线: ci.yml 已无 head.sha"
 
+# ⚠️ 可见性预算（#768 红2）: 本文件末尾 6 条 ✅ 文案受 ci.yml:278 `tail -8 | tr '\n' '|' | cut -c1-450`
+#   约束——超 450B 则**含 FIRST_FAIL 的结果行被挤出注解**，CI 上只见 ❌ 名不到（本卡实测：原长 530B 被截）。
+#   实测 tail-8 合并 = 265B（全绿）/ 398B（最坏 FIRST_FAIL，最长断言名 121B）→ 余 52B。
+#   **改这些话务必保持合计 < 450B**，否则可见性回退（建议后续卡加"预算自检"断言，非本卡范围）。
 # ── J6a/J6b/J6c: --root 护栏（ROOT 随 cwd 漂移 → 会读错树的基线）──
 OUT="$(bash "$GATE" --root "$REPO" --patterns-only 2>&1)"; rc=$?
 if [ "$rc" -eq 0 ] && printf '%s\n' "$OUT" | grep -qF "root=$REPO"; then
-  ok "J6a: 显式 --root → 定根本 worktree + rc=0（默认行为不变）"
+  ok "J6a: --root 定根本 worktree"
 else
   no "J6a 异常: rc=$rc"
 fi
 mkdir -p "$TMPD/non-git"
 OUT="$(cd "$TMPD/non-git" && bash "$GATE" --root "$REPO" --patterns-only 2>&1)"; rc=$?
 if [ "$rc" -eq 0 ] && printf '%s\n' "$OUT" | grep -qF "root=$REPO"; then
-  ok "J6b: cwd=非 git + --root → 仍正确定根（不静默落空）"
+  ok "J6b: cwd 非 git --root 仍定根"
 else
   no "J6b 异常: rc=$rc"
 fi
@@ -618,7 +622,7 @@ if git -C "$OTHER" init -q 2>/dev/null; then
   OUT_NO="$(cd "$OTHER" && bash "$GATE" --registry-only 2>&1 || true)"
   OUT_YES="$(cd "$OTHER" && bash "$GATE" --registry-only --root "$REPO" 2>&1 || true)"
   if printf '%s\n' "$OUT_YES" | grep -qF "root=$REPO" && ! printf '%s\n' "$OUT_NO" | grep -qF "root=$REPO"; then
-    ok "J6c 判别性: 同 cwd 下 无 --root → ROOT≠worktree / 有 --root → ROOT=worktree（护栏真实生效）"
+    ok "J6c: --root 真的改变定根"
   else
     no "J6c: --root 未改变定根结果（护栏可能失效）"
   fi
@@ -628,10 +632,10 @@ fi
 
 # ── 收尾: 红证不残留（仓库内零命中）──
 HITS="$(grep -rl -- "$MARK" "$REPO/scripts" "$REPO/tests" 2>/dev/null | wc -l | tr -d ' ')"   # swallow-ok: 探测型 grep（红证残留检查）；无命中=期望结果 0，grep rc=1 不是错误
-[ "$HITS" = "0" ] && ok "红证不残留: scripts/ + tests/ 内 '${MARK}' 命中 0" \
+[ "$HITS" = "0" ] && ok "红证不残留: scripts/+tests/ 命中 0" \
   || no "红证残留: scripts/ + tests/ 内命中 ${HITS} 个文件"
 TMP_HITS="$(grep -rl -- "$MARK" "$TMPD" 2>/dev/null | wc -l | tr -d ' ')"   # swallow-ok: 探测型 grep（/tmp 副本存在性）；无命中即判 FAIL，非放行
-[ "$TMP_HITS" -ge 1 ] && ok "红证只在 /tmp 副本（命中 ${TMP_HITS} 个文件）" || no "红证样本未落在 /tmp 副本"
+[ "$TMP_HITS" -ge 1 ] && ok "红证只在 /tmp: ${TMP_HITS} 文件" || no "红证样本未落在 /tmp 副本"
 
 echo ""
 if [ "$FAIL" -gt 0 ] && [ -z "$FIRST_FAIL" ]; then
