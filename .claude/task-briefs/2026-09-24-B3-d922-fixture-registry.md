@@ -26,6 +26,8 @@ K3 批次2 对 D922/D926 的条件三件：① 夹具登记 ci.yml ② 修 T3 �
 - .github/workflows/ci.yml — 改：canary 密封清单追加 1 行 + gate-integrity job 末尾追加证据步（关键行发 ::notice 注解，公开可检索）
 - .claude/task-briefs/2026-09-24-B3-d922-fixture-registry.md — 本 brief
 
+交付文件集（冻结）：上述 3 条即本任务进入 main 的完整文件集，不得有第 4 个文件；S1 互证 `task-state/D922.json` → `write_set`。
+
 不做什么（含文件路径）：
 - 不改 scripts/control-tower/install-dsh-preset.sh（安装器本体零改动）
 - 不改 scripts/control-tower/check-gate-integrity.sh（M9 写集）
