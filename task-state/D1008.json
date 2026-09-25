@@ -1,0 +1,21 @@
+{
+  "task_id": "D1008",
+  "title": "Vitest (2/2) shard 既有红登记（main@ef299746 push 全量红）",
+  "status": "claimed",
+  "owner": "d962-coder-b（临时持有，待 CTO 改派）",
+  "due": "2026-10-09",
+  "evidence": {
+    "run": "CI push run 36146340288 @ main=ef299746（2026-09-25）",
+    "failing_job": "Vitest (2/2) job_id=108108419949 conclusion=failure（Vitest 1/2 cancelled 连坐）",
+    "annotations": "仅 exit code 1（无失败用例注解——logs API 需较高权限，422/404；定位需有权限者开 https://github.com/tangbaobao520/SynovaAgent/actions/runs/36146340288/job/108108419949 取失败用例全文）",
+    "caliber_note": "口径差异（卡核心证据）：main push 的 Vitest 跑**全量集**（红）vs PR 的 Vitest 跑 **changed 集**（#804 同 lane 绿）——两口径下同一 shard 表现不同，红仅在全量集暴露。修复前不得以 PR 绿豁免。"
+  },
+  "write_set": {
+    "added": ["task-state/D1008.json", ".claude/task-briefs/2026-09-26-D1008-Vitest-shard2-既有红登记.md"],
+    "deleted": [],
+    "modified": []
+  },
+  "spec": {"path": ".claude/task-briefs/2026-09-26-D1008-Vitest-shard2-既有红登记.md"},
+  "impl": null,
+  "audit": null
+}
