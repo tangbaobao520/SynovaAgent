@@ -22,13 +22,12 @@
     "client": {
       "platform": "web",
       "inject": [
-        "@deepseek-ai/dsh-client-runtime",
         "@deepseek-ai/dsh-client-ui-layout"
       ]
     }
   },
   "license": "MIT",
   "scripts": {
-    "test": "node --test test/ledger.test.js test/host-route.test.js test/client-panel.test.js"
+    "test": "node --test test/ledger.test.js test/host-route.test.js test/client-panel.test.js test/charter-grid.test.js"
   }
 }
