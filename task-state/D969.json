@@ -9,6 +9,7 @@
   "milestone": "M0 治理",
   "depends_on": [],
   "write_set": [
+    ".claude/bypass.log",
     "scripts/control-tower/daily-cto-board.sh",
     "tests/control-tower/daily-cto-board.test.sh",
     ".claude/task-briefs/2026-09-25-D969-daily-cto-board-paired-test.md",
