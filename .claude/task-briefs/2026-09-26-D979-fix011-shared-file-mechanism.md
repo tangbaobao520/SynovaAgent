@@ -67,15 +67,10 @@
 1. 机制先落 main（本卡）→ 2. 每个共享文件由其**当前 owner 卡**在自己的提交里加声明行（声明含 owner D# + 下一个确知要改该文件的卡 D#）→ 3. 后续卡改该文件时把新 D# 追加进声明（同一提交内改声明 + 改内容）→ 4. 每步走 PR，K3 复审。
 
 ## Done 标准
-1) 机制落地：`scripts/control-tower/shared_file_decl.py` 解析两种声明载体 + `scripts/commit-msg-check.sh` 仅在双向命中时放行
-   verify: bash tests/control-tower/shared_file_decl.test.sh
-2) 两侧反例原始输出：授权通过（exit 0 + 证据行）/ 非授权仍红（exit 1 + `疑似并行劫持`）
-   verify: bash tests/control-tower/commit-msg-consistency.test.sh
-3) 判别性夹具：删掉声明行即报红（非 grep 型静态判据）
-   verify: bash tests/control-tower/commit-msg-consistency.test.sh
-4) 零回归：既有 13 个一致性用例全绿；MSG_DID 为空 / 无认领 / resolver 失败行为与修复前完全一致
-   verify: bash tests/control-tower/commit-msg-consistency.test.sh
-5) 语法与吞错：`bash -n scripts/commit-msg-check.sh` + `check-silent-swallow.sh --diff` 无新增静默吞错
-   verify: bash -n scripts/commit-msg-check.sh
+- [x] 机制落地：`scripts/control-tower/shared_file_decl.py` 解析两种声明载体 + `scripts/commit-msg-check.sh` 仅在双向命中时放行 — verify: bash tests/control-tower/shared_file_decl.test.sh
+- [x] 两侧反例原始输出：授权通过（exit 0 + 证据行）/ 非授权仍红（exit 1 + `疑似并行劫持`）— verify: bash tests/control-tower/commit-msg-consistency.test.sh
+- [x] 判别性夹具：删掉声明行即报红（非 grep 型静态判据）— verify: bash tests/control-tower/commit-msg-consistency.test.sh
+- [x] 零回归：既有 13 个一致性用例全绿；MSG_DID 为空 / 无认领 / resolver 失败行为与修复前完全一致 — verify: bash tests/control-tower/commit-msg-consistency.test.sh
+- [x] 语法与吞错：`bash -n scripts/commit-msg-check.sh` + `check-silent-swallow.sh --diff` 无新增静默吞错 — verify: bash -n scripts/commit-msg-check.sh
 
 #CRITERIA: A
