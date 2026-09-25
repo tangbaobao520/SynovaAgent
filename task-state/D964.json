@@ -27,7 +27,16 @@
     ".claude/task-briefs/**",
     "task-state/D964.json",
     "docs/synova/coordination/archive/**",
-    "docs/synova/research/archive/**"
+    "docs/synova/research/archive/**",
+    "docs/synova/coordination/派单-devdoc-D510-20260823.md",
+    "docs/synova/coordination/派单-小队B-P2不变量-20260921.md",
+    "docs/synova/coordination/派单-并行-D511-D512-20260823.md",
+    "docs/synova/coordination/派单-批七-20260917.md",
+    "docs/synova/coordination/派单-批十附-三项开工前核实-D818-20260918.md",
+    "docs/synova/coordination/编码指令-D539-会话worktree隔离-20260827.md",
+    "docs/synova/coordination/编码指令-D544-leftbar-acceptance-20260828.md",
+    "docs/synova/coordination/编码指令-D546-sentinel-findings-event-20260828.md",
+    "docs/synova/coordination/编码指令-D551-ga-calibration-20260828.md"
   ],
   "papers": [],
   "updated_at": "2026-09-25",
