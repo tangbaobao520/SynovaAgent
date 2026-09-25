@@ -38,6 +38,9 @@ D735 分两阶段把 bypass 证据账本移出 git。**Stage 1（PR #541 / e484a
 - tests/control-tower/post-commit.test.sh
 - tests/control-tower/post-commit-marker.test.sh
 - tests/control-tower/pre-commit-bypass-read.test.sh
+- docs/authority/bypass-ledger-archive/README.md
+- docs/authority/bypass-ledger-archive/bypass-ledger-frozen-2026-09-25.txt
+- docs/synova/coordination/ownership.yaml
 不做什么（含文件路径）：
 - 不改 scripts/control-tower/synova-commit （旧路径次写者；最高风险脚本，本卡不动 → 立后续卡）
 - 不改 .claude/reference-map.md （同类第二例：与 `.gitattributes:20` 同型的 union 属性，本卡保留，需升级）
@@ -50,6 +53,11 @@ D735 分两阶段把 bypass 证据账本移出 git。**Stage 1（PR #541 / e484a
 入口: `git push`（pre-push 门禁 5 → `check-bypass-log.sh`）；本地 `pre-commit-check.sh` 的 Gatekeeper 与组 7c。
 处理: 证据写 per-session（git 忽略）→ 读面 = 冻结归档 + 旧路径（若存在）+ 全部 per-session（写入与读取两侧同步切换）。
 结果: 分支不再产生 `.claude/bypass.log` 变更；D331 对账通过；Gatekeeper/组 7c 仍看得见证据（不静默失能）。
+
+### Q2b: 拆 PR（CTO 裁决 甲′）
+本卡拆两支 PR：**PR-2 `docs/d970-archive-and-ownership`**（归档产物 + `.gitattributes` 判 domain_neutral，**先合**）
++ **PR-1 `fix/d970-bypass-ledger-stage2`**（核心修复，恰 12 件，后合）。两支的 `task-state/D970.json` 的 `write_set`
+覆盖**两支全部文件**（D708 口径）；本 brief 同内容随两支落地。
 
 ## 架构层: scripts（控制塔）+ 仓库跟踪策略
 ## Done 标准
