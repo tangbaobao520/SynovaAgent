@@ -93,7 +93,11 @@ window.__ModuleLoader__.load({
 			".scg-pill-green{background:#0a7d32;color:#fff}.scg-pill-yellow{background:#b8860b;color:#fff}.scg-pill-red{background:#b3261e;color:#fff}.scg-pill-empty{background:#6b7280;color:#fff}",
 			".scg-cell-green{background:#e8f5e9}.scg-cell-yellow{background:#fff8e1}.scg-cell-red{background:#fdecea}.scg-cell-empty{background:#fafafa}",
 			".scg-legend{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:11px;color:var(--dsw-alias-label-tertiary)}",
-			".scg-note{font-size:10px;color:var(--dsw-alias-label-tertiary)}"
+			".scg-note{font-size:10px;color:var(--dsw-alias-label-tertiary)}",
+			// 拖动/缩放（照 .spo-grip/.spo-resize 先例，scg- 前缀独立命名空间）
+			".scg-grip{cursor:grab;user-select:none;touch-action:none}",
+			".scg-grip:active{cursor:grabbing}",
+			".scg-resize{position:absolute;right:0;bottom:0;width:18px;height:18px;cursor:nwse-resize;touch-action:none;background:linear-gradient(135deg,transparent 0 55%,var(--dsw-alias-border-l3,#9ca3af) 55% 62%,transparent 62% 74%,var(--dsw-alias-border-l3,#9ca3af) 74% 81%,transparent 81%)}"
 		].join("");
 
 		// ── 小工具 ─────────────────────────────────────────────────────────────
@@ -360,6 +364,8 @@ window.__ModuleLoader__.load({
 		const PANEL_MIN_W = 720;
 		const PANEL_MIN_H = 480;
 		const PANEL_MARGIN = 32;
+		// 「项目总览」几何参数（各面板独立一组；D963 起几何函数按 opts 参数化）
+		const OVERVIEW_GEO = { key: PANEL_GEO_KEY, minW: PANEL_MIN_W, minH: PANEL_MIN_H, defW: 1100, defH: 760, label: "项目总览" };
 		// 拖动/缩放过程中的起点。面板同时只存在一个实例（main keyed cell），故用模块级变量
 		// 而非 useRef —— 也避免污染 hook 顺序。
 		let dragOrigin = null;
@@ -373,7 +379,7 @@ window.__ModuleLoader__.load({
 			try {
 				el.setPointerCapture(e.pointerId);
 			} catch (err) {
-				console.warn("[项目总览] setPointerCapture 失败（拖动/缩放仍可用）: " + (err && err.message ? err.message : err));
+				console.warn("[面板] setPointerCapture 失败（拖动/缩放仍可用）: " + (err && err.message ? err.message : err));
 			}
 		}
 
@@ -381,53 +387,55 @@ window.__ModuleLoader__.load({
 		function viewportW() { return (typeof window !== "undefined" && window.innerWidth) || 1280; }
 		function viewportH() { return (typeof window !== "undefined" && window.innerHeight) || 800; }
 
-		/** 默认几何：视口内居中，四周留 PANEL_MARGIN。 */
-		function defaultGeo() {
+		/** 默认几何：视口内居中，四周留 PANEL_MARGIN。opts: {minW,minH,defW,defH}（各面板独立）。 */
+		function defaultGeo(opts) {
+			const minW = opts.minW, minH = opts.minH;
 			const vw = viewportW(), vh = viewportH();
-			const width = clampNum(1100, PANEL_MIN_W, Math.max(PANEL_MIN_W, vw - PANEL_MARGIN));
-			const height = clampNum(760, PANEL_MIN_H, Math.max(PANEL_MIN_H, vh - PANEL_MARGIN));
+			const width = clampNum(opts.defW, minW, Math.max(minW, vw - PANEL_MARGIN));
+			const height = clampNum(opts.defH, minH, Math.max(minH, vh - PANEL_MARGIN));
 			return { left: Math.max(0, Math.round((vw - width) / 2)), top: Math.max(0, Math.round((vh - height) / 2)), width, height };
 		}
 
 		/** 读偏好。localStorage 不可用（隐私模式/配额）或内容非法 → 返回 null 走默认，不抛错、不白屏。 */
-		function readJSONPref(storageKey) {
+		function readJSONPref(storageKey, label) {
 			try {
 				const raw = localStorage.getItem(storageKey);
 				if (!raw) return null;
 				const v = JSON.parse(raw);
 				return v !== null && typeof v === "object" ? v : null;
 			} catch (err) {
-				console.warn("[项目总览] 偏好读取失败，本区降级为默认值: " + storageKey + " — " + (err && err.message ? err.message : err));
+				console.warn("[" + label + "] 偏好读取失败，本区降级为默认值: " + storageKey + " — " + (err && err.message ? err.message : err));
 				return null;
 			}
 		}
 		/** 写偏好。失败只记 console（不静默），不影响面板可用性。 */
-		function writeJSONPref(storageKey, value) {
+		function writeJSONPref(storageKey, value, label) {
 			try {
 				localStorage.setItem(storageKey, JSON.stringify(value));
 			} catch (err) {
-				console.warn("[项目总览] 偏好写入失败，本次不记忆: " + storageKey + " — " + (err && err.message ? err.message : err));
+				console.warn("[" + label + "] 偏好写入失败，本次不记忆: " + storageKey + " — " + (err && err.message ? err.message : err));
 			}
 		}
 
-		/** 几何归一化：任何来源（默认/记忆/拖动/缩放）都必须落在 min/max 之间且不出视口。 */
-		function normalizeGeo(g) {
+		/** 几何归一化：任何来源（默认/记忆/拖动/缩放）都必须落在 min/max 之间且不出视口。opts 同 defaultGeo。 */
+		function normalizeGeo(g, opts) {
+			const minW = opts.minW, minH = opts.minH;
 			const vw = viewportW(), vh = viewportH();
-			const width = clampNum(Number(g.width) || 0, PANEL_MIN_W, Math.max(PANEL_MIN_W, vw - PANEL_MARGIN));
-			const height = clampNum(Number(g.height) || 0, PANEL_MIN_H, Math.max(PANEL_MIN_H, vh - PANEL_MARGIN));
+			const width = clampNum(Number(g.width) || 0, minW, Math.max(minW, vw - PANEL_MARGIN));
+			const height = clampNum(Number(g.height) || 0, minH, Math.max(minH, vh - PANEL_MARGIN));
 			const left = clampNum(Number(g.left) || 0, 0, Math.max(0, vw - width));
 			const top = clampNum(Number(g.top) || 0, 0, Math.max(0, vh - height));
 			return { left: Math.round(left), top: Math.round(top), width: Math.round(width), height: Math.round(height) };
 		}
-		/** 启动几何：有合法记忆用记忆（并归一化），否则用默认。 */
-		function readGeo() {
-			const saved = readJSONPref(PANEL_GEO_KEY);
+		/** 启动几何：有合法记忆用记忆（并归一化），否则用默认。opts: {key,minW,minH,defW,defH,label}。 */
+		function readGeoFor(opts) {
+			const saved = readJSONPref(opts.key, opts.label);
 			const usable = saved && Number.isFinite(Number(saved.width)) && Number.isFinite(Number(saved.height));
-			return normalizeGeo(usable ? saved : defaultGeo());
+			return normalizeGeo(usable ? saved : defaultGeo(opts), opts);
 		}
 		/** 折叠态：默认全部展开。 */
 		function readCollapsed() {
-			return Object.assign({ lines: false, blocked: false, tasks: false, health: false, timeline: false }, readJSONPref(PANEL_COLLAPSE_KEY) ?? {});
+			return Object.assign({ lines: false, blocked: false, tasks: false, health: false, timeline: false }, readJSONPref(PANEL_COLLAPSE_KEY, "项目总览") ?? {});
 		}
 
 		function ProjectOverviewPanel(props) {
@@ -439,7 +447,7 @@ window.__ModuleLoader__.load({
 			const [busy, setBusy] = useState(false);
 			const [at, setAt] = useState(null);
 			// 位置/尺寸（localStorage 记忆）与四+区块折叠态（localStorage 记忆）
-			const [geo, setGeo] = useState(readGeo);
+			const [geo, setGeo] = useState(() => readGeoFor(OVERVIEW_GEO));
 			const [collapsed, setCollapsed] = useState(readCollapsed);
 
 			const load = useCallback(async () => {
@@ -492,7 +500,7 @@ window.__ModuleLoader__.load({
 			const toggleSection = useCallback((id) => {
 				const next = Object.assign({}, collapsed, { [id]: !collapsed[id] });
 				setCollapsed(next);
-				writeJSONPref(PANEL_COLLAPSE_KEY, next);
+				writeJSONPref(PANEL_COLLAPSE_KEY, next, "项目总览");
 			}, [collapsed]);
 
 			// 拖动：标题栏 pointerdown → move → up。移动期间只改 state，松手才落盘。
@@ -508,14 +516,14 @@ window.__ModuleLoader__.load({
 					height: geo.height,
 					left: dragOrigin.left + (e.clientX - dragOrigin.x),
 					top: dragOrigin.top + (e.clientY - dragOrigin.y)
-				});
+				}, OVERVIEW_GEO);
 				lastGeo = next;
 				setGeo(next);
 			}, [geo.width, geo.height]);
 			const onDragEnd = useCallback(() => {
 				if (dragOrigin === null) return;
 				dragOrigin = null;
-				writeJSONPref(PANEL_GEO_KEY, lastGeo ?? geo);
+				writeJSONPref(PANEL_GEO_KEY, lastGeo ?? geo, "项目总览");
 			}, [geo]);
 
 			// 缩放：右下角手柄，同样松手落盘；min 720×480，max 视口-32px（由 normalizeGeo 保证）
@@ -531,14 +539,14 @@ window.__ModuleLoader__.load({
 					top: geo.top,
 					width: resizeOrigin.width + (e.clientX - resizeOrigin.x),
 					height: resizeOrigin.height + (e.clientY - resizeOrigin.y)
-				});
+				}, OVERVIEW_GEO);
 				lastGeo = next;
 				setGeo(next);
 			}, [geo.left, geo.top]);
 			const onResizeEnd = useCallback(() => {
 				if (resizeOrigin === null) return;
 				resizeOrigin = null;
-				writeJSONPref(PANEL_GEO_KEY, lastGeo ?? geo);
+				writeJSONPref(PANEL_GEO_KEY, lastGeo ?? geo, "项目总览");
 			}, [geo]);
 
 			const routeDegraded = data !== null && data.ok === false;
@@ -641,6 +649,9 @@ window.__ModuleLoader__.load({
 		//   @write  零写入：只 GET。
 		const CHARTER_URL = "/synova/charter/grid";
 		const CHARTER_TONE_TEXT = { green: "生效了", yellow: "接了未生效", red: "缺失", empty: "未填" };
+		// 宪章面板几何（D963 第二项退回：复用本插件既有几何能力，独立持久化键——与项目总览互不串）
+		const CHARTER_GEO_KEY = "synova.charter.panel.v1";
+		const CHARTER_GEO = { key: CHARTER_GEO_KEY, minW: 720, minH: 480, defW: 980, defH: 640, label: "宪章三问" };
 
 		/**
 		 * 格子渲染值归一化（X27）：tone 必须是四色白名单（green/yellow/red/empty），
@@ -658,6 +669,8 @@ window.__ModuleLoader__.load({
 			const [error, setError] = useState(null);
 			const [busy, setBusy] = useState(false);
 			const [at, setAt] = useState(null);
+			// 位置/尺寸（localStorage 记忆，独立键 synova.charter.panel.v1；读取失败降级默认不崩）
+			const [geo, setGeo] = useState(() => readGeoFor(CHARTER_GEO));
 
 			const load = useCallback(async () => {
 				setBusy(true);
@@ -688,6 +701,52 @@ window.__ModuleLoader__.load({
 					document.removeEventListener("visibilitychange", onVis);
 				};
 			}, [load]);
+
+			// 拖动（标题栏）与缩放（右下角手柄）：照 ProjectOverviewPanel 先例；期间只改 state，
+			// 松手落盘（独立键）。dragOrigin/resizeOrigin/lastGeo 为模块级单实例变量——main keyed
+			// 同一时刻只渲染一个选中面板，宪章与总览互斥可见，不并发。
+			const onDragStart = useCallback((e) => {
+				dragOrigin = { x: e.clientX, y: e.clientY, left: geo.left, top: geo.top };
+				lastGeo = geo;
+				capturePointer(e);
+			}, [geo]);
+			const onDragMove = useCallback((e) => {
+				if (dragOrigin === null) return;
+				const next = normalizeGeo({
+					width: geo.width,
+					height: geo.height,
+					left: dragOrigin.left + (e.clientX - dragOrigin.x),
+					top: dragOrigin.top + (e.clientY - dragOrigin.y)
+				}, CHARTER_GEO);
+				lastGeo = next;
+				setGeo(next);
+			}, [geo.width, geo.height]);
+			const onDragEnd = useCallback(() => {
+				if (dragOrigin === null) return;
+				dragOrigin = null;
+				writeJSONPref(CHARTER_GEO_KEY, lastGeo ?? geo, "宪章三问");
+			}, [geo]);
+			const onResizeStart = useCallback((e) => {
+				resizeOrigin = { x: e.clientX, y: e.clientY, width: geo.width, height: geo.height };
+				lastGeo = geo;
+				capturePointer(e);
+			}, [geo]);
+			const onResizeMove = useCallback((e) => {
+				if (resizeOrigin === null) return;
+				const next = normalizeGeo({
+					left: geo.left,
+					top: geo.top,
+					width: resizeOrigin.width + (e.clientX - resizeOrigin.x),
+					height: resizeOrigin.height + (e.clientY - resizeOrigin.y)
+				}, CHARTER_GEO);
+				lastGeo = next;
+				setGeo(next);
+			}, [geo.left, geo.top]);
+			const onResizeEnd = useCallback(() => {
+				if (resizeOrigin === null) return;
+				resizeOrigin = null;
+				writeJSONPref(CHARTER_GEO_KEY, lastGeo ?? geo, "宪章三问");
+			}, [geo]);
 
 			const routeDegraded = data !== null && data.ok === false;
 			const usable = data !== null && data.ok !== false;
@@ -744,8 +803,18 @@ window.__ModuleLoader__.load({
 				body.push(jsx("div", { className: "spo-empty", key: "empty", children: "数据已就绪但 rows 为空（真源 cells 缺失或为空——等宪章 48 格产出方补数）" }));
 			}
 
-			return jsx("div", { className: "scg-root", style: { left: "160px", top: "90px", width: "880px", height: "600px" }, children: [
-				jsx("div", { className: "spo-head", children: [
+			return jsx("div", {
+				className: "scg-root",
+				style: { left: geo.left + "px", top: geo.top + "px", width: geo.width + "px", height: geo.height + "px" },
+				children: [
+				jsx("div", {
+					className: "spo-head scg-grip",
+					title: "拖动标题栏移动面板",
+					onPointerDown: onDragStart,
+					onPointerMove: onDragMove,
+					onPointerUp: onDragEnd,
+					onPointerCancel: onDragEnd,
+					children: [
 					jsx("div", { className: "spo-title", children: "宪章三问" }),
 					source ? jsx("span", { className: "spo-tag" + (source === "worktree" ? "" : " spo-tag-blue"), children: "源 " + source }) : null,
 					jsx("span", { className: "spo-muted", children: "加了吗 / 接上了吗 / 生效了吗 —— 16 扩展点 × 3 问" }),
@@ -758,7 +827,15 @@ window.__ModuleLoader__.load({
 					jsx("span", { className: "spo-muted", children: "只读视图 · 数据源 docs/synova/coordination/宪章三问-48格.json · 更新 " + (at ?? "—") }),
 					jsx("span", { className: "spo-spacer" }),
 					jsx("span", { className: "spo-muted", children: routeDegraded || error !== null ? "降级" : "60s 自动刷新" })
-				] })
+				] }),
+				jsx("div", {
+					className: "scg-resize",
+					title: "拖动缩放面板",
+					onPointerDown: onResizeStart,
+					onPointerMove: onResizeMove,
+					onPointerUp: onResizeEnd,
+					onPointerCancel: onResizeEnd
+				})
 			] });
 		}
 

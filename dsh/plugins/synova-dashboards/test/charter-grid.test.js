@@ -28,10 +28,12 @@ const REAL_RAW = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "fix
 const REAL = JSON.parse(REAL_RAW);
 
 // ── 迷你 React 装载/渲染夹具（同 test/client-panel.test.js 手法，聚焦宪章面板）──
-function loadPlugin() {
+function loadPlugin(opts = {}) {
   const registrations = [];
   const fetchCalls = [];
   const panelSelections = [];
+  const storageWrites = [];
+  const storage = new Map(Object.entries(opts.storage ?? {}));
   let captured = null;
 
   const g = { stores: [], compIdx: 0, cursor: null, effectQueue: [] };
@@ -70,13 +72,19 @@ function loadPlugin() {
     addEventListener() {},
     removeEventListener() {},
   };
+  const localStorageStub = {
+    getItem: (k) => (storage.has(k) ? storage.get(k) : null),
+    setItem: (k, v) => { storage.set(k, String(v)); storageWrites.push({ key: k, value: String(v) }); },
+    removeItem: (k) => { storage.delete(k); },
+  };
   const windowStub = {
     innerWidth: 1400, innerHeight: 900,
     __ModuleLoader__: { load: (def) => { captured = def; } },
   };
-  const prev = { window: globalThis.window, document: globalThis.document, fetch: globalThis.fetch };
+  const prev = { window: globalThis.window, document: globalThis.document, fetch: globalThis.fetch, localStorage: globalThis.localStorage };
   globalThis.window = windowStub;
   globalThis.document = documentStub;
+  globalThis.localStorage = localStorageStub;
   (0, eval)(SRC);
   assert.ok(captured, "client.js 必须调用 window.__ModuleLoader__.load");
   const mod = captured.factory((name) => {
@@ -138,11 +146,12 @@ function loadPlugin() {
   }
 
   return {
-    registrations, fetchCalls, panelSelections, render,
+    registrations, fetchCalls, panelSelections, storageWrites, render,
     restore() {
       globalThis.window = prev.window;
       globalThis.document = prev.document;
       globalThis.fetch = prev.fetch;
+      globalThis.localStorage = prev.localStorage;
     },
   };
 }
@@ -631,6 +640,134 @@ test("契约一致性：adapter 输出形状 vs 客户端读取字段逐项吻�
     assert.match(r.text, /🟢 生效 2/);
     const emptyCells = r.nodes.filter((n) => n.className.includes("scg-pill-empty") && n.props.children === "未填");
     assert.equal(emptyCells.length, 43);
+  } finally {
+    p.restore();
+  }
+});
+
+// ── 几何能力（D963 第二项退回：可移动 + 可放大，复用既有先例）──
+// 键名 synova.charter.panel.v1（独立于项目总览 synova.pm.panel.v1）；min 720×480 / max 视口-32（视口 1400×900）。
+test("几何·记忆生效且键不串：宪章键记忆原样生效；项目总览键不影响宪章（走默认）", async () => {
+  const p = loadPlugin({ storage: { "synova.charter.panel.v1": JSON.stringify({ left: 77, top: 33, width: 900, height: 560 }) } });
+  try {
+    const r = await p.render(ROUTE_EMPTY);
+    const root = r.nodes.find((n) => n.className.includes("scg-root"));
+    assert.ok(root, "scg-root 必须渲染");
+    assert.equal(root.props.style.left, "77px");
+    assert.equal(root.props.style.top, "33px");
+    assert.equal(root.props.style.width, "900px");
+    assert.equal(root.props.style.height, "560px");
+  } finally {
+    p.restore();
+  }
+  // 只给项目总览键 → 宪章不读它，用默认（视口 1400×900 居中，def 980×640）
+  const p2 = loadPlugin({ storage: { "synova.pm.panel.v1": JSON.stringify({ left: 1, top: 2, width: 111, height: 222 }) } });
+  try {
+    const r = await p2.render(ROUTE_EMPTY);
+    const root = r.nodes.find((n) => n.className.includes("scg-root"));
+    assert.notEqual(root.props.style.left, "1px", "不得读项目总览键");
+    assert.notEqual(root.props.style.width, "111px");
+    assert.equal(root.props.style.width, "980px", "默认宽 980");
+    assert.equal(root.props.style.height, "640px", "默认高 640");
+    assert.equal(root.props.style.left, Math.round((1400 - 980) / 2) + "px", "默认水平居中");
+  } finally {
+    p2.restore();
+  }
+});
+
+test("几何·拖动：位移落盘到宪章键、不改尺寸；越界夹回视口内", async () => {
+  const p = loadPlugin({ storage: { "synova.charter.panel.v1": JSON.stringify({ left: 100, top: 60, width: 900, height: 560 }) } });
+  try {
+    const r = await p.render(ROUTE_EMPTY);
+    const grip = r.nodes.find((n) => n.className.includes("scg-grip"));
+    assert.ok(grip, "标题栏必须作为拖拽区存在");
+    for (const h of ["onPointerDown", "onPointerMove", "onPointerUp"]) {
+      assert.ok(Object.keys(grip.props).includes(h), "标题栏必须挂 " + h);
+    }
+    const cap = { setPointerCapture() {} };
+    grip.props.onPointerDown({ clientX: 200, clientY: 100, pointerId: 1, currentTarget: cap });
+    grip.props.onPointerMove({ clientX: 260, clientY: 130 }); // +60 / +30
+    grip.props.onPointerUp({});
+    const saved = JSON.parse(p.storageWrites[p.storageWrites.length - 1].value);
+    assert.equal(p.storageWrites[p.storageWrites.length - 1].key, "synova.charter.panel.v1", "必须写宪章键");
+    assert.equal(saved.left, 160, "位移必须落盘");
+    assert.equal(saved.top, 90);
+    assert.equal(saved.width, 900, "拖动不得改变尺寸");
+    // 越界 → 夹回视口内（1400×900）
+    grip.props.onPointerDown({ clientX: 0, clientY: 0, pointerId: 1, currentTarget: cap });
+    grip.props.onPointerMove({ clientX: 99999, clientY: 99999 });
+    grip.props.onPointerUp({});
+    const clamped = JSON.parse(p.storageWrites[p.storageWrites.length - 1].value);
+    assert.equal(clamped.left, 1400 - 900, "left 夹到视口-宽");
+    assert.equal(clamped.top, 900 - 560, "top 夹到视口-高");
+  } finally {
+    p.restore();
+  }
+});
+
+test("几何·缩放：min 720×480 / max 视口-32px（1400×900 → 1368×868）", async () => {
+  const p = loadPlugin({ storage: { "synova.charter.panel.v1": JSON.stringify({ left: 10, top: 10, width: 900, height: 560 }) } });
+  try {
+    const r = await p.render(ROUTE_EMPTY);
+    const handle = r.nodes.find((n) => n.className.includes("scg-resize"));
+    assert.ok(handle, "右下角必须有 resize 手柄");
+    const cap = { setPointerCapture() {} };
+    handle.props.onPointerDown({ clientX: 0, clientY: 0, pointerId: 2, currentTarget: cap });
+    handle.props.onPointerMove({ clientX: -9999, clientY: -9999 });
+    handle.props.onPointerUp({});
+    let saved = JSON.parse(p.storageWrites[p.storageWrites.length - 1].value);
+    assert.equal(saved.width, 720, "min 宽 720");
+    assert.equal(saved.height, 480, "min 高 480");
+    handle.props.onPointerDown({ clientX: 0, clientY: 0, pointerId: 3, currentTarget: cap });
+    handle.props.onPointerMove({ clientX: 99999, clientY: 99999 });
+    handle.props.onPointerUp({});
+    saved = JSON.parse(p.storageWrites[p.storageWrites.length - 1].value);
+    assert.equal(saved.width, 1400 - 32, "max 宽视口-32");
+    assert.equal(saved.height, 900 - 32, "max 高视口-32");
+  } finally {
+    p.restore();
+  }
+});
+
+test("几何·持久化失败：localStorage 抛错 → console.warn + 不崩（读取失败走默认，写入失败不记忆）", async () => {
+  const cap = captureConsole();
+  const p = loadPlugin();
+  try {
+    // getItem 抛错 → 警告 + 默认几何
+    globalThis.localStorage.getItem = () => { throw new Error("quota read"); };
+    const r1 = await p.render(ROUTE_EMPTY);
+    const root1 = r1.nodes.find((n) => n.className.includes("scg-root"));
+    assert.equal(root1.props.style.width, "980px", "读取失败必须降级默认几何");
+    assert.ok(cap.warnings.some((w) => w.includes("偏好读取失败") && w.includes("宪章三问")), "读取失败必须 warn: " + cap.warnings.join(" | "));
+    // setItem 抛错 → 警告 + 拖动仍可用不崩、不落盘
+    globalThis.localStorage.getItem = () => null;
+    globalThis.localStorage.setItem = () => { throw new Error("quota full"); };
+    const r2 = await p.render(ROUTE_EMPTY);
+    const grip = r2.nodes.find((n) => n.className.includes("scg-grip"));
+    const capPtr = { setPointerCapture() {} };
+    assert.doesNotThrow(() => {
+      grip.props.onPointerDown({ clientX: 0, clientY: 0, pointerId: 1, currentTarget: capPtr });
+      grip.props.onPointerMove({ clientX: 50, clientY: 20 });
+      grip.props.onPointerUp({});
+    }, "写失败不得抛错拖垮面板");
+    assert.ok(cap.warnings.some((w) => w.includes("偏好写入失败") && w.includes("本次不记忆")), "写失败必须 warn");
+  } finally {
+    cap.restore();
+    p.restore();
+  }
+});
+
+test("几何·标题栏拖动区与缩放手柄挂全 pointer 事件 + 面板标题仍在", async () => {
+  const p = loadPlugin();
+  try {
+    const r = await p.render(ROUTE_EMPTY);
+    assert.match(r.text, /宪章三问/);
+    const handle = r.nodes.find((n) => n.className.includes("scg-resize"));
+    for (const h of ["onPointerDown", "onPointerMove", "onPointerUp", "onPointerCancel"]) {
+      assert.ok(Object.keys(handle.props).includes(h), "手柄必须挂 " + h);
+    }
+    const grip = r.nodes.find((n) => n.className.includes("scg-grip"));
+    assert.ok(Object.keys(grip.props).includes("onPointerCancel"), "拖动区必须挂 onPointerCancel");
   } finally {
     p.restore();
   }
