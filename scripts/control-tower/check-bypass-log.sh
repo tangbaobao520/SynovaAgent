@@ -56,15 +56,10 @@ if [ -n "$_base_remote" ] && [ "$_base_remote" != "$_base_branch" ] && [ "${SYNO
 fi
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RESET='\033[0m'
 
-if ! _source_exists; then
-  echo -e "${RED}❌ 执行证据链整体不可读 — 无任何可用来源${RESET}"
-  echo "  已查来源: $(printf '%s' "$LEDGER_SOURCES" | tr '\n' ' ')"
-  echo "  Stage 2 后账本不随仓走：请确认 .sessions/<sid>/bypass.log 或 docs/authority/bypass-ledger-archive/*.txt 存在；"
-  echo "  并确认提交均经 synova-commit（含 COMMITTED 记录）或一次性补记"
-  exit 1
-fi
+# ⚠️ 本判据**过宽**已修（D970 verifier 退回 ①）: 「来源不可读」只有在**确有待对账提交**时才是
+#   fail-closed 触发条件；空范围是 vacuous pass，与来源可读性无关。见下方 RANGE 计算之后的判定。
 
-# base 可解析性: 显式 SYNO_BASE_REF 不可解析 → 硬错误（测试/调用方给错引用须显式暴露）
+BASE="${SYNO_BASE_REF:-${1:-origin/feat/prompt-architecture}}"
 if ! git rev-parse --verify "$BASE" >/dev/null 2>&1; then
   if [[ -n "${SYNO_BASE_REF:-}" ]]; then
     echo -e "${RED}❌ base 不可解析: $BASE${RESET}"
@@ -102,6 +97,23 @@ if [ $? -ne 0 ]; then
   echo -e "${RED}❌ git log 执行失败 ($BASE..HEAD) — 对账无法执行（fail-closed, 不当作通过）${RESET}" >&2
   echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) check-bypass-log degraded: git log $BASE..HEAD 失败" >> "$ROOT/.claude/degraded-events.log" 2>/dev/null || true
   exit 2
+fi
+
+# ── D970 语义 1: 空范围 = 无可对账对象 = **vacuous pass**，与来源是否可读**无关** ──
+#    （原实现在此之前就要求「至少一个来源可读」⇒ 把「无待对账提交」误判为「整体不可读」，
+#      在非本机 worktree（无本机 .sessions 记录）上退化成 exit 1 —— verifier 退回的根因。）
+if [ -z "$GIT_LOG_OUT" ]; then
+  echo -e "${GREEN}✅ bypass.log 对账通过: ${RANGE} 空集（无待对账提交，vacuous pass）${RESET}"
+  exit 0
+fi
+
+# ── D970 语义 3: **确有待对账提交** 且 全部来源不可读 → fail-closed（不改既有可观测行为）──
+if ! _source_exists; then
+  echo -e "${RED}❌ 有待对账提交但执行证据链整体不可读 — 无任何可用来源${RESET}"
+  echo "  已查来源: $(printf '%s' "$LEDGER_SOURCES" | tr '\n' ' ')"
+  echo "  Stage 2 后账本不随仓走：请确认 .sessions/<sid>/bypass.log 或 docs/authority/bypass-ledger-archive/*.txt 存在；"
+  echo "  并确认提交均经 synova-commit（含 COMMITTED 记录）或一次性补记"
+  exit 1
 fi
 for h in $GIT_LOG_OUT; do
   # D451: 纯补记提交（只改 bypass.log）豁免——它是补记动作本身
