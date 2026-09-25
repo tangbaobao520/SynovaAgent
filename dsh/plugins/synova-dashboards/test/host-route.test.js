@@ -105,13 +105,14 @@ test("Host 半导出契约：name / inject 保持 webServer（bundle 层按此�
   assert.deepEqual(inject, ["webServer"]);
 });
 
-test("同时注册两条只读路由：/synova/dashboards/data（原有）与 /synova/pm/ledger（新增）", async () => {
+test("同时注册三条只读路由：/synova/dashboards/data、/synova/pm/ledger 与 /synova/charter/grid（D963）", async () => {
   const root = makeRepo({ [LEDGER_REL_PATH]: GOOD_LEDGER });
   const { routes } = await loadHost(root);
-  assert.equal(routes.length, 2, "应恰好注册两条路由");
+  assert.equal(routes.length, 3, "应恰好注册三条路由");
   for (const r of routes) assert.equal(r.kind, "exact");
   findRoute(routes, "/synova/dashboards/data");
   findRoute(routes, "/synova/pm/ledger");
+  findRoute(routes, "/synova/charter/grid");
 });
 
 test("正常路径：工作区账本存在 → 200 + 账本字段全保留 + source=worktree + no-store", async () => {

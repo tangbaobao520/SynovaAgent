@@ -11,10 +11,15 @@
 //          降级: { ok:false, degraded:true, error:"<两级原因>", attempts:[...] }
 //   @degraded 数据收集/读盘失败 → 200 + degraded JSON（不 500，避免前端误判为断网；
 //             不抛异常，避免拖垮宿主进程；铁律 24/31）
+//     ③ GET /synova/charter/grid    → 200，宪章三问 48 格数据（D963）：
+//          成功 → { ...grid, ok:true, source:"worktree"|"origin/main" }
+//          降级 → { ok:false, degraded:true, error, missing:"宪章三问-48格.json" }
+//          （文件当前 main 上不存在，降级是预期正常态；禁 500 禁空白，见 lib/charter.js）
 //   @caching 两条路由均无缓存，每次请求读盘（沿用现有 data 路由语义）
 //   @write   零写入：只 readFile/execFile 只读 git，不写工作区/仓库（D794 红线）
 import { collectDashboards } from "./collect.js";
 import { readLedger } from "./ledger.js";
+import { readCharter } from "./charter.js";
 
 export const name = "synova-dashboards";
 export const inject = ["webServer"];
@@ -79,10 +84,39 @@ export function apply(ctx, config = {}) {
         res.end(JSON.stringify(body));
       }
     });
+    const disposeCharter = ctx.webServer.register({
+      kind: "exact",
+      path: "/synova/charter/grid",
+      handler: async (req, res) => {
+        const result = await readCharter(repoRoot);
+        if (!result.ok) {
+          // 铁律 24/31：降级必须留痕 + 显式标记 + missing 标注（禁 500、禁空白）
+          ctx.logger.warn(`synova-dashboards/charter: ${result.error}`);
+          res.writeHead(200, HEADERS);
+          res.end(JSON.stringify({
+            ok: false,
+            degraded: true,
+            error: result.error,
+            attempts: result.attempts,
+            path: result.path,
+            missing: result.missing
+          }));
+          return;
+        }
+        if (result.fallback_note) ctx.logger.warn(`synova-dashboards/charter: ${result.fallback_note}`);
+        const p = result.parsed;
+        const body = p !== null && typeof p === "object" && !Array.isArray(p)
+          ? Object.assign({}, p, { ok: true, source: result.source, ...(result.fallback_note ? { source_detail: result.fallback_note } : {}) })
+          : { ok: true, source: result.source, grid: p };
+        res.writeHead(200, HEADERS);
+        res.end(JSON.stringify(body));
+      }
+    });
     return () => {
       active = false;
       disposeData();
       disposeLedger();
+      disposeCharter();
     };
   }, "synova-dashboards: read-only routes");
 }
