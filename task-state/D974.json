@@ -1,0 +1,25 @@
+{
+  "task_id": "D974",
+  "title": "号段水位：先实测后发号 + 水位文件改为实测反查生成 + 落号段对账探针（三态 fail-closed）",
+  "status": "in_progress",
+  "risk": "medium",
+  "domain": "mac",
+  "owner": "mac-cto",
+  "executor": "并行 CTO 小队（DSH session，coder-b 编码）",
+  "milestone": "M0 治理",
+  "depends_on": [],
+  "write_set": [
+    "docs/synova/coordination/号段水位.md",
+    "scripts/control-tower/probes/task-id-watermark-probe.sh",
+    "tests/control-tower/task-id-watermark-probe.test.sh",
+    ".claude/task-briefs/2026-09-25-D974-task-id-watermark.md",
+    "memory/notes/proposed/2026-09-25-d974-task-id-watermark-probe.md",
+    "task-state/D974.json",
+    "docs/synova/product-lines/evidence/D974-watermark-20260925.md"
+  ],
+  "papers": [],
+  "updated_at": "2026-09-25",
+  "updated_by": "coder-b",
+  "note": "【D974 改号】原 D1013 号落在 CTO 裁决划给 Win 侧的 D1000–D1099 段 ⇒ 按裁决改号 D974（Mac 段），分支 docs/d1013-task-id-watermark → docs/d974-task-id-watermark；无 force push，走 branch -m + git mv + 内容全改。注意 .claude/bypass.log 历史台账**不回改**（其中 TASK_ID=D1013 条目如实记录当时发生的事实，改之即伪造证据链）—— 已 git checkout 回滚该文件。\n【D974 新增：分段约定落 main + 两类排除机制】号段水位 MANUAL 段现为 Mac D9xx / Win D1000–D1099（明确「Win 侧号段」，CTO 裁决）+ 原始更正记录逐字抄录 + 第二次更正记录（本批改号 D1008–D1013 作废释放 → 改用 D969–D974）+ 下一号 D975。探针新增两类人工声明、机器执行的排除：① `本水位号段: D900-D999`（结构性管辖范围，段外号不参与 Mac 水位判定，但仍打印段外最高号以保持可见）；② `作废号段: D1008-D1013`（已释放号不参与判定）。缺省 `本水位号段` = 不限号段（保持通用）。\n【D708 夹带修复】write_set 补入本卡自产治理产物 docs/synova/product-lines/evidence/D974-watermark-20260925.md（原缺失 ⇒ D708 判夹带 ⇒ quality 红 ⇒ test 被 skip ⇒ 必需 Vitest 永不报告）；brief Q2「做什么」清单同步。\n本批 D1008–D1013 原为手工占号（依据：全 refs 面实测水位于开工时 = D1007；取号器 alloc-task-id.sh 在本工作区 >25s 无输出，根因 = :295 WORKTREE_USED O(n²) 字符串累加，Σ各 worktree task-state 文件数 69484 / 249 worktree）。另登记两项：(a) 取号器占用表读取面（本地 task-state ∪ origin/main）≠ 拒绝面（分支名/目录名 d<num>），origin/main 的 task-state 只到 D964 ⇒ 不读远端 task-state 内容即判占用；(b) 分段约定冲突已由 CTO 裁决（见上）。",
+  "k3_required": []
+}
