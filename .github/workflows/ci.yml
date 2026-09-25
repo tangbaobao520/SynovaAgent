@@ -7,6 +7,8 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+    # D1014 ⒞: 触发类型显式化（原为默认 opened/synchronize/reopened + 新增 ready_for_review）
+    types: [opened, synchronize, reopened, ready_for_review]
 
 # N12 根治（D1014 · CTO 已批）: 同 workflow + 同 ref 只保留最新一条 run。
 # 依据: 全仓此前 concurrency = 0 ⇒ 同分支反复 push 无限排队（实测 feat/d962-2a-merge 独占 18 条，
