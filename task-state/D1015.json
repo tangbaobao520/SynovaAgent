@@ -10,14 +10,14 @@
   "depends_on": [],
   "blocked": null,
   "target": "2026-W40",
-  "spec": ".claude/task-briefs/2026-09-26-D1015-阶段1-A-check-*-计数口径定版.md",
+  "spec": ".claude/task-briefs/2026-09-26-D1015-阶段1-A-check-星号-计数口径定版.md",
   "impl": "docs/synova/coordination/阶段1-check星号-口径-20260926.md",
   "audit": null,
   "fix_task_id": null,
   "write_set": [
     "docs/synova/coordination/阶段1-check星号-口径-20260926.md",
     "task-state/D1015.json",
-    ".claude/task-briefs/2026-09-26-D1015-阶段1-A-check-*-计数口径定版.md"
+    ".claude/task-briefs/2026-09-26-D1015-阶段1-A-check-星号-计数口径定版.md"
   ],
   "notes": "定版命令 CHECKSTAR_CANONICAL = git ls-tree -r --name-only origin/main -- scripts | grep -E '(^|/)check-[^/]+$' | grep -v '^scripts/audit/' | wc -l；基线 48 @origin/main ee721b0a（as_of 2026-09-26T03:52:30+08:00）；不新增脚本（蓝图 §七-1）。"
 }
