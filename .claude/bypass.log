@@ -1781,3 +1781,5 @@ Binary file .claude/bypass.log matches
 2026-09-25T14:27:42+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=4bd48d6bc3f303bfa6fd8a7a122a3f678a19f94a
 2026-09-25T15:09:44+08:00 | GATE_FAIL_SOFT | exit=1 | branch=chore/cto-doc-slim-phase1-writeset-exempt
 2026-09-25T15:09:44+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=cabe7255af7e72d134093b4b8b6cd9a0efb8d863
+2026-09-25T15:50:42+08:00 | GATE_FAIL_SOFT | exit=1 | branch=chore/cto-doc-slim-phase1-writeset-exempt
+2026-09-25T15:50:43+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=04714052e3a60b990a709eb8f0c34fe613fc6b18
