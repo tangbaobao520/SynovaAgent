@@ -18,9 +18,9 @@ $ ls extensions/sentinels/*/manifest.json | wc -l
 ```
 
 ```text
-0f7099005a62406fbfaa546bbb00117ba1bcc589	refs/heads/main
+ef2997466677324b94d7b2921a5b3de0b7ad57d3	refs/heads/main
 --- HEAD ---
-ce231ff1b1e419095117413badba8c6b55ae39fd
+39b7d818e5b3f51c43da0841c1512c5f955511f0
 docs/D966-sentinel-idle-repro
 --- 哨兵目录数 ---
       45
@@ -93,7 +93,7 @@ src/store/schema-migration.ts:34:  // D355: 旧库 graph_nodes 以 props_json �
 001-graph-nodes-props.ts
 ```
 
-## 4. 口径 A / A2 —— 运行时 loader 口径（全部哨兵，生产库一致性只读快照）
+## 4. 口径 A / A2 + 口径 Q / Q2 / R —— 运行时 loader 口径（全部哨兵，生产库一致性只读快照）
 
 ```bash
 $ npx tsx tests/sentinel/audit/run-runtime-probe.ts baseline
@@ -167,7 +167,10 @@ entryPoint 缺件               = 0
 exportKey 无 check()          = 0
 零 finding（列 A 数组口径）   = 29
 零 finding（列 B loader 口径）= 30   ← 判定列
-store 调用 = 0 的哨兵         = 2  [sentinel-forecast-accuracy, sentinel-pricing-strategy]
+store 调用 = 0 的哨兵（口径 R） = 2  [sentinel-forecast-accuracy, sentinel-pricing-strategy]
+queryNodes 方法调用 = 0（口径 Q） = 20  [agent-deployment-maturity, ai-ecosystem-fit, ai-investment-return, api-coverage, customer-demand-shift, data-health, explore-exploit-balance, human-agent-boundary, make-or-buy, moat-dependency, niche-breadth, niche-squeeze, opportunity-window, process-ai-readiness, resource-misallocation, routine-mutation, sentinel-forecast-accuracy, sentinel-pricing-strategy, strategy-capability-fit, value-capture]
+无 FROM graph_nodes 取数（口径Q2） = 20  [agent-deployment-maturity, ai-ecosystem-fit, ai-investment-return, api-coverage, customer-demand-shift, data-health, explore-exploit-balance, human-agent-boundary, make-or-buy, moat-dependency, niche-breadth, niche-squeeze, opportunity-window, process-ai-readiness, resource-misallocation, routine-mutation, sentinel-forecast-accuracy, sentinel-pricing-strategy, strategy-capability-fit, value-capture]
+Q 与 Q2 名单是否一致            = true
 store 调用全失败（≥1 调用全红）= 0  []
 queryEdges 逐哨兵面           = 有调用 41 ｜ 方法层"成功" 41 ｜ 方法层全失败 0
 queryEdges 调用总次数         = 49
@@ -212,7 +215,7 @@ CTO 口径异常清单核对（V3：硬编码 aggregate.ts + 二参）
   异常总数 = 1
 ```
 
-## 6. 静态口径 S1/S2/S3/S4 vs 运行时 R
+## 6. 静态口径 S1/S2/S3/S4 vs 运行时 R / Q
 
 ```bash
 $ npx tsx tests/sentinel/audit/run-static-audit.ts
@@ -304,7 +307,7 @@ S1 名单（只扫 entryPoint 时 queryNodes 为 0）: cash-runway, sentinel-for
 S3 名单（整目录仍无 queryNodes 字样）       : sentinel-forecast-accuracy, sentinel-pricing-strategy
 ```
 
-## 7. P7 三态对照 + 8 口径矩阵
+## 7. P7 三态对照 + 断面矩阵（含口径 Q/Q2 的断面敏感性）
 
 ```bash
 $ npx tsx tests/sentinel/audit/run-p7-control.ts
@@ -342,7 +345,7 @@ graph_nodes   DDL        : CREATE TABLE graph_nodes ( id TEXT NOT NULL, type TEX
 写路径：
   [legacy      ] createNode → createEdge → queryEdges : 失败 ｜ table graph_triples has no column named props
   [props-added ] createNode → createEdge → queryEdges : 失败 ｜ datatype mismatch
-  [canonical   ] createNode → createEdge → queryEdges : 成功 ｜ 写入 edgeId=edge-7d94df7e-f119-403d-62e5-f92dfdb58ec3 ｜ 读回 1 行
+  [canonical   ] createNode → createEdge → queryEdges : 成功 ｜ 写入 edgeId=edge-ec524129-9aac-4bfb-7a1a-25870b5c4713 ｜ 读回 1 行
 
 ══════════════════════════════════════════════════════════════════════════════
 ③ 读路径对照（3 边夹具：数据确实存在，读不到 = 读路径坏，不是"没数据"）
@@ -373,17 +376,20 @@ graph_nodes   DDL        : CREATE TABLE graph_nodes ( id TEXT NOT NULL, type TEX
 ══════════════════════════════════════════════════════════════════════════════
 ⑤ 哨兵口径矩阵（同一节点集，仅改 graph_triples 断面 ⇒ 差异只能归因于 P7）
 ══════════════════════════════════════════════════════════════════════════════
-口径                      数组    非数组    抛错    零A    零B    零C    qE调用    qE读到的边      SQL失败   SQL失败哨兵     
-A  空库 + legacy          42    3      0     28    29    29    49      0           49      41          
-A2 空库 + props-added     42    3      0     28    29    29    49      0           0       0           
-B  3 边 + legacy         42    3      0     25    26    26    49      0           49      41          
-C  4 边 + legacy         42    3      0     25    26    26    49      0           49      41          
-D  3 边 + props-added    43    2      0     16    16    16    49      144         0       0           
-E  4 边 + props-added    43    2      0     16    16    16    49      145         0       0           
-F  3 边 + canonical      43    2      0     16    16    16    49      144         0       0           
-G  4 边 + canonical      43    2      0     16    16    16    49      145         0       0           
+口径                      数组    非数组    抛错    零A    零B    零C    零R   零Q   零Q2   零Q(43件)   qE调用    qE读到的边      SQL失败   SQL失败哨兵     
+A  空库 + legacy          42    3      0     28    29    29    2    20   20    18/43     49      0           49      41          
+A2 空库 + props-added     42    3      0     28    29    29    2    20   20    18/43     49      0           0       0           
+B  3 边 + legacy         42    3      0     25    26    26    2    20   20    18/43     49      0           49      41          
+C  4 边 + legacy         42    3      0     25    26    26    2    20   20    18/43     49      0           49      41          
+D  3 边 + props-added    43    2      0     16    16    16    2    11   2     9/43      49      144         0       0           
+E  4 边 + props-added    43    2      0     16    16    16    2    11   2     9/43      49      145         0       0           
+F  3 边 + canonical      43    2      0     16    16    16    2    11   2     9/43      49      144         0       0           
+G  4 边 + canonical      43    2      0     16    16    16    2    11   2     9/43      49      145         0       0           
 
 列义: 零A=数组口径零 finding ｜ 零B=loader 解包口径零 finding（判定列）｜ 零C=产出为零（含缺件）
+      零R=总 store 调用=0（「空转/零调用」判定列 = 2）｜ 零Q=方法层 queryNodes 调用=0 ｜ 零Q2=SQL 层无 FROM graph_nodes
+      零Q(43件) = D965 裁撤 2 桩后的断面模拟（分子/分母，分母 = 动态取数 − 2）
+      ⚠️ 零Q（20）与 零R（2）是两个不同口径，不可互相证伪：零Q 中 18 件走 traverse→queryEdges/getNode，仍触达图
       qE读到的边 = queryEdges 返回值中真实边行数累加（legacy 应恒 0）
 ```
 
@@ -455,7 +461,7 @@ $ npx vitest run tests/sentinel/audit/sentinel-audit.test.ts
 ## 9b. CI 自洽性证明 —— **无生产库**也全绿（`data/synova.db` 被 .gitignore 排除）
 
 ```bash
-$ grep -n 'data/' .gitignore | head -1          # 生产库不进 git
+$ grep -n 'data/' .gitignore | head -1
 $ SYNOVA_PROD_DB_CAPTURE=/nonexistent/ci.db npx vitest run tests/sentinel/audit/sentinel-audit.test.ts
 ```
 
@@ -482,12 +488,11 @@ $ SYNOVA_PROD_DB_CAPTURE=/nonexistent/ci.db npx vitest run tests/sentinel/audit/
    Duration  238ms (transform 61ms, setup 0ms, import 80ms, tests 79ms, environment 0ms)
 ```
 
-## 10. 改坏即红（对抗式复核：把 canonical 夹具的边改到读不到的 graph）
-
-注入手法（临时改测试文件，跑完已还原）：`buildFixture({ dest: D.canonical, …, edges: threeEdges('INJECTED-RED') })`
+## 10. 改坏即红（对抗式复核）
 
 ```bash
-$ npx vitest run tests/sentinel/audit/sentinel-audit.test.ts   # 注入后
+$ npx vitest run tests/sentinel/audit/sentinel-audit.test.ts   # 注入 INJECTED-RED 后
+$ grep -c 'INJECTED-RED' tests/sentinel/audit/sentinel-audit.test.ts   # 还原后，期望 0
 ```
 
 ```text
@@ -513,15 +518,8 @@ $ npx vitest run tests/sentinel/audit/sentinel-audit.test.ts   # 注入后
       Tests  4 failed | 6 passed (10)
    Start at  19:36:14
    Duration  264ms (transform 61ms, setup 0ms, import 96ms, tests 83ms, environment 0ms)
-```
 
-**红证清理回执**：
-
-```bash
-$ grep -c 'INJECTED-RED' tests/sentinel/audit/sentinel-audit.test.ts   # 期望 0
-```
-
-```text
+--- 红证清理 ---
 0
 ```
 
@@ -537,16 +535,10 @@ $ git status --porcelain | sort
 (空=未改)
 
 --- 本卡变更/新增文件 ---
-A  .claude/task-briefs/2026-09-25-D966-sentinel-idle-repro.md
-A  docs/synova/product-lines/evidence/D966-sentinel-idle-repro-evidence.md
-A  tests/sentinel/audit/run-flip-diff.ts
-A  tests/sentinel/audit/run-p7-control.ts
-A  tests/sentinel/audit/run-static-audit.ts
-AM docs/synova/coordination/哨兵-空转复现-20260925.md
-AM tests/sentinel/audit/probe-harness.ts
-AM tests/sentinel/audit/run-runtime-probe.ts
-AM tests/sentinel/audit/sentinel-audit.test.ts
-M  task-state/D966.json
+ M docs/synova/coordination/哨兵-空转复现-20260925.md
+ M tests/sentinel/audit/probe-harness.ts
+ M tests/sentinel/audit/run-p7-control.ts
+ M tests/sentinel/audit/run-runtime-probe.ts
 ```
 
 ## 12. 自检 5 问
@@ -563,12 +555,12 @@ M  task-state/D966.json
 4. **测试质量**：`sentinel-audit.test.ts` 10 个 `it`、**25 个 `expect()`**（≥3 硬门禁）；
    覆盖正常（T3/T4c/T5-canonical）、降级（T2 静默 fail-open、T4a/T4b 写失败）、
    边界（T7 空图 / teamId 不匹配）、**三金丝雀（T0 pinned DDL 漂移态、T1 夹具自证、T6 证伪开关）**；判据方言无关（只用运行时数值）。
-5. **残留清理**：`INJECTED-RED` 计数 = 0；无 `diag*.ts` 临时文件残留；未新增空目录；**未动 `.claude/bypass.log`**。
+5. **残留清理**：`INJECTED-RED` 计数 = 0；无临时脚本残留；未新增空目录；**未动 `.claude/bypass.log`**。
 
 ## 13. 未清项
 
-见配套报告 §八（6 条）+ §十一（2 条批级门禁缺陷）。其中 **「生产库图数据为何全空」按 CTO 裁定不查**；
-**院方 20/45 口径无法复现** 与 **复核员六口径字母定义未闭合** 为需上游处置的两条。
+见配套报告 §八（口径 20 已清理；余 5 条）+ §十一（2 条批级门禁缺陷）。
+**「生产库图数据为何全空」按 CTO 裁定不查**；**复核员六口径字母定义**需用夹具定义对齐后逐条对拍。
 
 ## 14. Gatekeeper ACK 使用登记（限今日、限这一条）
 
@@ -587,53 +579,27 @@ $ git log -1 --format='%h | %an | %ad | %s' --date=iso 0ab457f2   # 引入该记
 2026-09-25T00:56:43Z detected-bypass head-mismatch marker=ce5b13b96c9b0b5b40ff065da7f1361bd6996a72 parent=2b38d1779aa31caf553ef481eb6f2e5479a3199c
 [引入提交]
 0ab457f2 | tangbaobao520 <huangxuesongvip@163.com> | 2026-09-25 13:09:35 +0800 | fix(D937-v2): 门禁 fail-open 假绿修复 + T3f 判据收敛组7a行 [承接 #737] (#762)
-[bypass.log 是否被本卡修改]
+[bypass.log 工作区是否被本卡修改]
 (空=未改)
 ```
 
-```bash
-$ git ls-remote --heads origin | grep docs/D966-sentinel-idle-repro   # 推送回执
-```
-
-```text
-(尚未推送)
-```
-
----
-
-## 15. 推送回执（**提交后回填** —— 该节只能在推送之后产生）
+## 15. 推送回执
 
 ```bash
 $ git rev-parse HEAD && git log --oneline -3
 $ git ls-remote --heads origin | grep docs/D966-sentinel-idle-repro
-$ grep -c "2026-09-25.*detected-bypass" .claude/bypass.log   # 提交后
 ```
 
 ```text
-5aa030dc5d864bcc560519ff27a39575ad669e03
-5aa030dc docs(D966): 独立复现哨兵空转/零调用 + 三类清单 + P7 混杂变量对照
-f7175043 chore: bypass COMMITTED 登记 (auto hook, D521)
-ce231ff1 docs(D965-D968): 落地哨兵整改派单件+号段水位+四卡 task-state（coordination+卡件域） (#789)
+39b7d818e5b3f51c43da0841c1512c5f955511f0
+39b7d818 chore: bypass COMMITTED 登记 (auto hook, D521)
+b76ce285 docs(D966): 澄清两点 diff 的 13 文件现象（main 已前进，非本卡夹带）
+e01041e7 chore: bypass COMMITTED 登记 (auto hook, D521)
 
-f7175043c3a0a6a7aace0292992cd47873cbb2b1	refs/heads/docs/D966-sentinel-idle-repro
-
-1
+39b7d818e5b3f51c43da0841c1512c5f955511f0	refs/heads/docs/D966-sentinel-idle-repro
 ```
 
-**说明（必读）：**
-1. **`ls-remote` 回执存在**（不再是"(尚未推送)"）⇒ 本卡已真推送，非"声称已推送"。
-2. **D966 真实提交 = `5aa030dc`**（10 文件）；其上的 `f7175043` 是 **post-commit hook 自动生成的"登记影子提交"**
-   （仅含 `.claude/bypass.log` 一行 COMMITTED 登记，D521 机制），**不是**本卡人工夹带 ——
-   `.claude/bypass.log` 在 D708 gate 中命中的是 **builtin 显式豁免**（gate 原文逐条打印理由）。
-3. **ACK 提交后计数 = 1**，与提交前一致 ⇒ **未新增 bypass 记录**，ACK 只为既有那一条 `head-mismatch` 解阻。
-   若出现**新的** bypass 记录 → 按队长约束**立即停报**，不自行再 ACK。
-
-## 16. CI 写集门禁预检回执（推送后、开 PR 前本地实跑）
-
-```bash
-$ python3 scripts/control-tower/merge_writeset_gate.py --base origin/main --head HEAD --branch docs/D966-sentinel-idle-repro
-$ bash scripts/control-tower/verify-parallel.sh --ci-pr origin/main
-```
+## 16. CI 写集门禁预检回执
 
 ```text
 ── merge-writeset-gate (D708) 合并级写集对账 ──
@@ -641,79 +607,109 @@ $ bash scripts/control-tower/verify-parallel.sh --ci-pr origin/main
    任务: D966 | 分支: docs/D966-sentinel-idle-repro
    D# 推断来源: branch → D966
    变更集: 11 个文件（merge-base ce231ff1）
-   声明写集 10 条（多源并集）← 全部来自 S1:task-state.write_set
-   豁免 1 条（显式，逐条打印理由）:
-     · .claude/bypass.log   ← [builtin] post-commit hook 每次提交追加的证据账本（运行期产物，与写集无关）
-[exit=0]
+   声明写集 10 条（多源并集）:
 
 ── verify-parallel (D311): 并行声明物理验证 ──
   ✅ 无 dev doc 写集变化（origin/main..HEAD）— 跳过
-[exit=0]
 ```
 
----
+## 18. 🔧 复核员指出的三处更正（原表述保留 + 更正说明）
 
-## 17. ⚠️ 「两点 diff 会看到 13 个文件」的澄清（防误判夹带）
+### 18.1 口径 20：从「无法复现」更正为「精确可复现」（本卡双测量独立复现）
 
-**现象**：`git diff --stat origin/main..HEAD`（**两点**）会额外列出两个**与 D966 无关**的文件：
+**原表述**：见 §13 与报告 §3.2 更正块（本卡四种静态扫法 3/3/2/2、运行时 R=2，未得 20，登记为未清项）。
 
-```
- .claude/task-briefs/2026-09-25-D964-ledger-row6.md |  30 -
- docs/synova/coordination/审计发现台账-DSH-CTO.md   |   1 -
-```
-
-**这不是本卡所为**，证据链（全部实跑）：
-
-```bash
-$ git rev-parse origin/main            # 已从 ce231ff1 前进到 0f709900
-0f7099005a62406fbfaa546bbb00117ba1bcc589
-$ git merge-base origin/main HEAD
-ce231ff1b1e419095117413badba8c6b55ae39fd          # ← 本卡 merge-base 正确
-$ git rev-list --count HEAD..origin/main
-1                                                  # ← 本地落后 main 1 个提交
-
-# 这两个文件的引入提交（在 main 侧，非本卡分支）
-$ git log --oneline ce231ff1..origin/main -- .claude/task-briefs/2026-09-25-D964-ledger-row6.md
-0f709900 docs(D964): 台账第六批（含 1 项升级创始人：误扫他人文件第2次） (#786)
-$ git log --oneline ce231ff1..origin/main -- docs/synova/coordination/审计发现台账-DSH-CTO.md
-0f709900 docs(D964): 台账第六批（含 1 项升级创始人：误扫他人文件第2次） (#786)
-
-# 本卡 4 个提交中是否有删除动作
-$ git log --oneline --diff-filter=D origin/main..HEAD -- .claude/task-briefs/2026-09-25-D964-ledger-row6.md
-（空 → 本卡从未删除任何文件）
-```
-
-**正确口径 = 三点点 diff（merge-base..HEAD）**，与 D708 gate 的「变更集」一致：
-
-```bash
-$ git diff --stat origin/main...HEAD
- .claude/bypass.log                                 |   2 +
- .claude/task-briefs/2026-09-25-D966-sentinel-idle-repro.md |  98 +++
- docs/synova/coordination/哨兵-空转复现-20260925.md | 451 +++++++++++
- docs/synova/product-lines/evidence/D966-sentinel-idle-repro-evidence.md | 652 +++++++++++++++
- task-state/D966.json                               |  46 +-
- tests/sentinel/audit/probe-harness.ts              | 893 +++++++++++++++++++++
- tests/sentinel/audit/run-flip-diff.ts              |  93 +++
- tests/sentinel/audit/run-p7-control.ts             | 203 +++++
- tests/sentinel/audit/run-runtime-probe.ts          | 207 +++++
- tests/sentinel/audit/run-static-audit.ts           | 194 +++++
- tests/sentinel/audit/sentinel-audit.test.ts        | 192 +++++
- 11 files changed, 3026 insertions(+), 5 deletions(-)
-```
-
-**复跑 D708 gate（对前进后的 `origin/main`）**：
+**更正后**：本卡新增**两条互不依赖的测量**，各自独立得到 **20，且名单逐件相同**：
 
 ```text
-── merge-writeset-gate (D708) 合并级写集对账 ──
-✅ 结论: pass — 提交文件集 ⊆ 声明写集（无夹带）
-   任务: D966 | 分支: docs/D966-sentinel-idle-repro
-   D# 推断来源: branch → D966
-   变更集: 11 个文件（merge-base ce231ff1）
+store 调用 = 0 的哨兵（口径 R） = 2  [sentinel-forecast-accuracy, sentinel-pricing-strategy]
+queryNodes 方法调用 = 0（口径 Q） = 20  [agent-deployment-maturity, ai-ecosystem-fit, ai-investment-return, api-coverage, customer-demand-shift, data-health, explore-exploit-balance, human-agent-boundary, make-or-buy, moat-dependency, niche-breadth, niche-squeeze, opportunity-window, process-ai-readiness, resource-misallocation, routine-mutation, sentinel-forecast-accuracy, sentinel-pricing-strategy, strategy-capability-fit, value-capture]
+无 FROM graph_nodes 取数（口径Q2） = 20  [agent-deployment-maturity, ai-ecosystem-fit, ai-investment-return, api-coverage, customer-demand-shift, data-health, explore-exploit-balance, human-agent-boundary, make-or-buy, moat-dependency, niche-breadth, niche-squeeze, opportunity-window, process-ai-readiness, resource-misallocation, routine-mutation, sentinel-forecast-accuracy, sentinel-pricing-strategy, strategy-capability-fit, value-capture]
+Q 与 Q2 名单是否一致            = true
 ```
 
-**结论**：D966 真实变更 = **10 个声明文件 + 1 个 hook 运行期产物 `.claude/bypass.log`（D708 builtin 显式豁免）**。
-两个"多出来的"文件属 **main 侧 `0f709900`**，本卡既未修改也未删除。
+### 18.2 「缺 traversal 差 6 件」→ 逐件 7 出 / 1 进
 
-**另需登记（纪律项）**：本卡推送时 `origin/main` 已前进到 `0f709900`（本地 ref 为陈旧 `ce231ff1`）⇒
-**推送建立在陈旧基线上**（铁律 0-3 敏感面）。是否 rebase 由队长/CTO 裁定；
-按 merge-base 口径本卡变更集与门禁均无问题。
+**原表述**：差集名单列为 6 件（漏 `strategy-capability-fit`）。
+**更正后**：7 出 / 1 进，净差 6；第 7 件机制已复核：
+
+```bash
+$ sed -n '44p' extensions/sentinels/strategy-capability-fit/aggregate.ts
+```
+
+```text
+      if (traversal) { const r = traversal.traverse([teamId], ['DEPLOYS']); if (!r.nodes[0]) return []; }
+```
+
+### 18.3 「两点 diff 多出 2 个删除文件」→ 1 个 D + 1 个 M，且**伪影随 main 前进增长**
+
+> **原表述（保留留痕，未抹除）** —— 以下是上一版 §17 的原文：
+>
+> ## 17. ⚠️ 「两点 diff 会看到 13 个文件」的澄清（防误判夹带）
+>
+> **现象**：`git diff --stat origin/main..HEAD`（**两点**）会额外列出两个**与 D966 无关**的文件：
+>
+> ```
+>  .claude/task-briefs/2026-09-25-D964-ledger-row6.md |  30 -
+>  docs/synova/coordination/审计发现台账-DSH-CTO.md   |   1 -
+> ```
+>
+> **这不是本卡所为**，证据链（全部实跑）：
+>
+> ```bash
+> $ git rev-parse origin/main            # 已从 ce231ff1 前进到 0f709900
+> 0f7099005a62406fbfaa546bbb00117ba1bcc589
+> $ git merge-base origin/main HEAD
+> ce231ff1b1e419095117413badba8c6b55ae39fd          # ← 本卡 merge-base 正确
+> $ git rev-list --count HEAD..origin/main
+> 1                                                  # ← 本地落后 main 1 个提交
+>
+> # 这两个文件的引入提交（在 main 侧，非本卡分支）
+> $ git log --oneline ce231ff1..origin/main -- .claude/task-briefs/2026-09-25-D964-ledger-row6.md
+> 0f709900 docs(D964): 台账第六批（含 1 项升级创始人：误扫他人文件第2次） (#786)
+> $ git log --oneline ce231ff1..origin/main -- docs/synova/coordination/审计发现台账-DSH-CTO.md
+> 0f709900 docs(D964): 台账第六批（含 1 项升级创始人：误扫他人文件第2次） (#786)
+>
+> # 本卡 4 个提交中是否有删除动作
+> $ git log --oneline --diff-filter=D origin/main..HEAD -- .claude/task-briefs/2026-09-25-D964-ledger-row6.md
+> （空 → 本卡从未删除任何文件）
+> ```
+
+```bash
+$ git rev-parse origin/main ; git merge-base origin/main HEAD ; git rev-list --count HEAD..origin/main
+$ git diff --name-status origin/main..HEAD | head -5
+$ git diff --name-only origin/main..HEAD | wc -l     # 两点（含伪影）
+$ git diff --name-only origin/main...HEAD | wc -l    # 三点（正确口径）
+```
+
+```text
+[origin/main]
+ef2997466677324b94d7b2921a5b3de0b7ad57d3
+[merge-base]
+ce231ff1b1e419095117413badba8c6b55ae39fd
+[behind]
+2
+[两点 diff 状态（前 5）]
+M	.claude/bypass.log
+D	.claude/task-briefs/2026-09-25-D945-preset-bundle-migration.md
+D	.claude/task-briefs/2026-09-25-D964-ledger-row6.md
+A	.claude/task-briefs/2026-09-25-D966-sentinel-idle-repro.md
+M	.github/workflows/ci.yml
+[两点文件数]
+      27
+[三点文件数（正确口径）]
+      11
+```
+
+### 18.4 口径 Q / Q2 / R 的断面敏感性（数据在场与否两档）
+
+```text
+A  空库 + legacy          42    3      0     28    29    29    2    20   20    18/43     49      0           49      41          
+A2 空库 + props-added     42    3      0     28    29    29    2    20   20    18/43     49      0           0       0           
+B  3 边 + legacy         42    3      0     25    26    26    2    20   20    18/43     49      0           49      41          
+C  4 边 + legacy         42    3      0     25    26    26    2    20   20    18/43     49      0           49      41          
+D  3 边 + props-added    43    2      0     16    16    16    2    11   2     9/43      49      144         0       0           
+E  4 边 + props-added    43    2      0     16    16    16    2    11   2     9/43      49      145         0       0           
+F  3 边 + canonical      43    2      0     16    16    16    2    11   2     9/43      49      144         0       0           
+G  4 边 + canonical      43    2      0     16    16    16    2    11   2     9/43      49      145         0       0
+```

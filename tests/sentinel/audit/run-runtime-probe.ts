@@ -83,7 +83,13 @@ function renderSummary(rows: ProbeRow[], label: string): void {
   out(`exportKey 无 check()          = ${s.noCheckMethod}`);
   out(`零 finding（列 A 数组口径）   = ${s.zeroFindingsArrayScope}`);
   out(`零 finding（列 B loader 口径）= ${s.zeroFindingsUnpackedScope}   ← 判定列`);
-  out(`store 调用 = 0 的哨兵         = ${s.zeroStoreCalls.length}  [${s.zeroStoreCalls.join(', ')}]`);
+  out(`store 调用 = 0 的哨兵（口径 R） = ${s.zeroStoreCalls.length}  [${s.zeroStoreCalls.join(', ')}]`);
+  out(`queryNodes 方法调用 = 0（口径 Q） = ${s.zeroQueryNodesCalls.length}  [${s.zeroQueryNodesCalls.join(', ')}]`);
+  out(`无 FROM graph_nodes 取数（口径Q2） = ${s.zeroGraphNodesSql.length}  [${s.zeroGraphNodesSql.join(', ')}]`);
+  out(`Q 与 Q2 名单是否一致            = ${
+    s.zeroQueryNodesCalls.length === s.zeroGraphNodesSql.length &&
+    s.zeroQueryNodesCalls.every((n) => s.zeroGraphNodesSql.includes(n))
+  }`);
   out(`store 调用全失败（≥1 调用全红）= ${s.storeCallsAllFailed.length}  [${s.storeCallsAllFailed.join(', ')}]`);
   out(
     `queryEdges 逐哨兵面           = 有调用 ${s.queryEdgesAttempted} ｜ 方法层"成功" ${s.queryEdgesOk} ｜ 方法层全失败 ${s.queryEdgesFailed}`,

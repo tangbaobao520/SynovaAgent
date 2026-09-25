@@ -173,30 +173,43 @@ async function main(): Promise<void> {
     { label: 'F  3 边 + canonical   ', dbPath: e3Canon },
     { label: 'G  4 边 + canonical   ', dbPath: e4Canon },
   ];
+  /** D965 裁撤的 2 个硬编码桩（43 件断面的模拟依据） */
+  const EXTINCT_AFTER_D965 = ['sentinel-forecast-accuracy', 'sentinel-pricing-strategy'];
   out(
     `${pad('口径', 24)}${pad('数组', 6)}${pad('非数组', 7)}${pad('抛错', 6)}${pad('零A', 6)}${pad('零B', 6)}${pad('零C', 6)}${pad(
-      'qE调用',
+      '零R',
+      5,
+    )}${pad('零Q', 5)}${pad('零Q2', 6)}${pad('零Q(43件)', 10)}${pad('qE调用', 8)}${pad('qE读到的边', 12)}${pad(
+      'SQL失败',
       8,
-    )}${pad('qE读到的边', 12)}${pad('SQL失败', 8)}${pad('SQL失败哨兵', 12)}`,
+    )}${pad('SQL失败哨兵', 12)}`,
   );
   for (const r of runs) {
     const rows = await probeSentinels({ dbPath: r.dbPath, teamId: TEAM_ID, rawEdgeProbe: true });
     const s = summarize(rows);
+    const q43 = s.zeroQueryNodesCalls.filter((n) => !EXTINCT_AFTER_D965.includes(n)).length;
+    const q43denom = rows.length - EXTINCT_AFTER_D965.length;
     out(
       `${pad(r.label, 24)}${pad(String(s.arrays), 6)}${pad(String(s.nonArray), 7)}${pad(String(s.threw), 6)}${pad(
         String(s.zeroFindingsArrayScope),
         6,
       )}${pad(String(s.zeroFindingsUnpackedScope), 6)}${pad(String(s.zeroFindingsAnyOutcome), 6)}${pad(
-        String(s.queryEdgesCalls),
+        String(s.zeroStoreCalls.length),
+        5,
+      )}${pad(String(s.zeroQueryNodesCalls.length), 5)}${pad(String(s.zeroGraphNodesSql.length), 6)}${pad(
+        `${q43}/${q43denom}`,
+        10,
+      )}${pad(String(s.queryEdgesCalls), 8)}${pad(String(s.queryEdgesRowsReturned), 12)}${pad(
+        String(s.sqlPrepareFailed),
         8,
-      )}${pad(String(s.queryEdgesRowsReturned), 12)}${pad(String(s.sqlPrepareFailed), 8)}${pad(
-        String(s.sentinelsWithSqlFailure.length),
-        12,
-      )}`,
+      )}${pad(String(s.sentinelsWithSqlFailure.length), 12)}`,
     );
   }
   out('');
   out('列义: 零A=数组口径零 finding ｜ 零B=loader 解包口径零 finding（判定列）｜ 零C=产出为零（含缺件）');
+  out('      零R=总 store 调用=0（「空转/零调用」判定列 = 2）｜ 零Q=方法层 queryNodes 调用=0 ｜ 零Q2=SQL 层无 FROM graph_nodes');
+  out('      零Q(43件) = D965 裁撤 2 桩后的断面模拟（分子/分母，分母 = 动态取数 − 2）');
+  out('      ⚠️ 零Q（20）与 零R（2）是两个不同口径，不可互相证伪：零Q 中 18 件走 traverse→queryEdges/getNode，仍触达图');
   out('      qE读到的边 = queryEdges 返回值中真实边行数累加（legacy 应恒 0）');
 }
 

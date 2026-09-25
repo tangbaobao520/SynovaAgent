@@ -34,7 +34,10 @@
     "throws": 0,
     "zero_findings_array_scope": 29,
     "zero_findings_loader_scope": 30,
-    "zero_store_calls": ["sentinel-forecast-accuracy", "sentinel-pricing-strategy"],
+    "zero_store_calls": [
+      "sentinel-forecast-accuracy",
+      "sentinel-pricing-strategy"
+    ],
     "query_edges_calls": 49,
     "query_edges_rows_read_legacy": 0,
     "query_edges_rows_read_canonical": 144,
@@ -43,13 +46,30 @@
     "p7_verdict": "P7 = graph_triples 整表结构漂移（id 为 INTEGER PRIMARY KEY + 缺 props + graph 无默认），非「缺一列」；补列只修读侧，写侧仍 datatype mismatch；整表重建后读写全通",
     "flip_count": 15,
     "flip_up": 13,
-    "flip_down": 2
+    "flip_down": 2,
+    "zero_store_calls_scope_R": 2,
+    "zero_queryNodes_calls_scope_Q": 20,
+    "zero_graph_nodes_sql_scope_Q2": 20,
+    "scope_Q_equals_Q2_name_list": true,
+    "scope_Q_by_scope": {
+      "data_absent": 20,
+      "data_present": 11,
+      "after_D965_43_files": "18/43"
+    },
+    "verdict_20": "院方「20/45」在 queryNodes 方法级调用数=0 口径下精确可复现；本卡用 Q(方法层) 与 Q2(SQL层) 两条互不依赖测量各得同值同名 20，与独立复核员两条测量完全一致。该口径 ≠「空转/零调用」(=2)，两者不可互相证伪（20 件中 18 件走 traverse→queryEdges/getNode 仍触达图）。",
+    "three_layer_doctrine": "L1 方法层(queryNodes 计数)可点名、有判据价值但 ≠ 空转；L2 SQL 层(prepare 成败)判该次读取是否失败；L3 结果层(真实行数)判读到几行。"
   },
   "uncleared": [
-    "院方《边界评估》20/45 哨兵 queryNodes=0 无法复现（本卡四种静态扫法 3/3/2/2，运行时 2）",
     "生产库图两表为何全空 —— CTO 已裁定不查，登记为后续卡",
-    "复核员六口径 A/A2/B/C/D/E 的字母定义未闭合，需对拍",
+    "复核员六口径 A/A2/B/C/D/E 的字母定义未闭合，需用夹具定义对齐后逐条对拍",
     "生产 graph_nodes 亦为旧结构（id TEXT NOT NULL + PRIMARY KEY(id,graph)），影响面未评估",
-    "卡片正文基线 25e081ce 与实测 origin/main ce231ff1 不一致"
+    "卡片正文基线 25e081ce 与实测 origin/main ce231ff1 不一致",
+    "本卡推送时 origin/main 已前进（现 ef299746，落后 2），推送基线陈旧 —— 是否 rebase 由队长/CTO 裁定"
+  ],
+  "corrections": [
+    "§3.2 口径 20：由「无法复现/未清项」更正为「方法级 queryNodes=0 口径下精确可复现」，本卡双测量 Q/Q2 同值同名复现，断面 20/11/18。",
+    "§3.1 缺 traversal 净差 6 = 逐件 7 出 / 1 进，原名单漏第 7 件 strategy-capability-fit(aggregate.ts:44 同门)，customer-demand-shift 反向进入零集。",
+    "§3.5 两点 diff 伪影：状态为 1 个 D + 1 个 M（非两个删除）；且伪影集合随 main 前进增长（0f709900 时 2 个 → ef299746 时 16 个），两点 diff 不可作夹带判据。",
+    "以上更正处均保留原表述 + 更正说明（改前/改后对照），未抹除留痕。"
   ]
 }

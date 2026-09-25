@@ -118,10 +118,20 @@ export interface SqlTally {
   prepareFailed: number;
   /** 失败样本（SQL 前 120 字符 + 错误消息），封顶 10 条 */
   failedStatements: Array<{ sql: string; error: string }>;
+  /** prepare 的 SQL 文本中命中 `FROM graph_nodes` 的次数（复核员"测量②"同一层次） */
+  fromGraphNodes: number;
+  /** 同上，命中 `FROM graph_triples` 的次数 */
+  fromGraphTriples: number;
 }
 
 export function instrumentDatabase(db: Database.Database): { db: Database.Database; sql: SqlTally } {
-  const sql: SqlTally = { prepareCalls: 0, prepareFailed: 0, failedStatements: [] };
+  const sql: SqlTally = {
+    prepareCalls: 0,
+    prepareFailed: 0,
+    failedStatements: [],
+    fromGraphNodes: 0,
+    fromGraphTriples: 0,
+  };
   const proxy = new Proxy(db, {
     get(obj, prop, receiver) {
       const value = Reflect.get(obj, prop, receiver);
@@ -129,6 +139,9 @@ export function instrumentDatabase(db: Database.Database): { db: Database.Databa
       if (prop === 'prepare' && typeof value === 'function') {
         return (...args: unknown[]): unknown => {
           sql.prepareCalls += 1;
+          const text = typeof args[0] === 'string' ? args[0] : '';
+          if (/from\s+graph_nodes/i.test(text)) sql.fromGraphNodes += 1;
+          if (/from\s+graph_triples/i.test(text)) sql.fromGraphTriples += 1;
           try {
             return Reflect.apply(value, obj, args);
           } catch (err: unknown) {
@@ -525,6 +538,10 @@ export interface ProbeRow {
   sqlPrepareFailed: number;
   /** SQL 层失败样本 */
   sqlFailedStatements: Array<{ sql: string; error: string }>;
+  /** 该哨兵执行期间 prepare 命中 `FROM graph_nodes` 的次数（0 = 未按节点表取数） */
+  sqlFromGraphNodes: number;
+  /** 同上，命中 `FROM graph_triples` 的次数 */
+  sqlFromGraphTriples: number;
   error: string | null;
 }
 
@@ -602,6 +619,8 @@ export async function probeSentinels(opts: ProbeOptions): Promise<ProbeRow[]> {
         sqlPrepareCalls: 0,
         sqlPrepareFailed: 0,
         sqlFailedStatements: [],
+        sqlFromGraphNodes: 0,
+        sqlFromGraphTriples: 0,
         error: null,
       };
 
@@ -642,6 +661,8 @@ export async function probeSentinels(opts: ProbeOptions): Promise<ProbeRow[]> {
         // SQL 层基线：排除 SqliteGraphStore 构造期（WAL/initSchema/reconcileSchema）的噪声
         const sqlBase = sqlTally.prepareCalls;
         const sqlBaseFailed = sqlTally.prepareFailed;
+        const sqlBaseNodes = sqlTally.fromGraphNodes;
+        const sqlBaseTriples = sqlTally.fromGraphTriples;
 
         const args: unknown[] =
           argMode === 'loader4'
@@ -655,6 +676,8 @@ export async function probeSentinels(opts: ProbeOptions): Promise<ProbeRow[]> {
         row.sqlPrepareCalls = sqlTally.prepareCalls - sqlBase;
         row.sqlPrepareFailed = sqlTally.prepareFailed - sqlBaseFailed;
         row.sqlFailedStatements = sqlTally.failedStatements.slice(0, 2);
+        row.sqlFromGraphNodes = sqlTally.fromGraphNodes - sqlBaseNodes;
+        row.sqlFromGraphTriples = sqlTally.fromGraphTriples - sqlBaseTriples;
 
         row.rawIsArray = Array.isArray(raw);
         row.rawKind = kindOf(raw);
@@ -705,8 +728,25 @@ export interface ProbeSummary {
    * 三轴口径不自洽（"数组"+"异常" 与"零 finding"轴不同源）。本列用于可证伪地对齐 CTO 的 23。
    */
   zeroFindingsAnyOutcome: number;
-  /** 运行时 store 调用总数 = 0 的哨兵 */
+  /** 运行时 store 调用总数 = 0 的哨兵（口径 R /「空转/零调用」判定列） */
   zeroStoreCalls: string[];
+  /**
+   * 口径 Q：**方法层 `queryNodes` 调用数 = 0** 的哨兵。
+   *
+   * 与 `zeroStoreCalls` 是**两个不同口径，不可互相证伪**：
+   *   - 口径 Q 为 0 ≠ 不触达图 —— 相当一部分哨兵走 `traversal.traverse()`
+   *     → 内部 `store.queryEdges / getNode`，仍触达图（只是不直接调 queryNodes）。
+   *   - 本卡旁证：独立复核员用两种互不依赖的测量（store Proxy 计 queryNodes 调用数／
+   *     包 `db.prepare()` 统计 `FROM graph_nodes` 的 SQL 次数）均得同值同名单。
+   *   ⇒ 口径 Q 有**点名价值**（能定位"不走 queryNodes"的一批），
+   *     而「是否真的读不到」必须看 SQL 层失败数与真实读到行数（三层关系见报告 §2.3）。
+   */
+  zeroQueryNodesCalls: string[];
+  /**
+   * 口径 Q2：执行期间 **无任何 `FROM graph_nodes` 取数** 的哨兵（与 Q 同集则互为独立佐证）。
+   * 该口径下沉到 SQL 文本层，与 Q（方法层签名计数）互不依赖。
+   */
+  zeroGraphNodesSql: string[];
   /** 运行时 store 有调用但全部失败的哨兵（P7 受害面） */
   storeCallsAllFailed: string[];
   /** 运行时报错的哨兵 */
@@ -742,6 +782,8 @@ export function summarize(rows: ProbeRow[]): ProbeSummary {
     zeroFindingsUnpackedScope: 0,
     zeroFindingsAnyOutcome: 0,
     zeroStoreCalls: [],
+    zeroQueryNodesCalls: [],
+    zeroGraphNodesSql: [],
     storeCallsAllFailed: [],
     threwNames: [],
     queryEdgesOk: 0,
@@ -781,6 +823,8 @@ export function summarize(rows: ProbeRow[]): ProbeSummary {
     const produced = r.outcome === 'ok' ? (r.unpackedFindings ?? 0) : 0;
     if (produced === 0) s.zeroFindingsAnyOutcome += 1;
     if (r.outcome === 'ok' && r.tally.total === 0) s.zeroStoreCalls.push(r.name);
+    if (r.outcome === 'ok' && (r.tally.byMethod.queryNodes?.calls ?? 0) === 0) s.zeroQueryNodesCalls.push(r.name);
+    if (r.outcome === 'ok' && r.sqlFromGraphNodes === 0) s.zeroGraphNodesSql.push(r.name);
     if (r.outcome === 'ok' && r.tally.total > 0 && r.tally.ok === 0) s.storeCallsAllFailed.push(r.name);
     const qe = r.tally.byMethod.queryEdges;
     if (qe) {
@@ -795,6 +839,8 @@ export function summarize(rows: ProbeRow[]): ProbeSummary {
     if (r.sqlPrepareFailed > 0) s.sentinelsWithSqlFailure.push(r.name);
   }
   s.zeroStoreCalls.sort();
+  s.zeroQueryNodesCalls.sort();
+  s.zeroGraphNodesSql.sort();
   s.storeCallsAllFailed.sort();
   s.sentinelsWithSqlFailure.sort();
   return s;
