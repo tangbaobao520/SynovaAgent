@@ -1,10 +1,10 @@
 # Synova CTO 健康仪表盘（第③面）
 
-> 打开即真相。生成: 2026-09-26 04:18:17 | 数据源指纹: 240045e40806
+> 打开即真相。生成: 2026-09-26 04:25:01 | 数据源指纹: 561900ea2ee4
 
 <!-- CTO-HEALTH:AUTO:START -->
 ## CTO 健康仪表盘（第③面）— 自动区
-> 生成: 2026-09-26 04:18:12 | 数据源: bypass.log / pre-commit-failures.log / AUDIT-FINDINGS-LEDGER
+> 生成: 2026-09-26 04:24:57 | 数据源: bypass.log / pre-commit-failures.log / AUDIT-FINDINGS-LEDGER
 
 **总体判定: 🔴 红 — 24h 内有绕过 (detected-bypass), 防线被击穿, 升级创始人**
 
@@ -12,13 +12,13 @@
 
 | 事件 | 全量 | 24h 内 |
 |------|:---:|:---:|
-| COMMITTED（正常提交） | 1475 | 103 |
+| COMMITTED（正常提交） | 1478 | 106 |
 | BLOCKED（被门禁拒绝） | 168 | 4 |
 | DEGRADED（降级放行） | 52 | 0 |
 | TIMEOUT（超时） | 3 | 0 |
-| **detected-bypass（真绕过）** | **22** | **3** |
+| **detected-bypass（真绕过）** | **22** | **2** |
 
-近 7 天事件: 2026-09-20:28 | 2026-09-21:5 | 2026-09-22:19 | 2026-09-23:35 | 2026-09-24:66 | 2026-09-25:97 | 2026-09-26:36
+近 7 天事件: 2026-09-20:28 | 2026-09-21:5 | 2026-09-22:19 | 2026-09-23:35 | 2026-09-24:66 | 2026-09-25:97 | 2026-09-26:39
 
 **绕过历史（全部）** — 集中在 07-26~28（旧 marker 时代），此后零绕过：
 - `2026-07-26T18:34:35Z` no-precommit-marker
@@ -457,20 +457,20 @@
 | #4585 | 🔴 failure | chore/D1015-checkstar-cal | docs(D1015): 阶段1-A check-* 计数口径定版（唯一来源 = origin/ma |
 | #4584 | 🟡 pending | audit/k3-20260926-d979 | Audit/k3 20260926 d979 |
 
-> CI 红灯监测: main 红 3.3h（<24h 阈值），暂不告警（CT-39）
+> CI 红灯监测: main 红 3.4h（<24h 阈值），暂不告警（CT-39）
 
 ### 九、worktree 收尾（2026-08-21 必修）
 
 - 🔴 **171 个孤儿 worktree 有待收尾**（独有提交未合并进 main，可能是未收尾的交付）
-  - /Users/wane/SynovaAgent (分支 refs/heads/chore/cto-doc-slim-phase1-writeset-exempt, 14 个独有提交)
   - /private/tmp/synova-wt-cto-ci (分支 refs/heads/chore/D1014-ci-concurrency, 12 个独有提交)
   - /private/tmp/synova-wt-cto-d1017 (分支 refs/heads/chore/D1017-windows-hang, 2 个独有提交)
   - /private/tmp/synova-wt-cto-stage0 (分支 refs/heads/chore/D1010-stage0-report, 10 个独有提交)
-  - /private/tmp/synova-wt-squad-backlog (分支 refs/heads/chore/stage0-backlog-classification-20260926, 16 个独有提交)
+  - /private/tmp/synova-wt-squad-backlog (分支 refs/heads/chore/D1011-stage0-backlog-classification, 16 个独有提交)
   - /private/tmp/synova-wt-squad-checkstar (分支 refs/heads/chore/D1015-checkstar-caliber, 4 个独有提交)
   - /private/tmp/synova-wt-squad-ci (分支 refs/heads/chore/D1009-stage0-log-archive, 18 个独有提交)
+  - /private/tmp/synova-wt-squad-hang (分支 refs/heads/chore/D1018-hang-triage, 2 个独有提交)
   - /private/tmp/synova-wt-squad-k3in (分支 refs/heads/chore/D1016-k3-input-repro, 4 个独有提交)
-  - /private/tmp/synova-wt-squad-verify (分支 refs/heads/chore/stage0-selfverify-20260926, 34 个独有提交)
+  - /private/tmp/synova-wt-squad-verify (分支 refs/heads/chore/D1012-stage0-selfverify, 34 个独有提交)
   - /private/tmp/w850 (分支 refs/heads/docs/d850-authority, 2 个独有提交)
 
 > 处理: 确认独有提交是否该合并（真交付）→ worktree-manager finish 或 merge 进 main；过时则删除。
