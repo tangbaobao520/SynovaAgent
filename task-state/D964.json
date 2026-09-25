@@ -27,7 +27,16 @@
     ".claude/task-briefs/**",
     "task-state/D964.json",
     "docs/synova/coordination/archive/**",
-    "docs/synova/research/archive/**"
+    "docs/synova/research/archive/**",
+    "docs/synova/coordination/分工文档-20260906-当前任务边界与并行纪律.md",
+    "docs/synova/coordination/周报-20260918.md",
+    "docs/synova/coordination/周报-20260922.md",
+    "docs/synova/coordination/审计派单-20260905-D575-D577-impldone闭环审计.md",
+    "docs/synova/coordination/审计派单-K3-L1收工批-20260909.md",
+    "docs/synova/coordination/小队派单-D831-不变量机制-20260919.md",
+    "docs/synova/coordination/小队派单-批十四-win并行-20260920.md",
+    "docs/synova/coordination/小队派单-门禁加固三卡-20260920.md",
+    "docs/synova/coordination/施工图修正-删除候选误判-20260820.md"
   ],
   "papers": [],
   "updated_at": "2026-09-25",
