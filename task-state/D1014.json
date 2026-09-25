@@ -36,7 +36,9 @@
   ],
   "write_set": [
     ".github/workflows/ci.yml",
-    "task-state/D1014.json"
+    "task-state/D1014.json",
+    ".claude/task-briefs/2026-09-26-D1014-N12-根治-ci.yml-concurrency-+-push-触发收窄.md",
+    "docs/synova/coordination/D1014-N12-证据-20260926.md"
   ],
   "updated_at": "2026-09-26T03:30:00+08:00",
   "updated_by": "CTO"
