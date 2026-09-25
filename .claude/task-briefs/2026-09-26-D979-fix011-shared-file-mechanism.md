@@ -23,6 +23,10 @@
 - tests/control-tower/commit-msg-consistency.test.sh
 - .claude/task-briefs/2026-09-26-D979-fix011-shared-file-mechanism.md
 - task-state/D979.json
+- scripts/control-tower/gen-watermark.sh
+- tests/control-tower/gen-watermark.test.sh
+
+> T3（本卡 Phase 3，迁移落地）另产出文档/证据类文件（`docs/synova/coordination/派单模板/**`、`docs/synova/coordination/号段水位.md`、`docs/synova/coordination/号段/**`、`docs/synova/product-lines/evidence/D979-迁移落地-20260926/**`）—— 权威清单见 `task-state/D979.json` 的 `write_set`（本行仅为说明，不参与代码认领）。
 
 不做什么（含文件路径）:
 - 不修改 scripts/pre-commit-check.sh
@@ -46,6 +50,8 @@
 | tests/control-tower/commit-msg-consistency.test.sh | task |
 | .claude/task-briefs/2026-09-26-D979-fix011-shared-file-mechanism.md | task |
 | task-state/D979.json | task |
+| scripts/control-tower/gen-watermark.sh | task（T3） |
+| tests/control-tower/gen-watermark.test.sh | task（T3） |
 
 ## Q3: 验收
 - 入口: 任何卡的提交（`git commit` → commit-msg hook → `scripts/commit-msg-check.sh`）
@@ -67,15 +73,12 @@
 1. 机制先落 main（本卡）→ 2. 每个共享文件由其**当前 owner 卡**在自己的提交里加声明行（声明含 owner D# + 下一个确知要改该文件的卡 D#）→ 3. 后续卡改该文件时把新 D# 追加进声明（同一提交内改声明 + 改内容）→ 4. 每步走 PR，K3 复审。
 
 ## Done 标准
-1) 机制落地：`scripts/control-tower/shared_file_decl.py` 解析两种声明载体 + `scripts/commit-msg-check.sh` 仅在双向命中时放行
-   verify: bash tests/control-tower/shared_file_decl.test.sh
-2) 两侧反例原始输出：授权通过（exit 0 + 证据行）/ 非授权仍红（exit 1 + `疑似并行劫持`）
-   verify: bash tests/control-tower/commit-msg-consistency.test.sh
-3) 判别性夹具：删掉声明行即报红（非 grep 型静态判据）
-   verify: bash tests/control-tower/commit-msg-consistency.test.sh
-4) 零回归：既有 13 个一致性用例全绿；MSG_DID 为空 / 无认领 / resolver 失败行为与修复前完全一致
-   verify: bash tests/control-tower/commit-msg-consistency.test.sh
-5) 语法与吞错：`bash -n scripts/commit-msg-check.sh` + `check-silent-swallow.sh --diff` 无新增静默吞错
-   verify: bash -n scripts/commit-msg-check.sh
+- [x] 机制落地：`scripts/control-tower/shared_file_decl.py` 解析两种声明载体 + `scripts/commit-msg-check.sh` 仅在双向命中时放行 — verify: bash tests/control-tower/shared_file_decl.test.sh
+- [x] 两侧反例原始输出：授权通过（exit 0 + 证据行）/ 非授权仍红（exit 1 + `疑似并行劫持`）— verify: bash tests/control-tower/commit-msg-consistency.test.sh
+- [x] 判别性夹具：删掉声明行即报红（非 grep 型静态判据）— verify: bash tests/control-tower/commit-msg-consistency.test.sh
+- [x] 零回归：既有 13 个一致性用例全绿；MSG_DID 为空 / 无认领 / resolver 失败行为与修复前完全一致 — verify: bash tests/control-tower/commit-msg-consistency.test.sh
+- [x] 语法与吞错：`bash -n scripts/commit-msg-check.sh` + `check-silent-swallow.sh --diff` 无新增静默吞错 — verify: bash -n scripts/commit-msg-check.sh
+- [x] 声明落到真实共享件：`派单模板.md` 声明行 + 同窗口并发卡夹具红→绿（证据落 evidence/D979-迁移落地-20260926/）— verify: bash tests/control-tower/commit-msg-consistency.test.sh
+- [x] 号段水位可复算：生成器从 task-state + 分支反查（水位非手写）+ `--check` 幂等 — verify: bash tests/control-tower/gen-watermark.test.sh
 
 #CRITERIA: A
