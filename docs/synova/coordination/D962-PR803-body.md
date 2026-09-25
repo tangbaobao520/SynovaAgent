@@ -1,35 +1,64 @@
 # PR #803 正文（六项模板）— D962 α 单 PR
 
-> 产出：d962-coder-b（task-23）。gh CLI 不可用——本文件为待粘贴正文（CTO/队长执行 `gh pr edit 803 --body-file`）。
-> 刷新：已 re-sync 至 main@ef299746（机制 a 合并，未重写 hash，未 force）。
+> 产出：d962-coder-b（task-23）起草 → **d962-coder-c 于 task-26 全面刷新**（并入 2b + 项3 A 档四点 + 2a② 四处 `|| true`）。
+> 落库方式：GitHub PR 正文由 task-26 经 API 同步（`gh` CLI 本机不可用；本文件为可审版本）。
+> **真 CI 状态：队列积压（`9fd034dd` / `25e1b414` 的 CI 全 `queued`，无结论）⇒ 本正文 ⒞ 均为本地 CI 等价复跑，真 run ⒞ 标注「待补」。**
 
 ## ① 卡号 + 分支 + sha
-- 卡：D962（阶段 2a①②③⑥ + 合并候选 + 声明源补齐 + 刷新）
-- 分支：`feat/d962-2a-merge` @ **9aa0f13e**（base=merge-base origin/main@ef299746）
-- 关联：chore/d962-2a-scripts（已并入）/ feat/d962-2a-precommit-b（已并入）/ chore/d964-linter-wiring（**不在本 PR**，入 main 后 rebase 重验）
+- 卡：**D962**（2a① 门禁瘦身 + 2a② 收口 + 2a③ 接线断言 + 2b iron-laws 并入；CTO 裁决 A：**#803 完成标准包含 2b**）
+- 分支：`feat/d962-2a-merge` @ **（本次推送回执 sha，见 §推送）**，base = `main@ee721b0a`
+- 关联：`chore/d962-2a-scripts`（已并入）/ `feat/d962-2a-precommit-b`（已并入）/ `feat/d962-2b-iron-laws-wiring`（**已并入本 PR**；`fix/d962-2b-wiring-merge` 为并入前再同步 main 的中间分支）/ `chore/d964-linter-wiring`（**不在本 PR**，入 main 后 rebase 重验）
 
 ## ② 写集声明
-75 文件逐条（18A+26D+31M）＝ `task-state/D962.json` write_set ＝ brief Q2 双源一致；merge_writeset_gate 夹带=0，双向差实测=0。
+**87 文件逐条 = 24A+26D+37M**（`task-state/D962.json#write_set` ⟷ brief Q2 双源一致，含声明件自身）。
+- 双向对账（本机原始输出）：`变更集=87 声明集=87` → **方向A 夹带=0 / 方向B 多余=0**
+- `merge_writeset_gate --base origin/main --head HEAD --branch feat/d962-2a-merge` → `✅ pass — 提交文件集 ⊆ 声明写集（无夹带）`
+- G12（pre-commit CI 权威区）→ `✅ 所有文件均在 Q2 范围内`
 
-## ③ 逐条判据（本次 re-sync 后新跑，非旧绿）
-- `merge_writeset_gate`：✅ pass — 夹带=0，变更集 75（merge-base ef299746）
-- `grep-oP-regression.test.sh`：24 通过 / 0 失败
-- pre-commit 自过：rc=0；**399 行** / 断面 `grep -c check-dsh-anchor` = **3**
-- 电池抽 8（上一轮 task-21 已贴）：hard-gate-convergence/g10/ct-health/gen-cto-health/brief-parseable/utf8/verify-incremental/ci-strict-visible 全 PASS
-- 权威口径 `find scripts -type f -name 'check-*' ! -path 'scripts/audit/*' | wc -l`：main **48** → 本 PR 合并后 **24**（口径对齐注：CTO 51/25 系旧 base；队长 22 系 re-sync 前值；本值 = main@ef299746 同步后实测）
+## ③ 逐条判据（本次重跑，非旧绿）
+| # | 判据 | 结果（原文摘要） |
+|---|---|---|
+| 1 | merge-writeset-gate (D708) | `✅ pass`，变更集 87（merge-base ee721b0a） |
+| 2 | pre-commit CI 口径（`GITHUB_ACTIONS=true SYNO_CI=1 SYNO_DIFF_BASE=origin/main`） | `✅ 本地清单通过` rc=0（G12 / D782-D1 / D782-D2 / 骨架 / D943 全 ✅）**真 run 待补** |
+| 3 | iron-laws 活点接线断言（FIX-013） | `.github/workflows/ci.yml:111` job 存在、无 `needs`、跑 `scripts/pre-commit-check.sh` + `SYNO_CI=1` + `SYNO_DIFF_BASE=origin/main`；测试 `9 通过, 0 失败` |
+| 4 | FIX-015 源面/自伤面 判别性夹具 | `7 通过, 0 失败`（Arm-A 真注入仍红 / Arm-B 自伤面不再自伤 / Arm-C 12 行不截断） |
+| 5 | doc-registry W1/W2 接线（task-26 A①） | `9 通过 / 0 失败`（原 7/2）；活点 = CI 权威区 D782 块（`pre-commit-check.sh` 内，D1/D2 调用） |
+| 6 | G12 三日窗（task-26 A②） | `14 通过, 0 失败`（原 8/2）；含**能力等价**断言（新 glob 三日 == 旧 `^(D-1\|D0\|D+1)-` 正则，同夹具集合相等） |
+| 7 | 组 7a fail-open 网（task-26 A③） | `20/0` rc=0（原 17/3）；T3 降级 / T4 三注释形态零误报 / T5b `.ts` 判别对照必红 |
+| 8 | scan-fullwidth（task-26 A④） | `PASS=32 FAIL=0`（原 30/2）；阈值不变：覆盖 9 文件 / 写集残留 0 处 0 文件 / mac 6 文件 8 处 / win 10 文件 |
+| 9 | 其他控制塔回归 | grep-oP `24/0`；g9-contract `4/0`；g10-cp3 `14/0`；loop-score `5/0`；hard-gate-convergence / ci-strict-mode / ci-strict-visible / precommit-groups-injection / doc-registry-gate 全 PASS |
+| 10 | 全树冲突标记扫描 | `git grep -n -E '^(<<<<<<< \|>>>>>>> )' HEAD -- .` → **0 命中**（修复前 4 件：loop-score.sh / g10-cp3 / g9-contract / grep-oP） |
+| 11 | 权威口径脚本数 | `find scripts -type f -name 'check-*' ! -path 'scripts/audit/*' \| wc -l`：main **48** → 本分支 **24** |
+| 12 | 2a② 四处关键路径 `|| true` | 已清零（CT-34 纯文档早退 / diff 采集族 / G10 criteria-map / G12 写集判定）——均改三态，失败显式降级 |
 
-## ④ 改坏即红原始输出（代表三则）
-1. as any 探针（CI strict）：`❌ as any / as never / as unknown as 零容忍（铁律38）: 1 处 [CI strict——软提示转硬]` → exit 1
-2. G10 越界（死分支修活后首次真判定）：`❌ G10: 条件区域不匹配: 1 处 [CI strict]` + 越界文件点名
-3. D547 骨架 brief（早退路径并入后）：`❌ 骨架 brief 占位符未填（D547）: <path> [硬阻断]` → exit 1
-（完整回归集 R1-R8 见 D962-2a-selfverify 与交付报告）
+## ④ 改坏即红原始输出（代表四则）
+1. **iron-laws 活点**（真文件临时删 job，同一断言）：`❌ 活点缺失: ci.yml 无 job 'iron-laws'` + `❌ 活点未执行 scripts/pre-commit-check.sh` + `❌ 活点未注入 SYNO_CI=1` + `❌ 变异体行号对照失败` → `4 通过, 5 失败` rc=1（恢复后 sha256 一致、`9 通过, 0 失败`）
+2. **G12 三日窗**（`(-1,0,1)` → `(-1,1)` 丢今日）：`❌ 活点② 行为: 期望[…09-25, 09-26, 09-27] 实得[09-25, 09-27]` + `❌ 活点③ 能力等价失败` rc=1
+3. **7a 三态降级**（rc 强制 0 = 静默吞错）：`❌ T3 降级: 组 7a 在非法排除模式下仍判 ✅（fail-open 未修）` + `❌ 缺显式「降级」字样（静默吞错）` + `❌ CI strict 下降级应 exit 1，实际 0` → `17/3`
+4. **scan-fullwidth 夹具**（路径集改回已退役脚本）：`❌ 写集模式未输出标签且扫描器 fail-closed (rc=2): ❌ scan-fullwidth-vars: 路径不存在: scripts/control-tower/check-sentinel-type-net.sh` → `PASS=30 FAIL=2`
 
-## ⑤ 红线段
-未碰 `scripts/audit/**`、`docs/synova/audit-reports/**`、`src/**`；未改 `.github/workflows/ci.yml`（canary→2b，#804 后）；未用 force push / `--no-verify`（GATEKEEPER ACK 降级均有 degraded-events 登记）。
+## ⑤ 红线段（**分列，禁写"全绿/通过"**）
+### 5.1 本 PR 引入的红（main 基线对照实测 = 本分支独有）
+在 `origin/main@ee721b0a` 另建只读工作树跑同测试作基线：**下列各件 main 全绿、本分支全红** ⇒ 属本 PR 引入：
+| 测试 | main | 本分支 | 根因 |
+|---|---|---|---|
+| `ct-test-gate.test.sh` | PASS | ❌ `接线: ct-test-gate.sh 未接入 pre-commit` | 2a 移除组 2d 接线后**无 CI 落点**（待 CTO 裁 wire/retire） |
+| `platform-checklist.test.sh` | PASS | ❌ `pre-commit 接线缺失` + `❌ 未点名` | D520 平台软检查被移除，无落点（待裁） |
+| `claim-regex-narrow.test.sh` | PASS | ❌ `T1 收窄后正则缺失` | **重写期真丢失**（V5.2.x `pre-commit-check.sh:775` 原文在、现全仓 0 命中；plan §一 无该条目）待裁 |
+| `check-k3-report.test.sh` | PASS | ❌ `T1 合格 = OK 期望 0 实得 1` | 夹具引用 `pre-commit-check.sh:991`，重写后文件仅 564 行 ⇒ **行号越界判 VIOLATION**（同 A4 族） |
+| `simulate-ci.test.sh` | PASS | ❌ | **级联**（其断言=整套清单必须 exit 0），非独立缺陷 |
+### 5.2 既存红（非本 PR 引入）
+- **Vitest 2/2 @main**（main push 全量集红 vs PR changed 集绿的口径差）——**卡 D1008** 登记于分支 `chore/d1008-ratchet-card` @ `1837773d`（本 PR 不修）
+### 5.3 合规声明
+未碰 `scripts/audit/**`、`docs/synova/audit-reports/**`、`src/**`；**未用 `force push`、未用 `--no-verify`**。D331 bypass 对账按 **D451 一次性补记**路径闭合（8 条 rebase 改写 hash 的 COMMITTED 记录，commit `ac0ad90a`）。
+### 5.4 真 run 状态
+**⚠️ 真 CI 队列积压**：`36168743118` / `36168749183`（sha 9fd034dd）与 `36170408913` / `36170416178`（sha 25e1b414）**全部 `queued`、无结论** ⇒ 上表判据均为**本地 CI 等价复跑**；**真 run ⒞ 待队列恢复后补**（不以本地等价冒充实跑）。
 
 ## ⑥ 未清项登记
-1. 权威口径 24 → ≤20 需再退役 ≥4（canary-drift 2b −1 + 可退役清单 ≥3，task-24 产出供 CTO 批）
-2. pre-commit 4 处关键路径 `|| true`（DOC_ONLY/git 采集族/G10/G12 python 静默跳过）——task-24 清零
-3. D964 rebase（等本 PR 合入）
-4. 2b iron-laws 挂载（等 #804 合入；窗口期判定面清单在 D962-phase2-plan §九）
-5. check-bypass-log.test.sh 环境依赖（分支态 FAIL/main 态 PASS，合入自动回绿）
+1. **B 档三点待 CTO 裁**（wire / retire）：`ct-test-gate`、`platform-checklist`、`claim-regex`（真丢失，建议接回 CI 权威区 + 测试提取器改指活点）。
+2. **可退役计数算式（24 → ≤20）**：`24 − 2 retire（check-hardcoded.sh / control-tower/check-canary-drift.sh，均有 plan 或脚本注释具名承接）− 2 待裁（check-name-allocation.sh / check-preset-bundles.sh）= 20`。另 4 件按 plan 属 **wire**（check-file-driven / check-gitlinks / check-k3-report / check-pr-budget）——wire 属 plan 既定；retire 须 CTO 明批后执行。
+3. `check-k3-report.test.sh` 夹具行号越界（同 A4 族）——一行夹具修复已获批，**本次随正文一起落**。
+4. 真 CI 队列恢复后需补 ⒞（本 PR 与 main 两侧）。
+5. `D964 rebase`（等本 PR 合入）。
+6. 小瑕疵登记：`tests/doc-system/doc-registry-gate.test.sh` 首行 BOM（测试仍过）；`loop-score.test.sh` 内层 `ROOT: unbound variable` stderr 噪音；D2 登记门禁在 CI checkout 下输入集为空（空转，已在脚本注释如实登记）。
+7. D721（main push 上存量红放行分支不可达）仍为独立 FIX 条目，本 PR 不动。
