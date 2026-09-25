@@ -18,13 +18,21 @@ log_gate() {  # 契约(铁律47): @input 检查名+hit|miss; @output JSONL→gat
   local g="$1" r="$2"; [ -z "$g" ] && return 0
   echo "{\"time\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\", \"gate\": \"${g}\", \"result\": \"${r}\", \"branch\": \"${_GATE_BRANCH}\"}" >> "${GATE_HITS_LOG}" 2>/dev/null || true  # swallow-ok: 统计非门禁
 }
+_emit_matches() {  # FIX-015: CI 下不截断（原 head -8 使第 9 行起 CI 不可见）+ ::error 注解带失败断言原文
+  local m="$1" name="${2:-}" n="${3:-8}"
+  if [ "${GITHUB_ACTIONS:-}" = "true" ]; then
+    echo "$m" | while read -r l; do [ -n "$l" ] && echo "     ${l}"; done
+    [ -n "$name" ] && echo "::error title=IronLaws:${name}::$(echo "$m" | head -1 | tr -d '%' | cut -c1-280)"
+  else
+    echo "$m" | head -"$n" | while read -r l; do [ -n "$l" ] && echo "     ${l}"; done
+  fi
+}
 hard_check() {  # @三态 1: 命中即 HARD_FAIL（本地硬拦）
   local name="$1" matches="$2" count=0
   [ -n "$matches" ] && count=$(echo "$matches" | grep -c . 2>/dev/null) || count=0
   if [ "$count" -gt 0 ]; then
     echo -e "  ${RED}❌ ${name}: ${count} 处  [硬阻断]${RESET}"
-    echo "$matches" | head -8 | while read -r l; do [ -n "$l" ] && echo "     ${l}"; done
-    [ "${GITHUB_ACTIONS:-}" = "true" ] && echo "::error title=IronLaws:${name}::$(echo "$matches" | head -1 | tr -d '%' | cut -c1-300)"
+    _emit_matches "$matches" "$name" 8
     HARD_FAIL=$((HARD_FAIL + 1)); log_gate "$name" hit
   else
     echo -e "  ${GREEN}✅ ${name}${RESET}"; log_gate "$name" miss
@@ -41,7 +49,7 @@ soft_check() {  # @三态 1: 本地软 / SYNO_CI=1 转硬（D516；D542 CI 下�
       echo -e "  ${YELLOW}⚠️  ${name}: ${count} 处  [V5 软提示——CI 为权威]${RESET}"
       SOFT_COUNT=$((SOFT_COUNT + 1))
     fi
-    echo "$matches" | head -8 | while read -r l; do [ -n "$l" ] && echo "     ${l}"; done
+    _emit_matches "$matches" "$([ "${SYNO_CI:-0}" = "1" ] && echo "$name")" 8
     log_gate "$name" hit
   else
     echo -e "  ${GREEN}✅ ${name}${RESET}"; log_gate "$name" miss
@@ -56,7 +64,7 @@ warn_check() {  # CI 也转硬（D542）
     else
       echo -e "  ${YELLOW}⚠️  ${name}: ${count} 处  [警告]${RESET}"; WARN_COUNT=$((WARN_COUNT + 1))
     fi
-    echo "$matches" | head -5 | while read -r l; do [ -n "$l" ] && echo "     ${l}"; done
+    _emit_matches "$matches" "$([ "${SYNO_CI:-0}" = "1" ] && echo "$name")" 5
     log_gate "$name" hit
   fi
 }
@@ -110,6 +118,33 @@ else
 fi
 # D962 死分支修复: G10/G11 数据源赋值（原 CHANGED_FILES/STAGED_FILES 全脚本零赋值→恒跳过）
 CHANGED_FILES="$GIT_CACHED_ALL_NAMES"; STAGED_FILES="$GIT_CACHED_ALL_NAMES"; STAGED_ALL="$GIT_CACHED_ALL_NAMES"
+
+# ── FIX-015: 「代码字面量」类判定的**按路径**自伤排除（hunk 级 `+++ b/<path>`）──
+# 根因（#803 CI 实测 12 处 100% 自伤）: 这些判定扫 $GIT_CACHED_DIFF（本 PR 全 diff），而
+#   检查脚本自身的正则/标签/注解、测试夹具的**故意注入**、文档对规则的**引用**，本身就含这些
+#   字面量 ⇒ 检查在自己的 diff 上自伤报红（B 类生产真红 = 0 处）。
+# 规则: 只有**源面代码文件**的 added 行参与判定；本脚本自身 / tests/** / *.test.* /
+#   docs/** / memory/** / .claude/** / task-state/** / *.md|txt|html 一律按路径排除。
+# 禁行内字面量白名单（那会把真注入一起放过）——排除只按文件路径，且是 hunk 级。
+_SELF_REL="${BASH_SOURCE[0]}"
+case "$_SELF_REL" in
+  "$ROOT"/*) _SELF_REL="${_SELF_REL#"$ROOT"/}" ;;
+esac
+code_added_lines() {  # @output 仅「源面代码文件」的 added 行（含前导 +）
+  awk -v self="$_SELF_REL" '
+    /^\+\+\+ / {
+      p=$2; sub(/^b\//, "", p)
+      skip = (p==self) || (p=="/dev/null") \
+          || (p ~ /(^|\/)tests\//) || (p ~ /\.test\.[A-Za-z]+$/) \
+          || (p ~ /(^|\/)(docs|memory|\.claude|task-state)\//) \
+          || (p ~ /\.(md|txt|html)$/)
+      next
+    }
+    skip { next }
+    /^\+\+\+/ { next }
+    /^\+/ { print }
+  ' <<< "$GIT_CACHED_DIFF"
+}
 
 # ── #11家 CT-34 纯文档早退（豁免，仅 Secrets + 骨架D547 + Notes D472 硬拦）──
 DOC_PREFIX_RE='^(docs/.*\.(md|html|txt)$|\.claude/task-briefs/.*\.(md|html|txt)$|memory/.*\.(md|html|txt)$|task-state/.*\.(json|md)$|[^/]+\.(md|html|txt)$)'
@@ -225,8 +260,8 @@ if [ -n "$STAGED_HTML" ]; then
 fi
 soft_check "硬编码业务数据/类型 (#3 保留·本地)" "${HARDCODE_DATA:-}"
 
-# ── #30 禁止新 DiagnosticModule（组7a 正则保全: ^+++ / 全角 / conditions D937-v2）──
-NEW_DIAG=$(echo "$GIT_CACHED_DIFF" | grep "^+.*DiagnosticModule" | grep -Ev "scripts/pre-commit-check.sh|\.md|\.html|//|@deprecated|import type|^\\+\\+\\+|hard_check|禁止新 DiagnosticModule|不要再使用 DiagnosticModule" || true)
+# ── #30 禁止新 DiagnosticModule（FIX-015: 判定面 = 源面代码 added 行，按路径排除自伤面）──
+NEW_DIAG=$(code_added_lines | grep "DiagnosticModule" | grep -Ev "//|@deprecated|import type|hard_check|禁止新 DiagnosticModule|不要再使用 DiagnosticModule" || true)
 soft_check "禁止 DiagnosticModule: 新模块须实现 Sentinel 接口" "${NEW_DIAG:-}"
 
 # ── #38 G10 / #39 G11（D260 CP3 — 死分支已修活，首次真实执行）──
@@ -280,8 +315,8 @@ fi
 # 迁 CI 34 项回归集紧凑内联（铁律38/桥接/接线/D296/D547）；完整 13 组语义由 iron-laws ::error 承担。
 if [ "${SYNO_CI:-0}" = "1" ]; then
   echo -e "${CYAN}── CI 权威区（D962 迁移判定）──${RESET}"
-  # 铁律38: as any / as never / as unknown as（跳注释行）
-  M=$(echo "$GIT_CACHED_DIFF" | grep -E '^\+' | grep -v '^+++' | grep -E 'as (any|never)\b|as unknown as' | grep -vE '^\+\s*(//|/\*|\*|#)' || true)
+  # 铁律38: as any / as never / as unknown as（跳注释行；FIX-015: 判定面 = 源面代码 added 行）
+  M=$(code_added_lines | grep -E 'as (any|never)\b|as unknown as' | grep -vE '^\+\s*(//|/\*|\*|#)' || true)
   soft_check "as any / as never / as unknown as 零容忍（铁律38）" "$M"
   # 铁律46: engine-core 引用（白名单外; 含相对路径三重匹配）
   BRIDGE_FAIL=""
