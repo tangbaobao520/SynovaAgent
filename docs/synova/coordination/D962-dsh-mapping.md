@@ -86,7 +86,7 @@ DSH 的门禁分两层：**lefthook 本地钩子（快速检查点）+ CI 门禁
 |---|---|---|---|---|
 | 1 | as any / as never / as unknown as 零容忍（L493, hard） | hard | **有，等价更强**：TS `tsc -b` typecheck 全量类型检查（类型错误即 fail），无"as any 特赦"需求——DSH 无历史逃逸事故，靠编译器 + oxlint typeAware | .oxlintrc.json:9 `typeAware: true`；run-gates.ts:633 lintGate；lefthook.yml:54-55 pre-push typecheck |
 | 2 | from 损伤 D93/D95（L499, hard） | hard | **无对应**（Synova 专属事故模式） | — |
-| 3 | 硬编码业务数据/类型（L514, soft） | soft | **部分对应**：no-restricted-properties 等受限属性规则（按域限定 magic 字符串），但无"业务实体清单"类检查 | .oxlintrc.json:60+ no-restricted-properties |
+| 3 | 硬编码业务数据/类型（L514, soft） | soft | **无对应（2026-09-25 更正）**：原表述"部分对应 no-restricted-properties"夸大——DSH 的 no-restricted-properties 是属性**访问**禁令，非字面量表检查；且 oxlint 1.85 无 no-restricted-syntax（eslint/oxc/typescript 三插件名实测 not found，D964 实证），业务实体字面量表在 lint 层不可表达 | .oxlintrc.json:60+ no-restricted-properties（仅属性访问域） |
 
 ### 组 2 — 测试质量
 
