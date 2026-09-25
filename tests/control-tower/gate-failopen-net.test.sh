@@ -270,13 +270,32 @@ fi
 # 该 commit 全文里指向被禁模块的 + 行分布: .html 正文 9 行 + .ts 注释 1 行 +
 # 检查器自身 1 行 —— 三者都应被豁免/排除，故判据是"组 7a ✅"。
 # 不断言全局 exit: 历史 commit 的 diff 会合法触发其他组（本夹具只负责 7a）。
+# D937返修-3(#762 CI 实证): 全文 `git show` = 267,539 字节 —— 超过 Linux 单环境变量
+#   上限（MAX_ARG_STRLEN=131,072）→ CI ubuntu 上 `env SYNO_GIT_CACHED_DIFF=<全文>`
+#   E2BIG，pre-commit 根本没跑 → 无 7a 行 → 断言红（macOS 无每变量限制故本地恒绿）。
+#   修法=**最小保真切片**: 7a 只消费「diff --git/---/+++ 文件头 + 含 token 的 + 行」，
+#   从真实 commit 现切（.html 9 行 + .ts 注释 + 检查器自身，三类豁免全覆盖），
+#   体积 <2KB，任何平台 env 限制内。切片 >100KB → 夹具自身红（fail loud）。
 if git -C "$REPO" cat-file -e 58a19796^{commit} 2>/dev/null; then
-  OUT=$(run_pc soft "$(git -C "$REPO" show 58a19796)"); RC=$?
-  L=$(seven_a_lines "$OUT")
-  if [ -n "$L" ] && has_ok "$L" && ! has_bad "$L"; then
-    ok "T5c 真实样本: git show 58a19796 全文 → 组 7a ✅（0 命中；全局 exit=$RC 不判）"
+  T5C_SAMPLE="$(git -C "$REPO" show 58a19796 | awk '
+    /^diff --git /{h1=$0;h2="";h3="";done=0;next}
+    /^--- /{h2=$0;next}
+    /^\+\+\+ /{h3=$0;next}
+    /^\+/ && /DiagnosticModule/{
+      if(!done){print h1; if(h2!="")print h2; if(h3!="")print h3; done=1}
+      print
+    }')"
+  T5C_BYTES=$(printf '%s' "$T5C_SAMPLE" | wc -c | tr -d ' ')
+  if [ "$T5C_BYTES" -gt 100000 ]; then
+    no "T5c 真实样本切片异常: ${T5C_BYTES}B > 100KB（切片器失效，fail loud）"
   else
-    no "T5c 真实样本: 58a19796 误报，行=[${L:-<无 7a 行>}]"
+    OUT=$(run_pc soft "$T5C_SAMPLE"); RC=$?
+    L=$(seven_a_lines "$OUT")
+    if [ -n "$L" ] && has_ok "$L" && ! has_bad "$L"; then
+      ok "T5c 真实样本: 58a19796 切片(${T5C_BYTES}B) → 组 7a ✅（0 命中；全局 exit=$RC 不判）"
+    else
+      no "T5c 真实样本: 58a19796 误报，行=[${L:-<无 7a 行>}]"
+    fi
   fi
 else
   no "T5c 真实样本: commit 58a19796 不可达（CI fetch-depth 应为 0）——判据不可判，fail loud"
