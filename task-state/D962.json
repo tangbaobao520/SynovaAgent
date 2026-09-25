@@ -2,7 +2,7 @@
   "task_id": "D962",
   "title": "pre-commit/check-* 门禁收敛（V5.3 + 46→22 + 组级测试 + 合并候选）",
   "status": "in_progress",
-  "write_set_comment": "24A+26D+37M 共 87 文件逐条 = git diff --name-status --no-renames $(git merge-base origin/main HEAD)..HEAD（task-26 并入 2b 后重算，与 .claude/task-briefs/2026-09-25-D962-2a1-precommit.md Q2 逐条一致；D962-N 自举：声明件自身入集）",
+  "write_set_comment": "24A+26D+38M 共 88 文件逐条 = git diff --name-status --no-renames $(git merge-base origin/main HEAD)..HEAD（task-26 并入 2b 后重算，与 .claude/task-briefs/2026-09-25-D962-2a1-precommit.md Q2 逐条一致；D962-N 自举：声明件自身入集）",
   "write_set": {
     "added": [
       ".claude/task-briefs/2026-09-25-D962-2a-scripts.md",
@@ -79,6 +79,7 @@
       "tests/control-tower/brief-parseable.test.sh",
       "tests/control-tower/brief-parser-strip.test.sh",
       "tests/control-tower/check-ci-stale-red.test.sh",
+      "tests/control-tower/check-k3-report.test.sh",
       "tests/control-tower/check-notes-lifecycle.test.sh",
       "tests/control-tower/check-orphan-worktrees.test.sh",
       "tests/control-tower/check-sentinel-type-net.test.sh",
