@@ -1786,3 +1786,4 @@ Binary file .claude/bypass.log matches
 2026-09-25T14:07:42+0800 | COMMITTED | D962 merge candidate 一次性补记（rebase 改写 hash 后对账断裂，按 D451） | HASH=db3099fa20ae66fb0921c6ab681bab6e27cbfaa5
 2026-09-25T14:07:43+0800 | COMMITTED | D962 merge candidate 一次性补记（rebase 改写 hash 后对账断裂，按 D451） | HASH=a3587d12bd1e9cbf752482d597010a7c92793b52
 2026-09-25T14:07:54+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=f0d43129fb27f65284f30998e10510271c24f20b
+2026-09-25T14:13:07+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=bf3d91b3b0224a0f15b20847ebeda0e96b6bb1f7
