@@ -1771,3 +1771,5 @@ Binary file .claude/bypass.log matches
 2026-09-25T13:50:24+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=85a2e96d13c509863dd3d56d6ef8969bf971189c
 2026-09-25T13:58:39+0800 | COMMITTED | merge candidate D962 (git merge, B 手动补记同 auto-hook 语义) | HASH=ab0ebbaf
 2026-09-25T13:58:39+0800 | COMMITTED | merge candidate D962 (git merge, B 手动补记同 auto-hook 语义) | HASH=b67983b1
+2026-09-25T14:04:08+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/d962-2a-merge
+2026-09-25T14:04:08+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=18dc30faea8a0152fa882b2dd8e9bfcc4d5956be
