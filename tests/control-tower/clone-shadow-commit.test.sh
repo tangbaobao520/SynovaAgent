@@ -39,6 +39,12 @@ make_sandbox() { # make_sandbox <dest>
   local d="$1"
   mkdir -p "$d/.claude" "$d/.git/hooks"
   git -C "$d" init -q
+  # FIX-001 / D970 Stage 2 夹具补依赖: post-commit 以 `git rev-parse --show-toplevel` 为 ROOT
+  #   调 `$ROOT/scripts/control-tower/bypass-ledger.sh`（:24 append / :97 read）。原夹具只建
+  #   空仓 + 委派 hook ⇒ 沙箱内无该脚本 ⇒ 登记 exit=127（Stage 2 取消旧路径回退后由「静默
+  #   降级」变硬失败）。此处把**真实脚本**提供进沙箱——属「夹具缺依赖」修复，不改断言语义。
+  mkdir -p "$d/scripts/control-tower"
+  cp "$REPO/scripts/control-tower/bypass-ledger.sh" "$d/scripts/control-tower/bypass-ledger.sh"
   printf '#!/bin/bash\nexec bash "%s"\n' "$HOOK_SRC" > "$d/.git/hooks/post-commit"
   chmod +x "$d/.git/hooks/post-commit"
 }

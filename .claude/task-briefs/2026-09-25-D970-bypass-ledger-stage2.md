@@ -38,6 +38,7 @@ D735 分两阶段把 bypass 证据账本移出 git。**Stage 1（PR #541 / e484a
 - tests/control-tower/post-commit.test.sh
 - tests/control-tower/post-commit-marker.test.sh
 - tests/control-tower/pre-commit-bypass-read.test.sh
+- tests/control-tower/clone-shadow-commit.test.sh
 - docs/authority/bypass-ledger-archive/README.md
 - docs/authority/bypass-ledger-archive/bypass-ledger-frozen-2026-09-25.txt
 - docs/synova/coordination/ownership.yaml
