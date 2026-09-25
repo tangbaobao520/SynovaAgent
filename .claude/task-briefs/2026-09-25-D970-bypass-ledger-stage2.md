@@ -54,10 +54,18 @@ D735 分两阶段把 bypass 证据账本移出 git。**Stage 1（PR #541 / e484a
 处理: 证据写 per-session（git 忽略）→ 读面 = 冻结归档 + 旧路径（若存在）+ 全部 per-session（写入与读取两侧同步切换）。
 结果: 分支不再产生 `.claude/bypass.log` 变更；D331 对账通过；Gatekeeper/组 7c 仍看得见证据（不静默失能）。
 
-### Q2b: 拆 PR（CTO 裁决 甲′）
-本卡拆两支 PR：**PR-2 `docs/d970-archive-and-ownership`**（归档产物 + `.gitattributes` 判 domain_neutral，**先合**）
-+ **PR-1 `fix/d970-bypass-ledger-stage2`**（核心修复，恰 12 件，后合）。两支的 `task-state/D970.json` 的 `write_set`
-覆盖**两支全部文件**（D708 口径）；本 brief 同内容随两支落地。
+### Q2b: **预算超限与拆分登记**（D734；CTO 裁决 甲′）
+**原 D970 单支 = 14 件 > 上限 12，且 `.gitattributes` 落 win 兜底致「变更跨域」** ⇒ 按 D734「拆 PR，禁调高上限」拆两支：
+
+| 支 | 分支 | 文件清单 | 预算自检 |
+|---|---|---|---|
+| **PR-2（先合）** | `docs/d970-archive-and-ownership` | `docs/synova/coordination/ownership.yaml`（`.gitattributes` → `domain_neutral`）／`docs/authority/bypass-ledger-archive/README.md`／`docs/authority/bypass-ledger-archive/bypass-ledger-frozen-2026-09-25.txt` | `✅ PASS PR 预算内（4 文件）` / `✅ 变更单域: mac` |
+| **PR-1（后合）** | `fix/d970-bypass-ledger-stage2` | `.gitattributes`／`.gitignore`／`scripts/control-tower/bypass-ledger.sh`／`scripts/control-tower/check-bypass-log.sh`／`scripts/hooks/post-commit.sh`／`scripts/pre-commit-check.sh`／`tests/control-tower/{bypass-ledger,bypass-union-merge,check-bypass-log,post-commit-marker,post-commit,pre-commit-bypass-read}.test.sh` | `✅ ① 12 ≤ 12` / `✅ ③`；② 待 PR-2 合入后转绿（已实测：覆盖 PR-2 的 ownership.yaml 后 `✅ PASS PR 预算内（12 文件）` + `✅ 变更单域: mac`） |
+
+**顺序依赖**：PR-2 必须先合（② 的判定读 `ownership.yaml`）。两支的 `task-state/D970.json` 内容一致、`write_set` 覆盖**两支全部 21 项**（D708 口径）；本 brief 同内容随两支落地。
+
+### Q2c: 判据⑤ 卡面口径更正（CTO 裁决，责任在 CTO）
+卡面原写「无法读取来源 → exit 2」，实现为 **exit 1**。verifier A/B 实证：**main 版与 D970 版在同一夹具下均 exit 1** ⇒ 硬要求「语义/exit code/fail-closed 不变」被满足；且 `exit 2` 路径真实存在（base 引用缺失 / git log 不可用）。**裁决：保留 exit 1，改写本卡判据⑤口径。** 理由（第一性原理）：门禁语义变更卡的最高优先级是「不改既有可观测行为」（blast radius 最小）；两者同为 fail-closed 非 0，调用方（pre-push）同判阻断 ⇒ 实质等价；「不变」可证伪，「等于 2」只是措辞。
 
 ## 架构层: scripts（控制塔）+ 仓库跟踪策略
 ## Done 标准
