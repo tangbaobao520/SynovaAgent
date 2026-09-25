@@ -1,0 +1,41 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript"],
+  "ignorePatterns": [
+    "node_modules/**",
+    "**/*.test.ts",
+    "**/*.integration.test.ts",
+    "**/*.e2e.test.ts",
+    "**/*.d.ts",
+    "**/lib/**",
+    "**/dist/**",
+    "packages/**",
+    "prototypes/**",
+    "patches/**",
+    "memory/**",
+    "docs/**",
+    ".claude/**",
+    ".codex/**",
+    "tests/**",
+    "scripts/**",
+    "extensions/**",
+    "knowledge/**",
+    "expert/**",
+    "theory/**",
+    "skills/**"
+  ],
+  "rules": {
+    "typescript/no-explicit-any": "warn",
+    "no-restricted-imports": [
+      "error",
+      {
+        "paths": [
+          {
+            "name": "@synova/sog-core",
+            "message": "D962 §五 #26-28: SOG 旧引用防回归钉子——SOG 已退役，新代码禁止回引；替代见 l3/expert-platform"
+          }
+        ]
+      }
+    ]
+  }
+}
