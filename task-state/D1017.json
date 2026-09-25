@@ -84,7 +84,8 @@
   },
   "write_set": [
     "task-state/D1017.json",
-    "task-state/D1019.json"
+    "task-state/D1019.json",
+    "task-state/D1020.json"
   ],
   "write_set_note": "D1019（取号器无超时兜底 P0）由 CTO 在本批指令中要求立卡，随本 PR 交付 ⇒ 属本卡写集（显式声明，避免 D1010 那次未声明夹带的重演）",
   "updated_at": "2026-09-26T04:30:00+08:00",
