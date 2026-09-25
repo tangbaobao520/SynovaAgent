@@ -423,8 +423,20 @@ export class SentinelRunner {
     }
 
     try {
-      const { loadSentinels, clearSentinelCache } = await import('./sentinel-loader');
-      clearSentinelCache(); // 运行期重扫（cache 含启动期快照，每次自检取最新 manifest 面）
+      const { loadSentinels } = await import('./sentinel-loader');
+      // D968（CTO 裁定）: 去掉**路径3 —— 运行期重复加载**。
+      //
+      // 原实现每次自检都 `clearSentinelCache()` + `loadSentinels()`：既清缓存又重扫磁盘，
+      // 与路径2（注册时已扫过一次）重复。现改为**只读路径2 启动时发布的加载数快照**
+      // （`loadSentinels()` 的模块级 cache 即该快照，不清缓存 ⇒ 不再重扫磁盘）。
+      //
+      // ⚠️ 关键：**必须保留「跨源语义」**。`expectedCount` 是**磁盘 manifest 数**（loader 源），
+      //    `registryCount` 是**注册表数**（registry 源）——H1 的价值就是这两个独立来源之间的漂移。
+      //    若改成 `expectedCount = registry.count()`（同源），则 ratio 恒等 1 ⇒ 自证恒真、
+      //    漂移检测被静默废掉（本批一路在抓的"假绿"）。CTO 已明确裁定：不接受 ratio ≡ 1。
+      //
+      // 代价（如实登记）: 自检不再感知"启动后才恢复的 loader"；启动期快照为 0 时
+      //    `evaluateSentinelHealth` 的 `expectedCount > 0` 门控会跳过 H1（fail-closed，不误报）。
       state.expectedCount = loadSentinels().sentinels.length;
     } catch (err: unknown) {
       log.warn({ err: err instanceof Error ? err.message : String(err) }, '[self-check] loadSentinels() 收集失败 — 保守取 0（fail-closed：expectedCount=0 不误报 H1）');

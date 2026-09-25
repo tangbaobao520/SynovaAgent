@@ -1,79 +1,67 @@
 /**
- * sentinel/builtins.ts — 内置哨兵自动注册
+ * sentinel/builtins.ts — 内置哨兵注册（**路径1 已关停**，D968）
  *
- * 2026-06-18: 从硬编码 25 个模块 → 目录自动扫描。
- * 加新哨兵 = 在 adapters/ 创建 xxx-sentinel.ts 文件 → 自动注册。
- * 不需要改 builtins.ts。
+ * ═══ D968 裁定：关停路径1，唯一入口 = 文件驱动（路径2）═══
  *
- * 架构: L2 (synova-agent.ts) → L3 (builtins.ts) → L3 (adapters/*)
+ * 规格 `SYNOVA-哨兵体系-最终版-v1-20260925.md` §三 冻结三条注册路径：
+ *   路径1: builtins.ts → 扫 src/sentinel/adapters/*-sentinel.ts   ← **本文件，已关停**
+ *   路径2: file-driven-loaders.ts → 扫 extensions/sentinels/*​/manifest.json（唯一入口）
+ *   路径3: runner.ts → 运行时再次 loadSentinels()（冗余）→ 已在 runner.ts 去掉
+ *
+ * **为何"关停"而不是"修复"（院方禁令 4 的实证依据）**：
+ *   原实现的 `filenameToExportKey()` 把 `-sentinel.ts` 剥掉后只做 camelCase，
+ *   **从未拼回 `Sentinel` 后缀** ⇒ 四个文件名推导出的键
+ *   （`cashFlow` / `cpc` / `goalAlignment` / `integrationHealth`）
+ *   与实际导出（`cashFlowSentinel` / `cpcSentinel` / `goalalignmentSentinel` /
+ *   `integrationHealthSentinel`）**全部对不上** ⇒ 实测 `scanned: 4, registered: 0`
+ *   （旧版运行时原始输出见 D968 evidence）。
+ *   ⇒ 只需 1 行（拼回 `Sentinel`）就能让其中 3 个"活过来" —— 这正是院方禁令 4
+ *      「**不要顺手修注册 bug 就宣布'第二套哨兵活了'**（修 1 行能让键名对上 3 个）」
+ *      点名的情形。本批裁决是**关停路径1**；**明令禁止修那个键名推导**
+ *      （CTO 2026-09-25 裁定）。
+ *
+ * **栈式约束（PR-A / PR-B，必读）**：
+ *   `registerBuiltinSentinels` 的**调用点** `src/agent/synova-agent.ts:78-79` 属 **win 域**，
+ *   归 **PR-B**（base = PR-A）移除。因此 **PR-A 必须保留本 export**，否则 PR-A 单独编译不过
+ *   （TS2305: 模块无导出成员）。⇒ 本文件在 PR-A 阶段是"**有意的过渡态**"
+ *   （no-op + log.warn），**不是遗留死代码**；PR-B 移除调用点后本 export 即可删除。
+ *
+ * 架构: L3（哨兵域）。关停后本模块不再有任何磁盘扫描 / 动态 import 行为。
  */
 
-import { readdirSync } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
-import { getSentinelRegistry } from './registry';
 import { createLogger } from '@synova/logger';
 
 const log = createLogger('sentinel/builtins');
 
-/**
- * 从文件名推导导出键名。
- * cost-health-sentinel.ts → costHealthSentinel
- * revenue-health-sentinel.ts → revenueHealthSentinel
- * gap-dynamics: 已删除(V4.2.4)
- */
-function filenameToExportKey(filename: string): string {
-  const base = filename.replace(/-sentinel\.ts$/, '').replace(/\.ts$/, '');
-  return base.replace(/-([a-z])/g, (_, c: string) => c.toUpperCase());
-}
+/** 路径1 关停后的运行期提示（可见，不静默——铁律 11） */
+const PATH1_CLOSED_MSG =
+  '[builtins] 路径1 已关停（D968）：唯一入口 = 文件驱动 ' +
+  '(src/init/file-driven-loaders.ts → extensions/sentinels/*/manifest.json)。' +
+  '本调用为 no-op，不再扫描 src/sentinel/adapters/。';
 
 /**
- * 扫描 adapters/ 目录，自动发现并注册所有 *-sentinel.ts 文件。
- * 每个模块独立 try/catch——一个加载失败不影响其他。
+ * registerBuiltinSentinels — **路径1 关停后的 no-op**（保留 export 仅为栈式编译约束）。
+ *
+ * 契约（铁律 47）:
+ *   @input  — 无
+ *   @output Promise<void>；**不注册任何哨兵**（registry 不被修改）
+ *   @degraded — 不适用（不再触碰磁盘 / 动态 import，无失败路径）
+ *   @error  — 不抛异常（恒 resolve）
+ *
+ * 保留理由（栈式约束）: 调用点 `src/agent/synova-agent.ts:78-79` 在 PR-B 才移除；
+ *   若 PR-A 直接删掉本 export，PR-A 单独会因"调用了不存在的函数"编译失败。
  */
 export async function registerBuiltinSentinels(): Promise<void> {
-  const registry = getSentinelRegistry();
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = dirname(__filename);
-  const adaptersDir = join(__dirname, 'adapters');
-
-  let sentinelFiles: string[];
-  try {
-    sentinelFiles = readdirSync(adaptersDir).filter(f => f.endsWith('-sentinel.ts') || f.endsWith('-sentinel.js'));
-  } catch {
-    log.error('[builtins] adapters/ 目录不可读 — 哨兵注册失败');
-    return;
-  }
-
-  if (sentinelFiles.length === 0) {
-    log.warn('[builtins] adapters/ 无 *-sentinel 文件 — 零哨兵注册');
-    return;
-  }
-
-  let registered = 0;
-
-  for (const filename of sentinelFiles) {
-    const key = filenameToExportKey(filename);
-    try {
-      const mod = await import(join(adaptersDir, filename).replace(/\\/g, '/'));
-      const sentinel = (mod as Record<string, unknown>)[key];
-      if (sentinel && typeof sentinel === 'object' && 'config' in sentinel) {
-        registry.register(sentinel as Parameters<typeof registry.register>[0]);
-        registered++;
-        log.info(`[builtins] ${filename} → ${key} 已注册`);
-      } else {
-        log.error({ filename, key }, `[builtins] ${filename} 未导出哨兵对象 (key=${key})`);
-      }
-    } catch (err: unknown) {
-      log.error({ filename, key, err: (err as Error)?.message || String(err), code: 'SENTINEL_REGISTER_FAILED', phase: 2, retryable: false },
-        `[builtins] ${filename} 注册失败`);
-    }
-  }
-
-  const total = registry.count();
-  const cronCount = registry.listCronSentinels().length;
-  log.info({ registered, total, cronCount, scanned: sentinelFiles.length }, '[builtins] 哨兵自动注册完成');
+  log.warn(PATH1_CLOSED_MSG);
 }
 
-// 哨兵注册表: 文件驱动哨兵由 sentinel-loader.ts 自动发现注册 (V3.8)
+// 哨兵注册: **唯一入口 = 文件驱动**（src/init/file-driven-loaders.ts）
 // 新增哨兵 = extensions/sentinels/{name}/manifest.json + aggregate.ts → 零代码变更
+//
+// 已随路径1 关停一并删除（D968）:
+//   - `filenameToExportKey()`          —— 键名推导；缺陷留档于本文件头注释，**明令禁止修复**
+//   - `readdirSync(adaptersDir)` 扫描 + 逐文件动态 import + 逐文件 try/catch
+//   - 旧「内置哨兵」适配器（同批删除）: cpc-sentinel / goal-alignment-sentinel /
+//     integration-health-sentinel（三者 @deprecated）/ cash-flow-sentinel
+//     （能力与 extensions/sentinels/cash-runway/ 重叠、且生产上从未注册）/
+//     helpers（前四者的工具函数，删后零引用）

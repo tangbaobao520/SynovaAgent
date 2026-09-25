@@ -1,22 +1,93 @@
 {
   "task_id": "D968",
-  "title": "P1 统一哨兵注册为单入口（裁剪 adapters 5 个 @deprecated + 去 runner 冗余）",
-  "status": "spec_done",
+  "title": "P1 统一哨兵注册为单入口（关停路径1 + 去路径3 冗余；栈式两支 PR）",
+  "status": "impl_done",
   "risk": "high",
   "domain": "mac",
   "owner": "mac-coding",
   "executor": "dsh-squad",
+  "agent": "sentinel-coder-b",
+  "branch": "feat/D968a-sentinel-single-registry",
+  "branch_pr_b": "feat/D968b-win-single-entry",
+  "worktree": ".synova-wt-D968",
+  "base": "80045321fe1194e10ef8810065e9a8116ca3a796",
+  "base_ref": "origin/feat/D967b-sentinel-alert-stats",
+  "base_note": "栈式：PR-A base = D967b（非 main）；PR-B base = PR-A。理由=D967b 已改 src/sentinel/runner.ts，与本卡写集同文件 ⇒ 从 main 开分支会出现同文件双写者。",
   "milestone": "哨兵体系整改（十环判据）",
   "spec": "docs/synova/architecture/SYNOVA-哨兵体系-最终版-v1-20260925.md",
   "write_set": [
-    "src/sentinel/adapters/**",
     "src/sentinel/builtins.ts",
-    "src/init/file-driven-loaders.ts",
     "src/sentinel/runner.ts",
-    "tests/**",
+    "src/sentinel/adapters/cpc-sentinel.ts",
+    "src/sentinel/adapters/goal-alignment-sentinel.ts",
+    "src/sentinel/adapters/integration-health-sentinel.ts",
+    "src/sentinel/adapters/cash-flow-sentinel.ts",
+    "src/sentinel/adapters/helpers.ts",
+    "tests/sentinel/registry-single-entry.test.ts",
+    "tests/sentinel/self-check-h1-cross-source.test.ts",
+    "tests/sentinel/builtins.test.ts",
+    "tests/sentinel/durationms-regression.test.ts",
+    "tests/sentinel/adapters/cpc-sentinel.test.ts",
+    "src/agent/synova-agent.ts",
+    "tests/integration/knowledge-feedback.integration.test.ts",
+    "src/init/file-driven-loaders.ts",
+    "tests/integration/wiring-integration.test.ts",
+    ".claude/task-briefs/2026-09-25-D968-sentinel-single-registry.md",
+    "docs/synova/product-lines/evidence/D968-sentinel-single-registry-evidence.md",
     "task-state/D968.json"
   ],
+  "write_set_split": {
+    "PR_A_mac": [
+      "src/sentinel/builtins.ts",
+      "src/sentinel/runner.ts",
+      "src/sentinel/adapters/cpc-sentinel.ts",
+      "src/sentinel/adapters/goal-alignment-sentinel.ts",
+      "src/sentinel/adapters/integration-health-sentinel.ts",
+      "src/sentinel/adapters/cash-flow-sentinel.ts",
+      "src/sentinel/adapters/helpers.ts",
+      "tests/sentinel/registry-single-entry.test.ts",
+      "tests/sentinel/self-check-h1-cross-source.test.ts",
+      "tests/sentinel/builtins.test.ts",
+      "tests/sentinel/durationms-regression.test.ts",
+      "tests/sentinel/adapters/cpc-sentinel.test.ts"
+    ],
+    "PR_B_win_required": [
+      "src/agent/synova-agent.ts",
+      "tests/integration/knowledge-feedback.integration.test.ts"
+    ],
+    "PR_B_win_hygiene_optional": [
+      "src/init/file-driven-loaders.ts",
+      "tests/integration/wiring-integration.test.ts"
+    ],
+    "governance": [
+      ".claude/task-briefs/2026-09-25-D968-sentinel-single-registry.md",
+      "docs/synova/product-lines/evidence/D968-sentinel-single-registry-evidence.md",
+      "task-state/D968.json"
+    ]
+  },
   "updated_at": "2026-09-25",
-  "updated_by": "synova-cto",
-  "note": "依据派单 docs/synova/coordination/派单-哨兵体系整改-20260925.md；判据见该文档逐卡 Done 段。"
+  "updated_by": "sentinel-coder-b",
+  "note": "依据派单 docs/synova/coordination/派单-哨兵体系整改-20260925.md + CTO 2026-09-25 三条裁定（B1 栈式拆分 / B2 保留 H1 跨源语义 / ③ 授权修空壳假绿）。write_set 按 D708 口径逐文件精确、写两 PR 并集（超集安全）。",
+  "results": {
+    "path1_shutdown": "builtins.ts 改 no-op + log.warn；registerBuiltinSentinels export 保留（栈式编译约束，PR-B 移除调用点）",
+    "path1_pre_state": "scanned: 4 / registered: 0（armed-but-idle）；4 个推导键与实际导出全部对不上 ⇒ 实施禁令 4 的前提成立",
+    "path1_key_derivation_fixed": false,
+    "path1_key_derivation_disposition": "CTO 明令禁止修复 ⇒ 随路径1 整体删除，未修改其逻辑",
+    "adapters_cut": 5,
+    "path3_removed": "runner.ts collectHealthState 去掉 clearSentinelCache() + 运行期重扫；只读路径2 启动快照，保留 expectedCount(磁盘源) vs registryCount(注册表源) 跨源语义",
+    "done2_dynamic_equality": "loadSentinels().sentinels.length === 非递归·跳 shared/_* 的目录数（不写死 45/43）",
+    "done3_discriminator": "夹具根 1 目录 ⇒ 加载数 = 1；不 clear ⇒ 拿回主目录数（陷阱自动反证）",
+    "ring4_second_half": "registerLoadedSentinels().registered === loadSentinels().length 且 errors 空（原无断言）",
+    "tests_sentinel": "34 文件 / 247 用例 全绿（1 skipped）",
+    "pr_b_expected_red": "tests/integration/knowledge-feedback.integration.test.ts 2 红（正是那两条硬编码 adapters 断言）⇒ 栈式联合验收点",
+    "tsc": "全部 28 错；CI 白名单过滤后 = 0 ⇒ PR-A 编译通过；改动文件零类型错误",
+    "red_proofs": 3
+  },
+  "uncleared": [
+    "scripts/check-deprecated-mapping.sh 是预先存在的恒真门禁（grep -q 吞掉 -L 输出 ⇒ UNDOCUMENTED 恒 0 ⇒ 永远报 ✅），非本批裁撤所致；属 win 域 ⇒ 不动，待立卡",
+    "runner.ts 自检改用启动快照的代价：不再感知启动后才恢复的 loader；启动快照为 0 时 H1 因 expectedCount>0 门控被跳过（fail-closed 不误报）",
+    "PR-B（win 域）未开工：src/agent/synova-agent.ts 去调用点 + knowledge-feedback 换断言",
+    "PR-A 内加载数不变（45），与 D965 的 45→43 无耦合",
+    "D969 规则窗口：交付时点 origin/main 未含 D9xx 补的 ownership 规则（仅 src/sentinel/** L55、tests/sentinel/** L58）；PR-A 单域 mac 不受影响"
+  ]
 }

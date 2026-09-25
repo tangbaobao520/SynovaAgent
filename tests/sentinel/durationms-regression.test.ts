@@ -7,7 +7,7 @@
  *   本文件不做任何"修复"，只建立回归网——防同类「数值当时间戳」缺陷无声复发。
  *
  * 契约（铁律 47）:
- *   @input  — SentinelRegistry（fixture 哨兵 + 真实内置适配器）+ SentinelRunner（executeSentinel
+ *   @input  — SentinelRegistry（fixture 哨兵 + D968 内联真实工作夹具）+ SentinelRunner（executeSentinel
  *             生产路径）+ sentinel_events 事件流 + getSentinelFindings（L2 sentinel-service）
  *   @output — 4 用例断言:
  *             ① 真实 check durationMs ∈ (0, 60000]——生产路径用真实耗时覆盖哨兵内部值
@@ -28,9 +28,67 @@ import { createSentinelEventsTable, replaySentinelEvents } from '../../src/senti
 import { SentinelRunner, setGlobalSentinelRunner } from '../../src/sentinel/runner';
 import { getSentinelRegistry, destroySentinelRegistry } from '../../src/sentinel/registry';
 import { getSentinelFindings } from '../../src/agent/sentinel-service';
-import { integrationHealthSentinel } from '../../src/sentinel/adapters/integration-health-sentinel';
+import type { Sentinel, SentinelContext } from '../../src/sentinel';
 import { CronScheduler } from '../../src/cron/scheduler';
 import type { SentinelCheckResult, SentinelFinding } from '../../src/sentinel/types';
+
+// ═══ D968 内联夹具（替代已随路径1 关停删除的 integration-health 适配器）═══
+
+/**
+ * 真实工作哨兵夹具 —— 保留 D546 原始断言意图。
+ *
+ * 背景（D968）: 本用例原用 `src/sentinel/adapters/integration-health-sentinel` 作"真实工作哨兵"，
+ *   该适配器 @deprecated 且路径1 已关停（scanned:4 / registered:0），已随 D968 删除。
+ *   此处改为**本测试内联等价夹具**：同样对 `context.db` 做真实 SQL 扫描 + 逐行 JSON.parse
+ *   （毫秒级真实 CPU 工作）⇒ 生产计时器（runner L1080-1081）测得确定的非零真实耗时。
+ *
+ * 关键：内部 `durationMs` 故意返回伪值 **999999**，以便保留原断言
+ *   「生产路径必须覆盖哨兵内部伪值」（`res.durationMs).not.toBe(999999)`）的判别力。
+ */
+function makeRealWorkSentinel(id: string): Sentinel {
+  return {
+    config: {
+      id,
+      name: 'D546 durationMs 夹具（真实图扫描）',
+      description: 'D968 内联夹具：替代已删除的 integration-health 适配器',
+      category: 'health',
+      priority: 'P2',
+      mode: 'cron',
+      cron: '0 3 * * *',
+      requiredDataSources: [],
+      confidenceModel: 'deterministic',
+      version: '1.0.0',
+    },
+    async check(context: SentinelContext): Promise<SentinelCheckResult> {
+      const findings: SentinelFinding[] = [];
+      const raw = context.db as { prepare?: (sql: string) => { all: () => unknown[] } } | undefined;
+      if (raw && typeof raw.prepare === 'function') {
+        const rows = raw.prepare('SELECT id, type, props FROM graph_nodes').all() as Array<{ props?: string }>;
+        let parsed = 0;
+        for (const row of rows) {
+          JSON.parse(row.props ?? '{}');
+          parsed += 1;
+        }
+        if (parsed > 0) {
+          findings.push({
+            id: `${id}-scanned`,
+            severity: 'warning',
+            title: `夹具真实扫描 ${parsed} 个节点`,
+            description: 'D968 内联夹具：真实 SQL + JSON.parse 工作量',
+            evidence: [`rows=${parsed}`],
+            suggestion: 'n/a',
+            detectedAt: new Date().toISOString(),
+          });
+        }
+      }
+      // 故意伪值：生产路径必须用真实耗时覆盖它（D546 断言②的判别力来源）
+      return { sentinelId: id, ok: true, findings, durationMs: 999999, checkedAt: new Date().toISOString() };
+    },
+  };
+}
+
+/** 夹具哨兵 id（唯一，避免与真实哨兵冲突） */
+const FIXTURE_SENTINEL_ID = 'd546-graph-scan';
 
 // ═══ 断言器（D546 spec §7.3.2 纪元防护） ═══
 
@@ -125,8 +183,8 @@ describe('D546 DS4: durationMs duration 语义回归网', () => {
   it('① 真实 check 经 executeSentinel 生产路径 → durationMs ∈ (0, 60000]（真实耗时覆盖哨兵内部值 L1080-1081）', async () => {
     registerDurationSentinel('d546-duration');
 
-    // 为真实内置适配器构造直连上下文: runner db 附带 queryNodes（executeSentinel 对带
-    // queryNodes 的 db 走直连路径，不再包 SqliteGraphStore），integration-health 经
+    // 为内联夹具构造直连上下文: runner db 附带 queryNodes（executeSentinel 对带
+    // queryNodes 的 db 走直连路径，不再包 SqliteGraphStore），夹具经
     // context.db.prepare 直查 SQLite。预置 2000 行 graph_nodes → 真实 check 执行真实的
     // 图查询 + 逐行 JSON 解析（毫秒级 CPU 工作），生产计时器测得确定的非零真实耗时。
     const graphAwareDb = db as unknown as { queryNodes: () => unknown[] };
@@ -141,7 +199,7 @@ describe('D546 DS4: durationMs duration 语义回归网', () => {
         connector: i % 2 === 0,
       }));
     }
-    getSentinelRegistry().register(integrationHealthSentinel);
+    getSentinelRegistry().register(makeRealWorkSentinel(FIXTURE_SENTINEL_ID));
 
     const res = await runner.runOnce('d546-duration');
     expect(res).not.toBeNull();
@@ -149,7 +207,7 @@ describe('D546 DS4: durationMs duration 语义回归网', () => {
     expect(res!.durationMs).toBeLessThanOrEqual(60000); // 非纪元级巨数
     expect(res!.durationMs).not.toBe(999999); // 生产路径必须覆盖哨兵内部伪值
 
-    const builtinRes = await runner.runOnce(integrationHealthSentinel.config.id);
+    const builtinRes = await runner.runOnce(FIXTURE_SENTINEL_ID);
     expect(builtinRes).not.toBeNull();
     expect(builtinRes!.durationMs).toBeGreaterThan(0);
     expect(builtinRes!.durationMs).toBeLessThanOrEqual(60000);
