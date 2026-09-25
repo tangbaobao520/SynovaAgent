@@ -1764,3 +1764,5 @@ Binary file .claude/bypass.log matches
 2026-09-25T13:30:39+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=bd752e73bbc6495744e2d58b38b5a591efe664a1
 2026-09-25T14:08:17+08:00 | GATE_FAIL_SOFT | exit=1 | branch=chore/cto-doc-slim-phase3-dup-rule
 2026-09-25T14:08:17+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=118e79fcf16d0e50cd12fa77a3ea542636f36da7
+2026-09-25T14:28:52+08:00 | GATE_FAIL_SOFT | exit=1 | branch=chore/cto-doc-slim-phase3-dup-rule
+2026-09-25T14:28:52+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=964230da4aa630d21665584bffbcc630018c0885
