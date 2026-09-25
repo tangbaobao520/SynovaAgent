@@ -392,3 +392,125 @@ grep -c @deprecated 各文件:
 3. **PR-B 未开工**（win 域）：`src/agent/synova-agent.ts` 去调用点 + `knowledge-feedback` 换断言；PR-A 单独 2 红属联合验收点。
 4. **加载数在 PR-A 内不变**（45）：本卡只关停路径1/路径3，不改文件驱动哨兵集合 ⇒ 与 D965 的 45→43 无耦合。
 5. **D969 规则窗口**：PR-A 只碰 `src/sentinel/**` + `tests/sentinel/**`（均 mac）⇒ 单域，不受规则窗口影响（交付时点 `origin/main` 仍**未含** D9xx 补的 ownership 规则——实测 `ownership.yaml` 仅有 `src/sentinel/**`(L55) 与 `tests/sentinel/**`(L58)）。
+
+---
+
+# 附：PR-B（win 域，**base = PR-A**）证据
+
+> 分支 `feat/D968b-win-single-entry` ｜ base = `feat/D968a-sentinel-single-registry` @ `16c49cea`
+> 严格必需 **2 个文件**（`hygiene 可选默认不动` 项未动，见 §0）
+
+## B.1 改动与依据
+
+| 文件 | 改动 | 依据 |
+|---|---|---|
+| `src/agent/synova-agent.ts` | 去掉 `registerBuiltinSentinels()` 调用点（原 :78-79）+ 旧注释，改为说明「路径1 已关停、唯一入口 = 路径2」 | 关停路径1 的实现侧在 PR-A；**调用侧属 win 域**，须 PR-B 收 |
+| `tests/integration/knowledge-feedback.integration.test.ts` | Gate 4 两条断言**换向**：原「adapters 目存在 >= 3 个 `-sentinel.ts` 且含 `goal-alignment-sentinel.ts`」+「日志显示扫描到 4 个文件」⇒ 改为「路径1 源目录已删除」+「文件驱动单入口：加载数 = 目录数（动态取数）」 | 原断言**方向与新架构相反**（它在断言第二套哨兵存在）；且硬编码 45/43 违 Done⑤ |
+
+## B.2 行为中性论证（移除调用点为何不改变运行期注册结果）
+
+```bash
+$ npx vitest run tests/integration/knowledge-feedback.integration.test.ts tests/integration/wiring-integration.test.ts
+```
+
+```text
+ ✓ tests/integration/knowledge-feedback.integration.test.ts (11 tests) 35ms
+ ✓ tests/integration/wiring-integration.test.ts (16 tests) 188ms
+ Test Files  2 passed (2)
+      Tests  27 passed (27)
+```
+
+（PR-A 树上同两文件为 **2 红**；PR-A + PR-B 叠加后 **全绿** ⇒ 栈式联合验收点闭合）
+
+**路径2 确实在生产启动链上**（实测）：`src/server.ts:86` 委托 `Bootstrap` → `src/deploy/bootstrap.ts` **Phase 3b** 调用 `initFileDrivenLoaders()` → `registerLoadedSentinels()`。
+⇒ 去掉 `synova-agent.ts` 的路径1 调用后，哨兵仍由路径2 注册；且路径1 原本实测 `registered: 0` ⇒ **行为中性**。
+
+**🆕 附带发现（登记，未动）**：`src/server.ts:15` `import { initFileDrivenLoaders } from './init/file-driven-loaders';` —— 该 import **全文 0 次调用**（`grep -c "initFileDrivenLoaders()" src/server.ts` = 0），真正的调用在 Bootstrap Phase 3b ⇒ **未使用的死 import**。属 `src/server.ts`（win），**不在 PR-B 写集** ⇒ 未动，登记待立卡。
+
+## B.3 PR-B 变更集
+
+```text
+$ git status --porcelain
+```
+
+```text
+ M src/agent/synova-agent.ts
+ M tests/integration/knowledge-feedback.integration.test.ts
+```
+
+## B.4 回归
+
+```text
+$ npx vitest run tests/sentinel/          # PR-B 不碰 sentinel 域，仅作无波及确认
+ Test Files  34 passed | 1 skipped (35)
+      Tests  247 passed | 1 skipped (248)
+```
+
+## B.5 未清项（PR-B）
+
+1. **未重跑 `tsc --noEmit`**：重型令牌为 PR-A 申请并已交回；PR-B 的 `src/` 改动为**纯删除**（去掉一个动态 import + 注释），**未新增任何类型面** ⇒ 类型风险判为极低。如需我复跑，请再给令牌。
+2. `src/server.ts:15` 死 import（见 B.2）—— win 域、非写集，待立卡。
+3. `src/init/file-driven-loaders.ts`、`tests/integration/wiring-integration.test.ts` 按裁定**默认不动**（hygiene 可选）。
+
+---
+
+# 附：§C 口径更正与上游裁定（提交后回填，含原表述保留）
+
+## C.1 🔧 更正：D2 登记门禁**不是 CI 红**——本地会拦、CI 空扫集恒过
+
+> **原表述（保留留痕，已作废）**：「PR-A 的 D2 会让 CI 硬红；四份 evidence 未登记 ⇒ 批级阻断。」
+
+**更正后（本卡独立实跑复现，与队长实跑一致）**：
+D2 的扫描集 = **untracked 的 `.md/.yaml`** + **staged 新增（`--diff-filter=A`）的 `.md/.yaml`**（`doc-registry-gate.sh` 的 `while read` 输入来自 `{ git ls-files --others --exclude-standard; git diff --cached --name-only --diff-filter=A; }`）。
+⇒ **CI checkout 后两者皆空 ⇒ 空扫集 ⇒ 恒过**。本地看到红，是**本地暂存态**所致，**不等于 CI 红**。
+
+**实跑（PR-A 工作树，已提交、`git status --porcelain` = 0，即 CI 口径）**：
+```text
+$ git ls-files --others --exclude-standard | grep -E '\.(md|yaml)$' | wc -l   →  0
+$ git diff --cached --name-only --diff-filter=A | grep -E '\.(md|yaml)$' | wc -l   →  0
+$ bash scripts/doc-system/doc-registry-gate.sh
+  ── 汇总: 检查 0 个文档，0 个未登记 ──
+  ✅ 登记门禁通过          [exit=0]
+```
+另：该 evidence md 在 PR-A 提交后**已被 git 跟踪** ⇒ D2「只拦新不拦旧」⇒ 永不再命中。
+
+**⇒ 结论改写**：D2 的登记与否是**治理一致性问题（要不要补登 DOCS-REGISTRY）**，**不是阻断项**。
+CTO 已裁定：给 `docs/synova/product-lines/evidence/**` **加排除规则**（属 CTO 单写者域，本卡不动）。
+
+## C.2 🔧 D734 的定性（CTO 已裁定由 CTO 修调用方）
+
+**判定**：两支 PR 在 CI 上看到的 `18 文件 > 12 / 跨域` 是**栈式伪影**，非本卡贡献。**证据**：
+`pre-commit-check.sh:1516` 调 `check-pr-budget.sh --quiet`，**base 死取 `origin/main`**（脚本支持 `--base` 但调用方不传，亦无 env 覆写）。
+
+**两个口径对照（同一份改动，原始输出并列）**：
+```text
+# 口径 A —— 门禁实际使用（base = origin/main，含下栈 D967b 的改动）
+❌ ① 变更文件数 18 > 上限 12 —— 拆 PR（禁调高上限）
+❌ ② 变更跨域 —— 一个 PR 只许一个域（D733 ownership.yaml）
+   win  .claude/plan.json / src/agent/post-diagnosis-processor.ts / src/store/** …
+   mac  src/sentinel/baseline-store.ts / src/sentinel/runner.ts …
+
+# 口径 B —— 本卡真实 PR base
+#   PR-A：--base origin/feat/D967b-sentinel-alert-stats
+  ✅ ① 变更文件数 7 ≤ 上限 12      ✅ ② 变更单域: PASS 6 个文件同域: mac   ✅ ③ 落后 0
+  ✅ PASS PR 预算内（7 文件）
+#   PR-B：base = PR-A ⇒ 2 个业务文件，均 win
+  ✅ PASS 2 个文件同域: win（无归属 0，域判定豁免 0）
+```
+**CTO 裁定**：`pre-commit-check.sh:1516` 改为传 `--base "${SYNO_PR_BASE:-origin/main}"`，CI 侧导出 `SYNO_PR_BASE=origin/$GITHUB_BASE_REF` ⇒ 栈式 PR-B 的 base 恰为 PR-A 分支。**属 CTO 单写者域，本卡不动。**
+
+## C.3 生产级证据（本卡"单入口"结论的最强支撑，队长点名要求写明）
+
+**路径2（`initFileDrivenLoaders`）确实在生产启动链上**：
+```text
+src/server.ts:86   import { Bootstrap } from './deploy/bootstrap';
+src/deploy/bootstrap.ts   Phase 3b:
+      const { initFileDrivenLoaders } = await import('../init/file-driven-loaders');
+      await initFileDrivenLoaders();            ⇒ file-driven-loaders.ts → loadSentinels() + registerLoadedSentinels()
+```
+⇒ **「唯一入口 = 文件驱动」在生产路径成立**；去掉 `synova-agent.ts` 的路径1 调用点是**行为中性**
+（路径1 原本实测 `registered: 0`，见 §3.3）。
+
+**反向登记（未动，属 win、非写集）**：`src/server.ts:15` 的
+`import { initFileDrivenLoaders } from './init/file-driven-loaders';` 全文 **0 次调用**
+（`grep -c "initFileDrivenLoaders()" src/server.ts` = 0）⇒ **未使用的死 import**；真正调用在 Bootstrap Phase 3b。待立卡。

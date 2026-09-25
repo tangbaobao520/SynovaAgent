@@ -74,9 +74,12 @@ export class SynovaAgent {
       log.info({ baselineMinRuns: config.sentinel.baselineMinRuns }, '[baseline] 哨兵阈值配置已加载');
     }
 
-    // 注册内置哨兵 (必须在 SentinelRunner 启动前——否则 Runner 找不到哨兵)
-    const { registerBuiltinSentinels } = await import('../sentinel/builtins');
-    await registerBuiltinSentinels();
+    // D968: **路径1 已关停**（builtins 扫描 src/sentinel/adapters/），此处不再调用 registerBuiltinSentinels()。
+    // 唯一入口 = 文件驱动（路径2）：Bootstrap Phase 3b 的 initFileDrivenLoaders()
+    //   → file-driven-loaders.ts → loadSentinels() + registerLoadedSentinels()
+    //   （见 src/deploy/bootstrap.ts Phase 3b；server.ts:86 委托 Bootstrap 初始化）。
+    // 行为中性：原调用实测 registered = 0（路径1 键名推导与实际导出全部不匹配，见 D968 evidence §3.3），
+    //   移除不改变运行期注册结果；且路径2 启动更早，哨兵在 SentinelRunner 启动前已注册。
 
     // Phase 1.1: 崩溃后恢复未完成会话
     try {

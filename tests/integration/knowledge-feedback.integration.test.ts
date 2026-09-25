@@ -228,33 +228,36 @@ describe("Gate 15: closeGoal delegates to updateGoalStatus", () => {
 });
 
 describe("Gate 4: sentinel registration", () => {
-  it("adapters 目录存在 >= 3 个哨兵文件", () => {
-    const { readdirSync } = require("fs");
+  // D968（PR-B）: 本 Gate 原先断言 `src/sentinel/adapters/` 存在 >= 3 个 *-sentinel.ts 且含
+  //   `goal-alignment-sentinel.ts` —— 那是在**断言路径1 的第二套内置哨兵存在**。
+  //   D968 已裁定：唯一入口 = 文件驱动（路径2），路径1 关停、5 个适配器全部裁剪
+  //   ⇒ 该断言与新架构**方向相反**，必须改为断言**文件驱动单入口**。
+  it("路径1 的扫描源目录已删除（唯一入口 = 文件驱动）", () => {
+    const { existsSync } = require("fs");
     const { join } = require("path");
     const adapterDir = join(__dirname, "..", "..", "src", "sentinel", "adapters");
-    const files = readdirSync(adapterDir).filter(
-      (f: string) => f.endsWith("-sentinel.ts") || f.endsWith("-sentinel.js"),
-    );
-    expect(files.length).toBeGreaterThanOrEqual(3);
-    expect(files).toContain("goal-alignment-sentinel.ts");
+    expect(existsSync(adapterDir)).toBe(false);
   });
 
-  it("registerBuiltinSentinels 日志显示扫描到 4 个文件", async () => {
-    // builtins 内部扫描 adapters/*-sentinel.ts
-    const { registerBuiltinSentinels } = await import(
-      "../../src/sentinel/builtins"
-    );
-    // 在 vitest 环境下动态 import 可能因路径解析不完整而注册失败，
-    // 但文件扫描逻辑是正确的（scanned=4）.
-    await registerBuiltinSentinels();
-    // 验证 sentinel 文件存在 (注册环境无关的物理验证)
+  it("文件驱动单入口：loadSentinels() 加载数 = 目录数（加载器语义口径，动态取数）", async () => {
     const { readdirSync } = require("fs");
     const { join } = require("path");
-    const adapterDir = join(__dirname, "..", "..", "src", "sentinel", "adapters");
-    const files = readdirSync(adapterDir);
-    const sentinelFiles = files.filter(
-      (f: string) => f.endsWith("-sentinel.ts"),
+    const { loadSentinels, clearSentinelCache } = await import(
+      "../../src/sentinel/sentinel-loader"
     );
-    expect(sentinelFiles.length).toBeGreaterThanOrEqual(3);
+    clearSentinelCache(); // 注入缝/cache 陷阱：取快照前必须清缓存
+    const { sentinels, errors } = loadSentinels();
+
+    // 目录数口径必须由**加载器自身语义**推导（非递归、跳过 shared 与 `_` 前缀），
+    // 且**不得写死 45/43** —— D965 裁撤 2 桩后该值会变（D968 evidence §4）。
+    const root = join(__dirname, "..", "..", "extensions", "sentinels");
+    const expected = readdirSync(root, { withFileTypes: true }).filter(
+      (e: { isDirectory: () => boolean; name: string }) =>
+        e.isDirectory() && e.name !== "shared" && !e.name.startsWith("_"),
+    ).length;
+
+    expect(errors).toEqual([]);
+    expect(sentinels.length).toBe(expected);
+    expect(sentinels.length).toBeGreaterThan(0); // 防空集合假绿
   });
 });

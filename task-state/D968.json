@@ -81,13 +81,18 @@
     "tests_sentinel": "34 文件 / 247 用例 全绿（1 skipped）",
     "pr_b_expected_red": "tests/integration/knowledge-feedback.integration.test.ts 2 红（正是那两条硬编码 adapters 断言）⇒ 栈式联合验收点",
     "tsc": "全部 28 错；CI 白名单过滤后 = 0 ⇒ PR-A 编译通过；改动文件零类型错误",
-    "red_proofs": 3
+    "red_proofs": 3,
+    "pr_b": "已完成：synova-agent.ts 去路径1 调用点 + knowledge-feedback Gate4 断言换向（动态取数）；PR-A+PR-B 叠加后 27/27 绿（PR-A 单独 2 红=联合验收点）",
+    "path2_production_wired": "src/server.ts:86 委托 Bootstrap → deploy/bootstrap.ts Phase 3b → initFileDrivenLoaders() → registerLoadedSentinels()（实测）"
   },
   "uncleared": [
     "scripts/check-deprecated-mapping.sh 是预先存在的恒真门禁（grep -q 吞掉 -L 输出 ⇒ UNDOCUMENTED 恒 0 ⇒ 永远报 ✅），非本批裁撤所致；属 win 域 ⇒ 不动，待立卡",
     "runner.ts 自检改用启动快照的代价：不再感知启动后才恢复的 loader；启动快照为 0 时 H1 因 expectedCount>0 门控被跳过（fail-closed 不误报）",
     "PR-B（win 域）未开工：src/agent/synova-agent.ts 去调用点 + knowledge-feedback 换断言",
     "PR-A 内加载数不变（45），与 D965 的 45→43 无耦合",
-    "D969 规则窗口：交付时点 origin/main 未含 D9xx 补的 ownership 规则（仅 src/sentinel/** L55、tests/sentinel/** L58）；PR-A 单域 mac 不受影响"
-  ]
+    "D969 规则窗口：交付时点 origin/main 未含 D9xx 补的 ownership 规则（仅 src/sentinel/** L55、tests/sentinel/** L58）；PR-A 单域 mac 不受影响",
+    "src/server.ts:15 存在未使用的死 import initFileDrivenLoaders（全文 0 次调用）—— win 域、非写集，待立卡",
+    "PR-B 未重跑 tsc（令牌已交回；PR-B 的 src 改动为纯删除、未新增类型面）"
+  ],
+  "pr_b_base": "feat/D968a-sentinel-single-registry @ 16c49cea"
 }
