@@ -619,7 +619,7 @@
  "classification_rules": {
   "在途": "有 open PR（分支名匹配或 tip sha 匹配）；或无 open PR 但最近提交 ≤14 天",
   "重复劳动": "无 open PR 且（patch-id 集被另一 backlog ref 完全包含 或 与另一 ref 完全同源）",
-  "待定": "无 open PR、无包含关系、最近提交 >14 天 → 疑似废弃，需原作者确认（禁止据此删除）",
+  "待定": "无 open PR、无包含关系、最后提交 >14 天 → 疑似废弃，需原作者确认（禁止据此删除）。细分 pending_subclass = PR_closed_unmerged（有已关闭未合并 PR）｜PR_merged_branch_has_extra（PR 已合并但分支 tip 与合并提交树仍有差异）｜no_pr_gt30d（无 PR 且 >30 天无提交）",
   "threshold": "14 天为活跃窗口参数；包含关系阈值：交集 ≥3 个补丁且 min-ratio ≥0.5（identical/subset 才判重复）"
  },
  "counts_by_class": {
@@ -3458,8 +3458,22 @@
    "partial_overlap": null,
    "same_head_group": 1,
    "class": "待定",
-   "reason": "疑似废弃，需原作者确认：PR #456(closed)；含已关闭未合并 PR #456",
-   "risk_flag": "疑似废弃，需原作者确认（禁止据此删除）"
+   "reason": "待定（PR #456 已关未合 ⇒ 疑似废弃，需确认内容是否已被 main 取代）",
+   "risk_flag": "疑似废弃，需原作者确认（禁止据此删除）",
+   "pending_subclass": "PR_closed_unmerged",
+   "pending_evidence": {
+    "prs": [
+     {
+      "n": 456,
+      "state": "closed",
+      "merged_at": null
+     }
+    ],
+    "merge_commit_sha": null,
+    "merge_commit_in_main": null,
+    "branch_tree_equals_merge": null,
+    "branch_vs_merge_shortstat": null
+   }
   },
   {
    "worktree": "/Users/wane/SynovaAgent/.synova-wt-d925",
@@ -3639,8 +3653,16 @@
    "partial_overlap": null,
    "same_head_group": 1,
    "class": "待定",
-   "reason": "疑似废弃，需原作者确认：无任何 PR；最近提交 2026-08-24（33.0 天前）",
-   "risk_flag": "疑似废弃，需原作者确认（禁止据此删除）"
+   "reason": "待定（无 PR、>30 天无提交）",
+   "risk_flag": "疑似废弃，需原作者确认（禁止据此删除）",
+   "pending_subclass": "no_pr_gt30d",
+   "pending_evidence": {
+    "prs": [],
+    "merge_commit_sha": null,
+    "merge_commit_in_main": null,
+    "branch_tree_equals_merge": null,
+    "branch_vs_merge_shortstat": null
+   }
   },
   {
    "worktree": "/Users/wane/synova-wt-d794ux",
@@ -3709,8 +3731,22 @@
    "partial_overlap": null,
    "same_head_group": 1,
    "class": "待定",
-   "reason": "疑似废弃，需原作者确认：PR #464(closed)；含已关闭未合并 PR #464",
-   "risk_flag": "疑似废弃，需原作者确认（禁止据此删除）"
+   "reason": "待定（PR #464 已关未合 ⇒ 疑似废弃，需确认内容是否已被 main 取代）",
+   "risk_flag": "疑似废弃，需原作者确认（禁止据此删除）",
+   "pending_subclass": "PR_closed_unmerged",
+   "pending_evidence": {
+    "prs": [
+     {
+      "n": 464,
+      "state": "closed",
+      "merged_at": null
+     }
+    ],
+    "merge_commit_sha": null,
+    "merge_commit_in_main": null,
+    "branch_tree_equals_merge": null,
+    "branch_vs_merge_shortstat": null
+   }
   },
   {
    "worktree": "/Users/wane/SynovaAgent/.synova-wt-fix004b",
@@ -4020,8 +4056,16 @@
    "partial_overlap": null,
    "same_head_group": 1,
    "class": "待定",
-   "reason": "疑似废弃，需原作者确认：无任何 PR；最近提交 2026-08-23（33.1 天前）",
-   "risk_flag": "疑似废弃，需原作者确认（禁止据此删除）"
+   "reason": "待定（无 PR、>30 天无提交）",
+   "risk_flag": "疑似废弃，需原作者确认（禁止据此删除）",
+   "pending_subclass": "no_pr_gt30d",
+   "pending_evidence": {
+    "prs": [],
+    "merge_commit_sha": null,
+    "merge_commit_in_main": null,
+    "branch_tree_equals_merge": null,
+    "branch_vs_merge_shortstat": null
+   }
   },
   {
    "worktree": "/Users/wane/SynovaAgent/.synova-wt-d795",
@@ -4628,8 +4672,16 @@
    "partial_overlap": null,
    "same_head_group": 1,
    "class": "待定",
-   "reason": "疑似废弃，需原作者确认：无任何 PR；最近提交 2026-08-24（33.0 天前）",
-   "risk_flag": "疑似废弃，需原作者确认（禁止据此删除）"
+   "reason": "待定（无 PR、>30 天无提交）",
+   "risk_flag": "疑似废弃，需原作者确认（禁止据此删除）",
+   "pending_subclass": "no_pr_gt30d",
+   "pending_evidence": {
+    "prs": [],
+    "merge_commit_sha": null,
+    "merge_commit_in_main": null,
+    "branch_tree_equals_merge": null,
+    "branch_vs_merge_shortstat": null
+   }
   },
   {
    "worktree": "/Users/wane/SynovaAgent/.synova-wt-d577-impl",
@@ -4661,8 +4713,22 @@
    "partial_overlap": null,
    "same_head_group": 1,
    "class": "待定",
-   "reason": "疑似废弃，需原作者确认：PR #355(closed)",
-   "risk_flag": "疑似废弃，需原作者确认（禁止据此删除）"
+   "reason": "待定（PR #355 已于 2026-09-05 合并（merge commit 在 main：True）；分支 tip 与合并提交树仍差 34 files changed, 1902 insertions(+), 113 deletions(-) ⇒ 需人工比对剩余内容是否已被取代）",
+   "risk_flag": "疑似废弃，需原作者确认（禁止据此删除）",
+   "pending_subclass": "PR_merged_branch_has_extra",
+   "pending_evidence": {
+    "prs": [
+     {
+      "n": 355,
+      "state": "closed",
+      "merged_at": "2026-09-05T08:18:50Z"
+     }
+    ],
+    "merge_commit_sha": "ece4e268ace915de69f9b56095017b4715d7f12a",
+    "merge_commit_in_main": true,
+    "branch_tree_equals_merge": false,
+    "branch_vs_merge_shortstat": "34 files changed, 1902 insertions(+), 113 deletions(-)"
+   }
   },
   {
    "worktree": "/Users/wane/SynovaAgent/.synova-wt-d870",
@@ -6198,8 +6264,22 @@
    "partial_overlap": null,
    "same_head_group": 1,
    "class": "待定",
-   "reason": "疑似废弃，需原作者确认：PR #354(closed)",
-   "risk_flag": "疑似废弃，需原作者确认（禁止据此删除）"
+   "reason": "待定（PR #354 已于 2026-09-05 合并（merge commit 在 main：True）；分支 tip 与合并提交树仍差 17 files changed, 2395 insertions(+), 44 deletions(-) ⇒ 需人工比对剩余内容是否已被取代）",
+   "risk_flag": "疑似废弃，需原作者确认（禁止据此删除）",
+   "pending_subclass": "PR_merged_branch_has_extra",
+   "pending_evidence": {
+    "prs": [
+     {
+      "n": 354,
+      "state": "closed",
+      "merged_at": "2026-09-05T03:04:24Z"
+     }
+    ],
+    "merge_commit_sha": "c124f8c8c847e24b97318ea2a26bd2099126dcc9",
+    "merge_commit_in_main": true,
+    "branch_tree_equals_merge": false,
+    "branch_vs_merge_shortstat": "17 files changed, 2395 insertions(+), 44 deletions(-)"
+   }
   },
   {
    "worktree": "/Users/wane/SynovaAgent/.synova-wt-d602",
@@ -6231,8 +6311,22 @@
    "partial_overlap": null,
    "same_head_group": 1,
    "class": "待定",
-   "reason": "疑似废弃，需原作者确认：PR #448(closed)",
-   "risk_flag": "疑似废弃，需原作者确认（禁止据此删除）"
+   "reason": "待定（PR #448 已于 2026-09-09 合并（merge commit 在 main：True）；分支 tip 与合并提交树仍差 25 files changed, 2290 insertions(+), 105 deletions(-) ⇒ 需人工比对剩余内容是否已被取代）",
+   "risk_flag": "疑似废弃，需原作者确认（禁止据此删除）",
+   "pending_subclass": "PR_merged_branch_has_extra",
+   "pending_evidence": {
+    "prs": [
+     {
+      "n": 448,
+      "state": "closed",
+      "merged_at": "2026-09-09T00:25:42Z"
+     }
+    ],
+    "merge_commit_sha": "749c3b51569b31a238b594f73c40a37279bed775",
+    "merge_commit_in_main": true,
+    "branch_tree_equals_merge": false,
+    "branch_vs_merge_shortstat": "25 files changed, 2290 insertions(+), 105 deletions(-)"
+   }
   },
   {
    "worktree": "/Users/wane/SynovaAgent/.synova-wt-d791a",
@@ -6330,8 +6424,22 @@
    "partial_overlap": null,
    "same_head_group": 1,
    "class": "待定",
-   "reason": "疑似废弃，需原作者确认：PR #421(closed)",
-   "risk_flag": "疑似废弃，需原作者确认（禁止据此删除）"
+   "reason": "待定（PR #421 已于 2026-09-07 合并（merge commit 在 main：True）；分支 tip 与合并提交树仍差 4 files changed, 91 insertions(+), 5 deletions(-) ⇒ 需人工比对剩余内容是否已被取代）",
+   "risk_flag": "疑似废弃，需原作者确认（禁止据此删除）",
+   "pending_subclass": "PR_merged_branch_has_extra",
+   "pending_evidence": {
+    "prs": [
+     {
+      "n": 421,
+      "state": "closed",
+      "merged_at": "2026-09-07T21:14:26Z"
+     }
+    ],
+    "merge_commit_sha": "e8aafc8f7eff705af77e8e4017876b9fc25e8a68",
+    "merge_commit_in_main": true,
+    "branch_tree_equals_merge": false,
+    "branch_vs_merge_shortstat": "4 files changed, 91 insertions(+), 5 deletions(-)"
+   }
   },
   {
    "worktree": "/Users/wane/SynovaAgent/.synova-wt-d757",
@@ -6698,8 +6806,16 @@
    "partial_overlap": null,
    "same_head_group": 1,
    "class": "待定",
-   "reason": "疑似废弃，需原作者确认：无任何 PR；最近提交 2026-08-24（32.4 天前）",
-   "risk_flag": "疑似废弃，需原作者确认（禁止据此删除）"
+   "reason": "待定（无 PR、>30 天无提交）",
+   "risk_flag": "疑似废弃，需原作者确认（禁止据此删除）",
+   "pending_subclass": "no_pr_gt30d",
+   "pending_evidence": {
+    "prs": [],
+    "merge_commit_sha": null,
+    "merge_commit_in_main": null,
+    "branch_tree_equals_merge": null,
+    "branch_vs_merge_shortstat": null
+   }
   },
   {
    "worktree": "/Users/wane/SynovaAgent/.synova-wt-d754m",
@@ -6757,8 +6873,16 @@
    "partial_overlap": null,
    "same_head_group": 1,
    "class": "待定",
-   "reason": "疑似废弃，需原作者确认：无任何 PR；最近提交 2026-08-23（33.1 天前）",
-   "risk_flag": "疑似废弃，需原作者确认（禁止据此删除）"
+   "reason": "待定（无 PR、>30 天无提交）",
+   "risk_flag": "疑似废弃，需原作者确认（禁止据此删除）",
+   "pending_subclass": "no_pr_gt30d",
+   "pending_evidence": {
+    "prs": [],
+    "merge_commit_sha": null,
+    "merge_commit_in_main": null,
+    "branch_tree_equals_merge": null,
+    "branch_vs_merge_shortstat": null
+   }
   },
   {
    "worktree": "/Users/wane/SynovaAgent/.synova-wt-d929",
@@ -7989,8 +8113,22 @@
    "partial_overlap": null,
    "same_head_group": 1,
    "class": "待定",
-   "reason": "疑似废弃，需原作者确认：PR #374(closed)",
-   "risk_flag": "疑似废弃，需原作者确认（禁止据此删除）"
+   "reason": "待定（PR #374 已于 2026-09-05 合并（merge commit 在 main：True）；分支 tip 与合并提交树仍差 12 files changed, 958 insertions(+), 43 deletions(-) ⇒ 需人工比对剩余内容是否已被取代）",
+   "risk_flag": "疑似废弃，需原作者确认（禁止据此删除）",
+   "pending_subclass": "PR_merged_branch_has_extra",
+   "pending_evidence": {
+    "prs": [
+     {
+      "n": 374,
+      "state": "closed",
+      "merged_at": "2026-09-05T20:08:14Z"
+     }
+    ],
+    "merge_commit_sha": "1c0847752f272657aefcc7411da9805c11fd06ac",
+    "merge_commit_in_main": true,
+    "branch_tree_equals_merge": false,
+    "branch_vs_merge_shortstat": "12 files changed, 958 insertions(+), 43 deletions(-)"
+   }
   },
   {
    "worktree": "/Users/wane/SynovaAgent/.synova-wt-d802",
@@ -8055,8 +8193,22 @@
    "partial_overlap": null,
    "same_head_group": 1,
    "class": "待定",
-   "reason": "疑似废弃，需原作者确认：PR #375(closed)",
-   "risk_flag": "疑似废弃，需原作者确认（禁止据此删除）"
+   "reason": "待定（PR #375 已于 2026-09-05 合并（merge commit 在 main：True）；分支 tip 与合并提交树仍差 10 files changed, 210 insertions(+), 36 deletions(-) ⇒ 需人工比对剩余内容是否已被取代）",
+   "risk_flag": "疑似废弃，需原作者确认（禁止据此删除）",
+   "pending_subclass": "PR_merged_branch_has_extra",
+   "pending_evidence": {
+    "prs": [
+     {
+      "n": 375,
+      "state": "closed",
+      "merged_at": "2026-09-05T20:17:44Z"
+     }
+    ],
+    "merge_commit_sha": "9cfd7c367b0c2be52ede380e89de73adc5a86741",
+    "merge_commit_in_main": true,
+    "branch_tree_equals_merge": false,
+    "branch_vs_merge_shortstat": "10 files changed, 210 insertions(+), 36 deletions(-)"
+   }
   },
   {
    "worktree": "/Users/wane/SynovaAgent/.synova-wt-d589",
@@ -8088,8 +8240,22 @@
    "partial_overlap": null,
    "same_head_group": 1,
    "class": "待定",
-   "reason": "疑似废弃，需原作者确认：PR #414(closed)",
-   "risk_flag": "疑似废弃，需原作者确认（禁止据此删除）"
+   "reason": "待定（PR #414 已于 2026-09-07 合并（merge commit 在 main：True）；分支 tip 与合并提交树仍差 14 files changed, 360 insertions(+), 4 deletions(-) ⇒ 需人工比对剩余内容是否已被取代）",
+   "risk_flag": "疑似废弃，需原作者确认（禁止据此删除）",
+   "pending_subclass": "PR_merged_branch_has_extra",
+   "pending_evidence": {
+    "prs": [
+     {
+      "n": 414,
+      "state": "closed",
+      "merged_at": "2026-09-07T18:34:30Z"
+     }
+    ],
+    "merge_commit_sha": "1576054f8b722ec22443fe785319af1ca1fc80ed",
+    "merge_commit_in_main": true,
+    "branch_tree_equals_merge": false,
+    "branch_vs_merge_shortstat": "14 files changed, 360 insertions(+), 4 deletions(-)"
+   }
   },
   {
    "worktree": "/Users/wane/SynovaAgent/.synova-wt-d504-orphan",
@@ -8140,8 +8306,16 @@
    "partial_overlap": null,
    "same_head_group": 1,
    "class": "待定",
-   "reason": "疑似废弃，需原作者确认：无任何 PR；最近提交 2026-08-24（32.5 天前）",
-   "risk_flag": "疑似废弃，需原作者确认（禁止据此删除）"
+   "reason": "待定（无 PR、>30 天无提交）",
+   "risk_flag": "疑似废弃，需原作者确认（禁止据此删除）",
+   "pending_subclass": "no_pr_gt30d",
+   "pending_evidence": {
+    "prs": [],
+    "merge_commit_sha": null,
+    "merge_commit_in_main": null,
+    "branch_tree_equals_merge": null,
+    "branch_vs_merge_shortstat": null
+   }
   },
   {
    "worktree": "/Users/wane/SynovaAgent/.synova-wt-d580",
@@ -8173,8 +8347,22 @@
    "partial_overlap": null,
    "same_head_group": 1,
    "class": "待定",
-   "reason": "疑似废弃，需原作者确认：PR #417(closed)",
-   "risk_flag": "疑似废弃，需原作者确认（禁止据此删除）"
+   "reason": "待定（PR #417 已于 2026-09-07 合并（merge commit 在 main：True）；分支 tip 与合并提交树仍差 50 files changed, 326 insertions(+), 783 deletions(-) ⇒ 需人工比对剩余内容是否已被取代）",
+   "risk_flag": "疑似废弃，需原作者确认（禁止据此删除）",
+   "pending_subclass": "PR_merged_branch_has_extra",
+   "pending_evidence": {
+    "prs": [
+     {
+      "n": 417,
+      "state": "closed",
+      "merged_at": "2026-09-07T20:06:36Z"
+     }
+    ],
+    "merge_commit_sha": "9afb1919a7817d2dae6c22ef86619a4a070739c2",
+    "merge_commit_in_main": true,
+    "branch_tree_equals_merge": false,
+    "branch_vs_merge_shortstat": "50 files changed, 326 insertions(+), 783 deletions(-)"
+   }
   },
   {
    "worktree": "/Users/wane/SynovaAgent/.synova-wt-d758",
@@ -8520,8 +8708,22 @@
    "partial_overlap": null,
    "same_head_group": 1,
    "class": "待定",
-   "reason": "疑似废弃，需原作者确认：PR #143(closed)",
-   "risk_flag": "疑似废弃，需原作者确认（禁止据此删除）"
+   "reason": "待定（PR #143 已于 2026-08-23 合并（merge commit 在 main：True）；分支 tip 与合并提交树仍差 5 files changed, 62 insertions(+), 52 deletions(-) ⇒ 需人工比对剩余内容是否已被取代）",
+   "risk_flag": "疑似废弃，需原作者确认（禁止据此删除）",
+   "pending_subclass": "PR_merged_branch_has_extra",
+   "pending_evidence": {
+    "prs": [
+     {
+      "n": 143,
+      "state": "closed",
+      "merged_at": "2026-08-23T18:48:53Z"
+     }
+    ],
+    "merge_commit_sha": "a856c154850feeef8e89741e88ca33106c4ff88a",
+    "merge_commit_in_main": true,
+    "branch_tree_equals_merge": false,
+    "branch_vs_merge_shortstat": "5 files changed, 62 insertions(+), 52 deletions(-)"
+   }
   },
   {
    "worktree": "/Users/wane/SynovaAgent/.synova-wt-d920",
@@ -8594,5 +8796,35 @@
    "source": "repro.sh（附录 A 逐字）"
   }
  ],
- "curve_command": "cd /Users/wane/SynovaAgent && PYBIN=$(command -v python3) && \"$PYBIN\" - <<'PY'\n# 蓝图 §九.6 逐字（口径A；detached 不计）\nimport subprocess\nout=subprocess.run(['git','worktree','list','--porcelain'],capture_output=True,text=True).stdout\ntot=0;n=0;rows=[]\nfor blk in out.strip().split('\\n\\n'):\n    b=None\n    for ln in blk.splitlines():\n        if ln.startswith('branch '): b=ln[7:]\n    if not b: continue\n    c=int((subprocess.run(['git','rev-list','--count',f'origin/main..{b}'],capture_output=True,text=True).stdout or '0').strip() or 0)\n    if c: n+=1; tot+=c; rows.append((c,b))\nrows.sort(reverse=True)\nprint(f'含未合并提交的工作树: {n} | 未合并提交总数: {tot}')\nfor c,b in rows[:15]: print(f'  {c:4d}  {b}')\nPY"
+ "curve_command": "cd /Users/wane/SynovaAgent && PYBIN=$(command -v python3) && \"$PYBIN\" - <<'PY'\n# 蓝图 §九.6 逐字（口径A；detached 不计）\nimport subprocess\nout=subprocess.run(['git','worktree','list','--porcelain'],capture_output=True,text=True).stdout\ntot=0;n=0;rows=[]\nfor blk in out.strip().split('\\n\\n'):\n    b=None\n    for ln in blk.splitlines():\n        if ln.startswith('branch '): b=ln[7:]\n    if not b: continue\n    c=int((subprocess.run(['git','rev-list','--count',f'origin/main..{b}'],capture_output=True,text=True).stdout or '0').strip() or 0)\n    if c: n+=1; tot+=c; rows.append((c,b))\nrows.sort(reverse=True)\nprint(f'含未合并提交的工作树: {n} | 未合并提交总数: {tot}')\nfor c,b in rows[:15]: print(f'  {c:4d}  {b}')\nPY",
+ "pending_breakdown": {
+  "PR_closed_unmerged": 2,
+  "no_pr_gt30d": 6,
+  "PR_merged_branch_has_extra": 9
+ },
+ "pending_breakdown_refs": {
+  "PR_closed_unmerged": [
+   "feat/d595-mcp-auth",
+   "feat/mac-quality-batch1"
+  ],
+  "no_pr_gt30d": [
+   "feat/d512-gs-refresh",
+   "feat/d510-audit-remediation",
+   "feat/d511-version-guard",
+   "docs/slice-a-specs",
+   "fix/d505-wiring",
+   "fix/d516-ci-strict"
+  ],
+  "PR_merged_branch_has_extra": [
+   "feat/d577-sentinel-threshold-wiring",
+   "feat/d575-llm-first-run-config",
+   "feat/d602-interactive-cards-preload",
+   "fix/d597-session-projection-wiring",
+   "feat/d579-k3-verdict-stale",
+   "feat/mac-d581-win-verify-guard",
+   "feat/mac-d589-stale-reverify",
+   "fix/d584-dsh-test-debt",
+   "fix/d514-d510-audit-fix"
+  ]
+ }
 }
