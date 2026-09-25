@@ -54,8 +54,8 @@ scripts/control-tower/check-ownership.py           — ✅ 工具本体存在（
 - 不改 scripts/control-tower/check-ownership.py （工具本体非本卡写集）
 - 不改 scripts/control-tower/daily-cto-board.sh （D1008 单写者，已排他）
 - 不改 scripts/audit/K3-*.sh （K3 域，红线）
-- 不改 tests/control-tower/task-id-watermark-probe.test.sh （D1013 写集）
-- 不改 docs/authority/DOCS-REGISTRY.yaml （D1012 写集）
+- 不改 tests/control-tower/task-id-watermark-probe.test.sh （D974 写集）
+- 不改 docs/authority/DOCS-REGISTRY.yaml （D973 写集）
 
 ## Q3: 验收
 
