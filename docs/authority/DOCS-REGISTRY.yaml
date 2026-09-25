@@ -432,3 +432,9 @@ documents:
     path: docs/synova/product-lines/evidence/README.md
     status: archived
     owner: mac
+
+  - id: DOC-0149
+    type: status
+    path: docs/synova/product-lines/evidence/D1012-docs-registry-20260925.md
+    status: active
+    owner: mac
