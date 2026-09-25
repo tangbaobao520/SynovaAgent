@@ -456,7 +456,7 @@ try:
         for b, ex in excl:
             if b in claim and m(sf, ex):
                 viol.append('  %s (Q2 排除项禁止修改: %s, 来自 %s)' % (sf, ex, b)); break
-except Exception as e:   # task-26 2a②: 原实现静默吞（外层无 try，靠 bash `|| true`）⇒ 判定失败变「范围全通过」
+except Exception as e:   # task-26 2a②: 原实现静默吞（外层无 try + bash 吞错）⇒ 判定失败变「范围全通过」
     sys.stderr.write('DEGRADED: %s\n' % e); sys.exit(2)
 print('\n'.join(viol))
 " 2>/dev/null); _SV_RC=$?

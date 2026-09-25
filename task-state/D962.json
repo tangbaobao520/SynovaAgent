@@ -2,7 +2,7 @@
   "task_id": "D962",
   "title": "pre-commit/check-* 门禁收敛（V5.3 + 46→22 + 组级测试 + 合并候选）",
   "status": "in_progress",
-  "write_set_comment": "25A+26D+38M 共 89 文件逐条 = git diff --name-status --no-renames $(git merge-base origin/main HEAD)..HEAD（task-26 并入 2b 后重算，与 .claude/task-briefs/2026-09-25-D962-2a1-precommit.md Q2 逐条一致；D962-N 自举：声明件自身入集）",
+  "write_set_comment": "33A+26D+38M 共 97 文件逐条 = git diff --name-status --no-renames $(git merge-base origin/main HEAD)..HEAD（task-26 并入 2b 后重算，与 .claude/task-briefs/2026-09-25-D962-2a1-precommit.md Q2 逐条一致；D962-N 自举：声明件自身入集）",
   "write_set": {
     "added": [
       ".claude/task-briefs/2026-09-25-D962-2a-scripts.md",
@@ -12,6 +12,14 @@
       "docs/synova/coordination/D962-merge-card.md",
       "docs/synova/coordination/D962-phase2-plan.md",
       "docs/synova/coordination/D962-task25-3-classification.md",
+      "docs/synova/product-lines/evidence/D962-2a-selfverify.md",
+      "docs/synova/product-lines/evidence/D962-2a2-selfverify.md",
+      "docs/synova/product-lines/evidence/D962-2a3-reverify.md",
+      "docs/synova/product-lines/evidence/D962-decl-selfverify.md",
+      "docs/synova/product-lines/evidence/D962-merge-selfverify.md",
+      "docs/synova/product-lines/evidence/D962-refresh-selfverify.md",
+      "docs/synova/product-lines/evidence/D962-selfverify.md",
+      "docs/synova/product-lines/evidence/D962-task26-selfverify.md",
       "docs/synova/product-lines/evidence/D962-task26-回执.md",
       "docs/synova/product-lines/evidence/FIX-013-20260926-回执.md",
       "memory/notes/proposed/2026-09-25-d962-2a1-precommit.md",
