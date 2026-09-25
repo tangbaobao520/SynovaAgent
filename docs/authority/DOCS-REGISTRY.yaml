@@ -279,3 +279,11 @@ documents:
     path: .dsh/skills/squad-discipline/SKILL.md
     status: active
     owner: DSH
+
+  # ---- 文档减负归档根（CTO 2026-09-25 登记，D964 阶段4）----
+  - id: DOC-0119
+    type: archive-index
+    path: archive/
+    status: archived
+    owner: mac-cto
+    note: "D964 文档减负归档根：批次1 .claude/task-briefs/archive/**（274 份零引用 briefs）；批次2 archive/docs-synova-coordination/** + archive/docs-synova-research/**（50 份零引用文档）。归档件只读，引用核验与写集对账已豁免（/archive/ 与 archive/** 豁免根）"
