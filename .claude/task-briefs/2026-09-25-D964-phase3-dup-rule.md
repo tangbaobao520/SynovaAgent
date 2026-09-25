@@ -30,3 +30,4 @@
 - [ ] 改坏即红: 构造重复文档样例 ⇒ exit 1（tests/doc-system/doc-dup-rule.test.sh ②④）
 - [ ] 既有 doc-registry-gate.test.sh 全绿（9 通过 / 0 失败）
 - [ ] 真实仓库实跑不误拦（0 疑似重复）
+- 不改 scripts/audit/audit-rules.sh、scripts/pre-commit-check.sh、tests/control-tower/gate-stats.test.sh（明确不动这些具体文件）
