@@ -1,0 +1,11 @@
+{
+  "task_id": "D1007",
+  "title": "M9 门禁三件套收口（恢复 rebase 丢失接线 + M3 夹具假绿根治 + 棘轮基线清理；承接 PR#768/原#741）",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-25",
+  "updated_by": "alloc-task-id"
+}
