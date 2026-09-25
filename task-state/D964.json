@@ -25,11 +25,18 @@
     "docs/synova/coordination/CTO-看板-自动.md",
     "memory/notes/implemented/2026-09-25-d964-writeset-builtin-exempt-k3-pointer.md",
     ".claude/task-briefs/**",
-    "task-state/D964.json"
+    "task-state/D964.json",
+    "docs/synova/coordination/archive/**",
+    "docs/synova/research/archive/**",
+    "docs/synova/architecture/**"
   ],
   "papers": [],
   "updated_at": "2026-09-25",
   "updated_by": "synova-cto",
   "note": "门禁语义变更两处（merge_writeset_gate 内置豁免 / doc-registry-gate 重复文档判据）⇒ 必过 K3，K3 前不合并（PR #764 / #766）。K3 审计请求见 docs/synova/coordination/K3审计请求-D964-门禁语义变更-20260925.md。alloc-task-id.sh 挂死（>60s），手工取号 D964，origin/main 最高占用 D963 已核。",
-  "k3_required": ["scripts/control-tower/merge_writeset_gate.py", "scripts/doc-system/doc-registry-gate.sh", "scripts/control-tower/check-citations.py"]
+  "k3_required": [
+    "scripts/control-tower/merge_writeset_gate.py",
+    "scripts/doc-system/doc-registry-gate.sh",
+    "scripts/control-tower/check-citations.py"
+  ]
 }
