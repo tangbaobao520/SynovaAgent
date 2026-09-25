@@ -1767,3 +1767,4 @@ Binary file .claude/bypass.log matches
 2026-09-25T13:12:25+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=2af5381c1aee86228b18ae44a9e31e3f4fcf4628
 2026-09-25T05:13:10Z detected-bypass head-mismatch marker=4866b35e6b6ef2b73803ec3ef715b10b754d93de parent=831d0adfd9aed61625ee3de70bd0ff9ef5ada656
 2026-09-25T13:21:19+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=M9 | AGENT=coder-b
+2026-09-25T13:25:45+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=6ed37625c84ba84c22b3a473a18077e6f969b2bb
