@@ -1768,6 +1768,11 @@ Binary file .claude/bypass.log matches
 2026-09-25T12:12:43+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=0f6a72e1311a36e09a72b5a8d92b8bfed77bb450
 2026-09-25T12:35:27+08:00 | GATE_FAIL_SOFT | exit=1 | branch=fix/d937-gate-failopen-v2
 2026-09-25T12:35:27+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=c23357ca3924b5f24bddcba186bd475903eb0a5d
+2026-09-25T13:42:05+08:00 | GATE_FAIL_SOFT | exit=1 | branch=chore/cto-doc-slim-phase1b-citations-archive
+2026-09-25T13:42:07+08:00 | GATE_FAIL_SOFT | exit=1 | branch=chore/cto-doc-slim-phase1b-citations-archive
+2026-09-25T13:42:07+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=7904aceb0db1ed66b39d4d72424d8561f810c423
+2026-09-25T13:43:15+08:00 | GATE_FAIL_SOFT | exit=1 | branch=chore/cto-doc-slim-phase1b-citations-archive
+2026-09-25T13:43:16+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=9e231cd134c7ee3484c1d39b578a7ad50e06e868
 2026-09-25T13:35:02+08:00 | GATE_FAIL_SOFT | exit=1 | branch=chore/cto-doc-slim-ledger-k3req
 2026-09-25T13:35:07+08:00 | GATE_FAIL_SOFT | exit=1 | branch=chore/cto-doc-slim-ledger-k3req
 2026-09-25T13:35:08+08:00 | GATE_FAIL_SOFT | exit=1 | branch=chore/cto-doc-slim-ledger-k3req
@@ -1795,6 +1800,8 @@ Binary file .claude/bypass.log matches
 2026-09-25T15:50:32+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=390a78bc6d9be1a9fbf2117ba563f5d1b153b04a
 2026-09-25T16:24:18+08:00 | GATE_FAIL_SOFT | exit=1 | branch=chore/d964-p4-docs-b2-6
 2026-09-25T16:24:19+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=c92736d2a21a59f4fb50dd800c6ceeb5513b5d84
+2026-09-25T15:50:41+08:00 | GATE_FAIL_SOFT | exit=1 | branch=chore/cto-doc-slim-phase1b-citations-archive
+2026-09-25T15:50:41+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=a209231e6e0a1ffbbd0ba2b0f809b1074730af7f
 2026-09-25T15:50:39+08:00 | GATE_FAIL_SOFT | exit=1 | branch=chore/cto-doc-slim-ledger-k3req
 2026-09-25T15:50:39+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=e11ff0663c5bbb34385c8c44230dca6f5a613d79
 2026-09-25T16:46:49+08:00 | GATE_FAIL_SOFT | exit=1 | branch=chore/d964-p4-docs-b2-6
