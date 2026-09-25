@@ -1748,3 +1748,23 @@ Binary file .claude/bypass.log matches
 2026-09-25T13:20:00+08:00 | COMMITTED | pre-commit PASS (D451 跨机补记, PR#751 清障) | HASH=128fb9b7da49bf88faaeff647ab5939857e002b6
 2026-09-25T13:20:01+08:00 | COMMITTED | pre-commit PASS (D451 跨机补记, PR#751 清障) | HASH=2bf2630d65304e15fd5e4f7dd140ab2049f9d6da
 2026-09-25T13:13:32+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=aadad6d715875beb92716a30b744ab9f0d154923
+2026-09-24T08:08:33+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=8ca6329f3e8df1b410a43c7ba6dc3a258d0eb34c
+2026-09-24T08:11:19+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=b2137083136dfdf775cc8f3e3926e12232cf39ed
+2026-09-24T08:12:05+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=a82f59ec4dd865d07b13e84c3eb1bf1c20561c96
+2026-09-24T08:12:49+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=019b38a3124a8de2f55a6e75b8cac62055364bbc
+2026-09-24T08:41:33+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=984d67bf778332f298812cef4c9306d2093a6d05
+2026-09-24T08:44:59+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=46cae71bf25dbc77153cb76149612226d2f47732
+2026-09-24T23:37:25+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=8982fa77dd31ac1e37a5841eb2f5c5f58d75b8ef
+2026-09-25T00:56:43Z detected-bypass head-mismatch marker=ce5b13b96c9b0b5b40ff065da7f1361bd6996a72 parent=2b38d1779aa31caf553ef481eb6f2e5479a3199c
+2026-09-25T10:50:21+08:00 | GATE_FAIL_SOFT | exit=1 | branch=fix/d937-gate-failopen-v2
+2026-09-25T10:50:21+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=5ceef04d6610e462d938be598fdadc10b8099679
+2026-09-25T11:32:37+08:00 | GATE_FAIL_SOFT | exit=1 | branch=fix/d937-gate-failopen-v2
+2026-09-25T11:32:37+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=ad6a027b4f351f735ae7639945c9b60108c69a7d
+2026-09-25T11:46:23+08:00 | GATE_FAIL_SOFT | exit=1 | branch=fix/d937-gate-failopen-v2
+2026-09-25T11:46:24+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=f1eb09728c6a0dc9d5533705938678d3c04b94b9
+2026-09-25T11:59:24+08:00 | GATE_FAIL_SOFT | exit=1 | branch=fix/d937-gate-failopen-v2
+2026-09-25T11:59:24+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=519927d35d46813bb19e71ef2f68f3ea17c4980c
+2026-09-25T12:12:43+08:00 | GATE_FAIL_SOFT | exit=1 | branch=fix/d937-gate-failopen-v2
+2026-09-25T12:12:43+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=0f6a72e1311a36e09a72b5a8d92b8bfed77bb450
+2026-09-25T12:35:27+08:00 | GATE_FAIL_SOFT | exit=1 | branch=fix/d937-gate-failopen-v2
+2026-09-25T12:35:27+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=c23357ca3924b5f24bddcba186bd475903eb0a5d
