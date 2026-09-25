@@ -13,8 +13,10 @@ ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RESET='\033[0m'
 HARD_FAIL=0
 
-# ═══ --brief <path> 模式（D962-B 第二批: 自 check-brief-parseable.sh 逐字吸收，脚本退役）═══
+# ═══ --brief <path> 模式（D962-B 第二批: check-brief-parseable.sh 加严并入退役——非逐字）═══
 # D313 M3 brief 契约检查: ①Q2 可解析 ②#CRITERIA A-D ③架构层 ④Done≥1 ⑤模板同源自检。
+# 与旧宿主差异（V 自验 轻2 勘误）: 本版加严——#CRITERIA 必填判据、Q2 路径条目 ≥1 为
+# 硬失败项（旧版为模板自检附带的软口径差异）；架构层判据同源（有值即过）。
 # 三态: 0 过 / 1 失败（点名缺失项）/ brief 不存在或 python 不可用 → 0 + degraded 登记（fail-open 可见）。
 if [ "${1:-}" = "--brief" ]; then
   PARSER="$ROOT/scripts/control-tower/brief_parser.py"
