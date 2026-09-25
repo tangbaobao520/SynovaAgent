@@ -1736,3 +1736,5 @@ Binary file .claude/bypass.log matches
 2026-09-24T20:21:11Z detected-bypass head-mismatch marker=114e129e7ae2d9888d3c9a719391de8c39a756c1 parent=da6a42f4150393c225ff6303541cf9a4e55964b2
 2026-09-25T04:47:41+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=a4ea5bd1f02193e3665f90717b965d469854dcee
 2026-09-25T07:39:30+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=40771c092ae39c44b51fc50b8f954dbe53374a58
+2026-09-25T11:08:02+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/d963-charter-grid-panel
+2026-09-25T11:08:03+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=1ab87edb0cd3a07e47fc8728903d9d9acb7e0530
