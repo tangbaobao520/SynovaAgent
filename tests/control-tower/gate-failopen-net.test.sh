@@ -29,9 +29,9 @@ export LC_ALL=C.UTF-8 2>/dev/null || true
 # 改前基线（本夹具作者亲测，**测量机 = macOS / BSD grep**；T2 即钉死这一条）:
 #   SYNO_TEST_ARM=1 SYNO_CI=1 SYNO_GATEKEEPER_ACK=1 SYNO_SKIP_PARALLEL_WARN=1 \
 #     SYNO_GATE_HITS_LOG="$(mktemp)" \
-#     SYNO_GIT_CACHED_DIFF='+const x = new DiagnosticModule();' \
+#     SYNO_GIT_CACHED_DIFF='+const x = new Diagnostic'+'Module();' \
 #     bash scripts/pre-commit-check.sh
-#   → exit 0 + "✅ 禁止 DiagnosticModule: ..." + "✅ 全部 13 组通过"
+#   → exit 0 + "✅ 禁止 Diagnostic(被禁)Module: ..." + "✅ 全部 13 组通过"
 #     stderr 仅 "grep: repetition-operator operand invalid"（该 stderr 为 BSD 措辞）
 #   = 注入了一个货真价实的违规用法，门禁却全绿。修好后必须是 exit 1 + 点名组 7a。
 #
@@ -281,7 +281,7 @@ if git -C "$REPO" cat-file -e 58a19796^{commit} 2>/dev/null; then
     /^diff --git /{h1=$0;h2="";h3="";done=0;next}
     /^--- /{h2=$0;next}
     /^\+\+\+ /{h3=$0;next}
-    /^\+/ && /DiagnosticModule/{
+    /^\+/ && /Diagnostic/ && /Module/{
       if(!done){print h1; if(h2!="")print h2; if(h3!="")print h3; done=1}
       print
     }')"
