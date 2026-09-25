@@ -84,3 +84,4 @@ evidence/
 # 树级守门: scripts/control-tower/check-gitlinks.sh（三态退出）+ 密封测试入 ci.yml。
 .synova-wt-*
 .sessions/
+.claude/bypass.log
