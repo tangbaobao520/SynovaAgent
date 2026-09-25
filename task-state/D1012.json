@@ -1,0 +1,24 @@
+{
+  "task_id": "D1012",
+  "title": "文档登记清零（口径先定义）+ 登记对账探针（三态 fail-closed）",
+  "status": "in_progress",
+  "risk": "medium",
+  "domain": "mac",
+  "owner": "mac-cto",
+  "executor": "并行 CTO 小队（DSH session，coder-b 编码）",
+  "milestone": "M0 治理",
+  "depends_on": [],
+  "write_set": [
+    "docs/authority/DOCS-REGISTRY.yaml",
+    "scripts/control-tower/probes/docs-registry-probe.sh",
+    "tests/control-tower/docs-registry-probe.test.sh",
+    "memory/notes/proposed/2026-09-25-d1012-docs-registry-probe.md",
+    ".claude/task-briefs/2026-09-25-D1012-docs-registry.md",
+    "task-state/D1012.json"
+  ],
+  "papers": [],
+  "updated_at": "2026-09-25",
+  "updated_by": "coder-b",
+  "note": "判定面 v1 = docs/authority/**（除 chronicle-drafts）+ docs/synova/coordination/CTO-*.md + 号段水位.md + docs/synova/product-lines/evidence/**；匹配语义由整文本子串升级为解析真实 path 值（精确/目录前缀/通配）——首轮改坏即红实证子串匹配恒绿（evidence/README.md 因 D:/ 遗留条目的 README.md 子串被误判已登记）。登记 30 条（DOC-0119..DOC-0148），面内 41 份未登记 = 0。另修台账 YAML 非法转义（:118 E:\\ClawOrg-BOX 在双引号内 unknown escape，ruby/js-yaml 双解析器一致报错）。登记门禁扫描面实测更正 = untracked 新增 ∪ staged 新增（doc-registry-gate.sh:41-43），非「仅 untracked」。本机无 PyYAML ⇒ 卡面判据⑤ 改用 node+js-yaml 等价解析器，偏差已登记。",
+  "k3_required": []
+}

@@ -115,7 +115,7 @@ documents:
     path: "D:/novis-backup-20260526/Novis/全局规划/../README.md"
     status: archived
     owner: founder
-    note: "ClawOrg 文档中心 README（E:\ClawOrg-BOX 时代的目录规范）"
+    note: 'ClawOrg 文档中心 README（E:\ClawOrg-BOX 时代的目录规范）'
 
   # ---- 已登记的关键现有文档（分类打标，九类沉淀索引的一部分）----
   - id: DOC-0101
@@ -279,3 +279,156 @@ documents:
     path: .dsh/skills/squad-discipline/SKILL.md
     status: active
     owner: DSH
+
+  # ---- D1012 登记清零（判定面 v1：authority + coordination/CTO-* + 号段水位 + evidence）----
+  - id: DOC-0119
+    type: governance
+    path: docs/authority/AUTHORITY-UPGRADE-NOTICE-20260906.md
+    status: active
+    owner: DSH
+  - id: DOC-0120
+    type: governance
+    path: docs/synova/coordination/CTO-交接-518bfe33-新CTO接入-20260910.md
+    status: active
+    owner: mac
+  - id: DOC-0121
+    type: governance
+    path: docs/synova/coordination/CTO-固化-II-研究院权威结论-20260924.md
+    status: active
+    owner: mac
+  - id: DOC-0122
+    type: governance
+    path: docs/synova/coordination/CTO-固化-最终方向与在制任务-20260924.md
+    status: active
+    owner: mac
+  - id: DOC-0123
+    type: governance
+    path: docs/synova/coordination/CTO-看板-自动.md
+    status: active
+    owner: mac
+  - id: DOC-0124
+    type: status
+    path: docs/synova/product-lines/evidence/B5-收尾与回执-20260924.md
+    status: archived
+    owner: mac
+  - id: DOC-0125
+    type: status
+    path: docs/synova/product-lines/evidence/B5-改动清单.md
+    status: archived
+    owner: mac
+  - id: DOC-0126
+    type: status
+    path: docs/synova/product-lines/evidence/B5-自验.md
+    status: archived
+    owner: mac
+  - id: DOC-0127
+    type: status
+    path: docs/synova/product-lines/evidence/D870-diff-20260921.md
+    status: archived
+    owner: mac
+  - id: DOC-0128
+    type: status
+    path: docs/synova/product-lines/evidence/D870-leftovers-20260921.md
+    status: archived
+    owner: mac
+  - id: DOC-0129
+    type: status
+    path: docs/synova/product-lines/evidence/D870-verify-20260921.md
+    status: archived
+    owner: mac
+  - id: DOC-0130
+    type: status
+    path: docs/synova/product-lines/evidence/D922-phase0-lead-probes-20260923.md
+    status: archived
+    owner: mac
+  - id: DOC-0131
+    type: status
+    path: docs/synova/product-lines/evidence/D922-phase0-recon-20260923.md
+    status: archived
+    owner: mac
+  - id: DOC-0132
+    type: status
+    path: docs/synova/product-lines/evidence/D922-phase0-verify-20260923.md
+    status: archived
+    owner: mac
+  - id: DOC-0133
+    type: status
+    path: docs/synova/product-lines/evidence/D935-20260924/closeout.md
+    status: archived
+    owner: mac
+  - id: DOC-0134
+    type: status
+    path: docs/synova/product-lines/evidence/D935-20260924/self-verify.md
+    status: archived
+    owner: mac
+  - id: DOC-0135
+    type: status
+    path: docs/synova/product-lines/evidence/D937-CI-GNU-方言返修.md
+    status: archived
+    owner: mac
+  - id: DOC-0136
+    type: status
+    path: docs/synova/product-lines/evidence/D937-夹具原始输出.md
+    status: archived
+    owner: mac
+  - id: DOC-0137
+    type: status
+    path: docs/synova/product-lines/evidence/D937-收尾与回执-20260924.md
+    status: archived
+    owner: mac
+  - id: DOC-0138
+    type: status
+    path: docs/synova/product-lines/evidence/D937-改动清单.md
+    status: archived
+    owner: mac
+  - id: DOC-0139
+    type: status
+    path: docs/synova/product-lines/evidence/D937-自验.md
+    status: archived
+    owner: mac
+  - id: DOC-0140
+    type: status
+    path: docs/synova/product-lines/evidence/D938-夹具原始输出.md
+    status: archived
+    owner: mac
+  - id: DOC-0141
+    type: status
+    path: docs/synova/product-lines/evidence/D938-收尾与回执-20260924.md
+    status: archived
+    owner: mac
+  - id: DOC-0142
+    type: status
+    path: docs/synova/product-lines/evidence/D938-改动清单.md
+    status: archived
+    owner: mac
+  - id: DOC-0143
+    type: status
+    path: docs/synova/product-lines/evidence/D938-自验.md
+    status: archived
+    owner: mac
+  - id: DOC-0144
+    type: status
+    path: docs/synova/product-lines/evidence/D940-夹具原始输出.md
+    status: archived
+    owner: mac
+  - id: DOC-0145
+    type: status
+    path: docs/synova/product-lines/evidence/D940-收尾与回执-20260924.md
+    status: archived
+    owner: mac
+  - id: DOC-0146
+    type: status
+    path: docs/synova/product-lines/evidence/D940-改动清单.md
+    status: archived
+    owner: mac
+  - id: DOC-0147
+    type: status
+    path: docs/synova/product-lines/evidence/D940-自验.md
+    status: archived
+    owner: mac
+
+  - id: DOC-0148
+    type: status
+    path: docs/synova/product-lines/evidence/README.md
+    status: archived
+    owner: mac
