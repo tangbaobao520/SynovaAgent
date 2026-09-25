@@ -48,19 +48,22 @@ F6 变异体（串行；红态关键断言原文 + 真实退出码 + 还原验�
 - 独立验证：自验派单 e3f7fb33 → 报告 a75c3e32（17 成立/2 部分成立/0 不成立）；复核派单 4e8a02a4 → 报告 fc049128（0 退回点，可提请独立审计）。
 
 ## 四、git diff --stat + ls-remote（基准 8b6c95dd）
+> 勘误（2026-09-25，CTO 实测对账）：本节原贴 7 件 stat 系收尾提交前（@a3ab020d）截取，漏计 RECEIPT.md 自身（第 8 件）；已按最终态 d29a1362 重取。bypass.log 同步修正 +2→+3（收尾笔 auto-hook 再登记一行）。
 ```
-$ git diff --stat 8b6c95dd..a3ab020d
- .claude/bypass.log                                    |     2 +          （D521 auto hook 副产物，未清项⑫）
- .claude/task-briefs/2026-09-25-D1002-workspaces-route-order.md | 40 +   （治理）
- docs/synova/product-lines/evidence/D1002-20260925/PLAN.md      | 34 +   （治理）
- src/routes/workspaces-api.ts                          | 150 ++++----        （产品）
- task-state/D1002.json                                 |  34 +             （治理）
- tests/routes/workspace-access-write-endpoint.test.ts  |  27 ++-            （产品）
- tests/routes/workspaces-mine-conflicts.test.ts        | 454 ++++            （产品，新建）
- 7 files changed, 656 insertions(+), 85 deletions(-)
+$ git diff --stat 8b6c95dd..d29a1362
+ .claude/bypass.log                                 |   3 +
+ .../2026-09-25-D1002-workspaces-route-order.md     |  40 ++
+ .../product-lines/evidence/D1002-20260925/PLAN.md  |  34 ++
+ .../evidence/D1002-20260925/RECEIPT.md             |  92 +++++
+ src/routes/workspaces-api.ts                       | 150 +++----
+ task-state/D1002.json                              |  37 ++
+ .../routes/workspace-access-write-endpoint.test.ts |  27 +-
+ tests/routes/workspaces-mine-conflicts.test.ts    | 454 +++++++++++++++++++++
+ 8 files changed, 752 insertions(+), 85 deletions(-)
 $ git ls-remote --heads origin | grep d1002
- a3ab020d4e0d5f1f6d8c5271472da5961b2e7f05  refs/heads/fix/d1002-workspaces-route-order
+ d29a1362d465d99fd2655b9bfda6bb1fd6be47d2  refs/heads/fix/d1002-workspaces-route-order
 ```
+构成：**8 件 = 3 产品（workspaces-api.ts / 新测试 / 翻转测试）+ 4 治理（task-brief / PLAN.md / RECEIPT.md / task-state 卡片，治理产物不计 PR 预算）+ 1 hook 副产物（bypass.log，M4）**。
 push 门禁原文（关键行）：`✅ bypass.log 对账通过: 3d04a49205b341ebc2467ee7a1d3f0d42ae247c3..HEAD 全部提交有记录`；`✅ 全部门禁通过 — 允许推送`。
 
 ## 五、未清项（诚实登记）
@@ -75,7 +78,7 @@ push 门禁原文（关键行）：`✅ bypass.log 对账通过: 3d04a49205b341e
 9. D-1（变异体还原手段）声明仅存运行记录 team-message-958c1641，未落已推产物；D-2（空串格真实 JWT 链直调）已经自验席对账与代码形态一致。
 10. syntheticRbac 全文 grep 唯一命中 = 新测试文件 :11 的 ◆F1 裁定声明注释；零代码使用、零合成身份注入。
 11. :321「不含他人 department 工作区」为**排除面**断言（真实 JWT 链锁定部门分支 inert 不越权）——与「部门分支零断言」执行决定的字面边界，显式登记供 K3 裁。
-12. .claude/bypass.log +2 行为 D521 auto hook 副产物（第 7 件改动文件，M4 工具默认副作用，内容全为 COMMITTED|PASS 正常标记）。
+12. .claude/bypass.log +3 行为 D521 auto hook 副产物（8 件改动中唯一非人为文件，M4 工具默认副作用，内容全为 COMMITTED|PASS 正常标记）。
 13. 边界四值「存在但非子→403/400」的 admin×非子 400 半边无显式腿（admin 400 层已由空串×admin、不存在×admin 双腿覆盖；判据未要求，低危登记）。
 
 ## 六、派单件指纹对账
