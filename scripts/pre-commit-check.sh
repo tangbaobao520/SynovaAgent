@@ -105,16 +105,26 @@ if [ "${SYNO_TEST_ARM:-0}" = "1" ]; then
   GIT_CACHED_DIFF="${SYNO_GIT_CACHED_DIFF:-$(git diff --cached 2>/dev/null || true)}"
 else
   _DIFFARGS=(--name-only --diff-filter=ACMR)
+  # task-26 2a②: 原三处 `git … || true` 在 git 失败时把缓存置空 ⇒ 判定面看到「无变更」= fail-open。
+  #   改为捕获 rc：任一处非 0 ⇒ _GIT_DIFF_RC=1，末尾显式降级（HARD_FAIL，本地/CI 一律阻断）。
+  _GIT_DIFF_RC=0
   if [ "${GITHUB_ACTIONS:-}" = "true" ] && [ -n "${SYNO_DIFF_BASE:-}" ]; then
-    _R="${SYNO_DIFF_BASE}...HEAD"; GIT_CACHED_NAMES="$(git -c core.quotepath=false diff "${_DIFFARGS[@]}" "$_R" 2>/dev/null || true)"
-    GIT_CACHED_ADDED_NAMES="$(git -c core.quotepath=false diff --name-only --diff-filter=A "$_R" 2>/dev/null || true)"
-    GIT_CACHED_DIFF="$(git diff "$_R" 2>/dev/null || true)"
+    _R="${SYNO_DIFF_BASE}...HEAD"
+    GIT_CACHED_NAMES="$(git -c core.quotepath=false diff "${_DIFFARGS[@]}" "$_R" 2>/dev/null)"; [ $? -ne 0 ] && _GIT_DIFF_RC=1
+    GIT_CACHED_ADDED_NAMES="$(git -c core.quotepath=false diff --name-only --diff-filter=A "$_R" 2>/dev/null)"; [ $? -ne 0 ] && _GIT_DIFF_RC=1
+    GIT_CACHED_DIFF="$(git diff "$_R" 2>/dev/null)"; [ $? -ne 0 ] && _GIT_DIFF_RC=1
   else
-    GIT_CACHED_NAMES="$(git -c core.quotepath=false diff --cached "${_DIFFARGS[@]}" 2>/dev/null || true)"
-    GIT_CACHED_ADDED_NAMES="$(git -c core.quotepath=false diff --cached --name-only --diff-filter=A 2>/dev/null || true)"
-    GIT_CACHED_DIFF="$(git diff --cached 2>/dev/null || true)"
+    GIT_CACHED_NAMES="$(git -c core.quotepath=false diff --cached "${_DIFFARGS[@]}" 2>/dev/null)"; [ $? -ne 0 ] && _GIT_DIFF_RC=1
+    GIT_CACHED_ADDED_NAMES="$(git -c core.quotepath=false diff --cached --name-only --diff-filter=A 2>/dev/null)"; [ $? -ne 0 ] && _GIT_DIFF_RC=1
+    GIT_CACHED_DIFF="$(git diff --cached 2>/dev/null)"; [ $? -ne 0 ] && _GIT_DIFF_RC=1
   fi
   GIT_CACHED_ALL_NAMES="$GIT_CACHED_NAMES"
+  if [ "$_GIT_DIFF_RC" -ne 0 ]; then
+    echo -e "  ${RED}❌ diff 采集降级: git 返回非 0 — 判定面无输入（fail-closed，绝不当作「无变更」）${RESET}"
+    mkdir -p "$ROOT/.codex/control-tower/logs" 2>/dev/null || true
+    echo "{\"time\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\", \"component\": \"pre-commit-diff-cache\", \"reason\": \"git diff 采集失败 (degraded, 非通过)\"}" >> "$ROOT/.codex/control-tower/logs/degraded-events.log" 2>/dev/null || true
+    HARD_FAIL=$((HARD_FAIL + 1))
+  fi
 fi
 # D962 死分支修复: G10/G11 数据源赋值（原 CHANGED_FILES/STAGED_FILES 全脚本零赋值→恒跳过）
 CHANGED_FILES="$GIT_CACHED_ALL_NAMES"; STAGED_FILES="$GIT_CACHED_ALL_NAMES"; STAGED_ALL="$GIT_CACHED_ALL_NAMES"
@@ -168,8 +178,24 @@ code_added_lines() {  # @output 仅「源面代码文件」的 added 行（含�
 # ── #11家 CT-34 纯文档早退（豁免，仅 Secrets + 骨架D547 + Notes D472 硬拦）──
 DOC_PREFIX_RE='^(docs/.*\.(md|html|txt)$|\.claude/task-briefs/.*\.(md|html|txt)$|memory/.*\.(md|html|txt)$|task-state/.*\.(json|md)$|[^/]+\.(md|html|txt)$)'
 # 空暂存=fail-closed 不豁免；非空且全部命中文档前缀=纯文档
+# task-26 2a②: 原写法 `[ -z "$(echo … | grep -vE … || true)" ]` 在 grep 失败(rc≥2)时也判纯文档
+#   ⇒ **fail-open**（判定失败 ⇒ 静默走豁免通道，跳过绝大多数门禁）。改为 grep 三态：
+#   0=有非文档文件 / 1=确无匹配(真·纯文档) / ≥2=判定失败 ⇒ 按非纯文档继续 + 显式降级登记。
 DOC_ONLY=0
-if [ -n "$STAGED_ALL" ] && [ -z "$(echo "$STAGED_ALL" | grep -vE "$DOC_PREFIX_RE" || true)" ]; then DOC_ONLY=1; fi
+if [ -n "$STAGED_ALL" ]; then
+  _NONDOC="$(printf '%s\n' "$STAGED_ALL" | grep -vE "$DOC_PREFIX_RE")"; _ND_RC=$?
+  if [ "$_ND_RC" -eq 0 ]; then
+    DOC_ONLY=0
+  elif [ "$_ND_RC" -eq 1 ]; then
+    DOC_ONLY=1
+  else
+    DOC_ONLY=0
+    echo -e "  ${YELLOW}⚠️  纯文档早退判定降级 — grep rc=${_ND_RC}；按非纯文档继续（fail-closed）${RESET}"
+    mkdir -p "$ROOT/.codex/control-tower/logs" 2>/dev/null || true
+    echo "{\"time\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\", \"component\": \"pre-commit-ct34-doc-only\", \"reason\": \"grep rc=${_ND_RC} — 判定失败，不当作纯文档 (degraded)\"}" >> "$ROOT/.codex/control-tower/logs/degraded-events.log" 2>/dev/null || true
+    WARN_COUNT=$((WARN_COUNT + 1))
+  fi
+fi
 if [ "$DOC_ONLY" -eq 1 ]; then
   echo "  纯文档提交 (CT-34): 豁免 — 仅 Secrets + Notes"
   EXEMPT_LOG="${SYNO_EXEMPT_LOG:-$ROOT/.claude/exempt.log}"; mkdir -p "$(dirname "$EXEMPT_LOG")" 2>/dev/null || true
@@ -318,11 +344,17 @@ BRIEF_FILE=$(echo "$CHANGED_FILES" | grep -m1 "\.claude/task-briefs/" || true)
 if [ -f "$CRITERIA_MAP" ] && [ -n "$BRIEF_FILE" ] && [ -f "$ROOT/$BRIEF_FILE" ]; then
   CRITERIA=$(grep -oE '#CRITERIA[[:space:]]*[:=：][[:space:]]*[A-D]' "$ROOT/$BRIEF_FILE" 2>/dev/null | sed -E 's/.*[=:：][[:space:]]*//' | head -1 || true)
   if [ -n "$CRITERIA" ]; then
+    # task-26 2a②: 原 `… || true` 使 python 失败时 glob 集为空 ⇒ G10 静默走「无映射跳过」= fail-open。
+    #   改为捕获 rc：非 0 ⇒ 显式降级（CI strict 转硬），不当作「无映射」。
     CRITERIA_GLOBS=$("$PYBIN" -c "
 import json
 try: print('\n'.join(json.load(open('$CRITERIA_MAP')).get('criteria',{}).get('$CRITERIA',{}).get('glob',[])))
 except Exception: pass
-" 2>/dev/null || true)
+" 2>/dev/null); _CG_RC=$?
+    if [ "$_CG_RC" -ne 0 ]; then
+      soft_check "G10: criteria-map 解析降级（$PYBIN rc=${_CG_RC}，不当作无映射）" "1"
+      echo "{\"time\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\", \"component\": \"pre-commit-g10-criteria-globs\", \"reason\": \"python rc=${_CG_RC} (degraded, 非通过)\"}" >> "$ROOT/.codex/control-tower/logs/degraded-events.log" 2>/dev/null || true
+    fi
     REGEX_GLOBS=$(echo "$CRITERIA_GLOBS" | sed 's/\*/.*/g; s/?/./g' | grep -v '^$' | paste -sd'|' -)
     if [ -n "$REGEX_GLOBS" ]; then
       for sf in $STAGED_FILES; do
@@ -401,7 +433,7 @@ print('\n'.join(f for k in (-1,0,1) for f in glob.glob('.claude/task-briefs/%s-*
     "$PYBIN" "$ROOT/scripts/control-tower/brief_parser.py" --q2-exclude "$B" 2>/dev/null | sed "s|^|$(basename "$B")\\t|" >> "$EXCL_TSV" || true
   done
   SCOPE_VIOLATION=$(STAGED_ALL="$STAGED_ALL" SCOPE_TSV="$SCOPE_TSV" EXCL_TSV="$EXCL_TSV" "$PYBIN" -c "
-import os, re
+import os, re, sys
 def load(p):
     out = []
     try:
@@ -412,21 +444,26 @@ def load(p):
     except OSError: pass
     return out
 scope, excl = load(os.environ['SCOPE_TSV']), load(os.environ['EXCL_TSV'])
-m = lambda path, pat: re.search(r'(^|/)' + re.escape(pat) + r'$', path)
-skip_re = re.compile(r'\.claude/|scripts/workflow/|\.codex/|memory/|docs/|task-state/.*\.(json|md)$|\.github/')
+m = lambda path, pat: re.search(r'(^|/)' + re.escape(pat) + r'\$', path)
+skip_re = re.compile(r'\.claude/|scripts/workflow/|\.codex/|memory/|docs/|task-state/.*\.(json|md)\$|\.github/')
 code_re = re.compile(r'\.(ts|tsx|js|jsx|json|py|sh)\$')
 viol = []
-for sf in (x.strip() for x in os.environ['STAGED_ALL'].split('\n')):
-    if not sf or skip_re.search(sf) or not code_re.search(sf): continue
-    claim = [b for b, p in scope if m(sf, p)]
-    if not claim: viol.append('  %s (不在 Q2 范围内)' % sf); continue
-    for b, ex in excl:
-        if b in claim and m(sf, ex):
-            viol.append('  %s (Q2 排除项禁止修改: %s, 来自 %s)' % (sf, ex, b)); break
+try:
+    for sf in (x.strip() for x in os.environ['STAGED_ALL'].split('\n')):
+        if not sf or skip_re.search(sf) or not code_re.search(sf): continue
+        claim = [b for b, p in scope if m(sf, p)]
+        if not claim: viol.append('  %s (不在 Q2 范围内)' % sf); continue
+        for b, ex in excl:
+            if b in claim and m(sf, ex):
+                viol.append('  %s (Q2 排除项禁止修改: %s, 来自 %s)' % (sf, ex, b)); break
+except Exception as e:   # task-26 2a②: 原实现静默吞（外层无 try，靠 bash `|| true`）⇒ 判定失败变「范围全通过」
+    sys.stderr.write('DEGRADED: %s\n' % e); sys.exit(2)
 print('\n'.join(viol))
-" 2>/dev/null || true)
+" 2>/dev/null); _SV_RC=$?
   rm -f "$SCOPE_TSV" "$EXCL_TSV"
-  if [ -n "$SCOPE_VIOLATION" ]; then
+  if [ "$_SV_RC" -ne 0 ]; then
+    soft_check "G12: 写集判定执行失败（$PYBIN rc=${_SV_RC}）— fail-closed，不当作范围全通过" "1"
+  elif [ -n "$SCOPE_VIOLATION" ]; then
     soft_check "G12: Q2 范围一致性（D296/D749）" "$SCOPE_VIOLATION"
   else
     soft_pass "G12: 所有文件均在 Q2 范围内"
