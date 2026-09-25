@@ -111,6 +111,7 @@ jobs:
       #   gate-hits.log 由 pre-commit-check.sh:125/128 的 hard/soft_check 确定性产生；
       #   degraded-events.log 由 merge_writeset_gate.py:457/497 在 skip/degraded 路径条件产生。
       - name: Archive gate raw logs (stage-0②, ≥90d)
+        id: archive
         if: always()
         continue-on-error: true
         uses: actions/upload-artifact@v4
@@ -122,6 +123,60 @@ jobs:
           if-no-files-found: warn
           retention-days: 90
           include-hidden-files: true
+      # 归档失败的「计数 + 连续 2 次升级」兜底（CTO 裁定「甲」）：
+      #   单次失败 = 黄灯 + 计数；**连续 2 次 = 红**（连续 2 次说明是真问题，不是瞬时抖动），
+      #   且必须打印原因（谁失败/失败在哪/计数/判定来源）。判定 = 上一条 completed run 的
+      #   artifacts 里有无 gate-logs-*。夹具注入缝：ARCHIVE_PREV_RUNS_JSON /
+      #   ARCHIVE_PREV_ARTIFACTS_JSON（给了就不打 API）；取不到历史 ⇒ 显式 unknown、不升级。
+      - name: Archive failure backstop (2 consecutive ⇒ red)
+        if: always()
+        env:
+          ARCHIVE_OUTCOME: ${{ steps.archive.outcome }}
+          GH_TOKEN: ${{ github.token }}
+          RUNS_API: ${{ github.api_url }}/repos/${{ github.repository }}/actions/runs
+          ARCHIVE_PREV_RUNS_JSON: ""
+          ARCHIVE_PREV_ARTIFACTS_JSON: ""
+        run: |
+          set -uo pipefail
+          PYBIN="$(command -v python3 || command -v python || command -v py)"
+          if [ "${ARCHIVE_OUTCOME:-}" = "success" ]; then
+            echo "✅ 归档步 success ⇒ 计数归零（不升级）"
+            exit 0
+          fi
+          echo "::warning title=gate-logs 归档失败::本次失败（黄灯，计数 +1）— 连续 2 次将升级为红（步 outcome=${ARCHIVE_OUTCOME:-unknown}）"
+          RUNS_JSON="${ARCHIVE_PREV_RUNS_JSON:-}"
+          if [ -z "$RUNS_JSON" ]; then
+            RUNS_JSON="$(curl -sS -H "Authorization: Bearer ${GH_TOKEN}" "${RUNS_API}?status=completed&per_page=20" || true)"  # swallow-ok: 取不到历史 ⇒ 显式 unknown、不升级
+          fi
+          printf '%s' "$RUNS_JSON" > /tmp/archive-prev-runs.json
+          PREV_ID="$("$PYBIN" -c 'import json,os;d=json.load(open("/tmp/archive-prev-runs.json"));w=os.environ.get("GITHUB_HEAD_REF") or os.environ.get("GITHUB_REF_NAME") or "";rs=[r for r in d.get("workflow_runs",[]) if r.get("head_branch")==w];print(rs[0].get("id","") if rs else "")' 2>/dev/null || true)"  # swallow-ok: 解析失败 ⇒ PREV_ID 空 ⇒ 下方显式 unknown，不升级
+          if [ -z "$PREV_ID" ]; then
+            echo "::warning title=gate-logs 兜底::取不到上一条 completed run（分支 ${GITHUB_HEAD_REF:-${GITHUB_REF_NAME:-?}}）⇒ 无法判定连续性，本次不升级（显式 unknown）"
+            exit 0
+          fi
+          ART_JSON="${ARCHIVE_PREV_ARTIFACTS_JSON:-}"
+          if [ -z "$ART_JSON" ]; then
+            ART_JSON="$(curl -sS -H "Authorization: Bearer ${GH_TOKEN}" "${RUNS_API}/${PREV_ID}/artifacts?per_page=100" || true)"  # swallow-ok: 同上
+          fi
+          printf '%s' "$ART_JSON" > /tmp/archive-prev-artifacts.json
+          if ! grep -q '"artifacts"' /tmp/archive-prev-artifacts.json 2>/dev/null; then
+            VERDICT=unknown
+          elif grep -qE '"name"[[:space:]]*:[[:space:]]*"gate-logs-' /tmp/archive-prev-artifacts.json; then
+            VERDICT=has
+          else
+            VERDICT=missing
+          fi
+          case "$VERDICT" in
+            has)
+              echo "ℹ️ 上一条 completed run（id=${PREV_ID}）有 gate-logs-* ⇒ 本次为计数 1（黄灯，不红）"
+              exit 0 ;;
+            missing)
+              echo "::error title=gate-logs 归档连续 2 次失败::上一条 completed run（id=${PREV_ID}）也无 gate-logs-* ⇒ 连续第 2 次失败，升级为红（真问题，非瞬时抖动）。失败步=archive(outcome=${ARCHIVE_OUTCOME})；判定来源=runs/${PREV_ID}/artifacts"
+              exit 1 ;;
+            *)
+              echo "::warning title=gate-logs 兜底::历史 artifacts 不可解析 ⇒ 不升级（显式 unknown）"
+              exit 0 ;;
+          esac
 
   test:
     name: Vitest (${{ matrix.shard }})
