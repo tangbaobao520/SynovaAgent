@@ -29,3 +29,4 @@
 ## Done 标准
 - [ ] tests/control-tower/check-citations.test.sh 全绿（16 通过）
 - [ ] 改坏即红：非 archive 路径同内容 ⇒ exit 1 + CITE_FILE_NOT_FOUND
+- 不改 scripts/audit/audit-rules.sh、scripts/pre-commit-check.sh、tests/control-tower/gate-stats.test.sh（明确不动这些具体文件）
