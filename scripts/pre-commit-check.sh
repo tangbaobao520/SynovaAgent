@@ -390,6 +390,26 @@ else
   echo -e "  ${RED}❌ Secrets 扫描失败${RESET}"; HARD_FAIL=$((HARD_FAIL + 1)); log_gate "Secrets 扫描" hit
 fi
 
+# ── D520/任务3: 平台敏感命令软检查（V5 软提示——新增脚本须对照 PLATFORM-CHECKLIST.md）──
+# task-28 裁定⑤ 接回：V5.3 重写时该块被移除且无落点（红线真警报）。**原位恢复**（本地软 + SYNO_CI=1 转硬）——
+#   实测：若只放 CI 权威区，则 platform-checklist.test.sh 的本地行为断言（SYNO_CI=0 下须点名裸 python3 探针）必红。
+# 只查本次新增（A）的 scripts/control-tower|workflow 下的 .sh/.py 文件：
+#   裸 python3（非 PYBIN 模式）/ date +%s / date -v / grep -P → 提示见 checklist。
+if [ -f "$ROOT/scripts/control-tower/PLATFORM-CHECKLIST.md" ]; then
+  _PLAT_NEW=$(echo "$GIT_CACHED_ADDED_NAMES" | grep -E '^scripts/(control-tower|workflow)/.*\.(sh|py)$' || true)
+  _PLAT_HITS=""
+  if [ -n "$_PLAT_NEW" ]; then
+    while IFS= read -r _pf; do
+      [ -z "$_pf" ] && continue; [ ! -f "$ROOT/$_pf" ] && continue
+      _pf_hits=$(grep -nE '\bpython3\b|date \+%s|date -v|grep -P' "$ROOT/$_pf" 2>/dev/null | grep -v 'PYBIN\|swallow-ok\|D520\|#' | head -3 || true)  # grep-P-scan-ok: 本行是 -P 检测器自身（模式字面量，非调用）
+      [ -n "$_pf_hits" ] && _PLAT_HITS="${_PLAT_HITS}  ${_pf}: 平台敏感命令（见 PLATFORM-CHECKLIST.md）\n"
+    done <<< "$_PLAT_NEW"
+  fi
+  soft_check "V5 平台敏感命令: 新控制塔脚本对照 PLATFORM-CHECKLIST.md (D520)" "${_PLAT_HITS:-}"
+else
+  soft_pass "V5 平台检查: PLATFORM-CHECKLIST.md 不存在(跳过)"
+fi
+
 # ═════ CI 权威区（SYNO_CI=1 才执行；本地零成本跳过 <1s）═══════
 # 迁 CI 34 项回归集紧凑内联（铁律38/桥接/接线/D296/D547）；完整 13 组语义由 iron-laws ::error 承担。
 if [ "${SYNO_CI:-0}" = "1" ]; then
@@ -513,6 +533,47 @@ print('\n'.join(viol))
     fi
   else
     soft_check "D2 登记门禁: 脚本缺失 scripts/doc-system/doc-registry-gate.sh" "1"
+  fi
+
+  # ═══ task-28 裁定④⑥⑦：三处判定面接回 CI 权威区（活点 = iron-laws job）═══
+  # ④ CT-40: 控制塔脚本 ↔ 配对测试（原 pre-commit 组2d，V5.3 重写时被移除且无落点）
+  if [ ! -f "$ROOT/scripts/control-tower/ct-test-gate.sh" ]; then
+    soft_check "CT-40 控制塔脚本测试配对: 门禁脚本缺失" "1"
+  else
+    _CT40_OUT="$(SYNO_CT_DIFF_BASE="${SYNO_DIFF_BASE:-origin/main}" bash "$ROOT/scripts/control-tower/ct-test-gate.sh" 2>&1)"; _CT40_RC=$?
+    if [ "$_CT40_RC" -eq 0 ]; then
+      soft_pass "CT-40 控制塔脚本测试配对: $(printf '%s' "$_CT40_OUT" | head -1)"
+    else
+      # 反 fail-open：失败载荷必须非空（否则 soft_check 空匹配会打 ✅ —— 实测 rc=127 时踩到）
+      _CT40_FAILS="$(printf '%s' "$_CT40_OUT" | grep -v '^SYNC-OK')"
+      [ -z "$_CT40_FAILS" ] && _CT40_FAILS="rc=${_CT40_RC}（无输出；见 CT-40 门禁原始退出码）"
+      soft_check "CT-40 控制塔脚本测试配对（rc=${_CT40_RC}）" "$_CT40_FAILS"
+    fi
+  fi
+
+  # ⑥ 铁律 47: 声称完成须 grep 物理证明（D541 收窄版；task-28 裁定⑥ 按 V5.2.x :775 原文接回）
+  CLEANUP_CLAIM=""
+  BRIEF=$(bash "$ROOT/scripts/workflow/resolve-commit-brief.sh" "$STAGED_ALL" 2>/dev/null || true)
+  if [ -n "$BRIEF" ] && [ -f "$BRIEF" ]; then
+    if grep -qi "已拆\|已迁移\|已清理\|拆分.*完成\|迁移.*完成\|清理.*完成\|完成.*拆分\|完成.*迁移\|完成.*清理" "$BRIEF" 2>/dev/null; then
+      CLEANUP_CLAIM="task brief 声称拆分/迁移/清理完成 — 请确认 grep -r 'packages/engine-core' src/ 零结果"
+    fi
+  fi
+  warn_check "铁律 47: 声称完成须 grep 物理证明" "${CLEANUP_CLAIM:-}"
+
+  # ⑦ D945: 预设 bundle 源形态校验（原脚本零生产调用 = M3；task-28 裁定⑦ wire）
+  if [ ! -f "$ROOT/scripts/control-tower/check-preset-bundles.sh" ]; then
+    soft_check "D945 预设 bundle 源校验: 脚本缺失" "1"
+  else
+    _PB_OUT="$(bash "$ROOT/scripts/control-tower/check-preset-bundles.sh" --repo 2>&1)"; _PB_RC=$?
+    if [ "$_PB_RC" -eq 0 ]; then
+      soft_pass "D945 预设 bundle 源形态: $(printf '%s' "$_PB_OUT" | grep -m1 '汇总')"
+    else
+      # 反 fail-open：失败载荷非空保证计红（实测：脚本缺失时 rc=127、grep 无命中 → 曾打 ✅）
+      _PB_FAILS="$(printf '%s' "$_PB_OUT" | grep -E 'DRIFT|STALE|RUNTIME-ONLY|LEGACY|WARN|degraded|违规')"
+      [ -z "$_PB_FAILS" ] && _PB_FAILS="rc=${_PB_RC} — $(printf '%s' "$_PB_OUT" | head -2 | tr '\n' ' ')"
+      soft_check "D945 预设 bundle 源校验（rc=${_PB_RC}）" "$_PB_FAILS"
+    fi
   fi
 fi
 

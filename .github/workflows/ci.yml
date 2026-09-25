@@ -334,7 +334,11 @@ jobs:
           fi
           # D526: canary 密封清单漂移告警（::warning 可见，不阻断——防误伤；
           #   存量漂移由 K3/人工月度清理，全量密封化是 K3 P2-4 单独立项）
-          bash scripts/control-tower/check-canary-drift.sh || true
+          # task-28 裁定②: 原 `check-canary-drift.sh || true` 退役——逻辑已内联入 ct-health.sh；
+          #   `|| true` 一并清除（不静默吞）：改显式 if + ::warning 注解，退出码仍不阻断本 step。
+          if ! bash scripts/control-tower/ct-health.sh canary-drift; then
+            echo "::warning title=canary-drift::漂移对账非零退出（告警不阻断，K3 P2-4 单独立项）"
+          fi
           exit $FAIL
 
   integration-check:

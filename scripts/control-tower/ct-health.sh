@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # ═══════════════════════════════════════════════════════════════════════════════
 # ct-health.sh — 控制塔健康域统一宿主（D962-B2，吸收原 check-ci-stale-red.sh /
-#                check-orphan-worktrees.sh；check-canary-drift.sh 待 2b ci.yml
-#                改线后内联并退役）
+#                check-orphan-worktrees.sh / check-canary-drift.sh（task-28 裁定②：
+#                canary 逻辑内联为 run_canary_drift 并退役原脚本，ci.yml 调用点改指本宿主）)
 #
 # 命名说明: 宿主不带 check- 前缀（与 gen-cto-health.sh 同族），使 D962 终态
 #           `find scripts -name 'check-*'` 计数 = 20（plan §一 keep-20 清单
@@ -25,6 +25,13 @@ export LC_ALL=C.UTF-8 2>/dev/null || true
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
+# PYBIN 三级探测（PLATFORM-CHECKLIST #1，禁裸 python3；task-28 wire⑤ 连带修复：
+#   恢复的 D520 平台检查实测点名本脚本 —— 原 5 处裸 python3 在 Win（仅 python/py）不可用）
+PYBIN=""
+for _c in python3 python py; do  # PYBIN 三级探测（PLATFORM-CHECKLIST #1，禁裸 python3）
+  if command -v "$_c" >/dev/null 2>&1 && "$_c" -c "import sys" >/dev/null 2>&1; then PYBIN="$_c"; break; fi
+done
+
 # ── 子命令: ci-stale-red（原 check-ci-stale-red.sh 逐字迁移，exit→return）──
 # CT-39: CI 红超 24h 自动入 CTO 待办（D387 P2-5，红常态化=信号失效 M1 同型）
 run_ci_stale_red() {
@@ -42,7 +49,7 @@ run_ci_stale_red() {
   # ── 取 origin/main 最新 run（匿名 API，不用 token 避免泄露）──
   local API="https://api.github.com/repos/tangbaobao520/SynovaAgent/actions/runs?branch=main&per_page=5"
   local RESP RC
-  RESP=$(python3 - "$API" <<'PYEOF'
+  RESP=$("$PYBIN" - "$API" <<'PYEOF'
 import json, sys, urllib.request
 url = sys.argv[1]
 try:
@@ -75,7 +82,7 @@ PYEOF
 
   # ── 解析 created_at 距今小时数 ──
   local AGE_HOURS
-  AGE_HOURS=$(python3 - "$RESP" <<'PYEOF'
+  AGE_HOURS=$("$PYBIN" - "$RESP" <<'PYEOF'
 import json, sys, datetime
 d = json.loads(sys.argv[1])
 created = d["created"]
@@ -90,7 +97,7 @@ PYEOF
 )
 
   if [ "$MODE" = "json" ]; then
-    python3 - "$RESP" "$AGE_HOURS" "$THRESHOLD_HOURS" <<'PYEOF'
+    "$PYBIN" - "$RESP" "$AGE_HOURS" "$THRESHOLD_HOURS" <<'PYEOF'
 import json, sys
 d = json.loads(sys.argv[1])
 age = float(sys.argv[2])
@@ -102,11 +109,11 @@ PYEOF
   fi
 
   local STALE
-  STALE=$(python3 -c "print(1 if $AGE_HOURS > $THRESHOLD_HOURS else 0)" 2>/dev/null || echo 0)  # swallow-ok: age 解析失败按 0 处理，不阻断（AGE_HOURS 已由上游 python 保证）
+  STALE=$("$PYBIN" -c "print(1 if $AGE_HOURS > $THRESHOLD_HOURS else 0)" 2>/dev/null || echo 0)  # swallow-ok: age 解析失败按 0 处理，不阻断（AGE_HOURS 已由上游 python 保证）
   if [ "$STALE" = "1" ]; then
     echo -e "${RED}❌ CT-39: main CI 红灯已持续 ${AGE_HOURS}h（>24h）——信号失效，写入待办${NC}"
     if [ "$MODE" != "check" ]; then
-      python3 - "$RESP" "$AGE_HOURS" "$TODO_FILE" <<'PYEOF'
+      "$PYBIN" - "$RESP" "$AGE_HOURS" "$TODO_FILE" <<'PYEOF'
 import json, sys, datetime
 d = json.loads(sys.argv[1]); age = sys.argv[2]; path = sys.argv[3]
 content = f"""# CI 红灯待办（CT-39 自动生成）
@@ -195,6 +202,74 @@ run_orphan_worktrees() {
   [ "$COUNT" -gt 0 ] && return 1 || return 0
 }
 
+# ── 子命令: canary-drift（原 check-canary-drift.sh 逐字迁移，exit→return；task-28 裁定②）──
+run_canary_drift() {
+  ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+  TESTS_DIR="${SYNO_TESTS_DIR:-$ROOT/tests}"
+  CI_YML="${SYNO_CI_YML:-$ROOT/.github/workflows/ci.yml}"
+  YELLOW='\033[1;33m'; GREEN='\033[0;32m'; RESET='\033[0m'
+
+  if [ ! -f "$CI_YML" ]; then
+    echo -e "${YELLOW}⚠ canary 清单来源缺失: ${CI_YML} — 漂移检查跳过（铁律 11 显式）${RESET}"
+    return 0
+  fi
+  if [ ! -d "$TESTS_DIR" ]; then
+    echo -e "${YELLOW}⚠ 测试目录缺失: ${TESTS_DIR} — 漂移检查跳过（铁律 11 显式）${RESET}"
+    return 0
+  fi
+
+  # CI canary 清单（ci.yml control-tower-tests job 的 for t in 列表）
+  LISTED=$(grep -oE 'tests/[A-Za-z0-9_/.-]+\.test\.sh' "$CI_YML" | sort -u)
+  # 全部测试文件（.test.sh/.test.ts/.test.py，排除 node_modules）
+  # 路径规约: 相对 TESTS_DIR 的父目录（默认即仓库根 → "tests/..."，与清单同形；
+  #   注入缝下同样成立——前缀取 dirname(TESTS_DIR) 而非 git ROOT）
+  _BASE="$(dirname "${TESTS_DIR%/}")"
+  ALL=$(find "$TESTS_DIR" -name '*.test.*' -not -path '*/node_modules/*' 2>/dev/null | sed "s|^$_BASE/||" | sort -u)
+
+  LIST_N=$(echo "$LISTED" | grep -c . || true)
+  ALL_N=$(echo "$ALL" | grep -c . || true)
+
+  # 漂移 = 在仓库但不在清单（只对 .test.sh 报——.ts/.py 走 vitest/pytest 不属 canary 语义）
+  DRIFT=""
+  while IFS= read -r t; do
+    [ -z "$t" ] && continue
+    case "$t" in
+      *.test.sh)
+        echo "$LISTED" | grep -qxF "$t" || DRIFT="${DRIFT}  $t\n" ;;
+      *) : ;;  # .ts/.py 由各自 runner 覆盖，不计 canary 漂移
+    esac
+  done <<< "$ALL"
+
+  # 反向漂移 = 清单里有但文件已删/改名（防幽灵清单项）
+  GHOST=""
+  while IFS= read -r t; do
+    [ -z "$t" ] && continue
+    [ -f "$_BASE/$t" ] || GHOST="${GHOST}  $t\n"   # 注入缝下同样以 _BASE 为根
+  done <<< "$LISTED"
+
+  echo ""
+  echo "── canary 漂移对账 (D526) ──"
+  echo "  测试文件总数: $ALL_N | canary 清单: $LIST_N 项"
+  if [ -n "$DRIFT" ]; then
+    # DRIFT 以字面 \n 拼接——printf %b 展开后再计数/取首行
+    N=$(printf '%b' "$DRIFT" | grep -c . || true)
+    echo -e "${YELLOW}⚠ 漂移: $N 个 .test.sh 不在 CI canary 清单（红态无防线感知——评估纳入或确认排除）:${RESET}"
+    printf '%b' "$DRIFT"
+    # CI 上进 GitHub warnings 面板（本地输出无害）
+    FIRST=$(printf '%b' "$DRIFT" | head -3 | tr '\n' ',' | tr -d '%' | cut -c1-250)
+    echo "::warning title=canary-drift::${N} 个测试不在 CI canary 清单: ${FIRST}"
+  fi
+  if [ -n "$GHOST" ]; then
+    echo -e "${YELLOW}⚠ 幽灵清单项（清单有、文件无——改删）:${RESET}"
+    printf '%b' "$GHOST"
+    echo "::warning title=canary-ghost::CI 清单含不存在文件"
+  fi
+  if [ -z "$DRIFT" ] && [ -z "$GHOST" ]; then
+    echo -e "${GREEN}✅ canary 清单零漂移（.test.sh 全覆盖或显式排除）${RESET}"
+  fi
+  return 0
+}
+
 # ── 分发 ──
 case "${1:-}" in
   ci-stale-red)
@@ -208,10 +283,11 @@ case "${1:-}" in
     exit $?
     ;;
   canary-drift)
-    # 过渡期（2b 前）: ci.yml:281 仍直调 check-canary-drift.sh；此处转发保证
-    # 单一入口可用，2b 改线后内联其逻辑并退役原脚本。
+    # task-28 裁定②: 逻辑已内联为 run_canary_drift（原 check-canary-drift.sh 退役）；
+    #   ci.yml 调用点同步改指本宿主（不再有过渡期转发，单一入口）。
     shift
-    exec bash "$SCRIPT_DIR/check-canary-drift.sh" "$@"
+    run_canary_drift "$@"
+    exit $?
     ;;
   *)
     echo "用法: ct-health.sh <ci-stale-red|--check|--json | orphan-worktrees|--json | canary-drift ...>" >&2

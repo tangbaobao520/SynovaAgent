@@ -32,7 +32,7 @@
 | 铁律38 as any | `x as any` | ❌ as any 零容忍: 8 处（含我的 evilAny，点名） |
 | engine-core 桥接 | `import … '../../packages/engine-core/…'` | ❌ 铁律46: 1 处（bridge-sample.ts 点名） |
 | 接线（铁律4/5） | 新文件 `export function orphanUtil` | ❌ 接线审计: …unwired-sample.ts: export orphanUtil — 未被引用（点名） |
-| Secrets | `sk-Abcdefghijklmnopqrstuv` | check-secrets.sh rc=1，❌ 工作区发现真实凭证: 1 处（点名） |
+| Secrets | `sk-<22 位字母的门禁夹具串，task-28 按 CTO 裁定脱敏>` | check-secrets.sh rc=1，❌ 工作区发现真实凭证: 1 处（点名） |
 | D296/D749 G12 | 无 brief 覆盖的 staged 代码 | ❌ G12: Q2 范围一致性: 37 处（含我未声明的样例文件） |
 | 组7a DiagnosticModule | `export class MyDiagnosticModule` | ❌ 禁止 DiagnosticModule: 1 处（点名；`^\+\+\+` 排除项在正则中保全） |
 
