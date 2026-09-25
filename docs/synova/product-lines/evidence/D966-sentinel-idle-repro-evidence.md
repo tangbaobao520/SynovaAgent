@@ -650,3 +650,70 @@ $ bash scripts/control-tower/verify-parallel.sh --ci-pr origin/main
   ✅ 无 dev doc 写集变化（origin/main..HEAD）— 跳过
 [exit=0]
 ```
+
+---
+
+## 17. ⚠️ 「两点 diff 会看到 13 个文件」的澄清（防误判夹带）
+
+**现象**：`git diff --stat origin/main..HEAD`（**两点**）会额外列出两个**与 D966 无关**的文件：
+
+```
+ .claude/task-briefs/2026-09-25-D964-ledger-row6.md |  30 -
+ docs/synova/coordination/审计发现台账-DSH-CTO.md   |   1 -
+```
+
+**这不是本卡所为**，证据链（全部实跑）：
+
+```bash
+$ git rev-parse origin/main            # 已从 ce231ff1 前进到 0f709900
+0f7099005a62406fbfaa546bbb00117ba1bcc589
+$ git merge-base origin/main HEAD
+ce231ff1b1e419095117413badba8c6b55ae39fd          # ← 本卡 merge-base 正确
+$ git rev-list --count HEAD..origin/main
+1                                                  # ← 本地落后 main 1 个提交
+
+# 这两个文件的引入提交（在 main 侧，非本卡分支）
+$ git log --oneline ce231ff1..origin/main -- .claude/task-briefs/2026-09-25-D964-ledger-row6.md
+0f709900 docs(D964): 台账第六批（含 1 项升级创始人：误扫他人文件第2次） (#786)
+$ git log --oneline ce231ff1..origin/main -- docs/synova/coordination/审计发现台账-DSH-CTO.md
+0f709900 docs(D964): 台账第六批（含 1 项升级创始人：误扫他人文件第2次） (#786)
+
+# 本卡 4 个提交中是否有删除动作
+$ git log --oneline --diff-filter=D origin/main..HEAD -- .claude/task-briefs/2026-09-25-D964-ledger-row6.md
+（空 → 本卡从未删除任何文件）
+```
+
+**正确口径 = 三点点 diff（merge-base..HEAD）**，与 D708 gate 的「变更集」一致：
+
+```bash
+$ git diff --stat origin/main...HEAD
+ .claude/bypass.log                                 |   2 +
+ .claude/task-briefs/2026-09-25-D966-sentinel-idle-repro.md |  98 +++
+ docs/synova/coordination/哨兵-空转复现-20260925.md | 451 +++++++++++
+ docs/synova/product-lines/evidence/D966-sentinel-idle-repro-evidence.md | 652 +++++++++++++++
+ task-state/D966.json                               |  46 +-
+ tests/sentinel/audit/probe-harness.ts              | 893 +++++++++++++++++++++
+ tests/sentinel/audit/run-flip-diff.ts              |  93 +++
+ tests/sentinel/audit/run-p7-control.ts             | 203 +++++
+ tests/sentinel/audit/run-runtime-probe.ts          | 207 +++++
+ tests/sentinel/audit/run-static-audit.ts           | 194 +++++
+ tests/sentinel/audit/sentinel-audit.test.ts        | 192 +++++
+ 11 files changed, 3026 insertions(+), 5 deletions(-)
+```
+
+**复跑 D708 gate（对前进后的 `origin/main`）**：
+
+```text
+── merge-writeset-gate (D708) 合并级写集对账 ──
+✅ 结论: pass — 提交文件集 ⊆ 声明写集（无夹带）
+   任务: D966 | 分支: docs/D966-sentinel-idle-repro
+   D# 推断来源: branch → D966
+   变更集: 11 个文件（merge-base ce231ff1）
+```
+
+**结论**：D966 真实变更 = **10 个声明文件 + 1 个 hook 运行期产物 `.claude/bypass.log`（D708 builtin 显式豁免）**。
+两个"多出来的"文件属 **main 侧 `0f709900`**，本卡既未修改也未删除。
+
+**另需登记（纪律项）**：本卡推送时 `origin/main` 已前进到 `0f709900`（本地 ref 为陈旧 `ce231ff1`）⇒
+**推送建立在陈旧基线上**（铁律 0-3 敏感面）。是否 rebase 由队长/CTO 裁定；
+按 merge-base 口径本卡变更集与门禁均无问题。
