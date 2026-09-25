@@ -1,10 +1,10 @@
 # Synova CTO 健康仪表盘（第③面）
 
-> 打开即真相。生成: 2026-09-25 15:06:52 | 数据源指纹: b8be244a6a47
+> 打开即真相。生成: 2026-09-26 04:18:17 | 数据源指纹: 240045e40806
 
 <!-- CTO-HEALTH:AUTO:START -->
 ## CTO 健康仪表盘（第③面）— 自动区
-> 生成: 2026-09-25 15:06:49 | 数据源: bypass.log / pre-commit-failures.log / AUDIT-FINDINGS-LEDGER
+> 生成: 2026-09-26 04:18:12 | 数据源: bypass.log / pre-commit-failures.log / AUDIT-FINDINGS-LEDGER
 
 **总体判定: 🔴 红 — 24h 内有绕过 (detected-bypass), 防线被击穿, 升级创始人**
 
@@ -12,13 +12,13 @@
 
 | 事件 | 全量 | 24h 内 |
 |------|:---:|:---:|
-| COMMITTED（正常提交） | 1406 | 84 |
-| BLOCKED（被门禁拒绝） | 164 | 6 |
+| COMMITTED（正常提交） | 1475 | 103 |
+| BLOCKED（被门禁拒绝） | 168 | 4 |
 | DEGRADED（降级放行） | 52 | 0 |
 | TIMEOUT（超时） | 3 | 0 |
-| **detected-bypass（真绕过）** | **21** | **2** |
+| **detected-bypass（真绕过）** | **22** | **3** |
 
-近 7 天事件: 2026-09-19:24 | 2026-09-20:28 | 2026-09-21:5 | 2026-09-22:19 | 2026-09-23:35 | 2026-09-24:66 | 2026-09-25:59
+近 7 天事件: 2026-09-20:28 | 2026-09-21:5 | 2026-09-22:19 | 2026-09-23:35 | 2026-09-24:66 | 2026-09-25:97 | 2026-09-26:36
 
 **绕过历史（全部）** — 集中在 07-26~28（旧 marker 时代），此后零绕过：
 - `2026-07-26T18:34:35Z` no-precommit-marker
@@ -41,11 +41,12 @@
 - `2026-09-17T16:50:51Z` head-mismatch marker=a94c42472c589588b9996e591c25c1f2b4c828de parent=50d8a3d9453a5bedf93ebe846be6f5e86221dbaa
 - `2026-09-17T16:50:51Z` head-mismatch marker=a94c42472c589588b9996e591c25c1f2b4c828de parent=50d8a3d9453a5bedf93ebe846be6f5e86221dbaa
 - `2026-09-24T20:21:11Z` head-mismatch marker=114e129e7ae2d9888d3c9a719391de8c39a756c1 parent=da6a42f4150393c225ff6303541cf9a4e55964b2
+- `2026-09-25T05:05:54Z` head-mismatch marker=0fd44b7689c1a8870a8bc7a4394e53120061bf4b parent=519edadf83642b517b415cce52927a02b120b865
 - `2026-09-25T00:56:43Z` head-mismatch marker=ce5b13b96c9b0b5b40ff065da7f1361bd6996a72 parent=2b38d1779aa31caf553ef481eb6f2e5479a3199c
 
 ### 二、门禁拒绝（pre-commit-failures.log）
 
-- 累计拒绝: **2** 次 | 最近: 2026-09-25
+- 累计拒绝: **3** 次 | 最近: 2026-09-25
 - 阈值: >10 次/24h → 门禁过激警告（健康审计项）
 
 ### 三、M 模式复发（AUDIT-FINDINGS-LEDGER §二）
@@ -67,6 +68,7 @@
 
 | 任务 | 状态 | spec | impl | audit | FIX |
 |------|------|:---:|:---:|:---:|------|
+| D1007 | impl_done | ✅ | ✅ | — |  |
 | D356 | audited | ✅ | ✅ | CONDITIONAL_PASS |  |
 | D379 | audited | — | ✅ | CONDITIONAL_PASS |  |
 | D383 | audited | — | ✅ | CONDITIONAL_PASS | D384 |
@@ -426,42 +428,50 @@
 | D941 | claimed | — | — | — |  |
 | D942 | impl_done | — | ✅ | — |  |
 | D943 | impl_done | — | ✅ | — |  |
+| D945 | impl_done | — | ✅ | — |  |
+| D954 | impl_done | — | ✅ | — |  |
 | D955 | impl_done | — | ✅ | — |  |
-| D956 | claimed | — | — | — |  |
-| D962 | spec_done | ✅ | — | — |  |
+| D956 | spec_done | ✅ | — | — |  |
+| D962 | impl_done | ✅ | ✅ | — |  |
 | D963 | impl_done | — | ✅ | — |  |
 | D964 | impl_done | — | ✅ | — |  |
+| D965 | impl_done | — | ✅ | — |  |
+| D966 | impl_done | — | ✅ | — |  |
+| D967 | claimed | — | — | — |  |
+| D968 | claimed | — | — | — |  |
 | CT-64 | claimed | — | — | — |  |
 
-> 📦 历史任务（已折叠）: **189** 个（git log 全项目派生，非 task-state 登记；12 个有审计报告）
+> 📦 历史任务（已折叠）: **197** 个（git log 全项目派生，非 task-state 登记；12 个有审计报告）
 > 这些是 task-state 未登记、但 git 里确有提交的全项目任务（D5~D398 早期 + Win/Codex 侧），状态按 impl 派生。
 
 ### 六、CI 状态（CT-41①, GitHub API）
 
 | Run | 结论 | 分支 | 标题 |
 |-----|------|------|------|
-| #4357 | 🟡 pending | feat/d962-2a-merge | chore: bypass COMMITTED 登记 (auto hook, D521) |
-| #4356 | 🟡 pending | feat/d963-charter-grid-pa | chore: bypass COMMITTED 登记 (auto hook, D521) |
-| #4355 | 🟡 pending | chore/cto-doc-slim-phase3 | feat(D964-P3): 同类文档唯一性并入 doc-registry-gate（改坏即红） |
-| #4354 | 🟡 pending | chore/cto-doc-slim-phase1 | feat(D964): merge-writeset-gate 内置豁免 audit-reports |
-| #4353 | 🟡 pending | chore/cto-doc-slim-phase1 | feat(D964-P1b): check-citations 加 archive/** 豁免根（归 |
-| #4352 | 🟡 pending | chore/cto-doc-slim-ledger | docs(D964): 台账第五批 + K3 审计请求（门禁语义变更）+ 审计报告 INDEX 指针 |
-| #4351 | 🟡 pending | chore/cto-doc-slim-phase4 | chore(D964-P4): 归档 50 份零引用文档 + 登记归档根 DOC-0119 |
-| #4350 | 🟡 pending | chore/cto-doc-slim-phase5 | feat(D964-P5): 日报加「文档:代码 比」指标（旁路不阻断） |
+| #4591 | 🟡 pending | chore/D1009-stage0-log-ar | 阶段0-②(D1009) 归档 3 个未入库门禁日志 — CI artifact(≥90d) + 日 |
+| #4590 | 🟡 pending | chore/D1017-windows-hang | docs(D1017): P0 立卡 — 必需检查 Control Tower Gate Tests |
+| #4589 | 🔴 failure | chore/D1015-checkstar-cal | docs(D1015): 阶段1-A check-* 计数口径定版（唯一来源 = origin/ma |
+| #4588 | 🟡 pending | chore/D1016-k3-input-repr | 阶段1-B(D1016) K3 最小输入集异机复跑验证 — 匿名 clone 实测 + 蓝图 §九  |
+| #4587 | 🟡 pending | chore/D1012-stage0-selfve | docs(stage0): 阶段0 独立自验报告（① 重装 hook ／ ② 日志归档 ／ ③ 积压 |
+| #4586 | 🟡 pending | chore/D1015-k3-input-repr | 阶段1-B(D1015) K3 最小输入集异机复跑验证 — 匿名 clone 实测 + 蓝图 §九  |
+| #4585 | 🔴 failure | chore/D1015-checkstar-cal | docs(D1015): 阶段1-A check-* 计数口径定版（唯一来源 = origin/ma |
+| #4584 | 🟡 pending | audit/k3-20260926-d979 | Audit/k3 20260926 d979 |
+
+> CI 红灯监测: main 红 3.3h（<24h 阈值），暂不告警（CT-39）
 
 ### 九、worktree 收尾（2026-08-21 必修）
 
-- 🔴 **123 个孤儿 worktree 有待收尾**（独有提交未合并进 main，可能是未收尾的交付）
-  - /Users/wane/SynovaAgent (分支 refs/heads/chore/cto-doc-slim-phase3-dup-rule, 7 个独有提交)
+- 🔴 **171 个孤儿 worktree 有待收尾**（独有提交未合并进 main，可能是未收尾的交付）
+  - /Users/wane/SynovaAgent (分支 refs/heads/chore/cto-doc-slim-phase1-writeset-exempt, 14 个独有提交)
+  - /private/tmp/synova-wt-cto-ci (分支 refs/heads/chore/D1014-ci-concurrency, 12 个独有提交)
+  - /private/tmp/synova-wt-cto-d1017 (分支 refs/heads/chore/D1017-windows-hang, 2 个独有提交)
+  - /private/tmp/synova-wt-cto-stage0 (分支 refs/heads/chore/D1010-stage0-report, 10 个独有提交)
+  - /private/tmp/synova-wt-squad-backlog (分支 refs/heads/chore/stage0-backlog-classification-20260926, 16 个独有提交)
+  - /private/tmp/synova-wt-squad-checkstar (分支 refs/heads/chore/D1015-checkstar-caliber, 4 个独有提交)
+  - /private/tmp/synova-wt-squad-ci (分支 refs/heads/chore/D1009-stage0-log-archive, 18 个独有提交)
+  - /private/tmp/synova-wt-squad-k3in (分支 refs/heads/chore/D1016-k3-input-repro, 4 个独有提交)
+  - /private/tmp/synova-wt-squad-verify (分支 refs/heads/chore/stage0-selfverify-20260926, 34 个独有提交)
   - /private/tmp/w850 (分支 refs/heads/docs/d850-authority, 2 个独有提交)
-  - /Users/wane/synova-wt-D508b (分支 refs/heads/fix/d505-wiring, 3 个独有提交)
-  - /Users/wane/synova-wt-D510 (分支 refs/heads/feat/d510-audit-remediation, 10 个独有提交)
-  - /Users/wane/synova-wt-D511 (分支 refs/heads/feat/d511-version-guard, 8 个独有提交)
-  - /Users/wane/synova-wt-D512 (分支 refs/heads/feat/d512-gs-refresh, 12 个独有提交)
-  - /Users/wane/synova-wt-D514 (分支 refs/heads/fix/d514-d510-audit-fix, 1 个独有提交)
-  - /Users/wane/synova-wt-D516 (分支 refs/heads/fix/d516-ci-strict, 2 个独有提交)
-  - /Users/wane/synova-wt-d751-new-sentinel-e2e (分支 refs/heads/session/d751-new-sentinel-e2e, 2 个独有提交)
-  - /Users/wane/synova-wt-d752-type-net-gate (分支 refs/heads/session/d752-type-net-gate, 2 个独有提交)
 
 > 处理: 确认独有提交是否该合并（真交付）→ worktree-manager finish 或 merge 进 main；过时则删除。
 

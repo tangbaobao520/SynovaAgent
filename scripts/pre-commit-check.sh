@@ -78,6 +78,11 @@ for _c in python3 python py; do  # PYBIN 三级探测（PLATFORM-CHECKLIST #1，
   if command -v "$_c" >/dev/null 2>&1 && "$_c" -c "import sys" >/dev/null 2>&1; then PYBIN="$_c"; break; fi
 done
 
+# task-30 P0（Windows 平台差异）: 本脚本多处把路径喂给**原生 Windows python**，而 Git-Bash 的
+#   POSIX 路径（/d/a/…、/tmp/…）打不开 ⇒ 旧版静默读到空集（G10/G12 在 Win 上静默降级）。
+#   统一经本函数转换（无 cygpath 平台原样返回 ⇒ macOS/Linux 行为不变）。
+_TO_PY() { command -v cygpath >/dev/null 2>&1 && { cygpath -w "$1" 2>/dev/null || printf '%s' "$1"; } || printf '%s' "$1"; }
+
 
 # ── #46 GATEKEEPER 前置: 当日 detected-bypass 硬拦（ACK=1 人工复核降级 D421）──
 BYPASS_LOG="$ROOT/.claude/bypass.log"
@@ -346,9 +351,9 @@ if [ -f "$CRITERIA_MAP" ] && [ -n "$BRIEF_FILE" ] && [ -f "$ROOT/$BRIEF_FILE" ];
   if [ -n "$CRITERIA" ]; then
     # task-26 2a②: 原 `… || true` 使 python 失败时 glob 集为空 ⇒ G10 静默走「无映射跳过」= fail-open。
     #   改为捕获 rc：非 0 ⇒ 显式降级（CI strict 转硬），不当作「无映射」。
-    CRITERIA_GLOBS=$("$PYBIN" -c "
-import json
-try: print('\n'.join(json.load(open('$CRITERIA_MAP')).get('criteria',{}).get('$CRITERIA',{}).get('glob',[])))
+    CRITERIA_GLOBS=$(CRITERIA_MAP_PY="$(_TO_PY "$CRITERIA_MAP")" CRITERIA_KEY="$CRITERIA" "$PYBIN" -c "
+import json, os
+try: print('\n'.join(json.load(open(os.environ['CRITERIA_MAP_PY'])).get('criteria',{}).get(os.environ['CRITERIA_KEY'],{}).get('glob',[])))
 except Exception: pass
 " 2>/dev/null); _CG_RC=$?
     if [ "$_CG_RC" -ne 0 ]; then
@@ -443,16 +448,18 @@ if [ "${SYNO_CI:-0}" = "1" ]; then
     soft_check "G12: 无可用 python — fail-closed（不静默当作范围全通过，D328 三态）" "fail-closed"
   else
   SCOPE_TSV=$(mktemp); EXCL_TSV=$(mktemp)
+  # （路径→python 的转换统一用脚本首部的 _TO_PY，见上）
+  SCOPE_TSV_PY="$(_TO_PY "$SCOPE_TSV")"; EXCL_TSV_PY="$(_TO_PY "$EXCL_TSV")"
   for B in $("$PYBIN" -c "
-import datetime,glob
+import datetime,glob,os
 t=datetime.date.today()
-print('\n'.join(f for k in (-1,0,1) for f in glob.glob('.claude/task-briefs/%s-*.md' % (t+datetime.timedelta(days=k)).isoformat())))
+print('\n'.join(f.replace(os.sep,'/') for k in (-1,0,1) for f in glob.glob('.claude/task-briefs/%s-*.md' % (t+datetime.timedelta(days=k)).isoformat())))
 " 2>/dev/null); do
     [ -f "$B" ] || continue
     "$PYBIN" "$ROOT/scripts/control-tower/brief_parser.py" --q2-include "$B" 2>/dev/null | sed "s|^|$(basename "$B")\\t|" >> "$SCOPE_TSV" || true
     "$PYBIN" "$ROOT/scripts/control-tower/brief_parser.py" --q2-exclude "$B" 2>/dev/null | sed "s|^|$(basename "$B")\\t|" >> "$EXCL_TSV" || true
   done
-  SCOPE_VIOLATION=$(STAGED_ALL="$STAGED_ALL" SCOPE_TSV="$SCOPE_TSV" EXCL_TSV="$EXCL_TSV" "$PYBIN" -c "
+  SCOPE_VIOLATION=$(STAGED_ALL="$STAGED_ALL" SCOPE_TSV="$SCOPE_TSV_PY" EXCL_TSV="$EXCL_TSV_PY" "$PYBIN" -c "
 import os, re, sys
 def load(p):
     out = []
@@ -540,7 +547,11 @@ print('\n'.join(viol))
   if [ ! -f "$ROOT/scripts/control-tower/ct-test-gate.sh" ]; then
     soft_check "CT-40 控制塔脚本测试配对: 门禁脚本缺失" "1"
   else
-    _CT40_OUT="$(SYNO_CT_DIFF_BASE="${SYNO_DIFF_BASE:-origin/main}" bash "$ROOT/scripts/control-tower/ct-test-gate.sh" 2>&1)"; _CT40_RC=$?
+    # task-30 P0：diff 基**先验证存在**再传（Gate Integrity 的干净副本无 origin/main ⇒
+    #   原写法使门禁 rc=2 degraded ⇒ baseline 场景假红）。基不存在 ⇒ 空值 ⇒ 门禁回落暂存区（空 ⇒ SYNC-OK 跳过）。
+    _CT40_BASE=""
+    if [ -n "${SYNO_DIFF_BASE:-}" ] && git rev-parse --verify -q "${SYNO_DIFF_BASE}" >/dev/null 2>&1; then _CT40_BASE="$SYNO_DIFF_BASE"; fi
+    _CT40_OUT="$(SYNO_CT_DIFF_BASE="$_CT40_BASE" bash "$ROOT/scripts/control-tower/ct-test-gate.sh" 2>&1)"; _CT40_RC=$?
     if [ "$_CT40_RC" -eq 0 ]; then
       soft_pass "CT-40 控制塔脚本测试配对: $(printf '%s' "$_CT40_OUT" | head -1)"
     else
