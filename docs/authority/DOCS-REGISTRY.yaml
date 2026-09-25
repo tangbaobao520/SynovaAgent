@@ -280,7 +280,7 @@ documents:
     status: active
     owner: DSH
 
-  # ---- D1012 登记清零（判定面 v1：authority + coordination/CTO-* + 号段水位 + evidence）----
+  # ---- D973 登记清零（判定面 v1：authority + coordination/CTO-* + 号段水位 + evidence）----
   - id: DOC-0119
     type: governance
     path: docs/authority/AUTHORITY-UPGRADE-NOTICE-20260906.md
@@ -435,6 +435,6 @@ documents:
 
   - id: DOC-0149
     type: status
-    path: docs/synova/product-lines/evidence/D1012-docs-registry-20260925.md
+    path: docs/synova/product-lines/evidence/D973-docs-registry-20260925.md
     status: active
     owner: mac

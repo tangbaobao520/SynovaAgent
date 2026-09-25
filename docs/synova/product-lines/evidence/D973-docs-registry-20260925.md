@@ -1,7 +1,7 @@
-# D1012 交付回执 — 文档登记清零 + 登记对账探针
+# D973 交付回执 — 文档登记清零 + 登记对账探针
 
-> 卡片: `task-state/D1012.json` | 执行: coder-b（并行 CTO 小队） | 日期: 2026-09-25
-> 分支: `docs/d1012-docs-registry`（base = `origin/main` `057d8ca0`）
+> 卡片: `task-state/D973.json` | 执行: coder-b（并行 CTO 小队） | 日期: 2026-09-25
+> 分支: `docs/d973-docs-registry`（base = `origin/main` `057d8ca0`）
 > 结论: **可提请独立审计**（本件不写「通过」；通过与否归 CTO 收件闸 + K3 终审）
 
 ## 〇、收尾三件
@@ -167,12 +167,111 @@ PARSE OK documents = 69                              ← 修后：合法（js-ya
 ```
 $ git rev-parse HEAD | cut -c1-12
 97c7693dbc58
-$ git ls-remote --heads origin docs/d1012-docs-registry | cut -c1-12
+$ git ls-remote --heads origin docs/d973-docs-registry | cut -c1-12
 97c7693dbc58
 $ git log -3 --format='%h %s'
 97c7693d chore: bypass COMMITTED 登记 (auto hook, D521)     ← post-commit hook 影子登记
-<实体>   docs(D1012): 文档登记清零（口径收窄 + 匹配语义升级）+ 登记对账探针
+<实体>   docs(D973): 文档登记清零（口径收窄 + 匹配语义升级）+ 登记对账探针
 057d8ca0 feat(D964-P1b): check-citations 加 archive/** 豁免根（归档断链不误拦） (#771)   ← base
 ```
 
 本地 HEAD 与远端 **12 位一致**（`97c7693dbc58`）。
+
+---
+
+## 六、D973 改号 + verifier 退回修复（2026-09-25 二轮）
+
+### 6.1 改号（CTO 裁决：D1000–D1099 属 Win 侧号段）
+
+| 项 | 旧 | 新 |
+|---|---|---|
+| 卡号 | D1012 | **D973** |
+| 分支 | `docs/d1012-docs-registry` | `docs/d973-docs-registry` |
+| task-state | `task-state/D1012.json` | `task-state/D973.json` |
+| brief | `.claude/task-briefs/2026-09-25-D1012-docs-registry.md` | `…-D973-docs-registry.md` |
+| Note | `memory/notes/proposed/2026-09-25-d1012-docs-registry-probe.md` | `…-d973-docs-registry-probe.md` |
+| 本回执 | `…/evidence/D1012-docs-registry-20260925.md` | `…/evidence/D973-docs-registry-20260925.md` |
+
+做法：`git branch -m` + `git mv`（4 文件）+ 内容全量替换 `D1012`→`D973` / `d1012`→`d973`
+（含 `DOCS-REGISTRY.yaml` 内 DOC-0149 的 `path` 与注释、探针/测试注释、Note 的「任务:」字段）。
+**无 force push**；旧远端分支名按队长指令删除（取号器拒绝面匹配分支名里的 `d<num>`，留旧名仍撞号）。
+残留检查：`git grep -c 'D1012\|d1012'` → **0**。
+
+### 6.2 verifier 退回修复（方案①）——`--list` 退出码语义
+
+**退回成立**（我复核确认）：探针原 `:174-176`
+
+```bash
+if [ "${LIST_ONLY}" -eq 1 ]; then
+  printf '%s\n' "$UNREG_LIST"
+  exit 0            # ← 无条件 exit 0，与 $UNREG 无关
+fi
+```
+
+同一仓库状态（未登记 2）下：不带 `--list` → `exit 1`（正确报 DRIFT）；带 `--list` → **`exit 0`（有未登记却报「一致」）**。
+契约头原写 `0 = 未登记 0（一致）／1 = DRIFT／2 = fail-closed`，**无 `--list` 例外**；而 `--list` 自述「脚本可消费」
+⇒ 消费方读 `rc` 会误判。测试还把该错误行为**固化**（原断言「有未登记 → exit 0」）⇒ CI 永远绿。
+
+**修复**：`--list` 只改**输出形态**，不改**退出码语义** —— 按 `${UNREG}` 返回 0/1。
+
+```
+if [ "${LIST_ONLY}" -eq 1 ]; then
+  printf '%s\n' "$UNREG_LIST"
+  if [ "${UNREG}" -gt 0 ]; then exit 1; fi
+  exit 0
+fi
+```
+
+契约头同步写明：「**--list 与不带 --list 完全同码**（无例外分支）」+ `@exit-exception` 仅 `--help`。
+
+**测试同步**（不再固化错误）：原 ⑧「有未登记 → exit 0」改为「有未登记 → **exit 1**（与不带同码）」，
+并新增 ⑧b（无未登记 → exit 0 且清单为空）与 ⑧c（同一状态下两者**必须同码**的回归守卫）。
+测试 **22 → 25 项**，全绿。
+
+### 6.3 「无条件 exit 0」同类自查（请你要求）
+
+逐条核查探针内全部 `exit` 语句：
+
+| 行 | 语句 | 判定 |
+|---|---|---|
+| `-h/--help` | `exit 0` | **约定惯例**（只打印用法，不作「一致」声明）⇒ 已在契约头 `@exit-exception` 显式登记 |
+| 未知参数 | `exit 2` | fail-closed ✓ |
+| 无 Python / 无仓库根 / 台账缺失 / 子进程无输出 / ERR= / 计数非数字 / 零面 | `exit 2` | fail-closed ✓ |
+| `--list`（原 :176） | `exit 0` | ❌ **唯一缺陷**，已修 |
+| DRIFT 分支 | `exit 1` | 条件化 ✓ |
+| 一致分支 | `exit 0` | 条件化 ✓ |
+
+⇒ **同类仅此 1 处**，无其他「无条件 exit 0」。
+
+### 6.4 D708 夹带修复（本批系统性缺口）
+
+`task-state/D973.json` 的 `write_set` 补入本卡自产治理产物
+`docs/synova/product-lines/evidence/D973-docs-registry-20260925.md`
+（原缺失 ⇒ D708 判「写集外文件夹带」⇒ `quality` 红 ⇒ `test` 被 skip ⇒ 必需 Vitest 永不报告）。
+brief 的 Q2「做什么」清单同步补入该文件（G12 范围一致性）。
+write_set 现 7 项：台账 / 探针 / 配对测试 / Note / brief / task-state 自身 / 本回执。
+
+### 6.5 二轮实测（新分支上复跑）
+
+```
+$ bash scripts/control-tower/probes/docs-registry-probe.sh
+  面内文档数 = 42
+  已登记数   = 42
+  未登记数   = 0
+✅ 登记一致（判定面内 42 份文档全部已登记）        exit=0
+
+$ bash tests/control-tower/docs-registry-probe.test.sh
+  ✅ ⑧ --list 有未登记 → exit 1（与不带 --list 同码）（= 1）
+  ✅ ⑧b --list 无未登记 → exit 0（= 0）／⑧b 清单为空（= ）
+  ✅ ⑧c --list 与不带 --list 同码（有未登记 = 1）（= 1）
+✅ 全部通过: 25 项（25 通过 / 0 失败）             exit=0
+```
+
+面内 41 → 42 的差分说明：本回执自身在首轮提交前为 **untracked**（`git ls-files` 不计），
+首轮提交后转为 tracked ⇒ 进入判定面并已在台账登记（DOC-0149）。
+
+### 6.6 更正：CI 硬红归因（队长已实测，我采纳）
+
+我首轮登记的担忧「新增未登记 `.md` 会让 CI 硬红」**已被队长实测否定**：PR #791 的 `Iron laws check` 通过，
+其中 `✅ D2 登记门禁: 检查 0 个文档，0 个未登记`；**真正的红是 step 10 的 D708 夹带**（即 6.4）。
+⇒ 本卡**未**为登记门禁做任何改动；`号段水位.md` 的登记（DOC-0146）按队长指示保留。

@@ -34,7 +34,7 @@ bad() { FAIL=$((FAIL + 1)); echo "  ❌ $1"; }
 assert_eq() { if [ "$2" = "$3" ]; then ok "$1（= $2）"; else bad "$1: 期望 '$3'，实际 '$2'"; fi; }
 assert_contains() { case "$2" in *"$3"*) ok "$1" ;; *) bad "$1: 输出未包含 '$3'" ;; esac; }
 
-SB="$(mktemp -d "${TMPDIR:-/tmp}/d1012-dr.XXXXXX")" || { echo "❌ mktemp 失败"; exit 1; }
+SB="$(mktemp -d "${TMPDIR:-/tmp}/d973-dr.XXXXXX")" || { echo "❌ mktemp 失败"; exit 1; }
 trap 'rm -rf "$SB"' EXIT
 
 mk_repo() { # mk_repo <目录> —— 建沙箱 git 仓
@@ -84,7 +84,7 @@ RC7=$?
 assert_eq "⑦ 目录条目覆盖其下文档 → exit 0" "$RC7" "0"
 
 # ── ⑦b 边界：仅正文提及 basename ≠ 已登记（反「子串误判」）──
-# 依据 D1012 实证: 子串匹配会让 `evidence/README.md` 因 D:/ 遗留条目里的 "README.md" 子串被误判已登记
+# 依据 D973 实证: 子串匹配会让 `evidence/README.md` 因 D:/ 遗留条目里的 "README.md" 子串被误判已登记
 printf 'documents:\n  - id: DOC-0001\n    type: prd\n    path: docs/authority/PRD.md\n    status: draft\n    owner: DSH\n  - id: DOC-0002\n    type: status\n    path: docs/synova/coordination/CTO-看板-自动.md\n    status: active\n    owner: mac\n  # 正文提及 D999-未登记.md 但未声明其 path\n' > "$R1/docs/authority/DOCS-REGISTRY.yaml"
 OUT7B="$(bash "$PROBE" --repo-root "$R1" --registry "$R1/docs/authority/DOCS-REGISTRY.yaml" 2>&1)"
 RC7B=$?
@@ -107,16 +107,29 @@ OUT9="$(bash "$PROBE" --repo-root "$R6" --registry "$R6/docs/authority/DOCS-REGI
 RC9=$?
 assert_eq "⑨ 面板改到 audit-reports 后 exit 2（EXCLUDE 使其为零面）" "$RC9" "2"
 
-# ── ⑧ 边界：--list 只打印清单 ──
+# ── ⑧ 边界：--list 只改输出形态，**退出码语义与不带 --list 完全一致**（D973 退修）──
 add_doc "$R6" "docs/authority/未登记.md"
 OUT8="$(bash "$PROBE" --repo-root "$R6" --registry "$R6/docs/authority/DOCS-REGISTRY.yaml" --list 2>&1)"
 RC8=$?
-assert_eq "⑧ --list exit 0" "$RC8" "0"
+assert_eq "⑧ --list 有未登记 → exit 1（与不带 --list 同码）" "$RC8" "1"
 assert_contains "⑧ --list 打印未登记路径" "$OUT8" "docs/authority/未登记.md"
 case "$OUT8" in
   *"判定面内"*) bad "⑧ --list 不应打印报告体" ;;
   *) ok "⑧ --list 未打印报告体" ;;
 esac
+# ⑧b --list 在无未登记时 → exit 0 且清单为空
+R8B="$SB/r8b"
+mk_repo "$R8B"
+add_doc "$R8B" "docs/authority/PRD.md"
+printf 'documents:\n  - id: DOC-0001\n    type: prd\n    path: docs/authority/PRD.md\n    status: draft\n    owner: DSH\n' > "$R8B/docs/authority/DOCS-REGISTRY.yaml"
+OUT8B="$(bash "$PROBE" --repo-root "$R8B" --registry "$R8B/docs/authority/DOCS-REGISTRY.yaml" --list 2>&1)"
+RC8B=$?
+assert_eq "⑧b --list 无未登记 → exit 0" "$RC8B" "0"
+assert_eq "⑧b 清单为空" "$OUT8B" ""
+# ⑧c 回归守卫：同一状态下 --list 与不带 --list 必须同码（防「--list 例外」复发）
+OUT8N="$(bash "$PROBE" --repo-root "$R6" --registry "$R6/docs/authority/DOCS-REGISTRY.yaml" 2>&1)"
+RC8N=$?
+assert_eq "⑧c --list 与不带 --list 同码（有未登记 = 1）" "$RC8N" "$RC8"
 
 # ── ② 降级：台账缺失 → exit 2 ──
 OUT2="$(bash "$PROBE" --repo-root "$R1" --registry "$SB/does-not-exist.yaml" 2>&1)"

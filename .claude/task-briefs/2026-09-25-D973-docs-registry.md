@@ -1,7 +1,7 @@
-# Task Brief: D1012 文档登记清零 + 登记对账探针
+# Task Brief: D973 文档登记清零 + 登记对账探针
 
-> 生成: 2026-09-25 | 分支: docs/d1012-docs-registry | base: origin/main `057d8ca0`
-> 卡片: task-state/D1012.json | 执行: coder-b（并行 CTO 小队）
+> 生成: 2026-09-25 | 分支: docs/d973-docs-registry | base: origin/main `057d8ca0`
+> 卡片: task-state/D973.json | 执行: coder-b（并行 CTO 小队）
 > #CRITERIA: A
 
 ## Q0: 定位
@@ -45,17 +45,18 @@ tests/control-tower/docs-registry-probe.test.sh          — ❌ 新建（U7/CT-
 - docs/authority/DOCS-REGISTRY.yaml（登记清零 + 修 YAML 非法转义）
 - scripts/control-tower/probes/docs-registry-probe.sh（新建；三态对账探针）
 - tests/control-tower/docs-registry-probe.test.sh（新建；配对测试）
-- memory/notes/proposed/2026-09-25-d1012-docs-registry-probe.md（新建；决策 Note）
-- .claude/task-briefs/2026-09-25-D1012-docs-registry.md（新建）
-- task-state/D1012.json（新建）
+- memory/notes/proposed/2026-09-25-d973-docs-registry-probe.md（新建；决策 Note）
+- .claude/task-briefs/2026-09-25-D973-docs-registry.md（新建）
+- task-state/D973.json（新建）
+- docs/synova/product-lines/evidence/D973-docs-registry-20260925.md（新建；M6 交付回执 —— 必须列入写集，否则 D708 判夹带）
 
 **不做什么：**
 - 不改 scripts/doc-system/doc-registry-gate.sh （门禁本体不在本卡写集）
 - 不改 scripts/control-tower/daily-cto-board.sh （D1008 单写者，已排他）
-- 不改 scripts/control-tower/probes/task-id-watermark-probe.sh （D1013 写集）
-- 不改 tests/control-tower/check-ownership.test.sh （D1011 写集）
+- 不改 scripts/control-tower/probes/task-id-watermark-probe.sh （D974 写集）
+- 不改 tests/control-tower/check-ownership.test.sh （D972 写集）
 - 不改 scripts/audit/K3-*.sh （K3 域，红线）
-- 不改 docs/synova/coordination/号段水位.md （D1013 写集）
+- 不改 docs/synova/coordination/号段水位.md （D974 写集）
 
 ## Q3: 验收
 
@@ -67,6 +68,6 @@ tests/control-tower/docs-registry-probe.test.sh          — ❌ 新建（U7/CT-
 
 ## Done 标准
 - [x] verify: bash scripts/control-tower/probes/docs-registry-probe.sh （判定面内未登记 = 0，exit 0）
-- [x] verify: bash tests/control-tower/docs-registry-probe.test.sh （22 项断言全绿 exit 0）
+- [x] verify: bash tests/control-tower/docs-registry-probe.test.sh （25 项断言全绿 exit 0；含 ⑧b/⑧c --list 同码回归守卫）
 - [x] verify: node -e "const fs=require('fs'),y=require('js-yaml');y.load(fs.readFileSync('docs/authority/DOCS-REGISTRY.yaml','utf8'))" （YAML 合法 exit 0）
 - [x] verify: SYNO_TEST_ARM=1 SYNO_CT_STAGED="scripts/control-tower/probes/docs-registry-probe.sh" bash scripts/control-tower/ct-test-gate.sh （SYNC-OK exit 0）

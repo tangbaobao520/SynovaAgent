@@ -1,0 +1,25 @@
+{
+  "task_id": "D973",
+  "title": "文档登记清零（口径先定义）+ 登记对账探针（三态 fail-closed）",
+  "status": "in_progress",
+  "risk": "medium",
+  "domain": "mac",
+  "owner": "mac-cto",
+  "executor": "并行 CTO 小队（DSH session，coder-b 编码）",
+  "milestone": "M0 治理",
+  "depends_on": [],
+  "write_set": [
+    "docs/authority/DOCS-REGISTRY.yaml",
+    "scripts/control-tower/probes/docs-registry-probe.sh",
+    "tests/control-tower/docs-registry-probe.test.sh",
+    "memory/notes/proposed/2026-09-25-d973-docs-registry-probe.md",
+    ".claude/task-briefs/2026-09-25-D973-docs-registry.md",
+    "task-state/D973.json",
+    "docs/synova/product-lines/evidence/D973-docs-registry-20260925.md"
+  ],
+  "papers": [],
+  "updated_at": "2026-09-25",
+  "updated_by": "coder-b",
+  "note": "【D973 改号】原 D1012 号落在 CTO 裁决划给 Win 侧的 D1000–D1099 段 ⇒ 按裁决改号 D973（Mac D9xx 段），分支 docs/d1012-docs-registry → docs/d973-docs-registry；无 force push，走 branch -m + git mv + 内容全改。\n【D973 退修 · verifier 方案①】探针 :174-176 原 `--list` 无条件 exit 0 ⇒ 有未登记时消费方看 rc 会误判「一致」（契约头无 --list 例外）；已改为按 $UNREG 返回 0/1，并在契约头显式写「--list 与不带 --list 完全同码，无例外分支」+ @exit-exception 仅 --help。测试原断言把错误行为固化（「有未登记 → exit 0」）⇒ 同步改断言 + 新增 ⑧b（无未登记 → 0，清单为空）与 ⑧c（同状态同码回归守卫）；测试 22 → 25 项。\n【无条件 exit 0 自查】全探针 exit 语句逐条核查：仅 1 处缺陷（:176 --list），已修；--help 退 0 属约定惯例（只打印用法，不作「一致」声明，已在契约头 @exit-exception 登记）；其余 exit 2（fail-closed）与 exit 1（DRIFT）/exit 0（一致）均条件化。\n【D708 夹带修复】write_set 补入本卡自产治理产物 docs/synova/product-lines/evidence/D973-docs-registry-20260925.md（原缺失 ⇒ D708 判夹带 ⇒ quality 红 ⇒ test 被 skip ⇒ 必需 Vitest 永不报告）。\n判定面 v1 = docs/authority/**（除 chronicle-drafts）+ docs/synova/coordination/CTO-*.md + 号段水位.md + docs/synova/product-lines/evidence/**；匹配语义由整文本子串升级为解析真实 path 值（精确/目录前缀/通配）——首轮改坏即红实证子串匹配恒绿（evidence/README.md 因 D:/ 遗留条目的 README.md 子串被误判已登记）。登记 31 条（DOC-0119..DOC-0149），面内 42 份未登记 = 0。另修台账 YAML 非法转义（:118 E:\\ClawOrg-BOX 在双引号内 unknown escape，ruby/js-yaml 双解析器一致报错）。登记门禁扫描面实测更正 = untracked 新增 ∪ staged 新增（doc-registry-gate.sh:41-43），非「仅 untracked」。本机无 PyYAML ⇒ 卡面判据⑤ 改用 node+js-yaml 等价解析器，偏差已登记。",
+  "k3_required": []
+}

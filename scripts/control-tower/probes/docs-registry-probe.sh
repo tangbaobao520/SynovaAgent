@@ -1,6 +1,6 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# docs-registry-probe.sh — D1012 文档登记对账探针（三条对账机制之一）
+# docs-registry-probe.sh — D973 文档登记对账探针（三条对账机制之一）
 #
 # 目的: 把「registry 声明」vs「实际文档」的差异变成**会自己报警的物理信号**。
 #       背景: `scripts/doc-system/doc-registry-gate.sh` 只在提交路径上检查
@@ -11,16 +11,19 @@
 #   @input  — --registry <file>   台账（默认 <repo>/docs/authority/DOCS-REGISTRY.yaml）
 #             --repo-root <dir>   被扫描仓库根（默认 CWD 的 git toplevel）
 #             --prefixes <a,b,c>  覆盖判定面（默认见下；逗号分隔的前缀匹配）
-#             --list              只打印未登记清单（脚本可消费）
+#             --list              只打印未登记清单（脚本可消费）；**不改退出码语义**——
+#                                 与不带 --list 同码（D973 退修，见下 @exit）
 #   @output — stdout: 面内文档数 / 已登记数 / **未登记清单**（逐条点名）
-#   @exit   — 0 = 未登记 0（一致）
-#             1 = DRIFT（存在未登记文档 ⇒ 台账落后于现实）
-#             2 = fail-closed（台账缺失 / git 不可用 / 面内零文档 / 无 Python）
+#             --list 时 stdout 仅清单行（消费方读 stdout + rc）
+#   @exit   — 0 = 未登记 0（一致）／1 = DRIFT（存在未登记文档 ⇒ 台账落后于现实）
+#             ／2 = fail-closed（台账缺失 / git 不可用 / 面内零文档 / 无 Python）
+#             **--list 与不带 --list 完全同码**（无例外分支）
+#   @exit-exception — 仅 `--help` 退出 0（打印用法，不作「一致」声明）
 #   @degraded — 无 Python → 显式 fail-closed exit 2（不静默当作通过）
 #   @seam   — SYNO_DOCS_REGISTRY_EXCLUDE 覆盖排除正则（默认与登记门禁同款）
 #   @independent — 不依赖 daily-cto-board.sh，可单独复跑
 #
-# 判定面 v1（D1012 定义，D333 参考系见交付回执）:
+# 判定面 v1（D973 定义，D333 参考系见交付回执）:
 #   1. docs/authority/                                  治理锚点核心（台账自述的权威层）
 #   2. docs/synova/coordination/CTO-                    控制塔/CTO 产出面
 #   3. docs/synova/coordination/号段水位.md             号段水位锚点（D1013）
@@ -98,7 +101,7 @@ except OSError as exc:                                   # 探测型
 
 # 台账声明面：**解析真实 path 值**，不用「整文本子串匹配」。
 # 为什么不用子串: 子串匹配会把「注释/正文/别人条目里出现过该名字」误判为已登记
-#   （D1012 实证: `docs/synova/product-lines/evidence/README.md` 因 D:/ 遗留条目里的
+#   （D973 实证: `docs/synova/product-lines/evidence/README.md` 因 D:/ 遗留条目里的
 #   `README.md` 子串被误判为已登记；同时把某条 path 改坏也检不出来 ⇒ 探针失效）。
 # 声明语义三种: 精确路径 / 目录前缀（尾 `/`）/ 通配（含 `*`，按 basename 匹配，如 WORKLOG-*.md）
 declared = [m.strip().strip('"').strip("'") for m in re.findall(r'^\s+path:\s*(.+?)\s*$', reg_text, re.M)]
@@ -172,7 +175,13 @@ if [ "${FACE}" -eq 0 ]; then
 fi
 
 if [ "${LIST_ONLY}" -eq 1 ]; then
+  # D973 退修（verifier 方案①）: --list 只改**输出形态**，不改**退出码语义** ——
+  #   与不带 --list 完全同码（0 一致 / 1 DRIFT / 2 fail-closed）。
+  #   原实现无条件 exit 0 ⇒ 有未登记时消费方看 rc 会误判为「一致」（契约头 :9-11 无 --list 例外）。
   printf '%s\n' "$UNREG_LIST"
+  if [ "${UNREG}" -gt 0 ]; then
+    exit 1
+  fi
   exit 0
 fi
 
