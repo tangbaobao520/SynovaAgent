@@ -2,11 +2,17 @@
   "task_id": "D956",
   "title": "CI 失败消息观测性（失败行入窗+截断自报+三态）",
   "status": "in_progress",
+<<<<<<< HEAD
   "write_set_comment": "3 文件 = git diff origin/main...fix/d956-ci-failmsg --name-status（1A+2M）；task-25【1】补声明解锁 G12",
   "write_set": {
     "added": [
       ".claude/task-briefs/2026-09-25-D956-ci-failmsg.md",
       "task-state/D956.json",
+=======
+  "write_set_comment": "3 文件 = git diff origin/main...origin/fix/d956-ci-failmsg --name-status（1A+2M）；D962-N 补声明（此前无本文件——缺失被译成通过的同族风险）",
+  "write_set": {
+    "added": [
+>>>>>>> d99e048c (chore(d962): n-declarations 75 files writeset caliber tables d956 source)
       "tests/control-tower/d956-failmsg.test.sh"
     ],
     "deleted": [],
@@ -16,10 +22,17 @@
     ]
   },
   "branches": {
+<<<<<<< HEAD
     "impl": "fix/d956-ci-failmsg @ 0844d7c5"
   },
   "spec": {
     "path": ".claude/task-briefs/2026-09-25-D956-ci-failmsg.md"
+=======
+    "impl": "fix/d956-ci-failmsg @ 36b960e4"
+  },
+  "spec": {
+    "path": "(卡内联——CTO D956 开工令)"
+>>>>>>> d99e048c (chore(d962): n-declarations 75 files writeset caliber tables d956 source)
   },
   "impl": null,
   "audit": null
