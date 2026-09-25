@@ -8826,5 +8826,14 @@
    "fix/d584-dsh-test-debt",
    "fix/d514-d510-audit-fix"
   ]
+ },
+ "recycle_preconditions": {
+  "scope": "unique_pids==0 的行（本基线 95 行；见 rows[].unique_pids）",
+  "this_delivery_authorizes_deletion": false,
+  "preconditions": [
+   "① 逐个核 PR 合并状态（open/merged/closed-unmerged/无 PR），unique_pids=0 仅为必要条件",
+   "② 单独批次 + 队长批准 + Mac-CTO 批准（分类完成 ≠ 清理授权）",
+   "③ 回收动作自带改坏即红证据（删除后会丢交付的反例 + 删除后不丢交付的证据链）"
+  ]
  }
 }
