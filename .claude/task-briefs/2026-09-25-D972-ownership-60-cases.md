@@ -1,7 +1,7 @@
-# Task Brief: D1011 ownership 测试 58→60 用例（缩卡）+ CODEOWNERS BOM 核查
+# Task Brief: D972 ownership 测试 58→60 用例（缩卡）+ CODEOWNERS BOM 核查
 
-> 生成: 2026-09-25 | 分支: fix/d1011-ownership-60-cases | base: origin/main `057d8ca0`
-> 卡片: task-state/D1011.json | 执行: coder-b（并行 CTO 小队）
+> 生成: 2026-09-25 | 分支: fix/d972-ownership-60-cases | base: origin/main `057d8ca0`
+> 卡片: task-state/D972.json | 执行: coder-b（并行 CTO 小队）
 > #CRITERIA: A
 
 ## Q0: 定位
@@ -36,7 +36,7 @@ scripts/control-tower/check-ownership.py           — ✅ 工具本体存在（
 - rule: "补 2 项后用例数恰为 60"
   verify: bash tests/control-tower/check-ownership.test.sh
 - rule: "新增断言须为判别性夹具（删规则即红），非静态判据"
-  verify: grep -c 'D1011' tests/control-tower/check-ownership.test.sh
+  verify: grep -c 'D972' tests/control-tower/check-ownership.test.sh
 - rule: "CODEOWNERS 无 BOM"
   verify: head -c 3 .github/CODEOWNERS | od -An -tx1
 
@@ -44,8 +44,9 @@ scripts/control-tower/check-ownership.py           — ✅ 工具本体存在（
 
 **做什么：**
 - tests/control-tower/check-ownership.test.sh（增 §5c：`.dsh/**` → mac 正例 + 删规则必红，共 2 项；58→60）
-- .claude/task-briefs/2026-09-25-D1011-ownership-60-cases.md（新建）
-- task-state/D1011.json（新建）
+- .claude/task-briefs/2026-09-25-D972-ownership-60-cases.md（新建）
+- task-state/D972.json（新建）
+- docs/synova/product-lines/evidence/D972-ownership-60-20260925.md（新建；M6 交付回执 —— 必须列入写集，否则 D708 判夹带）
 
 **不做什么：**
 - 不改 .github/CODEOWNERS （实测首 3 字节非 ef bb bf，drift 断言已通过，无需重生成）
@@ -68,4 +69,4 @@ scripts/control-tower/check-ownership.py           — ✅ 工具本体存在（
 - [x] verify: bash tests/control-tower/check-ownership.test.sh （输出 `✅ 全部通过: 60 项` exit 0）
 - [x] verify: SYNO_TEST_ARM=1 SYNO_CT_STAGED="scripts/control-tower/check-ownership.py" bash scripts/control-tower/ct-test-gate.sh （SYNC-OK exit 0）
 - [x] verify: head -c 3 .github/CODEOWNERS | od -An -tx1 （非 ef bb bf）
-- [x] verify: grep -c 'D1011' tests/control-tower/check-ownership.test.sh （新增判别性夹具存在）
+- [x] verify: grep -c 'D972' tests/control-tower/check-ownership.test.sh （新增判别性夹具存在）
