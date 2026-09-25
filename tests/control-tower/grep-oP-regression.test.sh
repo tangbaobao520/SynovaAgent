@@ -77,18 +77,8 @@ eqs() {
 }
 
 # ── 类 1: \s / \S —— PCRE 无 ERE 等价物，必须转 POSIX 类 ──
-eq '\S→[^[:space:]] (Q0 模块清单)' "scripts/check-brief-vs-code.sh" \
-   'src/(expert|sentinel|knowledge|theory|skills)/[^[:space:]]+|extensions/[^[:space:]]+' \
-   '扫描 src/expert/foo.ts 与 extensions/sentinels/bar.json 完毕' \
-   'src/expert/foo.ts
-extensions/sentinels/bar.json'
-
-eq '\s→[[:space:]] (Done verify 命令)' "scripts/check-brief-vs-code.sh" \
-   'grep[[:space:]]+.*[^[:space:]]+|bash[[:space:]]+.*[^[:space:]]+|npx[[:space:]]+.*[^[:space:]]+' \
-   '- verify: bash scripts/pre-commit-check.sh 预期全过' \
-   'bash scripts/pre-commit-check.sh 预期全过'
-eq '\s→[[:space:]] 多空格不误伤' "scripts/check-brief-vs-code.sh" \
-   'grep[[:space:]]+.*[^[:space:]]+' '   grep   -rnE   foo   ' 'grep   -rnE   foo'
+# (D962-B2: 指向根目录 check-brief-vs-code.sh / check-tech-debt.sh 的条目随脚本退役移除，
+#  各类覆盖由 file-driven / checker-review / pre-doc-audit / pre-commit 存活条目保持)
 
 eq '\s→[[:space:]] (tags 字段体)' "scripts/check-file-driven.sh" \
    '"tags"[[:space:]]*:[[:space:]]*\[[^]]*\]' \
@@ -133,39 +123,21 @@ eqs '\K→grep -oE + sed (brief id)' "scripts/pre-commit-check.sh" \
    '2026-09-12-D664-x' 's|^\.claude/task-briefs/||'
 
 # ── 类 3: \d —— ERE 用 [0-9] / {n} 直译 ──
-eq '\d→[0-9] (check-tech-debt 日期)' "scripts/check-tech-debt.sh" \
-   '[0-9]{4}-[0-9]{2}-[0-9]{2}' 'TODO 2026-09-11 待办' '2026-09-11'
 eq '\d→[0-9] (brief 日期)' "scripts/pre-commit-check.sh" \
    '[0-9]{4}-[0-9]{2}-[0-9]{2}' '2026-09-12-D664-x.md' '2026-09-12'
-eq '\d 不误吞短串' "scripts/check-tech-debt.sh" \
-   '[0-9]{4}-[0-9]{2}-[0-9]{2}' '版本 26-9-11' ''
 
 # ── 类 4: 简单直译（-oP → -oE，语义本就 ERE 兼容）──
-eq '版本号提取' "scripts/check-brief-vs-code.sh" 'V[0-9]+\.[0-9]+\.[0-9]+' 'V5.2.7 已定稿' 'V5.2.7'
-eq '架构层前缀' "scripts/check-brief-vs-code.sh" 'L[1-5]' 'L2 编排层' 'L2'
-eq 'memory 引用' "scripts/check-brief-vs-code.sh" 'memory/[a-zA-Z0-9_-]+\.md' \
-   '参考 memory/lessons.md 与 x.txt' 'memory/lessons.md'
-eq 'HTTP 方法' "scripts/check-brief-vs-code.sh" 'GET|POST|PUT|DELETE' 'GET /api/x' 'GET'
-eq 'src ts/html 路径' "scripts/check-brief-vs-code.sh" 'src/[a-zA-Z0-9_/.]+\.(ts|html)' \
-   '改 src/routes/a.ts 和 src/web/b.html' 'src/routes/a.ts
-src/web/b.html'
-eq 'Q2 排除项（-oi 大小写不敏感）' "scripts/check-brief-vs-code.sh" \
-   '(不做|排除|不涉及|不修改)[^。]*' '不修改 src/audit/x。其余照旧' '不修改 src/audit/x' -i
-eq 'Q2 排除项里的 src 路径' "scripts/check-brief-vs-code.sh" 'src/[a-zA-Z0-9_/.]+' \
-   '不修改 src/audit/x.sh' 'src/audit/x.sh'
+# (D962-B2: 根目录 check-brief-vs-code.sh 专属模式条目随脚本退役移除)
+eq 'backtick 路径（workflow brief-vs-code）' "scripts/workflow/check-brief-vs-code.sh" '\`[^\`]+\.[a-z]{2,5}\`' \
+   '改 `src/routes/a.ts` 完成' '`src/routes/a.ts`'
 eq 'tags 词表' "scripts/check-file-driven.sh" '"[a-z_]+"' '"finance", "cash_flow"' '"finance"
 "cash_flow"'
 eq 'extensions 顶层目录' "scripts/check-file-driven.sh" '^extensions/[^/]+' \
    'extensions/sentinels/a.json' 'extensions/sentinels'
-eq '节点 label' "scripts/check-integrity-startup.sh" '"[A-Z][a-zA-Z]+"' '"Financial"' '"Financial"'
-eq 'label 不吞小写开头' "scripts/check-integrity-startup.sh" '"[A-Z][a-zA-Z]+"' '"cash"' ''
 eq '记忆双链' "scripts/hooks/hook-check-memory.sh" '\[\[[^]]+\]\]' \
    'see [[D665-gitlink]] and [[X]]' '[[D665-gitlink]]
 [[X]]'
 eq 'match_file 前缀' "scripts/pre-commit-check.sh" '^[^:]+' 'src/a.ts:12:内容' 'src/a.ts'
-eq 'exports 提取（check-test-quality 同模式）' "scripts/checks/check-test-quality.sh" \
-   'export (function|class|const) [A-Za-z_][A-Za-z0-9_]*' \
-   'export class QualityGate {}' 'export class QualityGate'
 
 echo ""
 echo "=== D664: 转译形态静态守卫（防 sed 参数错位类）==="
