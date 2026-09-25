@@ -1741,3 +1741,4 @@ Binary file .claude/bypass.log matches
 2026-09-25T04:47:41+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=a4ea5bd1f02193e3665f90717b965d469854dcee
 2026-09-25T07:39:30+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=40771c092ae39c44b51fc50b8f954dbe53374a58
 2026-09-25T05:05:54Z detected-bypass head-mismatch marker=0fd44b7689c1a8870a8bc7a4394e53120061bf4b parent=519edadf83642b517b415cce52927a02b120b865
+2026-09-25T13:06:30+08:00 | GATE_FAIL_SOFT | exit=1 | branch=
