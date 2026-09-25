@@ -268,7 +268,9 @@ jobs:
             tests/control-tower/check-citations.test.sh \
             tests/control-tower/check-progress-freshness.test.sh \
             tests/control-tower/check-dsh-anchor.test.sh \
+            tests/control-tower/check-gate-integrity.test.sh \
             tests/control-tower/check-k3-report.test.sh \
+            tests/control-tower/daily-cto-board-ratio.test.sh \
             tests/control-tower/install-dsh-preset.test.sh; do
             echo "── $t"
             # D526: 测试失败输出进 ::error 注解——无 token 也能经 annotations 定位（D521 工具1 语义）
@@ -341,3 +343,110 @@ jobs:
         run: npx tsx scripts/ci/golden-case-checker.ts
       - name: Run diagnosis quality check
         run: bash scripts/ci/diagnosis-quality-check.sh
+
+  # ── M9 门禁完整性：三件套接线（task-5 检查器 + task-6 夹具/基线表；本 job 由 task-6 登记）──
+  # 三步各堵一类洞，缺一步即门禁有洞（B 模式口径：登记 gate 判 = 路径出现在 ci.yml **全文**，
+  #   含本 job 的 run: 行；重型夹具不入 canary 密封清单，避免 canary 运行时长翻倍）：
+  #   step 1 = 检查器本体（模式哨兵 + 登记 gate；本地/CI 同一条命令）
+  #   step 2 = 注入夹具**抽检**（组 1/2/7/12 + 绿基线；全量由 SYNO_PRE_COMMIT_INJECT_FULL=1
+  #            人工或夜间触发——全量 ≈ 12 组 ×1 次 pre-commit，副本内实测 ~4s/次）
+  #   step 3 = CI 既有红基线对账（--ci-reds /tmp/checkruns.json），取数 fail-closed
+  gate-integrity:
+    name: Gate Integrity (pattern sentinel + injection fixture + ci-reds)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 登记 gate/模式哨兵依赖 origin/main 与完整历史（同 control-tower-tests 口径）
+      # 棘轮语义（check-gate-integrity.sh 的 PATTERN-BASELINE 段，README 见该脚本头部）：
+      #   存量非法模式（如 scripts/pre-commit-check.sh:991 的 `^+++` 非法 ERE——组 7a 因此恒绿）
+      #   以「登记豁免 owner/expires」形式入 gate-integrity-baseline.txt → 修复未落地前不堵队列；
+      #   **未登记的新非法模式仍必红**；已登记条目过期或失效（模式已消失却未清理）→ exit 1。
+      #   棘轮只减不增：到期即强制清理，豁免不得续期式常驻。
+      - name: Gate integrity pattern sentinel + registration gate
+        run: bash scripts/control-tower/check-gate-integrity.sh
+      # 抽检即注册（B 模式口径）——该行同时是"夹具在 CI 里无人执行"的反证。
+      - name: pre-commit groups injection fixture (sampled)
+        run: bash tests/control-tower/precommit-groups-injection.test.sh
+      # 取数失败必须让 step 失败（fail-closed，不静默放行）：豁免台账核对不到 = 既有红基线不可核。
+      - name: CI red baseline reconciliation (--ci-reds, fail-closed fetch)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          OUT=/tmp/checkruns.json
+          # D954（K3 定罪修复）: 对账对象 = **base**，不是当前提交。
+          #   旧取数 REF=head.sha → 该时刻同 SHA 多数 job 仍 in_progress（conclusion≠failure）
+          #   → 「失败检查 0 项」→ 棘轮从未被行使（同 SHA 终局实有 3 个 failure）。
+          #   base 是已定态集合，才可判定"有没有既有红"。
+          REF="${PR_BASE_SHA:-}"
+          if [ -z "$REF" ]; then
+            echo "── push 事件：base = origin/main（fetch 后解析）"
+            git fetch origin main --quiet 2>/dev/null || true   # swallow-ok: fetch 失败时下方 rev-parse 仍可命中既存 origin/main；两者皆失败 → fail-closed
+            REF="$(git rev-parse --verify --quiet 'origin/main^{commit}' 2>/dev/null || true)"
+          fi
+          if [ -z "$REF" ]; then
+            echo "::error title=ci-reds base::无法解析 base ref（PR base.sha 为空且 origin/main 不可解析）—— fail-closed，不静默放行"
+            exit 1
+          fi
+          echo "对账对象 base = ${REF}"
+          printf '%s\n' "$REF" > /tmp/ci-reds-base-ref.txt
+          URL="https://api.github.com/repos/${REPO}/commits/${REF}/check-runs?per_page=100"
+          AUTH=()
+          [ -n "${GH_TOKEN:-}" ] && AUTH=(-H "Authorization: Bearer ${GH_TOKEN}")
+          ok=0
+          for i in 1 2 3; do
+            echo "── check-runs 取数尝试 ${i}/3: ${URL}"
+            if curl -sS --fail --max-time 30 "${AUTH[@]+"${AUTH[@]}"}" \
+                 -H "Accept: application/vnd.github+json" \
+                 -H "X-GitHub-Api-Version: 2022-11-28" \
+                 -o "$OUT" "$URL"; then
+              ok=1
+              break
+            fi
+            echo "::warning title=ci-reds fetch::第 ${i} 次取数失败（最多 3 次，退避重试）"
+            sleep $((i * 5))
+          done
+          if [ "$ok" -ne 1 ]; then
+            echo "::error title=ci-reds fetch::check-runs 取数 3 次全失败 —— fail-closed，不静默放行（既有红基线无从核对）"
+            exit 1
+          fi
+          N=$(python3 -c "import json;print(len(json.load(open('$OUT')).get('check_runs',[])))")
+          if [ "$N" -eq 0 ]; then
+            echo "::warning title=ci-reds::${REF} 取到 0 条 check-runs（尚无检查记录）——基线核对为空集，不等于「已核对通过」"
+          fi
+          echo "check_runs=${N} (ref=${REF})"
+          bash scripts/control-tower/check-gate-integrity.sh --root "$PWD" --ci-reds /tmp/checkruns.json --base-ref "$REF"
+      # 证据步（M9 task-11）：判定已由前面 step 完成，本步只把关键行发布为 **可公开检索的注解**——
+      #   GitHub job logs 端点匿名 404/403（CTO 证据要求 ③ 的 CI GNU 侧原始输出取不回，K3 也核不了），
+      #   而注解有公开 API：GET /repos/{owner}/{repo}/check-runs/{id}/annotations（无需 token）。
+      #   `|| true` 仅限本步（判定归前一步）；`if: always()` 保证失败时同样出证据；注解 ≤10 行（GitHub 上限）。
+      - name: Publish gate-integrity summary (public evidence via annotations)
+        if: always()
+        run: |
+          set -uo pipefail
+          # 证据步：判定已由前面 step 完成；此处只把关键行发布为可公开检索的注解
+          # 带上 --ci-reds + --base-ref（若取数成功），使 C 段对账结果与**对账对象身份**同样可公开检索；
+          # 缺文件则自然回落 SKIPPED（可见，不静默）。
+          ARGS=""
+          [ -f /tmp/checkruns.json ] && ARGS="--ci-reds /tmp/checkruns.json"
+          # D954: base ref 由前一步落盘（单一解析点）；缺失则不传 → 检查器出显式 SKIPPED（不伪造判定）
+          if [ -f /tmp/ci-reds-base-ref.txt ]; then
+            ARGS="$ARGS --base-ref $(cat /tmp/ci-reds-base-ref.txt)"
+          fi
+          OUT="$(bash scripts/control-tower/check-gate-integrity.sh --root "$PWD" $ARGS 2>&1 || true)"
+          # 取不到关键行时**可见但不断**（发布者不判红；真实判定见 step 1）——见下方 ::warning 分支
+          # D954: 「对账对象」行**优先占一个注解位**（注解 ≤10 条上限）——保证对账对象身份必然可公开检索，
+          #   不被 PATTERN/REGISTRY 等行的条数挤出（原实现 head -10 有被挤掉的风险）。
+          KEY="$(echo "$OUT" | grep -E '^对账对象 = ' | head -1 || true)"
+          REST="$(echo "$OUT" | grep -E '^(PATTERN-SENTINEL|PATTERN-BASELINE|CI-REGISTRY|CI-RED-CHECK|CI-RED-BASELINE|GATE-INTEGRITY):' | head -9 || true)"
+          LINES="$(printf '%s\n%s\n' "$KEY" "$REST" | grep -v '^$' | head -10 || true)"
+          if [ -z "$LINES" ]; then
+            echo "::warning title=gate-integrity::证据步未取到关键行（检查器可能未能执行）——发布者不判红；真实判定见 step 1"
+          else
+            echo "$LINES" | while IFS= read -r line; do
+              echo "::notice title=gate-integrity::$line"
+            done
+          fi
