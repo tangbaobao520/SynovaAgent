@@ -48,6 +48,34 @@
       "control": "run 36182865555 的同一 job 17 秒内 completed/failure —— 但那是 **step2 checkout 失败 ⇒ hermetic 步被 skipped**（未执行），**不能作为『该步能跑通』的证据**",
       "platform_specific": "同一 run 的 ubuntu 变体 job 已 completed ⇒ **Windows 专属**"
     },
+    "p0_correction_20260926": {
+      "who": "task-7（squad-ci，D1018 / PR #842）以 run 级数据推翻并行 CTO 的原定性",
+      "retracted": [
+        "『正常 ~1.5–3 分钟』= 错误基线：我取的 87s/87s/87s/163s 样本是 **cancelled（未跑完）的 run**，时长不可比",
+        "『20–30× 劣化』= 随基线一起撤回",
+        "『2/3 永不收敛』= 撤回：最长 29.2 min **仍在正常区间内**（正常 25.2/34.0/35.6 min，3 次 success）"
+      ],
+      "corrected_facts": [
+        "Windows 该 step **正常耗时 25.2 / 34.0 / 35.6 分钟**（3 次 success 的 run）⇒ 它不是『1.5–3 分钟正常』的 job",
+        "当前 8 条 in-progress 耗时 4.0–29.2 min，**均未超过正常上限** ⇒ **未观测到『无限挂』**",
+        "慢的支配项 = **测试内递归**：ubuntu 日志 `simulate-ci.test.sh` 188.8s / step 274s = 69%；`simulate-ci.sh:49` 抽全表仅排除自己 + 该测试调它 3 次 ⇒ ~150 次测试执行；Windows fork/exec 更慢 ⇒ 20–25 min 吻合",
+        "**D560 新增 6 项被数据排除**（实测 0–9s）"
+      ],
+      "true_hang_mechanism_reproduced": {
+        "file_line": "tests/control-tower/alloc-task-id-lock.test.sh:97-100 + scripts/control-tower/alloc-task-id.sh:152-159",
+        "mechanism": "测试启 20 并发 allocator（未设 SYNO_ALLOC_NO_REMOTE=1）；alloc 在无 timeout/gtimeout（macOS 与 Windows Git Bash 皆无）时走**裸 git ls-remote 无超时**，随后**裸 wait** ⇒ 任一路阻塞即测试永不结束",
+        "repro": "kill 父进程后 20 个子进程仍阻塞在 git ls-remote 上 20+ 分钟（pgrep 实测 7 个孤儿，已清理）",
+        "status": "本地已复现 ⇒ 这是『永不报告』的真实机制；但**本例的 in-progress 并非它**（时长仍在正常区间）"
+      },
+      "independent_real_failure": {
+        "what": "含 `*` 的文件名让 Windows actions/checkout 直接失败",
+        "raw": "##[error]error: invalid path '.claude/task-briefs/2026-09-26-D1015-阶段1-A-check-*-计数口径定版.md' / git.exe failed with exit code 128",
+        "runs": ["36184156096", "36182865555"],
+        "impact": "**任何含该文件的分支在 Windows 上必红**（ubuntu 无此限制）⇒ 现挂在 D1015 分支（PR #838）上，属**可直接行动的硬红**"
+      },
+      "revised_severity": "P0 定性**下调**：不是『Windows job 挂死』，而是 ① **缺 timeout-minutes**（制度性：慢/偶发挂会升级为永不报告）② **`*` 文件名**（在 D1015 分支上已构成硬红）③ **simulate-ci 递归**（真负载，69%）。三者都支持 CTO 已批的 T3 止血包。",
+      "allocator_hang_again": "task-7 取号时 `alloc-task-id.sh` **本地挂 >20 分钟**，根因 = 同一个无超时 `git ls-remote` + 网络 443 抖动 ⇒ 已报 CTO 建议独立 P0 立项（第 N 次同源形态）"
+    },
     "candidate_mitigations": [
       "（正解）定位并修掉在 Windows 下阻塞的那个密封测试；D560 新增项优先怀疑",
       "（止血，需 CTO+K3 批）给该 step 加 timeout-minutes ⇒ 把『无限挂』变成『有界红』（仍红，但可见且不永久占用）",
