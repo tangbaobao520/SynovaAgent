@@ -1,0 +1,28 @@
+=== Gatekeeper ACK 审计取证（D965）===
+$ date
+2026-09-25T19:36:28+0800
+
+$ grep -c '2026-09-25.*detected-bypass' .claude/bypass.log   # 提交前
+1
+
+$ grep -n '2026-09-25.*detected-bypass' .claude/bypass.log
+1758:2026-09-25T00:56:43Z detected-bypass head-mismatch marker=ce5b13b96c9b0b5b40ff065da7f1361bd6996a72 parent=2b38d1779aa31caf553ef481eb6f2e5479a3199c
+
+$ git show HEAD:.claude/bypass.log | grep -c '2026-09-25.*detected-bypass'   # 已在基线内
+1
+
+$ git status --short .claude/bypass.log   # 本地零改动
+(空)
+
+$ git log -1 --format='%H %an <%ae> %ad %s' ce5b13b96c9b0b5b40ff065da7f1361bd6996a72
+ce5b13b96c9b0b5b40ff065da7f1361bd6996a72
+synova-cto <cto@synova.local>
+Thu Sep 24 20:02:15 2026 +0800
+Merge remote-tracking branch 'origin/main' into HEAD
+
+$ git branch -a --contains ce5b13b96c9b0b5b40ff065da7f1361bd6996a72 | head -3
+  fix/d937-gate-failopen
+  remotes/origin/fix/d937-gate-failopen
+  remotes/ssh/fix/d937-gate-failopen
+
+--- 提交后 grep -c 见下方（提交完成后追加）---

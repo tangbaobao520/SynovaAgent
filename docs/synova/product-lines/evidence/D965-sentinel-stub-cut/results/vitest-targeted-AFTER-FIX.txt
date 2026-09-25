@@ -1,0 +1,426 @@
+
+ RUN  v4.1.8 /Users/wane/SynovaAgent/.synova-wt-D965
+
+{"level":30,"time":1790335730348,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/loader","msg":"哨兵缓存已清除"}
+{"level":30,"time":1790335730358,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/loader","msg":"哨兵缓存已清除"}
+{"level":30,"time":1790335730360,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/loader","msg":"哨兵缓存已清除"}
+{"level":30,"time":1790335730360,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/loader","msg":"哨兵缓存已清除"}
+{"level":30,"time":1790335730362,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/loader","count":43,"errors":0,"msg":"哨兵加载完成"}
+{"level":30,"time":1790335730368,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-agent-deployment-maturity","name":"T7 Agent部署成熟度","category":"growth","msg":"哨兵已注册"}
+ ✓ tests/sentinels/shared/d62-me-sentinels.test.ts (14 tests) 33ms
+{"level":30,"time":1790335730372,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-ai-ecosystem-fit","name":"T6 AI软件生态匹配度","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1790335730373,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-ai-investment-return","name":"T8 AI投入产出比","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1790335730377,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-api-coverage","name":"API可达性与协议覆盖","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1790335730383,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-business-model-coherence","name":"商业模式一致性","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1790335730417,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-capital-health","name":"资本健康","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1790335730442,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"l4/ontology-loader","nodes":29,"edges":55,"msg":"本体类型加载完成"}
+{"level":40,"time":1790335730442,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/loader","sentinel":"cash-runway","nodeType":"Financial","msg":"哨兵依赖的节点类型在本体中不存在 — degraded"}
+{"level":30,"time":1790335730442,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-cash-runway","name":"现金流哨兵","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1790335730444,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-channel-capacity","name":"O6","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1790335730445,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-competitive-moat","name":"竞争护城河","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1790335730447,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-competitive-position","name":"竞争定位","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1790335730456,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-customer-demand-shift","name":"客户需求迁移","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1790335730465,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-data-health","name":"数据健康度","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1790335730470,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-environment-rent-dependency","name":"环境红利依赖性","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1790335730477,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-explore-exploit-balance","name":"O1","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1790335730483,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-financing-constraint","name":"融资约束指数","category":"growth","msg":"哨兵已注册"}
+ ✓ tests/sentinel/d752-type-net-gate.integration.test.ts (4 tests) 201ms
+{"level":30,"time":1790335730493,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-growth-quality","name":"增长质量指数","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1790335730497,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-human-agent-boundary","name":"T9 人Agent混合边界效率","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1790335730503,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-incentive-alignment","name":"O3","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1790335730508,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-info-distortion","name":"O7","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1790335730512,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-internal-transaction-cost","name":"内部交易成本增长率","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1790335730518,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/loader","sentinel":"key-person-risk","nodeType":"Financial","msg":"哨兵依赖的节点类型在本体中不存在 — degraded"}
+{"level":30,"time":1790335730518,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-key-person-risk","name":"关键人风险哨兵","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1790335730524,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-knowledge-accessibility","name":"O4","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1790335730528,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-make-or-buy","name":"自制外购决策健康度","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1790335730546,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/loader","sentinel":"margin-health","nodeType":"Financial","msg":"哨兵依赖的节点类型在本体中不存在 — degraded"}
+{"level":30,"time":1790335730546,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-margin-health","name":"利润健康","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1790335730550,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-moat-dependency","name":"护城河依赖度","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1790335730554,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-network-power","name":"网络权力指数","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1790335730559,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-niche-breadth","name":"生态位宽度与深度","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1790335730564,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-niche-squeeze","name":"生态位挤压指数","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1790335730569,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-opportunity-window","name":"结构性机会窗口","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1790335730575,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-org-repairability","name":"O8","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1790335730575,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-path-dependency","name":"路径依赖 (Path Dependency)","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1790335730582,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-power-rigidity","name":"O9","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1790335730586,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-process-ai-readiness","name":"T5 流程AI化就绪度","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1790335730591,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-resource-misallocation","name":"S3","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1790335730598,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/loader","sentinel":"revenue-health","nodeType":"Financial","msg":"哨兵依赖的节点类型在本体中不存在 — degraded"}
+{"level":30,"time":1790335730598,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-revenue-health","name":"收入健康哨兵","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1790335730602,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-routine-diffusion","name":"O5","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1790335730606,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-routine-mutation","name":"O2","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1790335730616,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-software-health","name":"软件资产健康度","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1790335730622,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-strategy-capability-fit","name":"S1","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1790335730627,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-talent-density","name":"O10","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1790335730630,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-time-penetration","name":"时间穿透力","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1790335730649,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-unit-economics","name":"单位经济可持续性","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1790335730653,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-value-capture","name":"价值捕获效率","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1790335730653,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/loader","registered":43,"errors":0,"msg":"文件驱动哨兵已注册"}
+{"level":30,"time":1790335730654,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/loader","msg":"哨兵缓存已清除"}
+{"level":30,"time":1790335730654,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/loader","msg":"哨兵缓存已清除"}
+{"level":30,"time":1790335730654,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/loader","msg":"哨兵缓存已清除"}
+{"level":30,"time":1790335730654,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/loader","msg":"哨兵缓存已清除"}
+{"level":30,"time":1790335730654,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/loader","msg":"哨兵缓存已清除"}
+{"level":30,"time":1790335730655,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/loader","msg":"哨兵缓存已清除"}
+{"level":30,"time":1790335730655,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/loader","msg":"哨兵缓存已清除"}
+{"level":30,"time":1790335730656,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/loader","msg":"哨兵缓存已清除"}
+{"level":30,"time":1790335730656,"pid":3000,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/loader","msg":"哨兵缓存已清除"}
+ ✓ tests/sentinel/path-dependency-sentinel.test.ts (12 tests) 309ms
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/agent-deployment-maturity","e":{}}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/ai-ecosystem-fit","e":{}}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/ai-investment-return","e":{}}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/api-coverage","err":{},"msg":"[api-coverage] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/bizmodel-coherence","err":{},"msg":"[bizmodel-coherence] 失败"}
+{"level":30,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/capital-health","teamId":"team-probe","msg":"无 Financial 节点 — 空库基线"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/capital-health","err":{},"msg":"[capital-health] check 失败"}
+{"level":40,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/capital-health","teamId":"team-probe","missing":"total_assets、total_debt、equity、operating_cashflow","msg":"Financial 节点缺必填字段组 — 跳过指标（防缺失默认 0 假 finding）"}
+{"level":40,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/capital-health","teamId":"team-probe","missing":"total_assets、total_debt、equity、operating_cashflow","msg":"Financial 节点缺必填字段组 — 跳过指标（防缺失默认 0 假 finding）"}
+{"level":30,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/cash-runway","teamId":"team-probe","count":2,"msg":"现金流检查完成"}
+{"level":30,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/cash-runway","teamId":"team-probe","count":2,"msg":"现金流检查完成"}
+{"level":30,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/cash-runway","teamId":"team-probe","count":1,"msg":"现金流检查完成"}
+{"level":30,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/cash-runway","teamId":"team-probe","count":2,"msg":"现金流检查完成"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/channel-capacity","err":{},"msg":"[channel-capacity] 失败"}
+{"level":40,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/moat-perceptual","teamId":"team-probe","msg":"brand premium degraded — using 0"}
+{"level":40,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/moat-perceptual","teamId":"team-probe","msg":"customer loyalty degraded — using 0"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/moat-perceptual","err":{},"msg":"[moat-perceptual] 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/moat-structural","err":{},"msg":"[moat-structural] 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/competitive-dynamics","err":{},"msg":"[competitive-dynamics] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/market-lifecycle","err":{},"msg":"[market-lifecycle] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/customer-demand","err":{},"msg":"[customer-demand-shift] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/data-health","err":{},"msg":"[data-health] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/rent-dependency","err":{},"msg":"[rent-dependency] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/explore-exploit-balance","err":{},"msg":"[explore-exploit] 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/financing-constraint","err":{},"msg":"[financing-constraint] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/growth-quality","err":{},"msg":"[growth-quality] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/human-agent-boundary","e":{}}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/incentive-alignment","err":{},"msg":"[incentive-alignment] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/info-distortion","err":{},"msg":"[info-distortion] 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/transaction-cost","err":{},"msg":"[transaction-cost] 失败"}
+{"level":40,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"l3/key-person-risk","err":{},"teamId":"team-probe","msg":"关键人风险失败 — degraded"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/knowledge-accessibility","err":{},"msg":"[knowledge-accessibility] check 失败"}
+{"level":40,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/make-or-buy","teamId":"team-probe","msg":"compute degraded — skipping threshold"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/make-or-buy","err":{},"msg":"[make-or-buy] 失败"}
+{"level":30,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/margin-health","teamId":"team-probe","msg":"无 Financial 节点 — 空库基线"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/margin-health","err":{},"teamId":"team-probe","msg":"[margin-health] check失败"}
+{"level":40,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/margin-health","teamId":"team-probe","missing":"gross_margin、operating_expense","msg":"Financial 节点缺必填字段组 — 跳过指标（防缺失默认 0 假 finding）"}
+{"level":40,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/margin-health","teamId":"team-probe","missing":"gross_margin、operating_expense","msg":"Financial 节点缺必填字段组 — 跳过指标（防缺失默认 0 假 finding）"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/moat-dependency","err":{},"msg":"[moat-dependency] 失败"}
+{"level":40,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/network-power","teamId":"team-probe","msg":"compute degraded — skipping threshold"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/network-power","err":{},"msg":"[network-power] 失败"}
+{"level":40,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/niche-breadth","teamId":"team-probe","msg":"compute degraded — skipping threshold"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/niche-breadth","err":{},"msg":"[niche-breadth] 失败"}
+{"level":40,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/niche-squeeze","teamId":"team-probe","msg":"compute degraded — skipping threshold"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/niche-squeeze","err":{},"msg":"[niche-squeeze] 失败"}
+{"level":40,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/opportunity-window","teamId":"team-probe","msg":"compute degraded — data incomplete"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/opportunity-window","err":{},"msg":"[opportunity-window] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/org-repairability","err":{},"msg":"[org-repairability] 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/power-rigidity","err":{},"msg":"[power-rigidity] 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/process-ai-readiness","e":{}}
+{"level":40,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/resource-misallocation","teamId":"team-probe","msg":"compute degraded — data incomplete"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/resource-misallocation","err":{},"msg":"[resource-misallocation] check 失败"}
+{"level":30,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/revenue-health","teamId":"team-probe","msg":"无收入数据"}
+{"level":40,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/revenue-health","err":{},"teamId":"team-probe","msg":"收入健康检查失败"}
+{"level":30,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/revenue-health","teamId":"team-probe","count":1,"msg":"收入健康检查完成"}
+{"level":30,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/revenue-health","teamId":"team-probe","count":1,"msg":"收入健康检查完成"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/routine-diffusion","err":{},"msg":"[routine-diffusion] 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/routine-mutation","err":{},"msg":"[routine-mutation] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/software-health","err":{},"msg":"[software-health] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/strategy-capability-fit","err":{},"msg":"[strategy-capability-fit] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/talent-density","err":{},"msg":"[talent-density] 失败"}
+{"level":40,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/time-penetration","teamId":"team-probe","msg":"compute degraded — skipping threshold"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/time-penetration","err":{},"msg":"[time-penetration] 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/unit-economics","err":{},"msg":"[unit-economics] 失败"}
+{"level":40,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/value-capture","teamId":"team-probe","msg":"compute degraded — skipping threshold"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/value-capture","err":{},"msg":"[value-capture] 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/agent-deployment-maturity","e":{}}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/ai-ecosystem-fit","e":{}}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/ai-investment-return","e":{}}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/api-coverage","err":{},"msg":"[api-coverage] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/bizmodel-coherence","err":{},"msg":"[bizmodel-coherence] 失败"}
+{"level":30,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/capital-health","teamId":"team-probe","msg":"无 Financial 节点 — 空库基线"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/capital-health","err":{},"msg":"[capital-health] check 失败"}
+{"level":40,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/capital-health","teamId":"team-probe","missing":"total_assets、total_debt、equity、operating_cashflow","msg":"Financial 节点缺必填字段组 — 跳过指标（防缺失默认 0 假 finding）"}
+{"level":40,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/capital-health","teamId":"team-probe","missing":"total_assets、total_debt、equity、operating_cashflow","msg":"Financial 节点缺必填字段组 — 跳过指标（防缺失默认 0 假 finding）"}
+{"level":30,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/cash-runway","teamId":"team-probe","count":2,"msg":"现金流检查完成"}
+{"level":30,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/cash-runway","teamId":"team-probe","count":2,"msg":"现金流检查完成"}
+{"level":30,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/cash-runway","teamId":"team-probe","count":1,"msg":"现金流检查完成"}
+{"level":30,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/cash-runway","teamId":"team-probe","count":2,"msg":"现金流检查完成"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/channel-capacity","err":{},"msg":"[channel-capacity] 失败"}
+{"level":40,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/moat-perceptual","teamId":"team-probe","msg":"brand premium degraded — using 0"}
+{"level":40,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/moat-perceptual","teamId":"team-probe","msg":"customer loyalty degraded — using 0"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/moat-perceptual","err":{},"msg":"[moat-perceptual] 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/moat-structural","err":{},"msg":"[moat-structural] 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/competitive-dynamics","err":{},"msg":"[competitive-dynamics] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/market-lifecycle","err":{},"msg":"[market-lifecycle] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/customer-demand","err":{},"msg":"[customer-demand-shift] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/data-health","err":{},"msg":"[data-health] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/rent-dependency","err":{},"msg":"[rent-dependency] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/explore-exploit-balance","err":{},"msg":"[explore-exploit] 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/financing-constraint","err":{},"msg":"[financing-constraint] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/growth-quality","err":{},"msg":"[growth-quality] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/human-agent-boundary","e":{}}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/incentive-alignment","err":{},"msg":"[incentive-alignment] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/info-distortion","err":{},"msg":"[info-distortion] 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/transaction-cost","err":{},"msg":"[transaction-cost] 失败"}
+{"level":40,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"l3/key-person-risk","err":{},"teamId":"team-probe","msg":"关键人风险失败 — degraded"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/knowledge-accessibility","err":{},"msg":"[knowledge-accessibility] check 失败"}
+{"level":40,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/make-or-buy","teamId":"team-probe","msg":"compute degraded — skipping threshold"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/make-or-buy","err":{},"msg":"[make-or-buy] 失败"}
+{"level":30,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/margin-health","teamId":"team-probe","msg":"无 Financial 节点 — 空库基线"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/margin-health","err":{},"teamId":"team-probe","msg":"[margin-health] check失败"}
+{"level":40,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/margin-health","teamId":"team-probe","missing":"gross_margin、operating_expense","msg":"Financial 节点缺必填字段组 — 跳过指标（防缺失默认 0 假 finding）"}
+{"level":40,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/margin-health","teamId":"team-probe","missing":"gross_margin、operating_expense","msg":"Financial 节点缺必填字段组 — 跳过指标（防缺失默认 0 假 finding）"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/moat-dependency","err":{},"msg":"[moat-dependency] 失败"}
+{"level":40,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/network-power","teamId":"team-probe","msg":"compute degraded — skipping threshold"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/network-power","err":{},"msg":"[network-power] 失败"}
+{"level":40,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/niche-breadth","teamId":"team-probe","msg":"compute degraded — skipping threshold"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/niche-breadth","err":{},"msg":"[niche-breadth] 失败"}
+{"level":40,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/niche-squeeze","teamId":"team-probe","msg":"compute degraded — skipping threshold"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/niche-squeeze","err":{},"msg":"[niche-squeeze] 失败"}
+{"level":40,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/opportunity-window","teamId":"team-probe","msg":"compute degraded — data incomplete"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/opportunity-window","err":{},"msg":"[opportunity-window] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/org-repairability","err":{},"msg":"[org-repairability] 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/power-rigidity","err":{},"msg":"[power-rigidity] 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/process-ai-readiness","e":{}}
+{"level":40,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/resource-misallocation","teamId":"team-probe","msg":"compute degraded — data incomplete"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/resource-misallocation","err":{},"msg":"[resource-misallocation] check 失败"}
+{"level":30,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/revenue-health","teamId":"team-probe","msg":"无收入数据"}
+{"level":40,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/revenue-health","err":{},"teamId":"team-probe","msg":"收入健康检查失败"}
+{"level":30,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/revenue-health","teamId":"team-probe","count":1,"msg":"收入健康检查完成"}
+{"level":30,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/revenue-health","teamId":"team-probe","count":1,"msg":"收入健康检查完成"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/routine-diffusion","err":{},"msg":"[routine-diffusion] 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/routine-mutation","err":{},"msg":"[routine-mutation] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/software-health","err":{},"msg":"[software-health] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/strategy-capability-fit","err":{},"msg":"[strategy-capability-fit] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/talent-density","err":{},"msg":"[talent-density] 失败"}
+{"level":40,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/time-penetration","teamId":"team-probe","msg":"compute degraded — skipping threshold"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/time-penetration","err":{},"msg":"[time-penetration] 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/unit-economics","err":{},"msg":"[unit-economics] 失败"}
+{"level":40,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/value-capture","teamId":"team-probe","msg":"compute degraded — skipping threshold"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/value-capture","err":{},"msg":"[value-capture] 失败"}
+{"level":50,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/agent-deployment-maturity","e":{}}
+{"level":50,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/ai-ecosystem-fit","e":{}}
+{"level":50,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/ai-investment-return","e":{}}
+{"level":50,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/api-coverage","err":{},"msg":"[api-coverage] check 失败"}
+{"level":50,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/bizmodel-coherence","err":{},"msg":"[bizmodel-coherence] 失败"}
+{"level":30,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/capital-health","teamId":"team-probe","msg":"无 Financial 节点 — 空库基线"}
+{"level":50,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/capital-health","err":{},"msg":"[capital-health] check 失败"}
+{"level":40,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/capital-health","teamId":"team-probe","missing":"total_assets、total_debt、equity、operating_cashflow","msg":"Financial 节点缺必填字段组 — 跳过指标（防缺失默认 0 假 finding）"}
+{"level":40,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/capital-health","teamId":"team-probe","missing":"total_assets、total_debt、equity、operating_cashflow","msg":"Financial 节点缺必填字段组 — 跳过指标（防缺失默认 0 假 finding）"}
+{"level":30,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/cash-runway","teamId":"team-probe","count":2,"msg":"现金流检查完成"}
+{"level":30,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/cash-runway","teamId":"team-probe","count":2,"msg":"现金流检查完成"}
+{"level":30,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/cash-runway","teamId":"team-probe","count":1,"msg":"现金流检查完成"}
+{"level":30,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/cash-runway","teamId":"team-probe","count":2,"msg":"现金流检查完成"}
+{"level":50,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/channel-capacity","err":{},"msg":"[channel-capacity] 失败"}
+{"level":40,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/moat-perceptual","teamId":"team-probe","msg":"brand premium degraded — using 0"}
+{"level":40,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/moat-perceptual","teamId":"team-probe","msg":"customer loyalty degraded — using 0"}
+{"level":50,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/moat-perceptual","err":{},"msg":"[moat-perceptual] 失败"}
+{"level":50,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/moat-structural","err":{},"msg":"[moat-structural] 失败"}
+{"level":50,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/competitive-dynamics","err":{},"msg":"[competitive-dynamics] check 失败"}
+{"level":50,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/market-lifecycle","err":{},"msg":"[market-lifecycle] check 失败"}
+{"level":50,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/customer-demand","err":{},"msg":"[customer-demand-shift] check 失败"}
+{"level":50,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/data-health","err":{},"msg":"[data-health] check 失败"}
+{"level":50,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/rent-dependency","err":{},"msg":"[rent-dependency] check 失败"}
+{"level":50,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/explore-exploit-balance","err":{},"msg":"[explore-exploit] 失败"}
+{"level":50,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/financing-constraint","err":{},"msg":"[financing-constraint] check 失败"}
+{"level":50,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/growth-quality","err":{},"msg":"[growth-quality] check 失败"}
+{"level":50,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/human-agent-boundary","e":{}}
+{"level":50,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/incentive-alignment","err":{},"msg":"[incentive-alignment] check 失败"}
+{"level":50,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/info-distortion","err":{},"msg":"[info-distortion] 失败"}
+{"level":50,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/transaction-cost","err":{},"msg":"[transaction-cost] 失败"}
+{"level":40,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"l3/key-person-risk","err":{},"teamId":"team-probe","msg":"关键人风险失败 — degraded"}
+{"level":50,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/knowledge-accessibility","err":{},"msg":"[knowledge-accessibility] check 失败"}
+{"level":40,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/make-or-buy","teamId":"team-probe","msg":"compute degraded — skipping threshold"}
+{"level":50,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/make-or-buy","err":{},"msg":"[make-or-buy] 失败"}
+{"level":30,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/margin-health","teamId":"team-probe","msg":"无 Financial 节点 — 空库基线"}
+{"level":50,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/margin-health","err":{},"teamId":"team-probe","msg":"[margin-health] check失败"}
+{"level":40,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/margin-health","teamId":"team-probe","missing":"gross_margin、operating_expense","msg":"Financial 节点缺必填字段组 — 跳过指标（防缺失默认 0 假 finding）"}
+{"level":40,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/margin-health","teamId":"team-probe","missing":"gross_margin、operating_expense","msg":"Financial 节点缺必填字段组 — 跳过指标（防缺失默认 0 假 finding）"}
+{"level":50,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/moat-dependency","err":{},"msg":"[moat-dependency] 失败"}
+{"level":40,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/network-power","teamId":"team-probe","msg":"compute degraded — skipping threshold"}
+{"level":50,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/network-power","err":{},"msg":"[network-power] 失败"}
+{"level":40,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/niche-breadth","teamId":"team-probe","msg":"compute degraded — skipping threshold"}
+{"level":50,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/niche-breadth","err":{},"msg":"[niche-breadth] 失败"}
+{"level":40,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/niche-squeeze","teamId":"team-probe","msg":"compute degraded — skipping threshold"}
+{"level":50,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/niche-squeeze","err":{},"msg":"[niche-squeeze] 失败"}
+{"level":40,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/opportunity-window","teamId":"team-probe","msg":"compute degraded — data incomplete"}
+{"level":50,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/opportunity-window","err":{},"msg":"[opportunity-window] check 失败"}
+{"level":50,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/org-repairability","err":{},"msg":"[org-repairability] 失败"}
+{"level":50,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/power-rigidity","err":{},"msg":"[power-rigidity] 失败"}
+{"level":50,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/process-ai-readiness","e":{}}
+{"level":40,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/resource-misallocation","teamId":"team-probe","msg":"compute degraded — data incomplete"}
+{"level":50,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/resource-misallocation","err":{},"msg":"[resource-misallocation] check 失败"}
+{"level":30,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/revenue-health","teamId":"team-probe","msg":"无收入数据"}
+{"level":40,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/revenue-health","err":{},"teamId":"team-probe","msg":"收入健康检查失败"}
+{"level":30,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/revenue-health","teamId":"team-probe","count":1,"msg":"收入健康检查完成"}
+{"level":30,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/revenue-health","teamId":"team-probe","count":1,"msg":"收入健康检查完成"}
+{"level":50,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/routine-diffusion","err":{},"msg":"[routine-diffusion] 失败"}
+{"level":50,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/routine-mutation","err":{},"msg":"[routine-mutation] check 失败"}
+{"level":50,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/software-health","err":{},"msg":"[software-health] check 失败"}
+{"level":50,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/strategy-capability-fit","err":{},"msg":"[strategy-capability-fit] check 失败"}
+{"level":50,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/talent-density","err":{},"msg":"[talent-density] 失败"}
+{"level":40,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/time-penetration","teamId":"team-probe","msg":"compute degraded — skipping threshold"}
+{"level":50,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/time-penetration","err":{},"msg":"[time-penetration] 失败"}
+{"level":50,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/unit-economics","err":{},"msg":"[unit-economics] 失败"}
+{"level":40,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/value-capture","teamId":"team-probe","msg":"compute degraded — skipping threshold"}
+{"level":50,"time":1788688920000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/value-capture","err":{},"msg":"[value-capture] 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/agent-deployment-maturity","e":{}}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/ai-ecosystem-fit","e":{}}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/ai-investment-return","e":{}}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/api-coverage","err":{},"msg":"[api-coverage] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/bizmodel-coherence","err":{},"msg":"[bizmodel-coherence] 失败"}
+{"level":30,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/capital-health","teamId":"team-probe","msg":"无 Financial 节点 — 空库基线"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/capital-health","err":{},"msg":"[capital-health] check 失败"}
+{"level":40,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/capital-health","teamId":"team-probe","missing":"total_assets、total_debt、equity、operating_cashflow","msg":"Financial 节点缺必填字段组 — 跳过指标（防缺失默认 0 假 finding）"}
+{"level":40,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/capital-health","teamId":"team-probe","missing":"total_assets、total_debt、equity、operating_cashflow","msg":"Financial 节点缺必填字段组 — 跳过指标（防缺失默认 0 假 finding）"}
+{"level":30,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/cash-runway","teamId":"team-probe","count":2,"msg":"现金流检查完成"}
+{"level":30,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/cash-runway","teamId":"team-probe","count":2,"msg":"现金流检查完成"}
+{"level":30,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/cash-runway","teamId":"team-probe","count":1,"msg":"现金流检查完成"}
+{"level":30,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/cash-runway","teamId":"team-probe","count":2,"msg":"现金流检查完成"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/channel-capacity","err":{},"msg":"[channel-capacity] 失败"}
+{"level":40,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/moat-perceptual","teamId":"team-probe","msg":"brand premium degraded — using 0"}
+{"level":40,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/moat-perceptual","teamId":"team-probe","msg":"customer loyalty degraded — using 0"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/moat-perceptual","err":{},"msg":"[moat-perceptual] 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/moat-structural","err":{},"msg":"[moat-structural] 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/competitive-dynamics","err":{},"msg":"[competitive-dynamics] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/market-lifecycle","err":{},"msg":"[market-lifecycle] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/customer-demand","err":{},"msg":"[customer-demand-shift] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/data-health","err":{},"msg":"[data-health] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/rent-dependency","err":{},"msg":"[rent-dependency] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/explore-exploit-balance","err":{},"msg":"[explore-exploit] 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/financing-constraint","err":{},"msg":"[financing-constraint] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/growth-quality","err":{},"msg":"[growth-quality] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/human-agent-boundary","e":{}}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/incentive-alignment","err":{},"msg":"[incentive-alignment] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/info-distortion","err":{},"msg":"[info-distortion] 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/transaction-cost","err":{},"msg":"[transaction-cost] 失败"}
+{"level":40,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"l3/key-person-risk","err":{},"teamId":"team-probe","msg":"关键人风险失败 — degraded"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/knowledge-accessibility","err":{},"msg":"[knowledge-accessibility] check 失败"}
+{"level":40,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/make-or-buy","teamId":"team-probe","msg":"compute degraded — skipping threshold"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/make-or-buy","err":{},"msg":"[make-or-buy] 失败"}
+{"level":30,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/margin-health","teamId":"team-probe","msg":"无 Financial 节点 — 空库基线"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/margin-health","err":{},"teamId":"team-probe","msg":"[margin-health] check失败"}
+{"level":40,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/margin-health","teamId":"team-probe","missing":"gross_margin、operating_expense","msg":"Financial 节点缺必填字段组 — 跳过指标（防缺失默认 0 假 finding）"}
+{"level":40,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/margin-health","teamId":"team-probe","missing":"gross_margin、operating_expense","msg":"Financial 节点缺必填字段组 — 跳过指标（防缺失默认 0 假 finding）"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/moat-dependency","err":{},"msg":"[moat-dependency] 失败"}
+{"level":40,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/network-power","teamId":"team-probe","msg":"compute degraded — skipping threshold"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/network-power","err":{},"msg":"[network-power] 失败"}
+{"level":40,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/niche-breadth","teamId":"team-probe","msg":"compute degraded — skipping threshold"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/niche-breadth","err":{},"msg":"[niche-breadth] 失败"}
+{"level":40,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/niche-squeeze","teamId":"team-probe","msg":"compute degraded — skipping threshold"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/niche-squeeze","err":{},"msg":"[niche-squeeze] 失败"}
+{"level":40,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/opportunity-window","teamId":"team-probe","msg":"compute degraded — data incomplete"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/opportunity-window","err":{},"msg":"[opportunity-window] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/org-repairability","err":{},"msg":"[org-repairability] 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/power-rigidity","err":{},"msg":"[power-rigidity] 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/process-ai-readiness","e":{}}
+{"level":40,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/resource-misallocation","teamId":"team-probe","msg":"compute degraded — data incomplete"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/resource-misallocation","err":{},"msg":"[resource-misallocation] check 失败"}
+{"level":30,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/revenue-health","teamId":"team-probe","msg":"无收入数据"}
+{"level":40,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/revenue-health","err":{},"teamId":"team-probe","msg":"收入健康检查失败"}
+{"level":30,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/revenue-health","teamId":"team-probe","count":1,"msg":"收入健康检查完成"}
+{"level":30,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/revenue-health","teamId":"team-probe","count":1,"msg":"收入健康检查完成"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/routine-diffusion","err":{},"msg":"[routine-diffusion] 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/routine-mutation","err":{},"msg":"[routine-mutation] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/software-health","err":{},"msg":"[software-health] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/strategy-capability-fit","err":{},"msg":"[strategy-capability-fit] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/talent-density","err":{},"msg":"[talent-density] 失败"}
+{"level":40,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/time-penetration","teamId":"team-probe","msg":"compute degraded — skipping threshold"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/time-penetration","err":{},"msg":"[time-penetration] 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/unit-economics","err":{},"msg":"[unit-economics] 失败"}
+{"level":40,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/value-capture","teamId":"team-probe","msg":"compute degraded — skipping threshold"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/value-capture","err":{},"msg":"[value-capture] 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/agent-deployment-maturity","e":{}}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/ai-ecosystem-fit","e":{}}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/ai-investment-return","e":{}}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/api-coverage","err":{},"msg":"[api-coverage] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/bizmodel-coherence","err":{},"msg":"[bizmodel-coherence] 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/capital-health","err":{},"msg":"[capital-health] check 失败"}
+{"level":30,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/cash-runway","teamId":"team-probe","count":2,"msg":"现金流检查完成"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/channel-capacity","err":{},"msg":"[channel-capacity] 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/moat-perceptual","err":{},"msg":"[moat-perceptual] 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/moat-structural","err":{},"msg":"[moat-structural] 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/competitive-dynamics","err":{},"msg":"[competitive-dynamics] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/market-lifecycle","err":{},"msg":"[market-lifecycle] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/customer-demand","err":{},"msg":"[customer-demand-shift] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/data-health","err":{},"msg":"[data-health] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/rent-dependency","err":{},"msg":"[rent-dependency] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/explore-exploit-balance","err":{},"msg":"[explore-exploit] 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/financing-constraint","err":{},"msg":"[financing-constraint] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/growth-quality","err":{},"msg":"[growth-quality] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/human-agent-boundary","e":{}}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/incentive-alignment","err":{},"msg":"[incentive-alignment] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/info-distortion","err":{},"msg":"[info-distortion] 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/transaction-cost","err":{},"msg":"[transaction-cost] 失败"}
+{"level":40,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"l3/key-person-risk","err":{},"teamId":"team-probe","msg":"关键人风险失败 — degraded"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/knowledge-accessibility","err":{},"msg":"[knowledge-accessibility] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/make-or-buy","err":{},"msg":"[make-or-buy] 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/margin-health","err":{},"teamId":"team-probe","msg":"[margin-health] check失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/moat-dependency","err":{},"msg":"[moat-dependency] 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/network-power","err":{},"msg":"[network-power] 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/niche-breadth","err":{},"msg":"[niche-breadth] 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/niche-squeeze","err":{},"msg":"[niche-squeeze] 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/opportunity-window","err":{},"msg":"[opportunity-window] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/org-repairability","err":{},"msg":"[org-repairability] 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/power-rigidity","err":{},"msg":"[power-rigidity] 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/process-ai-readiness","e":{}}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/resource-misallocation","err":{},"msg":"[resource-misallocation] check 失败"}
+{"level":40,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/revenue-health","err":{},"teamId":"team-probe","msg":"收入健康检查失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/routine-diffusion","err":{},"msg":"[routine-diffusion] 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/routine-mutation","err":{},"msg":"[routine-mutation] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/software-health","err":{},"msg":"[software-health] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/strategy-capability-fit","err":{},"msg":"[strategy-capability-fit] check 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/talent-density","err":{},"msg":"[talent-density] 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/time-penetration","err":{},"msg":"[time-penetration] 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/unit-economics","err":{},"msg":"[unit-economics] 失败"}
+{"level":50,"time":1788688800000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/value-capture","err":{},"msg":"[value-capture] 失败"}
+{"level":50,"time":1788689100000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/agent-deployment-maturity","e":{}}
+{"level":50,"time":1788689100000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/ai-ecosystem-fit","e":{}}
+{"level":50,"time":1788689100000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/ai-investment-return","e":{}}
+{"level":50,"time":1788689100000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/api-coverage","err":{},"msg":"[api-coverage] check 失败"}
+{"level":50,"time":1788689100000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/bizmodel-coherence","err":{},"msg":"[bizmodel-coherence] 失败"}
+{"level":50,"time":1788689100000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/capital-health","err":{},"msg":"[capital-health] check 失败"}
+{"level":30,"time":1788689100000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/cash-runway","teamId":"team-probe","count":2,"msg":"现金流检查完成"}
+{"level":50,"time":1788689100000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/channel-capacity","err":{},"msg":"[channel-capacity] 失败"}
+{"level":50,"time":1788689100000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/moat-perceptual","err":{},"msg":"[moat-perceptual] 失败"}
+{"level":50,"time":1788689100000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/moat-structural","err":{},"msg":"[moat-structural] 失败"}
+{"level":50,"time":1788689100000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/competitive-dynamics","err":{},"msg":"[competitive-dynamics] check 失败"}
+{"level":50,"time":1788689100000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/market-lifecycle","err":{},"msg":"[market-lifecycle] check 失败"}
+{"level":50,"time":1788689100000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/customer-demand","err":{},"msg":"[customer-demand-shift] check 失败"}
+{"level":50,"time":1788689100000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/data-health","err":{},"msg":"[data-health] check 失败"}
+{"level":50,"time":1788689100000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/rent-dependency","err":{},"msg":"[rent-dependency] check 失败"}
+{"level":50,"time":1788689100000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/explore-exploit-balance","err":{},"msg":"[explore-exploit] 失败"}
+{"level":50,"time":1788689100000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/financing-constraint","err":{},"msg":"[financing-constraint] check 失败"}
+{"level":50,"time":1788689100000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/growth-quality","err":{},"msg":"[growth-quality] check 失败"}
+{"level":50,"time":1788689100000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/human-agent-boundary","e":{}}
+{"level":50,"time":1788689100000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/incentive-alignment","err":{},"msg":"[incentive-alignment] check 失败"}
+{"level":50,"time":1788689100000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/info-distortion","err":{},"msg":"[info-distortion] 失败"}
+{"level":50,"time":1788689100000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/transaction-cost","err":{},"msg":"[transaction-cost] 失败"}
+{"level":50,"time":1788689100000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/knowledge-accessibility","err":{},"msg":"[knowledge-accessibility] check 失败"}
+{"level":50,"time":1788689100000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/make-or-buy","err":{},"msg":"[make-or-buy] 失败"}
+{"level":50,"time":1788689100000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/margin-health","err":{},"teamId":"team-probe","msg":"[margin-health] check失败"}
+{"level":50,"time":1788689100000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/moat-dependency","err":{},"msg":"[moat-dependency] 失败"}
+{"level":50,"time":1788689100000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/network-power","err":{},"msg":"[network-power] 失败"}
+{"level":50,"time":1788689100000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/niche-breadth","err":{},"msg":"[niche-breadth] 失败"}
+{"level":50,"time":1788689100000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/niche-squeeze","err":{},"msg":"[niche-squeeze] 失败"}
+{"level":50,"time":1788689100000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/opportunity-window","err":{},"msg":"[opportunity-window] check 失败"}
+{"level":50,"time":1788689100000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/org-repairability","err":{},"msg":"[org-repairability] 失败"}
+{"level":50,"time":1788689100000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/power-rigidity","err":{},"msg":"[power-rigidity] 失败"}
+{"level":50,"time":1788689100000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/process-ai-readiness","e":{}}
+{"level":50,"time":1788689100000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/resource-misallocation","err":{},"msg":"[resource-misallocation] check 失败"}
+{"level":50,"time":1788689100000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/routine-diffusion","err":{},"msg":"[routine-diffusion] 失败"}
+{"level":50,"time":1788689100000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/routine-mutation","err":{},"msg":"[routine-mutation] check 失败"}
+{"level":50,"time":1788689100000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/software-health","err":{},"msg":"[software-health] check 失败"}
+{"level":50,"time":1788689100000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/strategy-capability-fit","err":{},"msg":"[strategy-capability-fit] check 失败"}
+{"level":50,"time":1788689100000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/talent-density","err":{},"msg":"[talent-density] 失败"}
+{"level":50,"time":1788689100000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/time-penetration","err":{},"msg":"[time-penetration] 失败"}
+{"level":50,"time":1788689100000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/unit-economics","err":{},"msg":"[unit-economics] 失败"}
+{"level":50,"time":1788689100000,"pid":3001,"hostname":"192.168.1.7","name":"synova-agent","service":"sentinel/value-capture","err":{},"msg":"[value-capture] 失败"}
+ ✓ tests/sentinel/finding-id-stability.test.ts (4 tests) 61ms
+
+ Test Files  4 passed (4)
+      Tests  34 passed (34)
+   Start at  19:28:50
+   Duration  704ms (transform 936ms, setup 0ms, import 847ms, tests 605ms, environment 0ms)
+

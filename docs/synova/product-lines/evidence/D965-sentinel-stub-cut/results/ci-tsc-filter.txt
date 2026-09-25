@@ -1,0 +1,9 @@
+$ # CI 同款过滤链（.github/workflows/ci.yml:76-81），输入=results/tsc-AFTER-FIX.txt
+$ grep -v "_extinct/\|ima.ts\|server.ts\|sentinel-service.ts\|industry-loader.ts\|tool-registration.ts\|llm-provider-loader.ts" docs/synova/product-lines/evidence/D965-sentinel-stub-cut/results/tsc-AFTER-FIX.txt | grep -E "error TS"
+[以上为空 = CI 类型门禁绿]
+
+$ # 同一过滤器作用在基线 docs/synova/product-lines/evidence/D965-sentinel-stub-cut/results/tsc-BASELINE.txt
+[以上为空 = 基线亦绿]
+
+$ # 原始（未过滤）错误计数
+baseline_raw=28  after_cut_raw=30  after_fix_raw=30

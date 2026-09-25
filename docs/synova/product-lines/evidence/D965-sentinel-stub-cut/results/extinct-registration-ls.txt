@@ -1,0 +1,35 @@
+$ ls extensions/sentinels/_extinct/ | sort
+adaptation-velocity
+capital-efficiency
+capital-structure
+capital-turnover
+competitive-dynamics
+competitive-moat-perceptual
+competitive-moat-structural
+connector-coverage
+cost-health
+market-lifecycle
+profit-health
+sentinel-forecast-accuracy
+sentinel-pricing-strategy
+structural-change
+
+$ ls extensions/sentinels/_extinct/ | wc -l
+14
+
+$ ls -d extensions/sentinels/sentinel-forecast-accuracy extensions/sentinels/sentinel-pricing-strategy
+ls: extensions/sentinels/sentinel-forecast-accuracy: No such file or directory
+ls: extensions/sentinels/sentinel-pricing-strategy: No such file or directory
+
+$ 活跃目录数（loader 同口径：排除 shared 与 _ 前缀）
+43
+
+$ find extensions/sentinels/sentinel-forecast-accuracy extensions/sentinels/sentinel-pricing-strategy (应为 No such file)
+find: extensions/sentinels/sentinel-forecast-accuracy: No such file or directory
+find: extensions/sentinels/sentinel-pricing-strategy: No such file or directory
+
+$ 新登记件内容清单
+extensions/sentinels/_extinct/sentinel-forecast-accuracy/aggregate.ts
+extensions/sentinels/_extinct/sentinel-forecast-accuracy/manifest.json
+extensions/sentinels/_extinct/sentinel-pricing-strategy/aggregate.ts
+extensions/sentinels/_extinct/sentinel-pricing-strategy/manifest.json

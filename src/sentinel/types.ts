@@ -294,5 +294,8 @@ import type { competitivePositionSentinel as _competitivePositionCheck } from ".
 import type { keyPersonRiskSentinel as _keyPersonRiskCheck } from "../../extensions/sentinels/key-person-risk/aggregate";
 import type { pathDependencySentinel as _pathDependencyCheck } from "../../extensions/sentinels/path-dependency/computes/detect";
 import type { revenueHealthSentinel as _revenueHealthCheck } from "../../extensions/sentinels/revenue-health/aggregate";
-import type { forecastAccuracySentinel as _forecastAccuracyCheck } from "../../extensions/sentinels/sentinel-forecast-accuracy/aggregate";
-import type { pricingStrategySentinel as _pricingStrategyCheck } from "../../extensions/sentinels/sentinel-pricing-strategy/aggregate";
+// D965 裁撤：两件硬编码桩（check 收错第 1 参 / 从不碰 store / input 为字面量）归档 _extinct，
+// 登记随迁（与同文件既有 12 条 _extinct/... import 同制）。_extinct/ 由
+// check-sentinel-type-net.sh 显式豁免（loader 同口径跳过 `_` 前缀），CI tsc 亦白名单 _extinct/。
+import type { forecastAccuracySentinel as _forecastAccuracyCheck } from "../../extensions/sentinels/_extinct/sentinel-forecast-accuracy/aggregate";
+import type { pricingStrategySentinel as _pricingStrategyCheck } from "../../extensions/sentinels/_extinct/sentinel-pricing-strategy/aggregate";

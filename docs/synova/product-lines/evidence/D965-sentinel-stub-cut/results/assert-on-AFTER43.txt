@@ -1,0 +1,14 @@
+# assert-D965-stub-cut  probe=/tmp/D965/probe-AFTER43.json  label=AFTER43
+# loadSentinels.count=43 degraded=false errors=[]
+PASS  金丝雀在 [cash-runway] -> ["cr_runway_degraded","cr_overdue_degraded"]
+PASS  金丝雀在 [business-model-coherence] -> ["i7-crit"]
+PASS  金丝雀在 [channel-capacity] -> ["o6-nodata"]
+PASS  已裁撤 [sentinel-forecast-accuracy]：不在加载集内
+PASS  已裁撤 [sentinel-pricing-strategy]：不在加载集内
+PASS  编造 finding 零残留：["forecast-mape","forecast-sample","forecast-timeseries","pricing-disc","pricing-below-mc"] 均不在流中（全流 14 条）
+PASS  有产出的哨兵集合一致：13 个
+# 零 store 调用哨兵（裁撤后应为空）: []
+PASS  零 store 调用哨兵 = 0（裁撤前为 2）
+PASS  抛错 = 0（共 43 个哨兵）
+
+=== ASSERT RESULT: GREEN (failures=0) ===

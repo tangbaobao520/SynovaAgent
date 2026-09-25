@@ -1,20 +1,79 @@
 {
   "task_id": "D965",
-  "title": "P0 修 3 个坏哨兵（path-dependency 缺 aggregate；forecast-accuracy / pricing-strategy 契约违反）",
-  "status": "spec_done",
+  "title": "P0 裁撤 2 个硬编码桩哨兵（forecast-accuracy / pricing-strategy）+ 登记 _extinct/ + 连带 5 处修绿",
+  "status": "impl_done",
   "risk": "high",
   "domain": "mac",
   "owner": "mac-coding",
   "executor": "dsh-squad",
   "milestone": "哨兵体系整改（十环判据）",
   "spec": "docs/synova/architecture/SYNOVA-哨兵体系-最终版-v1-20260925.md",
+  "branch": "fix/D965-sentinel-stub-cut",
+  "worktree": ".synova-wt-D965",
+  "base": "origin/main ce231ff1b1e419095117413badba8c6b55ae39fd",
   "write_set": [
-    "extensions/sentinels/path-dependency/**",
     "extensions/sentinels/sentinel-forecast-accuracy/**",
     "extensions/sentinels/sentinel-pricing-strategy/**",
-    "task-state/D965.json"
+    "extensions/sentinels/_extinct/**",
+    "src/sentinel/types.ts",
+    "tests/sentinels/shared/d62-me-sentinels.test.ts",
+    "tests/sentinel/path-dependency-sentinel.test.ts",
+    "tests/sentinel/d752-type-net-gate.integration.test.ts",
+    "tests/control-tower/check-sentinel-type-net.test.sh",
+    "docs/authority/DOCS-REGISTRY.yaml",
+    "task-state/D965.json",
+    ".claude/task-briefs/2026-09-25-D965-sentinel-stub-cut.md",
+    "docs/synova/product-lines/evidence/D965-sentinel-stub-cut-evidence.md",
+    "docs/synova/product-lines/evidence/D965-sentinel-stub-cut/**"
   ],
+  "evidence": "docs/synova/product-lines/evidence/D965-sentinel-stub-cut-evidence.md",
+  "brief": ".claude/task-briefs/2026-09-25-D965-sentinel-stub-cut.md",
+  "cross_card_holdings": {
+    "note": "D965 持有以下文件；本批其它卡的 write_set 与之存在重叠，需按序串行（同一文件同一时间只有一个写者）。",
+    "holds": [
+      "src/sentinel/types.ts",
+      "tests/sentinels/shared/d62-me-sentinels.test.ts",
+      "tests/sentinel/path-dependency-sentinel.test.ts",
+      "tests/sentinel/d752-type-net-gate.integration.test.ts",
+      "tests/control-tower/check-sentinel-type-net.test.sh"
+    ],
+    "overlaps": [
+      {
+        "card": "D967",
+        "their_entry": "src/sentinel/**",
+        "overlap_files": ["src/sentinel/types.ts"],
+        "overlap_lines": 2,
+        "resolution": "D965 先落（本卡提交即释放）；D967 承接时直接基于含本卡改动的 main 开工。两卡均由同一编码成员（sentinel-coder-a）承接，天然串行。"
+      },
+      {
+        "card": "D968",
+        "their_entry": "tests/**",
+        "overlap_files": [
+          "tests/sentinels/shared/d62-me-sentinels.test.ts",
+          "tests/sentinel/path-dependency-sentinel.test.ts",
+          "tests/sentinel/d752-type-net-gate.integration.test.ts"
+        ],
+        "resolution": "D965 先落；D968 开工前必须基于含本卡的 main（否则其 tests/** 断言与 43 口径不一致）。若 D968 由他人承接，需 CTO 排期串行。"
+      }
+    ],
+    "explicit_release": "本卡合并（K3 复审通过）后方可释放以上文件归属；owner 不自动释放。"
+  },
+  "batch_impact": {
+    "load_sentinels_count": "45 -> 43",
+    "consumers_affected": [
+      "D966：凡引用「45 哨兵 / 45/45」口径的基线或分母必须改用 43（本卡未改 D966 产物，仅登记）。",
+      "D968：「加载数 = 目录数 = 门禁计数 = 43」不变式成立（三源一致，见证据 §3-Done5）。D968 应沿用动态取数写法，不得写死数字。"
+    ],
+    "not_added": "未新增任何哨兵（院方禁令 3）；活跃数净减 2，归档新增 2。"
+  },
+  "done_evidence": {
+    "D1_probe_threw_zero": "43/43 threw=0（裁撤前 45 侧亦 threw=0）；results/probe-D965-FINAL-summary.txt",
+    "D2_registered_no_residue": "_extinct/ 12 -> 14；原目录 No such file；活跃目录数 43；results/extinct-registration-ls.txt",
+    "D3_discriminative_fixture": "GREEN exit 0 与 还原裁撤 RED exit 1 对照（金丝雀两态均 PASS）；results/assert-D965-FINAL.txt + assert-RED-RESTORED.txt",
+    "D4_path_dependency_untouched": "哨兵目录 git diff 空输出（其测试文件因硬编码 45 连带改，已分开表述）；results/self-check-raw.txt",
+    "D5_count_registered": "45 -> 43 三源一致；results/gate-sh-test-after-fix.txt + ci-tsc-filter.txt"
+  },
   "updated_at": "2026-09-25",
-  "updated_by": "synova-cto",
-  "note": "依据派单 docs/synova/coordination/派单-哨兵体系整改-20260925.md；判据见该文档逐卡 Done 段。"
+  "updated_by": "sentinel-coder-a",
+  "note": "派单原写集含 path-dependency（前提不成立：其 entryPoint=./computes/detect.ts 存在且 check() 返回 SentinelFinding[]，loader 尊重 entryPoint —— CTO 探针硬编码 aggregate.ts 才报模块找不到），已由队长实测拦下并改卡，本卡对 path-dependency 哨兵目录 0 改动。另原写集未覆盖裁撤的 5 处连带断裂（src/sentinel/types.ts + 4 个测试文件），已报队长并经 CTO 批准 A 方案扩写集；其中 3 处硬编码计数 45 一律改动态取数（非改成 43）。自验不由编码兼任，独立复核归 sentinel-verifier。"
 }

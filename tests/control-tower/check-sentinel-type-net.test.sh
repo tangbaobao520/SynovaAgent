@@ -34,7 +34,16 @@ echo "── 1. 正常路径: 真实仓库全登记 → exit 0 ──"
 # git rev-parse --show-toplevel 解析（D521/M13 同族坑）——显式剥除，保证测真实仓库根
 OUT=$(env -u GIT_DIR -u GIT_WORK_TREE -u GIT_INDEX_FILE bash "$TOOL" 2>&1) && RC=0 || RC=$?
 assert_exit "$RC" 0 "真实仓库门禁绿"
-assert_contains "$OUT" "45 个活跃哨兵全部已登记" "全登记计数输出"
+# D965（铁律 35 自动化优先）: 计数**动态取数**，不写死 45/43。
+# 期望值 = 真实目录数（与门禁/loader 同口径: 排除 shared 与 `_` 前缀），
+# 哨兵裁撤或新增时本断言自动跟随，不会把同一个坑挪到下一次变更后再爆。
+EXPECTED_COUNT=$(cd "$REPO_DIR/extensions/sentinels" && ls -1 | while IFS= read -r e; do
+  [ -d "$e" ] || continue
+  [ "$e" = "shared" ] && continue
+  case "$e" in (_*) continue ;; esac
+  echo "$e"
+done | sort -u | wc -l | tr -d ' ')
+assert_contains "$OUT" "${EXPECTED_COUNT} 个活跃哨兵全部已登记" "全登记计数输出（动态取数=${EXPECTED_COUNT}）"
 echo ""
 
 echo "── 2. 红分支: 沙箱缺登记 → exit 1 + 点名 ──"

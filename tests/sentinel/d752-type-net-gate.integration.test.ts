@@ -6,14 +6,14 @@
  * .github/workflows/ci.yml 属红区不可改，故 CI 侧拦截经本测试实现（铁律 12: 真实路由）。
  *
  * 覆盖（铁律 48: 正常/红/豁免边界/降级）:
- *   1. 正常 — 真实仓库（补登记后）门禁 exit 0
+ *   1. 正常 — 真实仓库（补登记后）门禁 exit 0，且计数 = 真实活跃目录数（动态取数）
  *   2. 红 — 沙箱缺登记 → exit 1 + 点名（反向验证的自动化形态）
  *   3. 豁免 — _ 前缀归档（_extinct 等）+ shared 不要求登记（与 sentinel-loader 同口径）
  *   4. 降级 — 哨兵目录缺失 → exit 2 fail-closed
  */
 import { describe, it, expect } from 'vitest';
 import { execFileSync } from 'child_process';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'fs';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { tmpdir } from 'os';
@@ -54,10 +54,18 @@ function mkSandbox(typesTs: string, sentinelDirs: string[]): string {
 }
 
 describe('D752 哨兵类型网硬门禁（check-sentinel-type-net.sh）', () => {
-  it('正常路径: 真实仓库 45 个活跃哨兵全部登记 → exit 0', () => {
+  it('正常路径: 真实仓库活跃哨兵全部登记 → exit 0（计数动态取数，防裁撤后复发）', () => {
     const { code, out } = runGate();
     expect(code).toBe(0);
-    expect(out).toContain('45 个活跃哨兵全部已登记');
+    // D965（铁律 35 自动化优先）：不写死计数。门禁报的数字必须等于**真实目录数**
+    // ——即「加载数 = 目录数」不变式（与哨兵 loader 同口径：跳过 shared 与 `_` 前缀）。
+    const m = out.match(/(\d+)\s*个活跃哨兵全部已登记/);
+    expect(m, `门禁输出未含计数行: ${out}`).toBeTruthy();
+    const activeDirs = readdirSync(join(REPO_ROOT, 'extensions', 'sentinels'), { withFileTypes: true })
+      .filter((e) => e.isDirectory() && e.name !== 'shared' && !e.name.startsWith('_'))
+      .map((e) => e.name);
+    expect(activeDirs.length).toBeGreaterThan(0); // 防空载假绿
+    expect(Number(m![1])).toBe(activeDirs.length);
   });
 
   it('红分支: 沙箱缺登记 → exit 1 + 点名缺失哨兵（自动化反向验证）', () => {

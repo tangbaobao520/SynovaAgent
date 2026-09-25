@@ -1,0 +1,28 @@
+=== SUMMARY BASELINE45 ===
+sentinels_total=45
+threw_count=0
+entry_missing=[]
+module_import_failed=[]
+hasCheck_false=[]
+store_zero_call=["sentinel-forecast-accuracy","sentinel-pricing-strategy"]
+degraded_prop_true=["customer-demand-shift"]
+
+=== FINDINGS-BY-SENTINEL BASELINE45 (non-empty only, 逐元素可比) ===
+business-model-coherence -> ["i7-crit"]
+cash-runway -> ["cr_runway_degraded","cr_overdue_degraded"]
+channel-capacity -> ["o6-nodata"]
+competitive-moat -> ["i3-nodata"]
+competitive-position -> ["e1-nodata"]
+environment-rent-dependency -> ["e5-rent-warn"]
+incentive-alignment -> ["o3-nodata"]
+info-distortion -> ["o7-nodata"]
+knowledge-accessibility -> ["o4-nodata"]
+org-repairability -> ["o8-nodata"]
+power-rigidity -> ["o9-nodata"]
+routine-diffusion -> ["o5-nodata"]
+sentinel-forecast-accuracy -> ["forecast-mape","forecast-sample","forecast-timeseries"]
+sentinel-pricing-strategy -> ["pricing-disc"]
+talent-density -> ["o10-nodata"]
+finding_producing_sentinels=15
+total_findings=18
+json_written=/tmp/D965/probe-BASELINE45.json

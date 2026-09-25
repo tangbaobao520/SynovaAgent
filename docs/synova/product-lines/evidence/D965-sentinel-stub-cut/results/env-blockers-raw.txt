@@ -1,0 +1,21 @@
+$ grep -n '2026-09-25.*detected-bypass' .claude/bypass.log
+1758:2026-09-25T00:56:43Z detected-bypass head-mismatch marker=ce5b13b96c9b0b5b40ff065da7f1361bd6996a72 parent=2b38d1779aa31caf553ef481eb6f2e5479a3199c
+
+$ git show HEAD:.claude/bypass.log | grep -c '2026-09-25.*detected-bypass'
+1
+(1 = 该记录已在基线 origin/main 内，非本卡产生)
+
+$ git status --short .claude/bypass.log
+(空 = 本地未改动)
+
+$ ls -l /tmp/.synova-before-brief
+-rw-r--r--@ 1 wane  wheel  234 Sep 24 16:31 /tmp/.synova-before-brief
+
+$ head -1 /tmp/.synova-before-brief
+2026-09-24T16:31:02+08:00 | FILE=/Users/wane/.claude/projects/-Users-wane-SynovaAgent/memory/dsh-electron-source-desktop.md | BRIEF=.claude/task-briefs/2026-09-24-D941-ownership-generative-rewrite.md | 代码在 brief 填写前写入
+
+$ git merge-base --is-ancestor ce5b13b96c9b0b5b40ff065da7f1361bd6996a72 origin/main
+NO (marker 不在 main 上)
+
+$ git log -1 --format='%an <%ae> %ad %s' ce5b13b96c9b0b5b40ff065da7f1361bd6996a72
+synova-cto <cto@synova.local> Thu Sep 24 20:02:15 2026 +0800 Merge remote-tracking branch 'origin/main' into HEAD

@@ -1,0 +1,19 @@
+# assert-D965-stub-cut  probe=/tmp/D965/probe-BASELINE45.json  label=BASELINE45
+# loadSentinels.count=45 degraded=false errors=[]
+PASS  金丝雀在 [cash-runway] -> ["cr_runway_degraded","cr_overdue_degraded"]
+PASS  金丝雀在 [business-model-coherence] -> ["i7-crit"]
+PASS  金丝雀在 [channel-capacity] -> ["o6-nodata"]
+FAIL  裁撤未生效 [sentinel-forecast-accuracy]：仍出现在加载集（共 45 个哨兵）
+FAIL  裁撤未生效 [sentinel-pricing-strategy]：仍出现在加载集（共 45 个哨兵）
+FAIL  编造 finding 泄漏：["forecast-mape","forecast-sample","forecast-timeseries","pricing-disc"]（出现在 ["sentinel-forecast-accuracy","sentinel-pricing-strategy"]）
+FAIL  有产出的哨兵集合变化（误伤）：多出 ["sentinel-forecast-accuracy","sentinel-pricing-strategy"] / 缺失 []
+# 零 store 调用哨兵（裁撤后应为空）: ["sentinel-forecast-accuracy","sentinel-pricing-strategy"]
+FAIL  裁撤后仍有哨兵零 store 调用（硬编码桩嫌疑）: ["sentinel-forecast-accuracy","sentinel-pricing-strategy"]
+PASS  抛错 = 0（共 45 个哨兵）
+
+=== ASSERT RESULT: RED (failures=5) ===
+  - 裁撤未生效 [sentinel-forecast-accuracy]：仍出现在加载集（共 45 个哨兵）
+  - 裁撤未生效 [sentinel-pricing-strategy]：仍出现在加载集（共 45 个哨兵）
+  - 编造 finding 泄漏：["forecast-mape","forecast-sample","forecast-timeseries","pricing-disc"]（出现在 ["sentinel-forecast-accuracy","sentinel-pricing-strategy"]）
+  - 有产出的哨兵集合变化（误伤）：多出 ["sentinel-forecast-accuracy","sentinel-pricing-strategy"] / 缺失 []
+  - 裁撤后仍有哨兵零 store 调用（硬编码桩嫌疑）: ["sentinel-forecast-accuracy","sentinel-pricing-strategy"]

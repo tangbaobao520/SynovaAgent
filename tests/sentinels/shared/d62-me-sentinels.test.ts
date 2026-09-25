@@ -90,14 +90,17 @@ describe('D62 — incentive-alignment post-processor: computeAgencyCost', () => 
 
 // ═══ Group B: 2 new sentinel structure ═══
 
-describe('D62 — new sentinels exist', () => {
-  it('pricing-strategy aggregate.ts exports sentinel', async () => {
-    const mod = await import('../../../extensions/sentinels/sentinel-pricing-strategy/aggregate');
+// D965 裁撤: 两件为硬编码桩（check 收错第 1 参 / 从不碰 store / input 为字面量），
+// 已 git mv 至 _extinct/。断言随迁并显式标注归档态——保留导出形状契约，
+// 不删除覆盖（删覆盖会让「归档物被悄悄改坏」失去唯一探针）。
+describe('D62 — sentinels exist（D965 起两件已归档 _extinct/）', () => {
+  it('pricing-strategy aggregate.ts exports sentinel（已归档）', async () => {
+    const mod = await import('../../../extensions/sentinels/_extinct/sentinel-pricing-strategy/aggregate');
     expect(mod.pricingStrategySentinel).toBeDefined();
     expect(typeof mod.pricingStrategySentinel.check).toBe('function');
   });
-  it('forecast-accuracy aggregate.ts exports sentinel', async () => {
-    const mod = await import('../../../extensions/sentinels/sentinel-forecast-accuracy/aggregate');
+  it('forecast-accuracy aggregate.ts exports sentinel（已归档）', async () => {
+    const mod = await import('../../../extensions/sentinels/_extinct/sentinel-forecast-accuracy/aggregate');
     expect(mod.forecastAccuracySentinel).toBeDefined();
     expect(typeof mod.forecastAccuracySentinel.check).toBe('function');
   });

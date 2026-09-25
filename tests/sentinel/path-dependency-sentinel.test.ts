@@ -4,7 +4,7 @@
  *
  * 覆盖（dev doc §4，10 用例 red→green）:
  *   1. detect.ts 存在且 export pathDependencySentinel（命名对齐，exportKey 命中）
- *   2. registerLoadedSentinels 45/45 全量注册（无 path-dependency entryPoint 报错）
+ *   2. registerLoadedSentinels 全量注册（计数动态取数 = 加载数；无 path-dependency entryPoint 报错）
  *   3. detectPathDependency 空图（0 节点）→ degraded: true
  *   4. detectPathDependency 空边（0 边）→ degraded: true
  *   5. detectPathDependency 有边 → value ∈ [0,1]
@@ -74,12 +74,16 @@ describe('D379 path-dependency 空壳补实现', () => {
 
   // ═══ 用例 2: 45/45 全量注册 ═══
 
-  it('registerLoadedSentinels 45/45 注册，无 path-dependency entryPoint 报错', async () => {
-    const { registerLoadedSentinels } = await import('../../src/sentinel/sentinel-loader');
+  it('registerLoadedSentinels 全量注册（动态取数：注册数 = 加载数），无 path-dependency entryPoint 报错', async () => {
+    const { registerLoadedSentinels, loadSentinels } = await import('../../src/sentinel/sentinel-loader');
     clearSentinelCache();
+    // D965（铁律 35 自动化优先）：计数**动态取数**，不写死 45/43。
+    // 哨兵目录增减时本断言自动跟随——写死数字只会把同一个坑挪到下一次裁撤后再爆。
+    const expected = loadSentinels().sentinels.length;
+    expect(expected).toBeGreaterThan(0); // 防空载假绿：0 个哨兵时 registered===0 会平凡通过
     const { registered, errors } = await registerLoadedSentinels();
     expect(errors.filter(e => e.includes('path-dependency'))).toEqual([]);
-    expect(registered).toBe(45);
+    expect(registered).toBe(expected);
   });
 
   // ═══ 用例 3-6: detectPathDependency 三态 ═══

@@ -1,0 +1,16 @@
+loadSentinels.count: 45 -> 43
+total_findings:      18 -> 14
+
+A-B (消失的 finding):
+  - sentinel-forecast-accuracy:forecast-mape
+  - sentinel-forecast-accuracy:forecast-sample
+  - sentinel-forecast-accuracy:forecast-timeseries
+  - sentinel-pricing-strategy:pricing-disc
+
+B-A (新增的 finding):
+  (空)
+
+REMOVED_ENTRIES = {"sentinel-forecast-accuracy": ["forecast-mape", "forecast-sample", "forecast-timeseries"], "sentinel-pricing-strategy": ["pricing-disc"]}
+ADDED_ENTRIES   = {}
+CHANGED_ENTRIES = {}
+COLLATERAL_DAMAGE = False

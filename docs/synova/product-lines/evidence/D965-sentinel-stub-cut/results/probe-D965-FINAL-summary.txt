@@ -1,0 +1,26 @@
+=== SUMMARY D965-FINAL ===
+sentinels_total=43
+threw_count=0
+entry_missing=[]
+module_import_failed=[]
+hasCheck_false=[]
+store_zero_call=[]
+degraded_prop_true=["customer-demand-shift"]
+
+=== FINDINGS-BY-SENTINEL D965-FINAL (non-empty only, 逐元素可比) ===
+business-model-coherence -> ["i7-crit"]
+cash-runway -> ["cr_runway_degraded","cr_overdue_degraded"]
+channel-capacity -> ["o6-nodata"]
+competitive-moat -> ["i3-nodata"]
+competitive-position -> ["e1-nodata"]
+environment-rent-dependency -> ["e5-rent-warn"]
+incentive-alignment -> ["o3-nodata"]
+info-distortion -> ["o7-nodata"]
+knowledge-accessibility -> ["o4-nodata"]
+org-repairability -> ["o8-nodata"]
+power-rigidity -> ["o9-nodata"]
+routine-diffusion -> ["o5-nodata"]
+talent-density -> ["o10-nodata"]
+finding_producing_sentinels=13
+total_findings=14
+json_written=/tmp/D965/probe-D965-FINAL.json

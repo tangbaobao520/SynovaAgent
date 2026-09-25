@@ -1,0 +1,17 @@
+$ git diff --stat -M HEAD
+ .../sentinel-forecast-accuracy/aggregate.ts              |  0
+ .../sentinel-forecast-accuracy/manifest.json             |  0
+ .../sentinel-pricing-strategy/aggregate.ts               |  0
+ .../sentinel-pricing-strategy/manifest.json              |  0
+ src/sentinel/types.ts                                    |  7 +++++--
+ tests/control-tower/check-sentinel-type-net.test.sh      | 11 ++++++++++-
+ tests/sentinel/d752-type-net-gate.integration.test.ts    | 16 ++++++++++++----
+ tests/sentinel/path-dependency-sentinel.test.ts          | 12 ++++++++----
+ tests/sentinels/shared/d62-me-sentinels.test.ts          | 13 ++++++++-----
+ 9 files changed, 43 insertions(+), 16 deletions(-)
+
+$ git diff -M --summary HEAD
+ rename extensions/sentinels/{ => _extinct}/sentinel-forecast-accuracy/aggregate.ts (100%)
+ rename extensions/sentinels/{ => _extinct}/sentinel-forecast-accuracy/manifest.json (100%)
+ rename extensions/sentinels/{ => _extinct}/sentinel-pricing-strategy/aggregate.ts (100%)
+ rename extensions/sentinels/{ => _extinct}/sentinel-pricing-strategy/manifest.json (100%)

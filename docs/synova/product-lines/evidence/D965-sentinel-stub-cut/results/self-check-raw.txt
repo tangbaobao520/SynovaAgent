@@ -1,0 +1,23 @@
+$ git diff --stat -M HEAD -- extensions/sentinels/path-dependency
+$ git diff --numstat -M HEAD -- extensions/sentinels/path-dependency
+[两条均为空 = path-dependency 哨兵目录 0 改动]
+
+$ git diff -M HEAD | grep -nE 'as any|as never|as unknown as'
+[空 = 三禁断言 0 处；exit=1]
+
+$ git grep -l '_extinct/sentinel-forecast-accuracy\|_extinct/sentinel-pricing-strategy' -- src tests
+src/sentinel/types.ts
+tests/sentinels/shared/d62-me-sentinels.test.ts
+
+$ git status --short
+R  extensions/sentinels/sentinel-forecast-accuracy/aggregate.ts -> extensions/sentinels/_extinct/sentinel-forecast-accuracy/aggregate.ts
+R  extensions/sentinels/sentinel-forecast-accuracy/manifest.json -> extensions/sentinels/_extinct/sentinel-forecast-accuracy/manifest.json
+R  extensions/sentinels/sentinel-pricing-strategy/aggregate.ts -> extensions/sentinels/_extinct/sentinel-pricing-strategy/aggregate.ts
+R  extensions/sentinels/sentinel-pricing-strategy/manifest.json -> extensions/sentinels/_extinct/sentinel-pricing-strategy/manifest.json
+ M src/sentinel/types.ts
+ M tests/control-tower/check-sentinel-type-net.test.sh
+ M tests/sentinel/d752-type-net-gate.integration.test.ts
+ M tests/sentinel/path-dependency-sentinel.test.ts
+ M tests/sentinels/shared/d62-me-sentinels.test.ts
+?? docs/synova/product-lines/evidence/D965-sentinel-stub-cut-evidence.md
+?? docs/synova/product-lines/evidence/D965-sentinel-stub-cut/
