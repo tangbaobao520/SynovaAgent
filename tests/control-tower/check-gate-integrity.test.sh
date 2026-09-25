@@ -22,6 +22,13 @@
 #   棘轮 — ① 修好副本（坐标不再违规）→ STALE(方言) + exit 0；③ STALE 且过期 → 仍 exit 1（反"拔牙"）；⑩ 混合计数
 #   棘轮 — ④ step summary: GITHUB_STEP_SUMMARY 可写 → 落 `## Gate Integrity` 块；存在但不可写 → 显式 degrade
 #   棘轮 — 跨方言陷阱: :991 在 BSD rc=2(违规) / GNU 合法(不违规) → "已不再违规"不得判红（CTO 裁定 A）
+#   跨方言 — **"非法 ERE"夹具一律用方言无关构造 `a(b`**（括号不平衡，BSD/GNU 均 rc=2）；
+#            `^+++` 只作 PROBE_RE 探针与 :991 的 STALE 双分支，**不参与 pass/fail**。
+#            （#768 CI 实测: 旧夹具拿 ^+++ 当非法 ERE → GNU 下合法 → 该坐标落 STALE 而非"待修违规"
+#             → 5 条断言连锁红 PASS=50 FAIL=5；本机 GNU 仿真 shim 可逐字复现同一组）
+#   健壮 — 失败路径必须能播报: no()/ok() 文案里 `${VAR}` **必须加花括号** —— 全角标点紧贴变量
+#            （`$rc（…）`）在 macOS/bash 3.2 + UTF-8 locale 下被解析成变量名 `rc（` → set -u 下
+#            unbound variable → **夹具整体崩在断言处、结果行永不产出**（比截断更糟）。11 处已修。
 #   分段 — 双段互不串行: [R] 段 key 不给 A 模式豁免；[P] 段条目不进 registry 面
 #   判别性 — M1 未登记的新非法 ERE（临时脚本）→ 必红（exit 1 + 点名 file:line + 模式原文）
 #   判别性 — M2 从基线删 1 条仍存在的未登记项 → 必红
@@ -59,8 +66,13 @@ trap 'rm -rf "$TMPD"' EXIT
 SB="$TMPD/sb"
 mkdir -p "$SB/scripts" "$SB/tests/control-tower" "$SB/logs"
 MARK="INJECTED""-RED"      # 拼接构造：本文件源码内不出现该字面量（收尾断言仓库零命中）
-BAD_RE='^+'"++"             # 拼接构造非法 ERE：扫描面里不出现"红"字面量
-PROBE_RE='^+'"++"           # 拼接构造方言探针模式（= ^+++；BSD rc=2 / GNU rc 0-1）——同上，避开字面量
+# 方言无关的"非法 ERE"夹具: **括号不平衡 a(b** —— BSD 与 GNU 均判 rc=2（POSIX ERE 未闭合括号 = 语法错误）。
+#   历史（#768 CI 实测）: 旧夹具拿 ^+++ 当"非法 ERE"，但 BSD rc=2 / **GNU 合法 rc=1** → 方言敏感：
+#   GNU 上该坐标不再是违规 → 条目落 STALE 而非"待修违规" → 5 条断言连锁红
+#   （CI: PASS=50 FAIL=5 FIRST_FAIL=PATTERN 过期未触发；本机 GNU 仿真 shim 逐字复现同一组）。
+#   ^+++ 现仅保留给 PROBE_RE（方言探针）与真仓库 :991 的 STALE 双分支场景，**不参与 pass/fail**。
+BAD_RE='a('"b"              # 拼接构造: 本文件与扫描面内不出现该连续字面量
+PROBE_RE='^+'"++"           # 拼接构造方言探针模式（= ^+++；BSD rc=2 / GNU rc 0-1）——只作探针，不判 pass/fail
 NAME_CN='门禁完整性（gate-integrity）检查 v1.2'   # 含中文/全角括号/点号 → 转义回归
 
 PASS=0; FAIL=0
@@ -160,7 +172,7 @@ OUT="$(RUN "$SCAN_OK" "$SB/tests" "$SB/ci.yml" "$SB/baseline.txt" "$SB/red-basel
 if [ "$rc" -eq 0 ] && printf '%s\n' "$OUT" | grep -q "CI-RED-CHECK: 失败检查 1 项；基线命中 1 项"; then
   ok "C1 回归: 冻结格式（NAME 后空格）→ 命中基线 → exit 0"
 else
-  no "C1 回归失败: rc=$rc（空格格式被判未登记）"
+  no "C1 回归失败: rc=${rc}（空格格式被判未登记）"
 fi
 
 # ── 端到端复现: 自造 JSON 含两条已登记红（其一含中文/全角括号/点号）→ exit 0 ──
@@ -173,7 +185,7 @@ OUT="$(RUN "$SCAN_OK" "$SB/tests" "$SB/ci.yml" "$SB/baseline.txt" "$SB/red-two.t
 if [ "$rc" -eq 0 ] && printf '%s\n' "$OUT" | grep -q "CI-RED-CHECK: 失败检查 2 项；基线命中 2 项"; then
   ok "端到端复现: 两条已登记红（含中文/全角括号/点号名）→ exit 0"
 else
-  no "端到端复现失败: rc=$rc（应 2 项全命中）"
+  no "端到端复现失败: rc=${rc}（应 2 项全命中）"
 fi
 
 # ── 向后兼容: 无空格旧格式 `NAME|first_seen=…|expires=…` → exit 0 ──
@@ -188,7 +200,7 @@ OUT="$(RUN "$SCAN_OK" "$SB/tests" "$SB/ci.yml" "$SB/baseline.txt" "$SB/red-expir
 if [ "$rc" -eq 1 ] && printf '%s\n' "$OUT" | grep -q "VIOLATION: CI 红基线过期"; then
   ok "C2 回归: expires 过期 → exit 1 + 命中「CI 红基线过期」（按键取值生效）"
 else
-  no "C2 回归失败: rc=$rc（过期未被触发 = fail-open）"
+  no "C2 回归失败: rc=${rc}（过期未被触发 = fail-open）"
 fi
 
 # ── 降级: 条目缺 expires 键 → exit 2（malformed 不静默当 0）──
@@ -309,7 +321,7 @@ if [ "$rc" -eq 0 ] && printf '%s\n' "$OUT" | grep -q "PATTERN-BASELINE: STALE(${
   && ! printf '%s\n' "$OUT" | grep -q "VIOLATION"; then
   ok "① STALE: 修好副本 → rc=0 + STALE(${EXPECT_DIALECT}) + registered 0/STALE 1（不再是 exit 1）"
 else
-  no "① STALE 断言失败: rc=$rc（期望 rc=0 + STALE(${EXPECT_DIALECT})，实际见下）"
+  no "① STALE 断言失败: rc=${rc}（期望 rc=0 + STALE(${EXPECT_DIALECT})，实际见下）"
 fi
 
 # ── 判别性 ③ 反"拔牙": STALE 且 expires 已过 → 仍须 exit 1 ──
@@ -325,7 +337,7 @@ OUT="$(RUN "$SCAN_OK" "$SB/tests" "$SB/ci.yml" "$SB/baseline-stale-expired.txt" 
 if [ "$rc" -eq 1 ] && printf '%s\n' "$OUT" | grep -q "VIOLATION: PATTERN 基线过期（须修或延期；条目本平台已 STALE(" ; then
   ok "③ 反拔牙: STALE 且 expires 已过 → exit 1（放宽 STALE 未连带跳过 expires 硬门）"
 else
-  no "③ 反拔牙断言失败: rc=$rc（STALE 把 expires 一起放行了 = fail-open）"
+  no "③ 反拔牙断言失败: rc=${rc}（STALE 把 expires 一起放行了 = fail-open）"
 fi
 
 # ── 判别性 ⑩ STALE 与 registered 同时存在 → 计数各自准确，退出码不受 STALE 影响 ──
@@ -358,7 +370,7 @@ OUT="$(RUN "$SCAN_M1" "$SB/tests" "$SB/ci.yml" "$SB/baseline-cross.txt" "$SB/red
 if [ "$rc" -eq 1 ] && printf '%s\n' "$OUT" | grep -q "VIOLATION: 非法 ERE 模式"; then
   ok "分段隔离: [R] 段条目不给 A 模式豁免 → 新非法模式仍必红（exit 1）"
 else
-  no "分段隔离 A 失败: rc=$rc（跨段串行！）"
+  no "分段隔离 A 失败: rc=${rc}（跨段串行！）"
 fi
 
 # ── 分段隔离 B: [P] 段条目不给 registry 面生效（registry 仍按 [R] 判 → exit 0）──
@@ -385,7 +397,7 @@ if [ "$rc" -eq 1 ] && printf '%s\n' "$OUT" | grep -q "VIOLATION: 非法 ERE 模�
   && printf '%s\n' "$OUT" | grep -q "m1-scan.sh:3" && printf '%s\n' "$OUT" | grep -q -F "$BAD_RE"; then
   ok "M1: 新注入非法 ERE（未登记）→ exit 1 + 点名 m1-scan.sh:3 + 模式原文"
 else
-  no "M1 判别性失败: rc=$rc（注入未被拦下）"
+  no "M1 判别性失败: rc=${rc}（注入未被拦下）"
 fi
 
 # ── 判别性 M4: 哨兵核心置 return 0 → M1 场景必须不再红（证明夹具依赖真哨兵）──
@@ -402,7 +414,7 @@ OUT="$(SYNO_GATE_SCAN_SCRIPTS="$SCAN_M1" SYNO_TESTS_DIR="$SB/tests" SYNO_CI_YML=
 if [ "$rc" -eq 0 ] && ! printf '%s\n' "$OUT" | grep -q "VIOLATION"; then
   ok "M4: 变异体下 M1 场景不再红（exit 0）→ 夹具依赖真哨兵，判别性成立"
 else
-  no "M4 判别性失败: rc=$rc（哨兵失效后 M1 仍报红 = M1 未依赖哨兵）"
+  no "M4 判别性失败: rc=${rc}（哨兵失效后 M1 仍报红 = M1 未依赖哨兵）"
 fi
 
 # ── 判别性 M5: 伪造 check-runs JSON 多加一条未登记 failure → 必红 ──
@@ -480,7 +492,7 @@ if [ "$rc" -eq 0 ] && printf '%s\n' "$OUT" | grep -qF "对账对象 = ${BASE_REF
    && printf '%s\n' "$OUT" | grep -q "CI-RED-CHECK: 失败检查 1 项；基线命中 1 项"; then
   ok "D1: 已登记红命中基线 → rc=0 + 对账对象行（ref @ sha 逐字）+ 失败 1/命中 1（不再恒 0）"
 else
-  no "D1 异常: rc=$rc（对账对象行或计数不符）"
+  no "D1 异常: rc=${rc}（对账对象行或计数不符）"
 fi
 printf '%s\n' "$OUT" | grep -q "CI-RED-CHECK: 失败检查 1 项" \
   && ok "D1: 判红口径 = 仅 conclusion==failure（skipped/cancelled/null 均不计）" \
@@ -496,7 +508,7 @@ if [ "$rc" -eq 1 ] && printf '%s\n' "$OUT" | grep -qF "VIOLATION: 未登记 CI �
    && printf '%s\n' "$OUT" | grep -qF "对账对象 = ${BASE_REF_FIX} @ ${BASE_SHA_FIX}"; then
   ok "M1: base 有红且未登记 → exit 1 + 点名未登记项（棘轮真被行使）"
 else
-  no "M1 判别靶失败: rc=$rc（base 有未登记红却未判红 = 空转复发）"
+  no "M1 判别靶失败: rc=${rc}（base 有未登记红却未判红 = 空转复发）"
 fi
 # M1 负控: 同一 JSON，该红登记后 → 不判红（防"一律判红"的错修法）
 printf 'brand-new-red (x/y) | first_seen=2026-09-24 | owner=UNASSIGNED | expires=2099-12-31 | evidence=夹具\n' >> "$SB/d954-red.txt"
@@ -528,7 +540,7 @@ if [ "$rc" -eq 1 ] && printf '%s\n' "$OUT" | grep -q "VIOLATION: CI 红处置逾
    && printf '%s\n' "$OUT" | grep -q "处置逾期 1 项"; then
   ok "M4: disposition_due 逾期 → exit 1 + 点名「CI 红处置逾期」（与 expires 同级硬门）"
 else
-  no "M4 异常: rc=$rc（disposition_due 逾期未判红）"
+  no "M4 异常: rc=${rc}（disposition_due 逾期未判红）"
 fi
 printf 'Vitest (2/2) | first_seen=2026-09-24 | owner=UNASSIGNED | expires=2099-12-31 | disposition_due=2099-12-31 | evidence=夹具未到期\n' > "$SB/d954-due-ok.txt"
 OUT="$(RUN "$SCAN_OK" "$SB/tests" "$SB/ci.yml" "$SB/baseline.txt" "$SB/d954-due-ok.txt" "$SB/logs/d954-m4n1.log" --base-ref "$BASE_REF_FIX" --ci-reds "$SB/d954-reg.json" 2>&1)"; rc=$?
