@@ -1,0 +1,21 @@
+{
+  "task_id": "D964",
+  "title": "文档减负+K3报告指针式 阶段1——merge-writeset-gate 内置豁免（audit-reports/** + archive/**）",
+  "status": "in_progress",
+  "risk": "high",
+  "domain": "mac",
+  "owner": "mac-cto",
+  "executor": "并行 CTO（DSH session）",
+  "milestone": "M0 治理",
+  "depends_on": [],
+  "write_set": [
+    "scripts/control-tower/merge_writeset_gate.py",
+    "tests/control-tower/merge_writeset_gate.test.sh",
+    "task-state/D964.json",
+    ".claude/task-briefs/2026-09-25-D964-doc-slim-phase1-writeset-exempt.md",
+    "docs/synova/audit-reports/INDEX.md"
+  ],
+  "updated_at": "2026-09-25",
+  "updated_by": "synova-cto",
+  "note": "门禁语义变更 ⇒ 必过 K3，K3 前不合并。改前夹带复现 + 33 测试全绿 + 改坏即红（⑨ 反证）已备。alloc-task-id.sh 挂死（D938 已知缺陷），手工取号 D964，origin/main 最高占用 D963 已核实。"
+}
