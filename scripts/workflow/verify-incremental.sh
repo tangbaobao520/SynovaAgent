@@ -13,7 +13,7 @@
 set -euo pipefail
 # D313 M5 UTF-8 强制: Windows 控制台/子进程统一 UTF-8
 export PYTHONIOENCODING=utf-8
-export LC_ALL=C.UTF-8 2>/dev/null || true
+export LC_ALL=C.UTF-8 2>/dev/null  # swallow-ok: locale 无效时保持进程默认（D964: export 内建恒成功，非判定路径）
 
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 cd "$ROOT"
@@ -74,8 +74,8 @@ json.dump({'iteration': $ITER, 'maxIterations': $MAX, 'lastRun': '$(date -u +%Y-
 " 2>/dev/null
 
 echo -e "${CYAN}[VERIFY $ITER/$MAX] 分层增量验证开始...${RESET}"
-CHANGED_SRC=$(git diff --name-only 2>/dev/null | grep '\.ts$' | grep -v '\.test\.' | grep -v '\.d\.ts' || true)
-ALL_CHANGED=$(git diff --name-only 2>/dev/null || true)
+CHANGED_SRC=$(git diff --name-only 2>/dev/null | grep '\.ts$' | grep -v '\.test\.' | grep -v '\.d\.ts') || CHANGED_SRC=""  # D964: 无匹配=显式空（可见跳过，非静默吞判定）
+ALL_CHANGED=$(git diff --name-only 2>/dev/null) || ALL_CHANGED=""  # D964: 同上
 TOTAL_LINES_CHANGED=$(git diff 2>/dev/null | grep '^[+-]' | grep -v '^[+-]\{3\}' | wc -l | tr -d ' ')
 
 # ═══ v3.3: 轻量变更通道 ═══
@@ -92,7 +92,22 @@ if [ "$IS_LIGHT" -eq 1 ]; then
   echo -e "${YELLOW}  跳过: tsc --noEmit + vitest run${RESET}"
   echo -e "${YELLOW}  保留: oxlint + secrets扫描${RESET}"
   # 只跑 L1+L4 (oxlint + 接线审计)
-  [ -n "$CHANGED_SRC" ] && npx oxlint $(echo "$CHANGED_SRC" | tr '\n' ' ') --silent 2>&1 || true
+  # D964: 灭轻量通道 oxlint fail-open——同三态（探测失败=显式降级 exit 2，禁静默吞）
+  if [ -n "$CHANGED_SRC" ]; then
+    OXLINT_LIGHT="$ROOT/node_modules/.bin/oxlint"
+    if [ -x "$OXLINT_LIGHT" ]; then
+      if "$OXLINT_LIGHT" --config "$ROOT/.oxlintrc.json" --deny typescript/no-explicit-any $CHANGED_SRC --silent 2>&1; then
+        :  # passed
+      else
+        echo -e "${RED}[FAIL] L1 语法检查失败 — 请修正语法错误${RESET}"
+        exit 1
+      fi
+    else
+      echo -e "${YELLOW}  L1 语法: oxlint 未安装 — 显式降级（exit 2，不静默放行）${RESET}"
+      echo "degraded: oxlint 二进制缺失（npm install 后重试）" >&2
+      exit 2
+    fi
+  fi
   # L4 接线审计仍然执行
   # 全部通过 → 清除循环状态
   rm -f "$STATE_FILE"
@@ -101,19 +116,24 @@ if [ "$IS_LIGHT" -eq 1 ]; then
 fi
 
 # ═══ L1: oxlint 语法检查 (< 1s) ═══
+# D964: 声明=执行体一致化——本地 .bin 优先（不再裸 which+npx 双轨），探测失败显式降级 exit 2。
+# --deny typescript/no-explicit-any: 改动文件上的 as any 家族即时转 error（铁律 38 棘轮——
+# 存量 33 处不在 diff 内不受影响，被触碰的文件须清零该文件存量）。
 if [ -n "$CHANGED_SRC" ]; then
   echo -e "${CYAN}[L1] oxlint 语法检查...${RESET}"
-  OXLINT_AVAILABLE=$(which oxlint 2>/dev/null || echo "")
-  if [ -n "$OXLINT_AVAILABLE" ]; then
+  OXLINT_BIN="$ROOT/node_modules/.bin/oxlint"
+  if [ -x "$OXLINT_BIN" ]; then
     OXLINT_FILES=$(echo "$CHANGED_SRC" | tr '\n' ' ')
-    if npx oxlint $OXLINT_FILES --silent 2>&1; then
+    if "$OXLINT_BIN" --config "$ROOT/.oxlintrc.json" --deny typescript/no-explicit-any $OXLINT_FILES --silent 2>&1; then
       echo -e "${GREEN}  L1 语法: 通过${RESET}"
     else
       echo -e "${RED}[FAIL] L1 语法检查失败 — 请修正语法错误${RESET}"
       exit 1
     fi
   else
-    echo -e "${YELLOW}  L1 语法: oxlint 未安装, 跳过 (建议: npm install -D oxlint)${RESET}"
+    echo -e "${YELLOW}  L1 语法: oxlint 未安装 — 显式降级（exit 2，不静默放行）${RESET}"
+    echo "degraded: oxlint 二进制缺失（npm install -D oxlint 后重试）" >&2
+    exit 2
   fi
 else
   echo -e "${CYAN}[L1] 无 .ts 文件改动, 跳过语法检查${RESET}"
@@ -123,7 +143,11 @@ fi
 if [ -n "$CHANGED_SRC" ]; then
   echo -e "${CYAN}[L2] tsc 类型检查 (incremental)...${RESET}"
   # 使用 --incremental 利用 .tsbuildinfo 缓存, 只检查改动文件
-  L2_OUT=$(bash "$ROOT/scripts/control-tower/baseline-check.sh" --tsc 2>&1) || true
+  L2_RC=0
+  L2_OUT=$(bash "$ROOT/scripts/control-tower/baseline-check.sh" --tsc 2>&1) || L2_RC=$?
+  if [ "$L2_RC" -eq 2 ]; then
+    echo -e "${YELLOW}  L2 类型: baseline-check 降级（exit 2）— 显式可见，不静默${RESET}"
+  fi
   echo "$L2_OUT" | grep -E "存量|新增|degraded|✅|❌" | head -5
   if echo "$L2_OUT" | grep -qE "新增 [1-9]"; then
     echo -e "${RED}[FAIL] L2 类型检查: 存在新增 tsc 错误 (存量豁免, 新增阻断)${RESET}"
@@ -165,16 +189,16 @@ fi
 echo -e "${CYAN}[L4] 综合门禁...${RESET}"
 
 # L4a. 接线审计 (新文件 export 验证)
-NEW_FILES=$(git diff --cached --name-only --diff-filter=A 2>/dev/null | grep '^src/.*\.ts$' | grep -v '\.test\.' | grep -v '\.d\.ts' || true)
+NEW_FILES=$(git diff --cached --name-only --diff-filter=A 2>/dev/null | grep '^src/.*\.ts$' | grep -v '\.test\.' | grep -v '\.d\.ts') || NEW_FILES=""  # D964: 显式空默认
 if [ -n "$NEW_FILES" ]; then
   UNWIRED=""
   while IFS= read -r file; do
     [ -z "$file" ] && continue
-    EXPORTS=$(grep -oE 'export (function|class|const) [a-zA-Z0-9_]+' "$file" 2>/dev/null | awk '{print $NF}' || true)
+    EXPORTS=$(grep -oE 'export (function|class|const) [a-zA-Z0-9_]+' "$file" 2>/dev/null | awk '{print $NF}') || EXPORTS=""  # D964: 显式空默认
     for name in $EXPORTS; do
       [ -z "$name" ] && continue
       if echo "$name" | grep -qi 'mock\|fake\|_internal\|_deprecated'; then continue; fi
-      WIRED=$(grep -rn "\b${name}\b" src/server.ts src/index.ts src/cli.ts src/agent/ src/routes/ src/sentinel/builtins.ts --include="*.ts" 2>/dev/null | grep -v "export.*${name}" | grep -v "import.*${name}" | grep -v "$file" | head -1 || true)
+      WIRED=$(grep -rn "\b${name}\b" src/server.ts src/index.ts src/cli.ts src/agent/ src/routes/ src/sentinel/builtins.ts --include="*.ts" 2>/dev/null | grep -v "export.*${name}" | grep -v "import.*${name}" | grep -v "$file" | head -1) || WIRED=""  # D964: 显式空默认（无接线=空，由下方判定消费）
       if [ -z "$WIRED" ]; then
         UNWIRED="${UNWIRED}  ${file}: export ${name} — 未在生产入口中接线\n"
       fi
@@ -189,7 +213,9 @@ if [ -n "$NEW_FILES" ]; then
 fi
 
 # L4b. 增量架构边界 (跨层引用)
-CHANGED_SRC2=$(git diff --name-only 2>/dev/null | grep '^src/.*\.ts$' | grep -v '\.test\.' | grep -v '\.d\.ts' || true)
+# (D964 rebase 平铺: 本分支不携带 D962-B2 的 L4b 内联——那属 chore/d962-2a-scripts;
+#  此处保留 main 原调用形态，仅保留 D964 的显式空默认改造)
+CHANGED_SRC2=$(git diff --name-only 2>/dev/null | grep '^src/.*\.ts$' | grep -v '\.test\.' | grep -v '\.d\.ts') || CHANGED_SRC2=""  # D964: 显式空默认
 if [ -n "$CHANGED_SRC2" ]; then
   if bash "$ROOT/scripts/workflow/check-boundaries-incremental.sh" 2>&1; then
     :  # passed
@@ -200,10 +226,10 @@ if [ -n "$CHANGED_SRC2" ]; then
 fi
 
 # L4c. 暗默失败检查 (新增 catch 无 log)
-TS_DIFF=$(git diff -- '*.ts' '*.tsx' 2>/dev/null || true)
+TS_DIFF=$(git diff -- '*.ts' '*.tsx' 2>/dev/null) || TS_DIFF=""  # D964: 显式空默认
 if [ -n "$TS_DIFF" ]; then
-  NEW_CATCHES=$(echo "$TS_DIFF" | grep "^\+.*catch\s*(" 2>/dev/null || true)
-  NEW_CATCHES=$(echo "$NEW_CATCHES" | grep -v "catch.*log\.\|catch.*logger\|catch.*//.*log\|catch.*/\*.*log\|catch.*throw\|catch.*degraded" || true)
+  NEW_CATCHES=$(echo "$TS_DIFF" | grep "^\+.*catch\s*(" 2>/dev/null) || NEW_CATCHES=""  # D964: 显式空默认
+  NEW_CATCHES=$(echo "$NEW_CATCHES" | grep -v "catch.*log\.\|catch.*logger\|catch.*//.*log\|catch.*/\*.*log\|catch.*throw\|catch.*degraded") || NEW_CATCHES=""  # D964: 显式空默认
   if [ -n "$NEW_CATCHES" ]; then
     SILENT=""
     while IFS= read -r catch_line; do
@@ -223,11 +249,11 @@ if [ -n "$TS_DIFF" ]; then
 fi
 
 # L4d. 用户可见缺口检查 (新增 export 无对应 API 变更)
-NEW_EXPORTS_ALL=$(git diff --name-only 2>/dev/null | grep '^src/.*\.ts$' | grep -v '\.test\.' | grep -v '\.d\.ts' || true)
-ROUTE_CHANGED=$(git diff --name-only 2>/dev/null | grep '^src/routes/' || true)
+NEW_EXPORTS_ALL=$(git diff --name-only 2>/dev/null | grep '^src/.*\.ts$' | grep -v '\.test\.' | grep -v '\.d\.ts') || NEW_EXPORTS_ALL=""  # D964: 显式空默认
+ROUTE_CHANGED=$(git diff --name-only 2>/dev/null | grep '^src/routes/') || ROUTE_CHANGED=""  # D964: 显式空默认
 if [ -n "$NEW_EXPORTS_ALL" ] && [ -z "$ROUTE_CHANGED" ]; then
   # 有 src 文件改动但没有 route 文件改动 → 可能遗漏用户入口
-  NEW_FUNCS=$(git diff 2>/dev/null | grep "^\+export \(function\|class\|const\)" | grep -oE 'export (function|class|const) [a-zA-Z0-9_]+' | awk '{print $NF}' || true)
+  NEW_FUNCS=$(git diff 2>/dev/null | grep "^\+export \(function\|class\|const\)" | grep -oE 'export (function|class|const) [a-zA-Z0-9_]+' | awk '{print $NF}') || NEW_FUNCS=""  # D964: 显式空默认
   if [ -n "$NEW_FUNCS" ]; then
     echo -e "${CYAN}[VERIFY $ITER/$MAX] 用户可见缺口...${RESET}"
     # 检查这些新函数是否被现有路由引用
