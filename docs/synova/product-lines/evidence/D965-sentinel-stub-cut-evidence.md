@@ -587,6 +587,8 @@ npx tsc --noEmit --pretty false 2>&1 \
 | `results/env-blockers-raw.txt` | 环境级阻断取证（Gatekeeper tripwire 属基线 main + `/tmp/.synova-before-brief` 属 D941 会话） |
 | `results/pr-budget-fail.txt` | D734 PR 预算原始输出（13>12 + 跨域，见 §9） |
 | `results/post-closeout.txt` | 提交后收尾取证（sha / ls-remote 回执 / 提交后 count） |
+| `results/budget-after-refresh.txt` | 刷新 `origin/main` 后的 PR 预算（①③ 绿 / ② 仍红，§9.5） |
+| `results/budget-with-d969-rules.txt` | 模拟 D969 已进 main 后的 PR 预算（①②③ 齐绿，可逆实验已还原） |
 
 > `docs/authority/DOCS-REGISTRY.yaml` **不属本卡**（已按队长裁定拆出，本卡对其净零改动）——见 §6-7。
 
@@ -642,4 +644,39 @@ $ bash scripts/control-tower/check-pr-budget.sh
 ### 9.4 同文件第二个写者（M2）—— 已停手上报
 
 实测发现分支 `docs/d973-docs-registry`（卡 `D973`「文档登记清零」，**已 push**：`git ls-remote` → `e66f8bda`）的 `write_set` **第 1 条即 `docs/authority/DOCS-REGISTRY.yaml`**。⇒ **同一文件同一时间两个写者** ⇒ 我**放弃自建登记支**并上报，未产生竞争 PR（详见 §6-7）。
+
+### 9.5 分支刷新（队长授权，2026-09-25）
+
+```
+$ git merge origin/main -m "merge origin/main into fix/D965-sentinel-stub-cut（刷新至 ef299746）"
+$ git log --oneline -2
+ef92a8e5 merge origin/main into fix/D965-sentinel-stub-cut（刷新至 ef299746）
+ef299746 fix(D945): 预设机制迁移（legacy→bundle 声明行）最小解红 … (#797)
+$ git rev-list --count HEAD..origin/main
+0                       # 刷新前为 1
+$ git status --short    # 空
+```
+- 刷新法：**`git merge`**（**未** rebase、**未** force push）——仓内既定刷新法。
+- **未新增 `detected-bypass`**：`grep -c "2026-09-25.*detected-bypass" .claude/bypass.log` = **1**（刷新前后一致）。机制：`.git/hooks/` **无 `pre-merge-commit`** ⇒ merge 不触发本地 pre-commit/Gatekeeper；`scripts/hooks/post-commit.sh` 对 merge 提交有 **CT-45 豁免**（`HEAD^2` 存在 ⇒ 跳过 bypass 判定，不写 `detected-bypass`）。
+- 净变更仍 **45 个文件**（我的改动全数保留）。
+
+#### 刷新后 PR 预算：**①③ 绿，② 仍红 —— 依赖 D969 先进 main**
+
+```
+$ bash scripts/control-tower/check-pr-budget.sh       # 刷新后（main 尚无 D969 规则）
+  ✅ ① 变更文件数 12 ≤ 上限 12
+  ❌ ② 变更跨域 —— mac/win（win = 4 个 _extinct 件 + tests/sentinels/shared/d62-…）
+  ✅ ③ 落后 origin/main 0 个提交 ≤ 20          ← 刷新解掉了 ③
+❌ FAIL PR 超预算
+
+$ cp <D969 分支 ownership.yaml> …（可逆实验，随后已 git checkout 还原）
+  ✅ ① 12 ≤ 12   ✅ ② 单域 mac   ✅ ③ 0 落后
+✅ PASS PR 预算内（12 文件）
+```
+
+⇒ **③ 由刷新解决；② 只能由 D969（`docs/D969-ownership-sentinel-domain`）先合入 main、再二次刷新 D965 来解决**。两次原始输出：`results/budget-after-refresh.txt`、`results/budget-with-d969-rules.txt`。
+**诚实更正**：队长口径原为"刷新后应三项齐绿"——**实测不成立**（D969 当时仍在独立分支、未合 main）；三项齐绿需 **D969 合并 → D965 二次刷新** 两个前置。此依赖已上报。
+
+> **本卡的 CI 结论**：D965 的 CI 全绿**不是单卡可完成事件**，前置链为 `D969 合 main` → `D965 二次刷新`。是否带红开 PR、或等前置，归 **CTO 收件闸**。
+
 

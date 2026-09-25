@@ -1,0 +1,20 @@
+$ git merge origin/main（刷新）后
+ef92a8e5 merge origin/main into fix/D965-sentinel-stub-cut（刷新至 ef299746）
+ef299746 fix(D945): 预设机制迁移（legacy→bundle 声明行）最小解红 — brief 措辞 + V5 PYBIN 注释 [承接原 9f63de0b] (#797)
+落后=0
+
+── PR 预算门禁（D734）: 基线=origin/main 上限=12 文件 / 落后阈值=20 ──
+  ℹ️  D860 治理产物豁免: 33 件不计预算（brief/卡/Note/规格/自验证据，代码文件仍计数）
+  ✅ ① 变更文件数 12 ≤ 上限 12
+  ❌ ② 变更跨域 —— 一个 PR 只许一个域（D733 ownership.yaml）
+       win  extensions/sentinels/_extinct/sentinel-forecast-accuracy/aggregate.ts
+       win  extensions/sentinels/_extinct/sentinel-forecast-accuracy/manifest.json
+       win  extensions/sentinels/_extinct/sentinel-pricing-strategy/aggregate.ts
+       win  extensions/sentinels/_extinct/sentinel-pricing-strategy/manifest.json
+       mac  src/sentinel/types.ts
+       mac  tests/control-tower/check-sentinel-type-net.test.sh
+       mac  tests/sentinel/d752-type-net-gate.integration.test.ts
+       mac  tests/sentinel/path-dependency-sentinel.test.ts
+       win  tests/sentinels/shared/d62-me-sentinels.test.ts
+  ✅ ③ 落后 origin/main 0 个提交 ≤ 20
+❌ FAIL PR 超预算 —— 拆 PR，不要调高上限
