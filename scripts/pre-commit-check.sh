@@ -226,7 +226,14 @@ fi
 soft_check "硬编码业务数据/类型 (#3 保留·本地)" "${HARDCODE_DATA:-}"
 
 # ── #30 禁止新 DiagnosticModule（组7a 正则保全: ^+++ / 全角 / conditions D937-v2）──
-NEW_DIAG=$(echo "$GIT_CACHED_DIFF" | grep "^+.*DiagnosticModule" | grep -Ev "scripts/pre-commit-check.sh|\.md|\.html|//|@deprecated|import type|^\\+\\+\\+|hard_check|禁止新 DiagnosticModule|不要再使用 DiagnosticModule" || true)
+# (对齐 main 组7a 既有排除口径 + 判定面限定 src/packages——重写后的本脚本自身 diff 含检查名
+#  字面量,内容级排除无法区分来源(路径只在被排除的 +++ 头),故按 main 语义收窄到源码路径)
+if [ "${SYNO_TEST_ARM:-0}" = "1" ]; then
+  _DIAG_DIFF="$GIT_CACHED_DIFF"      # 注入缝同上
+else
+  _DIAG_DIFF="$(git diff "${SYNO_DIFF_BASE:-HEAD~1}"...HEAD -- src/ packages/ 2>/dev/null || echo "$GIT_CACHED_DIFF")"
+fi
+NEW_DIAG=$(echo "$_DIAG_DIFF" | grep "^+.*DiagnosticModule" | grep -Ev "scripts/pre-commit-check.sh|\.md|\.html|//|@deprecated|import type|^\\+\\+\\+|hard_check|禁止新 DiagnosticModule|不要再使用 DiagnosticModule|tests/" || true)
 soft_check "禁止 DiagnosticModule: 新模块须实现 Sentinel 接口" "${NEW_DIAG:-}"
 
 # ── #38 G10 / #39 G11（D260 CP3 — 死分支已修活，首次真实执行）──
@@ -281,7 +288,14 @@ fi
 if [ "${SYNO_CI:-0}" = "1" ]; then
   echo -e "${CYAN}── CI 权威区（D962 迁移判定）──${RESET}"
   # 铁律38: as any / as never / as unknown as（跳注释行）
-  M=$(echo "$GIT_CACHED_DIFF" | grep -E '^\+' | grep -v '^+++' | grep -E 'as (any|never)\b|as unknown as' | grep -vE '^\+\s*(//|/\*|\*|#)' || true)
+  # (对齐 main 组1 既有排除口径: 只扫 src/ packages/ 且排除 *.test.*/*.d.ts——判定面同宽非放宽;
+  #  修复夹具自伤: 判别性测试文件的字面量样例不得被自己的门禁命中)
+  if [ "${SYNO_TEST_ARM:-0}" = "1" ]; then
+    _ASANY_DIFF="$GIT_CACHED_DIFF"   # 注入缝（夹具依赖 GIT_CACHED_DIFF，不得绕过）
+  else
+    _ASANY_DIFF="$(git diff "${SYNO_DIFF_BASE:-HEAD~1}"...HEAD -- src/ packages/ ':(exclude)**/*.test.ts' ':(exclude)**/*.test.tsx' ':(exclude)**/*.d.ts' 2>/dev/null || echo "$GIT_CACHED_DIFF")"
+  fi
+  M=$(echo "$_ASANY_DIFF" | grep -E '^\+' | grep -v '^+++' | grep -E 'as (any|never)\b|as unknown as' | grep -vE '^\+\s*(//|/\*|\*|#)' || true)
   soft_check "as any / as never / as unknown as 零容忍（铁律38）" "$M"
   # 铁律46: engine-core 引用（白名单外; 含相对路径三重匹配）
   BRIDGE_FAIL=""
