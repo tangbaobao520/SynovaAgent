@@ -2,7 +2,7 @@
   "task_id": "D962",
   "title": "pre-commit/check-* 门禁收敛（V5.3 + 46→22 + 组级测试 + 合并候选）",
   "status": "in_progress",
-  "write_set_comment": "24A+26D+35M 共 85 文件逐条 = git diff --name-status --no-renames $(git merge-base origin/main HEAD)..HEAD（task-26 并入 2b 后重算，与 .claude/task-briefs/2026-09-25-D962-2a1-precommit.md Q2 逐条一致；D962-N 自举：声明件自身入集）",
+  "write_set_comment": "24A+26D+37M 共 87 文件逐条 = git diff --name-status --no-renames $(git merge-base origin/main HEAD)..HEAD（task-26 并入 2b 后重算，与 .claude/task-briefs/2026-09-25-D962-2a1-precommit.md Q2 逐条一致；D962-N 自举：声明件自身入集）",
   "write_set": {
     "added": [
       ".claude/task-briefs/2026-09-25-D962-2a-scripts.md",
@@ -86,11 +86,13 @@
       "tests/control-tower/ci-strict-mode.test.sh",
       "tests/control-tower/ci-strict-visible.test.sh",
       "tests/control-tower/fastlane-bypass-only.test.sh",
+      "tests/control-tower/g12-day-window.test.sh",
       "tests/control-tower/grep-oP-regression.test.sh",
       "tests/control-tower/hard-gate-convergence.test.sh",
       "tests/control-tower/incident-loop-hygiene.test.sh",
       "tests/control-tower/parallel-main-tree-occupancy.test.sh",
       "tests/control-tower/precommit-groups-injection.test.sh",
+      "tests/control-tower/scan-fullwidth-vars.test.sh",
       "tests/control-tower/sync-dsh-skills.test.sh",
       "tests/control-tower/utf8.test.sh",
       "tests/sentinel/d752-type-net-gate.integration.test.ts"
