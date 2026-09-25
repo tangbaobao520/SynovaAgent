@@ -460,7 +460,7 @@ family_scan "$REPO/scripts" main
 echo "  扫描 ${FS_FILES} 个 .sh ｜ 可判 ${FS_PAT} ｜ 未解析 ${FS_BAD} ｜ 非法 ${FS_VIOL}"
 echo "  （动态不可判 ${FS_DYN} ｜ 非 ERE 跳过 ${FS_NON}）"
 if [ "$FS_VIOL" -eq 0 ]; then
-  ok "家族网: 非法 ERE 0 个（scripts/**/*.sh）"
+  ok "家族网: 非法 ERE 0"
 else
   no "家族网: 非法 ERE $FS_VIOL 个:"
   while IFS= read -r v; do
@@ -469,13 +469,13 @@ else
   done < "$TMP/fs-main.viol"
 fi
 if [ "$FS_BAD" -eq 0 ]; then
-  ok "家族网: 未解析 0 个（无静默跳过）"
+  ok "家族网: 未解析 0"
 else
   no "家族网: 未解析 $FS_BAD 个（解析器覆盖不足，fail loud）:"
   grep -a '^B' "$TMP/fs-main.emit" | sed 's/^/      /'
 fi
 if [ "$FS_PAT" -ge 200 ] && [ "$FS_FILES" -ge 100 ]; then
-  ok "家族网: 网规模非空转（可判 $FS_PAT ≥ 200 且 .sh $FS_FILES ≥ 100）"
+  ok "家族网: ${FS_PAT}/${FS_FILES}（≥200/100）"
 else
   no "家族网: 网规模异常（可判 ${FS_PAT} / .sh ${FS_FILES}）——疑似网被削空"
 fi
@@ -488,30 +488,28 @@ fi
 #   它平台相对（BSD 非法 / GNU 合法），CI ubuntu 下判据与期望分叉（注解实证）。
 #   `^+++` 仅保留**探针打印**（可见观测），不参与任何 pass/fail。
 #   顺带压缩本段输出行数，保证 tail-8|cut-450 窗口内 FIRST_FAIL（结果行）可见。
-echo "── 金丝雀: 网必须能抓到非法 ERE（防空转网，方言无关 a(b）──"
+echo "── 金丝雀（a(b）──"
 CAN="$TMP/canary"; mkdir -p "$CAN"
 printf '#!/bin/bash\ngrep -E "%s" /dev/null\n' "$OVR_UNLAWFUL" > "$CAN/canary-paren.sh"
 grep -E -e "$OVR_HISTORIC" /dev/null >/dev/null 2>&1; PRC=$?
-echo "  探针(仅观测): grep -E '$OVR_HISTORIC' → rc=${PRC}（BSD=2 非法 / GNU=1 合法，不作判据）"
+echo "  探针: ^+++ rc=${PRC}（仅观测）"
 family_scan "$CAN" canary
 if grep -q "canary-paren.sh" "$TMP/fs-canary.viol"; then
-  ok "金丝雀: 括号不平衡非法 ERE 被网抓到（网非空转）"
+  ok "金丝雀: a(b 被网抓到（非空转）"
 else
   no "金丝雀: 网抓不到非法 ERE —— 网是空转的"
 fi
 
 # ── 接线: 本测试必须在 ci.yml 密封清单内（M3「机制建成未接线」）──────────────
 if grep -qF 'tests/control-tower/gate-failopen-net.test.sh' "$CIY" 2>/dev/null; then
-  ok "接线: ci.yml control-tower-tests 密封清单含本测试"
+  ok "接线: ci.yml 含本测试"
 else
   no "接线: ci.yml 密封清单缺本测试（跑了也不会被执行）"
 fi
-
-echo ""
 # D938-CI-2: FAIL>0 但 FIRST_FAIL 为空 = 夹具自身缺陷（记名机制失灵），显式红，不得静默
 if [ "$FAIL" -gt 0 ] && [ -z "$FIRST_FAIL" ]; then
   echo "  ❌ SELF-CHECK: FAIL=$FAIL 但 FIRST_FAIL 为空（no() 记名机制缺陷）"
   exit 2
 fi
-echo "结果: $PASS 通过, $FAIL 失败${FIRST_FAIL:+ FIRST_FAIL=${FIRST_FAIL}}"
+echo "结果: $PASS/$FAIL${FIRST_FAIL:+ FIRST_FAIL=${FIRST_FAIL}}"
 [ "$FAIL" -eq 0 ]
