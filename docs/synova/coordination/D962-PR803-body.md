@@ -2,10 +2,21 @@
 
 > 产出：d962-coder-b（task-23）起草 → **d962-coder-c 于 task-26 全面刷新**（并入 2b + 项3 A 档四点 + 2a② 四处 `|| true`）。
 > 落库方式：GitHub PR 正文由 task-26 经 API 同步（`gh` CLI 本机不可用；本文件为可审版本）。
-> ## ⛔ **CI 未跑（外部队列停摆 @2026-09-25T19:04:20Z）**
-> 所有 CI run（`9fd034dd` / `25e1b414` / `933bf1de` 及其后）**全部 `queued`，无一产出结论** ⇒ 本文所有判据均为 **本地 CI 等价复跑（不等价于真 run）**。
-> **禁以本地等价冒充实跑**；**CI 恢复后必须重跑本 PR 与 main 两侧并补结论**；**合并前若无真 run 结论，需创始人书面接受风险**。
-> **V2 自验收口（F1-F5）已并入**：F1 反引号（stderr 2→0）、③ 8 件 D962 自验证据迁入 track 路径、F2/F3/F4/F5 回执修订。
+> ## CI 状态（**逐 head 实测三类**，as_of 2026-09-26T04:20+08:00；禁以"未跑"覆盖"已跑且红"）
+> | head | 总 checks | 绿 | 红 | cancelled | 红 job 名 |
+> |---|---|---|---|---|---|
+> | `9fd034dd` | 28 | 22 | 4 | 2 | Control Tower Gate Tests (ubuntu/windows)（push+PR 两次 run 各 2） |
+> | `25e1b414` | 28 | 22 | 4 | 2 | 同上 |
+> | `e74aae55` | 28 | 18 | 4 | 6 | 同上 |
+> | `68747574` | 28 | 18 | 3 | 7 | Control Tower Gate Tests (ubuntu/windows) |
+> | `ae371c45` | 26 | 5 | 0 | 21 | — |
+> | `933bf1de` | 26 | 1 | 0 | 25 | — |
+> | `1f577444` | 26 | 0 | 0 | 26 | — |
+> | **`52f5aa1f`** | 27 | **11** | **3** | 13 | Control Tower Gate Tests (windows) / (ubuntu) / Gate Integrity |
+> | `a964c302` | — | **无 run**（task-30 修复提交，待触发） | | | |
+> **cancelled 说明**：并发 run 被后推 head 取代（`concurrency` 语义），非失败。
+> **红因归属（as_of 同上）**：Gate Integrity 基线 + G10/G12 windows = **本 PR 引入**，修点在写集内，已于 `a964c302` 修复（本地 CI 等价复跑转绿，**真 run 待补**）；Control Tower ubuntu/windows 剩余红 = **本 PR 新增的 grep-oP backtick 断言**暴露**既存生产缺陷**（`scripts/workflow/check-brief-vs-code.sh:59` 的 `\`` 在 GNU grep 是锚点）⇒ 按 rev3 边界**供件**（patch 见 `docs/synova/product-lines/evidence/D962-task30-回执.md` §T2(3)），未自行改。
+
 
 > **sha 口径**：本正文所述**代码态** = `ae371c45`（写集 97；含 F1 与 8 件证据入库）；**正文文件自身的提交紧随其后** —— 若需精确 head 请以 PR 头部为准（正文不再递归追写自身 sha）。
 
