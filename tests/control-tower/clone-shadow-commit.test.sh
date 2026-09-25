@@ -31,8 +31,10 @@ TMPD="$(mktemp -d)"; trap 'rm -rf "$TMPD" 2>/dev/null || true' EXIT
 
 echo "=== D540 clone-shadow-commit: 影子提交 clone 环境物理断言 ==="
 
-# ── 接线: post-commit.sh 影子提交段真实存在（本单验证对象，不改）──
-grep -q "bypass COMMITTED 登记" "$HOOK_SRC" && ok "接线: post-commit.sh 含影子提交段" || no "接线: 影子提交段缺失"
+# ── 接线（Stage 2 / D970 已裁）: 登记只落 per-session；影子登记提交已删 ──
+grep -q 'bypass-ledger.sh" append' "$HOOK_SRC" && ok "接线: per-session 登记（bypass-ledger.sh append）在位" || no "接线: per-session 登记接线缺失"
+HOOK_SHADOW_N=$(grep -c "bypass COMMITTED 登记" "$HOOK_SRC" | tr -d '\n\r' || true)
+[ "$HOOK_SHADOW_N" -eq 0 ] && ok "接线: 影子登记提交已删（Stage 2；grep -c=0）" || no "接线: 影子提交段仍在（与 Stage 2 不符）: $HOOK_SHADOW_N"
 
 # 帮助: 建 sandbox git 仓库 + 委托 post-commit hook 指向真实脚本
 make_sandbox() { # make_sandbox <dest>
@@ -45,6 +47,9 @@ make_sandbox() { # make_sandbox <dest>
   #   降级」变硬失败）。此处把**真实脚本**提供进沙箱——属「夹具缺依赖」修复，不改断言语义。
   mkdir -p "$d/scripts/control-tower"
   cp "$REPO/scripts/control-tower/bypass-ledger.sh" "$d/scripts/control-tower/bypass-ledger.sh"
+  # 沙箱 .gitignore: Stage 2 的 per-session 落点 .sessions/ + 本夹具自造的 scripts/
+  #   都是运行期产物 ⇒ 不参与「树干净」判据（.sessions/ 由真实 .gitignore:42 忽略，此处等价复刻）
+  printf '.sessions/\nscripts/\n' > "$d/.gitignore"
   printf '#!/bin/bash\nexec bash "%s"\n' "$HOOK_SRC" > "$d/.git/hooks/post-commit"
   chmod +x "$d/.git/hooks/post-commit"
 }
@@ -59,70 +64,72 @@ git -C "$SB" config --local user.email "claworg@users.noreply.github.com"
 # 预创建 + 暂存 .claude/bypass.log 到 seed（post-commit 影子提交须在已跟踪文件上 append，
 #   否则 git status/内层 commit 行为不稳——post-commit.test.sh 同款可靠流程）
 echo "seed" > "$SB/.claude/bypass.log"
-git -C "$SB" add .claude/bypass.log
+git -C "$SB" add .claude/bypass.log .gitignore
 echo "seed" > "$SB/seed.txt"; git -C "$SB" add seed.txt
 git -C "$SB" commit -q --no-verify -m "chore: seed"
 echo "feature" > "$SB/feature.txt"; git -C "$SB" add feature.txt
 # marker 模拟 pre-commit 真跑过（PASS_WAY=1）——写当前 HEAD(seed) + 时间戳
 echo "$(git -C "$SB" rev-parse HEAD)|$(date +%s)" > "$SB/.claude/last-precommit-success"
-git -C "$SB" commit -q -m "feat: real commit C1"   # 真实 commit（用 local identity，非 -c）
-REAL_HASH=$(git -C "$SB" rev-parse HEAD^)          # 影子已是 HEAD，真实提交 = HEAD^
-grep -q "COMMITTED | pre-commit PASS (hook 层登记) | HASH=$REAL_HASH" "$SB/.claude/bypass.log" \
-  && ok "C1 bypass.log 含本提交 HASH 的 COMMITTED" || no "C1 COMMITTED 未登记"
-# 影子提交已生成? 用 grep -c（读全量，避免 grep -q 提前退出→SIGPIPE→pipefail 误判为非确定性）
+# 注入缝（D735）: 固定 session 标识 ⇒ per-session 落点确定（hook 经 git 继承环境）
+SYNO_SESSION_ID="c1-sandbox" git -C "$SB" commit -q -m "feat: real commit C1"
+REAL_HASH=$(git -C "$SB" rev-parse HEAD)           # Stage 2 无影子提交 ⇒ 真实提交即 HEAD
+LED1="$SB/.sessions/c1-sandbox/bypass.log"
+grep -qF "HASH=$REAL_HASH" "$LED1" 2>/dev/null \
+  && ok "C1 per-session 账本含本提交 HASH 的 COMMITTED（Stage 2 落点）" || no "C1 per-session COMMITTED 未登记: $LED1"
+# 影子提交? 用 grep -c（读全量，避免 grep -q 提前退出→SIGPIPE→pipefail 误判为非确定性）
 SHADOW_N=$(git -C "$SB" log --oneline --format=%s | grep -c "^chore: bypass COMMITTED 登记 (auto hook, D521)$" | tr -d '\n\r' || true)
-[ "$SHADOW_N" -ge 1 ] && ok "C1 影子提交已生成" || no "C1 影子提交缺失"
+[ "$SHADOW_N" -eq 0 ] && ok "C1 无影子提交（Stage 2 已删该机制）" || no "C1 出现影子提交（与 Stage 2 不符）: $SHADOW_N"
 DIRTY=$(git -C "$SB" status --porcelain | grep -vE 'last-precommit-success' || true)
 [ -z "$DIRTY" ] && ok "C1 树干净（无残留脏 bypass.log）" || no "C1 仍脏: $DIRTY"
 
-# ═══ C2 降级: 无 identity → 影子提交失败 → L87 消息 + 不生成影子提交 ═══
+# ═══ C2 降级: append 失败 → exit 2 fail-closed（不回退旧路径）+ 显式点名 ═══
 echo ""
-echo "── C2 降级（无 identity → L87「identity 未配置」）──"
+echo "── C2 降级（append 失败 → fail-closed，不回退旧路径）──"
 SB2="$TMPD/c2"; make_sandbox "$SB2"
-# clone 无身份配置（不设 local user.*）。真实提交用一次性 -c 身份创建（不持久化 identity——
-# 模拟 clone 无 global/local 配置。注意: git -c 会经 GIT_CONFIG_PARAMETERS 传播给自动 hook，
-# 故 feature commit 时临时禁用 hook，避免自动影子提交提前生成——降级路径须手动触发。
-# 另: git 默认会从 OS 自动派生身份（username@hostname）→ 影子提交竟能成功；
-#     要真实触发 L87（git commit 因无法确定身份而失败），须 user.useConfigOnly=true
-#     （git 不再自动派生、只认显式身份配置）——这是触发 post-commit L87 的诚实物理条件。
-git -C "$SB2" config --local user.useConfigOnly true
+git -C "$SB2" config --local user.name "synova-mac"
+git -C "$SB2" config --local user.email "claworg@users.noreply.github.com"
+echo "seed" > "$SB2/.claude/bypass.log"; git -C "$SB2" add .claude/bypass.log .gitignore
 echo "seed" > "$SB2/seed.txt"; git -C "$SB2" add seed.txt
-git -C "$SB2" -c user.name=t -c user.email=t@t commit -q --no-verify -m "chore: seed"   # 无 marker → no shadow
-# feature commit: 临时禁用 hook（防 -c identity 传播→自动影子提交）
-mv "$SB2/.git/hooks/post-commit" "$SB2/.git/hooks/post-commit.bak"
+git -C "$SB2" commit -q --no-verify -m "chore: seed"
+LEGACY_BEFORE=$(wc -l < "$SB2/.claude/bypass.log" | tr -d ' ')
+# 物理制造 append 失败: 落点目录的父路径被普通文件占位 ⇒ `mkdir -p` 必失败 ⇒ bypass-ledger.sh exit 2
+echo "blocker" > "$SB2/.notadir"
 echo "feature" > "$SB2/feature.txt"; git -C "$SB2" add feature.txt
-SEED_SHA=$(git -C "$SB2" rev-parse HEAD)
-echo "$SEED_SHA|$(date +%s)" > "$SB2/.claude/last-precommit-success"
-git -C "$SB2" -c user.name=t -c user.email=t@t commit -q -m "feat: real commit C2"
-mv "$SB2/.git/hooks/post-commit.bak" "$SB2/.git/hooks/post-commit"
-# 手动触发 post-commit，且清空身份环境（模拟 clone 无 identity + 无 -c 传播 + useConfigOnly）
-C2_OUT=$(cd "$SB2" && env -u GIT_CONFIG_PARAMETERS -u GIT_AUTHOR_NAME -u GIT_AUTHOR_EMAIL \
-      -u GIT_COMMITTER_NAME -u GIT_COMMITTER_EMAIL bash "$SB2/.git/hooks/post-commit" 2>&1)
-C2_L87_N=$(echo "$C2_OUT" | grep -c "identity 未配置" | tr -d '\n\r' || true)
-[ "$C2_L87_N" -ge 1 ] \
-  && ok "C2 L87 降级消息（identity 未配置）已触发" || no "C2 L87 消息缺失: [$C2_OUT]"
+echo "$(git -C "$SB2" rev-parse HEAD)|$(date +%s)" > "$SB2/.claude/last-precommit-success"
+C2_ENV=(SYNO_SESSION_ID=c2-sandbox SYNO_BYPASS_LEDGER_DIR="$SB2/.notadir/sub")
+C2_OUT=$(env "${C2_ENV[@]}" git -C "$SB2" commit -q -m "feat: real commit C2" 2>&1 || true)
+echo "$C2_OUT" | grep -q "bypass 账本写入失败 (exit=2)" \
+  && ok "C2 append 失败 exit=2 被显式点名（不静默）" || no "C2 未显式点名 append 失败: [${C2_OUT}]"
+LEGACY_AFTER=$(wc -l < "$SB2/.claude/bypass.log" | tr -d ' ')
+[ "$LEGACY_BEFORE" = "$LEGACY_AFTER" ] && ok "C2 未回退旧路径（.claude/bypass.log 行数不变: ${LEGACY_AFTER}）" || no "C2 回退了旧路径: $LEGACY_BEFORE → $LEGACY_AFTER"
+grep -q "post-commit degraded: bypass 账本写入失败" "$SB2/.claude/degraded-events.log" 2>/dev/null \
+  && ok "C2 degraded-events.log 留痕（可追溯）" || no "C2 无 degraded-events 留痕"
 if [ "$(git -C "$SB2" log --oneline --format=%s | grep -c "^chore: bypass COMMITTED 登记 (auto hook, D521)$" | tr -d '\n\r' || true)" -ge 1 ]; then
-  no "C2 不应生成影子提交（降级不洗白）"
+  no "C2 不应生成影子提交（Stage 2 已删该机制）"
 else
-  ok "C2 未生成影子提交（降级不洗白）"
+  ok "C2 未生成影子提交（Stage 2 语义）"
 fi
 
-# ═══ C3 防递归: 影子提交自身不再触发影子提交 ═══
+# ═══ C3 幂等: 同一 HEAD 二次触发 → 不重复登记（Stage 2 用 read 幂等）═══
 echo ""
-echo "── C3 防递归（影子不登记影子）──"
+echo "── C3 幂等（二次 post-commit 不重复登记）──"
 SB3="$TMPD/c3"; make_sandbox "$SB3"
 git -C "$SB3" config --local user.name "synova-mac"
 git -C "$SB3" config --local user.email "claworg@users.noreply.github.com"
-echo "seed" > "$SB3/.claude/bypass.log"
-git -C "$SB3" add .claude/bypass.log
+echo "seed" > "$SB3/.claude/bypass.log"; git -C "$SB3" add .claude/bypass.log .gitignore
 echo "seed" > "$SB3/seed.txt"; git -C "$SB3" add seed.txt
 git -C "$SB3" commit -q --no-verify -m "chore: seed"
 echo "b" > "$SB3/b.txt"; git -C "$SB3" add b.txt
 echo "$(git -C "$SB3" rev-parse HEAD)|$(date +%s)" > "$SB3/.claude/last-precommit-success"
-git -C "$SB3" commit -q -m "feat: real commit B"
-# grep -c 无匹配输出 0 且 exit 1 → 用 tr 兜底（ctrl-tower 模式 4）
-COUNT=$(git -C "$SB3" log --oneline --format=%s | grep -c "^chore: bypass COMMITTED 登记 (auto hook, D521)$" | tr -d '\n\r' || true)
-[ "$COUNT" -eq 1 ] && ok "C3 防递归: 影子提交仅 1 次 (count=$COUNT)" || no "C3 影子递归: count=$COUNT"
+SYNO_SESSION_ID="c3-sandbox" git -C "$SB3" commit -q -m "feat: real commit B"
+HASH_C3=$(git -C "$SB3" rev-parse HEAD)
+LED3="$SB3/.sessions/c3-sandbox/bypass.log"
+N1=$(grep -cF "HASH=$HASH_C3" "$LED3" 2>/dev/null | tr -d '\n\r' || true)
+# 二次触发同一 post-commit（迟到/重复 hook 场景，见 post-commit-marker.test.sh S6）
+(cd "$SB3" && SYNO_SESSION_ID="c3-sandbox" bash "$SB3/.git/hooks/post-commit" >/dev/null 2>&1) || true
+N2=$(grep -cF "HASH=$HASH_C3" "$LED3" 2>/dev/null | tr -d '\n\r' || true)
+[ "$N1" = "1" ] && ok "C3 首次登记恰 1 条（read 幂等前置）" || no "C3 首次登记条数异常: $N1"
+[ "$N2" = "1" ] && ok "C3 二次触发未重复登记（read 幂等生效）" || no "C3 重复登记: $N1 → $N2"
 
 # ═══ C4 隔离: 双独立 clone，A commit → B 的 HEAD/index 零变化 ═══
 echo ""
