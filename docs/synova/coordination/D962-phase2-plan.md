@@ -8,3 +8,7 @@
 - WIP 三缺陷修复：G12 `\$` 正则逃逸（恒绿 fail-open）、裸 python3×7（PYBIN 全局化）、D547 骨架检查 CT-34 早退不可达（骨架硬拦并入早退路径）。
 - 六处引用移除确认：check-hardcoded/deprecated-mapping/verifiable-done/q0c-tracking/acceptance-ci/brief-parseable 在 V5.3 中零引用（hardcoded 改判保留但不再被 pre-commit 引用——判定本地内联 #3）。
 - 计数更正：main@519edadf 新增 check-name-allocation.sh（#760）→ 第一批后 29，第二批 7 项删除后预期 **22**（CTO 三选一裁决定稿）。
+
+### 2a② 第二批勘误（V 自验 D962-2a2 回执）
+- 轻2: brief-parseable 并入为**加严并入**非逐字（#CRITERIA 必填、Q2 路径条目≥1 升硬失败；架构层判据同源）。
+- 轻3: 计数双口径——CTO 卡原命令 find（含 audit 红线件）= 29/23/22；V 口径（排除 audit 红线件）= 28/22/21。恒差 1=scripts/audit/check-gates-v2.py，两口径自洽。
