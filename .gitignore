@@ -84,3 +84,7 @@ evidence/
 # 树级守门: scripts/control-tower/check-gitlinks.sh（三态退出）+ 密封测试入 ci.yml。
 .synova-wt-*
 .sessions/
+# D1021: tests/output/ 为测试运行生成物（生成物离库）
+# 由 tests/expert-quality/layer2-judge.test.ts / tests/run-experts-real.ts / tests/run-e2e-pipeline.cjs
+# （及 src/mvp-server.ts 同类写入）运行时重建；历史入库的 3 个 json 已 git rm --cached 出索引。
+tests/output/

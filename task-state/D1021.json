@@ -1,0 +1,19 @@
+{
+  "task_id": "D1021",
+  "title": "tests-output 出库",
+  "status": "claimed",
+  "spec": ".claude/task-briefs/2026-09-26-D1021-tests-output-出库.md",
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "write_set": [
+    ".gitignore",
+    "docs/synova/coordination/D1020-tests-output-出库-20260926.md",
+    "task-state/D1021.json",
+    "tests/output/expert-quality-cross-industry.json",
+    "tests/output/expert-quality-report.json",
+    "tests/output/expert-test-results.json"
+  ],
+  "updated_at": "2026-09-26",
+  "updated_by": "squad-ci"
+}
