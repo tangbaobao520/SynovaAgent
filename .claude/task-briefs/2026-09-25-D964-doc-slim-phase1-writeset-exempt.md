@@ -30,3 +30,4 @@ Synova 控制塔门禁域。merge_writeset_gate.py（D708）以「声明写集 v
 - [ ] tests/control-tower/merge_writeset_gate.test.sh 全绿（33 通过）
 - [ ] 改前/改后原始输出各一份（夹带 → 豁免）
 - [ ] K3 审计通过后才合并
+- 不改 scripts/audit/audit-rules.sh、scripts/pre-commit-check.sh、tests/control-tower/gate-stats.test.sh（明确不动这些具体文件）
