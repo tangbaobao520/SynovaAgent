@@ -4,7 +4,8 @@ on:
   push:
     branches: [main, feat/*]
   pull_request:
-    branches: [main]
+    # D969: 放开 base 限制 —— 原 [main] 使 base≠main 的 PR 拿不到 CI，
+    #   而 `Vitest (1/2)`/`Vitest (2/2)` 是必需检查 ⇒ 那些 PR 永久 405（2 expected）。
 
 jobs:
   quality:

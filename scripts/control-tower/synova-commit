@@ -799,11 +799,18 @@ if [[ $PRECOMMIT_EXIT -eq 0 ]]; then
   # U1a/D414: bypass.log 证据链随提交入库（修 M4 "写了没提交"——:601 追加 COMMITTED 但从不 add，
   #   证据链只在工作区不进 git、换 worktree/clone 即断）。commit 前把 bypass.log 变更并入本次提交。
   if [ -f "$BYPASS_LOG" ] && ! git diff --quiet -- "$BYPASS_LOG" 2>/dev/null; then
-    git add "$BYPASS_LOG" 2>/dev/null || true
-    if [[ ${#FILES[@]} -gt 0 ]]; then
-      FILES+=(".claude/bypass.log")  # --files 模式: 显式并入提交文件集
+    # D969（替代 U1a/D414）: **默认不再把 .claude/bypass.log 并入提交**。
+    #   原 D414 每次提交 `git add .claude/bypass.log` ⇒ 每个分支必改该文件；而 GitHub 不执行
+    #   .gitattributes 的 merge=union（自定义 driver 只在本地 .git/config 生效）⇒ 退回三方合并
+    #   ⇒ **任何 PR 都判 dirty（假冲突）** ⇒ 全队 PR 积压（2026-09-25 实测 8 条被堵）。
+    #   现改为: 证据写入 per-session 账本（bypass-ledger.sh；本地 .sessions/<sid>/bypass.log），不入索引。
+    #   对账不受影响: check-bypass-log.sh 经 bypass-ledger.sh sources 读「旧路径 + 全部 per-session」并集。
+    #   迁移期如需旧行为: SYNO_LEGACY_LEDGER_COMMIT=1（显式启用，用于历史补记）。
+    if [ -n "${SYNO_LEGACY_LEDGER_COMMIT:-}" ] && [ -f "$BYPASS_LOG" ] && ! git diff --quiet -- "$BYPASS_LOG" 2>/dev/null; then
+      git add "$BYPASS_LOG" 2>/dev/null || true
+      echo "  ℹ SYNO_LEGACY_LEDGER_COMMIT=1: 仍将 bypass.log 并入提交（旧行为，仅迁移期显式启用）"
     fi
-    echo "  ℹ D414: bypass.log 证据链随本次提交入库"
+
   fi
 
   # D706: --files 模式前置断言 — staged ⊆ FILES（防 D329「--files 洗白他人暂存」）

@@ -5,13 +5,8 @@
 .codex/checkpoints/** linguist-generated=true
 .codex/dependency-graph.json linguist-generated=true
 
-# CT-47 / D457: bypass.log append-only 证据日志 — merge=union 自动保留双方
-# 背景: 每个 session 的 synova-commit 都往 bypass.log 追加一行证据，多 PR 并发合并时
 #       必然冲突（D357/D358/D354 三个分支都改了它）。append-only 日志合并 = 取并集，
-#       union 驱动保留双方所有行，每行含唯一 HASH 不会重复，正好适用。
-# 注意: union 驱动需在 .git/config 注册一次（git config merge.union.driver），
 #       见 scripts/control-tower/install-hooks.sh 的自动注册逻辑。
-.claude/bypass.log merge=union
 
 # CT-48 / D508 补充（Win PR#128 #8）: reference-map.md append-only 符号地图 — merge=union
 # 背景: grep-refs.sh 每次写 reference-map.md（append-only），merge main 时手工 union
@@ -20,7 +15,8 @@
 .claude/reference-map.md merge=union
 
 # D520/任务2: bash/python 脚本强制 LF——Windows runner autocrlf=true 会把 .sh 检出成
-# CRLF 导致 bash 全线 ": command not found"（双平台 CI 必备）
+# CRLF 导致 bash 全线 "
+# : command not found"（双平台 CI 必备）
 *.sh text eol=lf
 *.py text eol=lf
 
@@ -30,3 +26,7 @@ scripts/audit/** -text
 # D533: 控制塔脚本存量 CRLF（env_validator/inject-context 无配对测试，CT-40 禁改）
 # 保持字节不变 → 零噪音且不触发 U7/CT-40 测试配对门禁（新增脚本不受影响，走 *.py text eol=lf）
 scripts/control-tower/*.py -text
+
+# D969: .claude/bypass.log 冻结为历史归档 —— 见 scripts/control-tower/synova-commit 的
+#   D969 块（不再随提交入库）。原 merge=union 声明已移除：GitHub 不执行自定义 merge driver，
+#   声明 union 只会造成「每个 PR 必假冲突」。新账本 = .sessions/<sid>/bypass.log（本地、按 session 分文件）。
