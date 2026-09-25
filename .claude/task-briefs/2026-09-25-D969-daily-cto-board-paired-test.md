@@ -1,10 +1,10 @@
-# Task Brief: D1008 — daily-cto-board 配对测试 + 对账探针 runner + 默认 REPO 去硬编码
-> 认领: 🧭 coder-a（并行 CTO 小队 A）｜ 分支: feat/d1008-daily-cto-board-paired-test ｜ 基线: origin/main 25e081ce
+# Task Brief: D969 — daily-cto-board 配对测试 + 对账探针 runner + 默认 REPO 去硬编码
+> 认领: 🧭 coder-a（并行 CTO 小队 A）｜ 分支: feat/d969-daily-cto-board-paired-test ｜ 基线: origin/main 25e081ce
 #CRITERIA: A
 
 ## Q0: 定位
 ### a) 拼图
-D948 起的「CTO 每日自动看板」runner（scripts/control-tower/daily-cto-board.sh）。本卡补 U7/CT-40 要求的**配对测试**，并把它变成三条对账机制（D1010/D1012/D1013 探针）的**接入点**。
+D948 起的「CTO 每日自动看板」runner（scripts/control-tower/daily-cto-board.sh）。本卡补 U7/CT-40 要求的**配对测试**，并把它变成三条对账机制（D971/D973/D974 探针）的**接入点**。
 ### b) 文件审计
 - `scripts/control-tower/daily-cto-board.sh`（95 行）已存在、**无配对测试** → `ct-test-gate.sh:34,45` 判 `缺配对测试` exit=1（实测复现）。
 - `tests/control-tower/daily-cto-board-ratio.test.sh` 存在，但**文件名不匹配配对规则**（须 `<name>.test.sh`）→ 不构成配对。
@@ -26,9 +26,9 @@ D370（`$VAR` 紧贴全角标点 → `unbound variable`；本卡**真踩中**，
 不做什么（含文件路径）：
 - 不改 scripts/audit/k3-batch-gate.sh （K3 专属域，禁碰）
 - 不改 docs/synova/audit-reports/INDEX.md （K3 审计报告域）
-- 不写 scripts/control-tower/probes/required-checks-probe.sh （D1010 写集）
-- 不写 scripts/control-tower/probes/docs-registry-probe.sh （D1012 写集）
-- 不写 scripts/control-tower/probes/task-id-watermark-probe.sh （D1013 写集）
+- 不写 scripts/control-tower/probes/required-checks-probe.sh （D971 写集）
+- 不写 scripts/control-tower/probes/docs-registry-probe.sh （D973 写集）
+- 不写 scripts/control-tower/probes/task-id-watermark-probe.sh （D974 写集）
 
 ## Q3: 验收
 入口: `bash tests/control-tower/daily-cto-board.test.sh`（U7/CT-40 门禁同源调用同一路径）。
