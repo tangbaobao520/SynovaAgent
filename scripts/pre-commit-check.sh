@@ -126,9 +126,24 @@ CHANGED_FILES="$GIT_CACHED_ALL_NAMES"; STAGED_FILES="$GIT_CACHED_ALL_NAMES"; STA
 # 规则: 只有**源面代码文件**的 added 行参与判定；本脚本自身 / tests/** / *.test.* /
 #   docs/** / memory/** / .claude/** / task-state/** / *.md|txt|html 一律按路径排除。
 # 禁行内字面量白名单（那会把真注入一起放过）——排除只按文件路径，且是 hunk 级。
-_SELF_REL="${BASH_SOURCE[0]}"
-case "$_SELF_REL" in
-  "$ROOT"/*) _SELF_REL="${_SELF_REL#"$ROOT"/}" ;;
+# ── FIX-013/015 P1（PR #816 verifier 退回）: `_SELF_REL` 必须与 ROOT **同口径**比较 ──
+# 缺陷：`ROOT` 来自 `git rev-parse --show-toplevel`（**物理**路径，如 `/private/tmp/x`），
+#   而 `BASH_SOURCE[0]` 是**调用串**（如 `/tmp/x/scripts/…`；macOS `/tmp` 是软链 ⇒ 逻辑路径）。
+#   前缀不匹配 → 剥离失败 → `_SELF_REL` 仍是绝对路径 → hunk 里的
+#   `+++ b/scripts/pre-commit-check.sh` 永不等于 self ⇒ **自伤排除整体失效**
+#   （verifier 实测翻转：相对调用 ✅/✅ ↔ 绝对调用 ❌1 处/❌1 处）。
+# 修法：两侧都**物理化**（`pwd -P`）后再比 —— 相对 / 绝对 / 软链三种调用串结果一致。
+_PHYS_ROOT="$(cd "$ROOT" 2>/dev/null && pwd -P || printf '%s' "$ROOT")"
+_SRC_RAW="${BASH_SOURCE[0]}"
+_SELF_DIR="${BASH_SOURCE[0]%/*}"
+[ "$_SELF_DIR" = "${BASH_SOURCE[0]}" ] && _SELF_DIR="."
+_SELF_ABS="$(cd "$_SELF_DIR" 2>/dev/null && pwd -P || printf '%s' "$_SELF_DIR")/${BASH_SOURCE[0]##*/}"
+_SELF_REL="$_SELF_ABS"
+case "$_SELF_ABS" in
+  "$_PHYS_ROOT"/*) _SELF_REL="${_SELF_ABS#"$_PHYS_ROOT"/}" ;;
+  # 相对调用且 CWD≠仓根（非典型，但存在脚本被从别处 `bash <相对路径>` 调起的场景）：
+  # 落到仓根的相对串，保证 self 与 diff 里的 `b/<rel>` 同口径。
+  *) [ -f "$_PHYS_ROOT/$_SRC_RAW" ] && _SELF_REL="$_SRC_RAW" ;;
 esac
 code_added_lines() {  # @output 仅「源面代码文件」的 added 行（含前导 +）
   awk -v self="$_SELF_REL" '
