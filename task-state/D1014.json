@@ -1,6 +1,9 @@
 {
   "task_id": "D1014",
-  "title": "N12 根治：ci.yml 加 concurrency（同 ref 只留最新）+ push 触发收窄为 [main]",
+  "title": "N12 根治：ci.yml 加 concurrency（同 ref 只留最新）+ push 触发收窄为 [main] + pull_request.types 显式化",
+  "cto_card_alias": "D981",
+  "alias_note": "CTO 于 2026-09-26 交付 D981-ci-concurrency.patch；经逐键深比较与本卡已交付内容语义等价（仅注释文字与键序不同）⇒ 同一交付，不另开第二 PR。等价性证据见 docs/synova/coordination/D1014-N12-证据-20260926.md §五。",
+  "stage": "阶段 2（交付路径唯一化）子项 —— 按 CTO 要求并入，不另立线",
   "status": "impl_done",
   "risk": "high",
   "domain": "mac",
