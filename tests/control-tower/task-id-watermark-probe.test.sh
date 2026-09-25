@@ -13,6 +13,8 @@
 #         ⑧ --face refs 忽略本地工作树 / union 纳入本地（判别性）
 #         ⑨ --emit 刷新声明值且保留 MANUAL 段（幂等可复跑）
 #         ⑩ --emit 后自校验通过
+#   边界  ⑫ 本水位号段: 段外号不参与判定（含判别性对照：不声明号段则参与 ⇒ DRIFT）
+#         ⑬ 作废号段: 已释放号不参与判定（含判别性对照：不声明作废则参与 ⇒ DRIFT）
 #   接线  ⑪ 探针落在 scripts/control-tower/probes/*-probe.sh（daily-cto-board 通用 runner 的发现面）
 #
 # 零真实仓库污染: 全部在 mktemp -d 沙箱内 git init；trap 清理；不写仓库任何文件。
@@ -43,7 +45,7 @@ assert_contains() { # assert_contains <名称> <文本> <片段>
   esac
 }
 
-SB="$(mktemp -d "${TMPDIR:-/tmp}/d1013-wm.XXXXXX")" || { echo "❌ mktemp 失败"; exit 1; }
+SB="$(mktemp -d "${TMPDIR:-/tmp}/d974-wm.XXXXXX")" || { echo "❌ mktemp 失败"; exit 1; }
 cleanup() { rm -rf "$SB"; }
 trap cleanup EXIT
 
@@ -56,7 +58,7 @@ mk_repo() { # mk_repo <目录> <D号...>  —— 建沙箱 git 仓并把 task-st
   done
   git -C "$d" add -A >/dev/null 2>&1 || true
   # 身份走 -c 一次性注入（PLATFORM-CHECKLIST §6: 禁 git config 持久写入）
-  git -C "$d" -c user.email=test@test.local -c user.name=d1013-test \
+  git -C "$d" -c user.email=test@test.local -c user.name=d974-test \
       commit -qm "seed task-state" >/dev/null 2>&1 || true
 }
 
@@ -152,7 +154,7 @@ cat > "$W9" <<'EOF'
 声明水位: D2
 
 <!-- MANUAL:BEGIN -->
-人工段标记 D1013-MANUAL-SENTINEL
+人工段标记 D974-MANUAL-SENTINEL
 <!-- MANUAL:END -->
 EOF
 OUT9="$(bash "$PROBE" --repo-root "$R9" --watermark "$W9" --emit 2>&1)"
@@ -160,7 +162,7 @@ RC9=$?
 assert_eq "⑨ --emit exit 0" "$RC9" "0"
 NEWDECL="$(grep -E '^声明水位: D[0-9]+$' "$W9" | head -1)"
 assert_eq "⑨ --emit 刷新声明为实测值" "$NEWDECL" "声明水位: D7"
-if grep -qF 'D1013-MANUAL-SENTINEL' "$W9"; then
+if grep -qF 'D974-MANUAL-SENTINEL' "$W9"; then
   ok "⑨ --emit 保留 MANUAL 段"
 else
   bad "⑨ --emit 丢了 MANUAL 段"
@@ -174,6 +176,36 @@ case "$PROBE" in
   */scripts/control-tower/probes/*-probe.sh) ok "⑪ 探针路径符合 probes/*-probe.sh 发现面" ;;
   *) bad "⑪ 探针路径不符合发现面: ${PROBE}" ;;
 esac
+
+# ── ⑫ 边界：本水位号段（段外号不参与判定，仍可见）—— 判别性对照 ──
+R12="$SB/r12"
+mk_repo "$R12" 950 1007
+W12A="$SB/w12a.md"   # 声明号段: 段外 D1007 不计 → 实测 950
+printf '# 号段水位\n\n声明水位: D950\n\n本水位号段: D900-D999\n' > "$W12A"
+OUT12="$(bash "$PROBE" --repo-root "$R12" --watermark "$W12A" 2>&1)"
+RC12=$?
+assert_eq "⑫ 声明号段后段外 D1007 不参与 → exit 0" "$RC12" "0"
+assert_contains "⑫ 报告仍打印段外最高号（可见）" "$OUT12" "D1007"
+W12B="$SB/w12b.md"   # 同一状态但不声明号段 → D1007 > D950 → DRIFT（对照）
+printf '# 号段水位\n\n声明水位: D950\n' > "$W12B"
+OUT12B="$(bash "$PROBE" --repo-root "$R12" --watermark "$W12B" 2>&1)"
+RC12B=$?
+assert_eq "⑫对照 不声明号段 → 段外号参与 ⇒ exit 1" "$RC12B" "1"
+
+# ── ⑬ 边界：作废号段（已释放号不参与判定）—— 判别性对照 ──
+R13="$SB/r13"
+mk_repo "$R13" 960 999
+W13A="$SB/w13a.md"   # 声明作废 D990-D999 → 实测 960
+printf '# 号段水位\n\n声明水位: D960\n\n作废号段: D990-D999\n' > "$W13A"
+OUT13="$(bash "$PROBE" --repo-root "$R13" --watermark "$W13A" 2>&1)"
+RC13=$?
+assert_eq "⑬ 作废号段内的 D999 不参与 → exit 0" "$RC13" "0"
+assert_contains "⑬ 报告打印作废命中数" "$OUT13" "本轮回放命中"
+W13B="$SB/w13b.md"   # 同一状态但不声明作废 → D999 > D960 → DRIFT（对照）
+printf '# 号段水位\n\n声明水位: D960\n' > "$W13B"
+OUT13B="$(bash "$PROBE" --repo-root "$R13" --watermark "$W13B" 2>&1)"
+RC13B=$?
+assert_eq "⑬对照 不声明作废 → D999 参与 ⇒ exit 1" "$RC13B" "1"
 
 echo ""
 if [ "$FAIL" -eq 0 ]; then

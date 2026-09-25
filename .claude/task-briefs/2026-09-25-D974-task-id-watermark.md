@@ -1,7 +1,7 @@
-# Task Brief: D1013 号段水位（先实测后发号 + 实测反查生成 + 对账探针）
+# Task Brief: D974 号段水位（先实测后发号 + 实测反查生成 + 对账探针）
 
-> 生成: 2026-09-25 | 分支: docs/d1013-task-id-watermark | 基于 origin/main 25e081ce
-> 卡片: task-state/D1013.json | 执行: coder-b（并行 CTO 小队）
+> 生成: 2026-09-25 | 分支: docs/d974-task-id-watermark | 基于 origin/main 25e081ce
+> 卡片: task-state/D974.json | 执行: coder-b（并行 CTO 小队）
 > #CRITERIA: A
 
 ## Q0: 定位
@@ -55,8 +55,9 @@ tests/control-tower/task-id-watermark-probe.test.sh     — ❌ 新建（U7/CT-4
 - docs/synova/coordination/号段水位.md（新建；由 `--emit` 实测生成）
 - scripts/control-tower/probes/task-id-watermark-probe.sh（新建；三态对账探针）
 - tests/control-tower/task-id-watermark-probe.test.sh（新建；U7/CT-40 配对测试）
-- memory/notes/proposed/2026-09-25-d1013-task-id-watermark-probe.md（新建；决策 Note）
-- task-state/D1013.json（新建；本卡登记）
+- memory/notes/proposed/2026-09-25-d974-task-id-watermark-probe.md（新建；决策 Note）
+- task-state/D974.json（新建；本卡登记）
+- docs/synova/product-lines/evidence/D974-watermark-20260925.md（新建；M6 交付回执 —— 必须列入写集，否则 D708 判夹带）
 
 **不做什么：**
 - 不改 scripts/control-tower/alloc-task-id.sh （取号器缺陷只登记不修，属另卡）
@@ -77,8 +78,8 @@ tests/control-tower/task-id-watermark-probe.test.sh     — ❌ 新建（U7/CT-4
 
 ## Done 标准
 - [x] verify: bash scripts/control-tower/probes/task-id-watermark-probe.sh （真实仓库 exit 0，水位=实测）
-- [x] verify: bash tests/control-tower/task-id-watermark-probe.test.sh （21 项断言全绿 exit 0）
+- [x] verify: bash tests/control-tower/task-id-watermark-probe.test.sh （27 项断言全绿 exit 0；含 ⑫ 本水位号段 / ⑬ 作废号段 两组判别性对照）
 - [x] verify: SYNO_TEST_ARM=1 SYNO_CT_STAGED="scripts/control-tower/probes/task-id-watermark-probe.sh" bash scripts/control-tower/ct-test-gate.sh （SYNC-OK exit 0）
 - [x] verify: grep -cE '^声明水位: D[0-9]+$' docs/synova/coordination/号段水位.md （机器判定位存在）
-- [x] verify: bash scripts/workflow/check-brief-parseable.sh .claude/task-briefs/2026-09-25-D1013-task-id-watermark.md （brief 可解析）
+- [x] verify: bash scripts/workflow/check-brief-parseable.sh .claude/task-briefs/2026-09-25-D974-task-id-watermark.md （brief 可解析）
 - 改坏即红（证据见交付回执，非 Done 判据）：打掉 DRIFT 判据①（判别性夹具）后测试必红（3 项失败）；恢复后 21/21 绿，注入标记在被改文件内计数为 0

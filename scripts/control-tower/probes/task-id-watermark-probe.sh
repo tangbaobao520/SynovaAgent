@@ -1,12 +1,14 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# task-id-watermark-probe.sh — D1013 号段水位对账探针（三条对账机制之一）
+# task-id-watermark-probe.sh — D974 号段水位对账探针（三条对账机制之一）
 #
 # 目的: 把「已分配 D# 水位」从**手工维护**改为**实测反查**，并让「水位落后于现实」
 #       变成一条会自己报警的物理信号（防 D382/D1004 型撞号）。
 #
 # 契约（铁律 47）:
 #   @input  — --watermark <file>  水位文件（默认 <repo>/docs/synova/coordination/号段水位.md）
+#             水位文件 MANUAL 段可由人声明 `作废号段: D<n>-D<n>`（每行一条，可多条）——
+#             该区间从实测最大号中**排除**（已正式释放的号不参与水位判定，见 @note 作废语义）
 #             --repo-root <dir>   被扫描的仓库根（默认 CWD 的 git toplevel）
 #             --face <union|refs> 判定面（默认 union = 面A refs ∪ 当前工作树 task-state/）
 #             --emit              生成模式: 用实测结果重写水位文件（默认只校验不写盘）
@@ -29,6 +31,10 @@
 #             面 C = 当前工作树 task-state/
 #             测量法 = git cat-file --batch 单进程批读（O(n) 次对象读），
 #                      不用「每 ref 一个子进程」的 O(n) fork 路径。
+#   @note   — 作废语义（D974 新增）: 号段约定更正后被**正式释放**的号，其历史 commit 仍留在
+#             refs 里（分支未必已删）⇒ 若不排除，水位会被已释放号永久抬高，探针恒 DRIFT。
+#             处置: 作废区间**由人在 MANUAL 段声明**（属号段约定决策，不由探针自动推断），
+#             探针只负责机械排除并在报告里显式打印「本轮回放命中 N 处」。
 # ═══════════════════════════════════════════════════════════════════════════════
 # D313 M5 UTF-8 强制: Windows 控制台/子进程统一 UTF-8
 export PYTHONIOENCODING=utf-8
@@ -90,8 +96,25 @@ if [ -z "$WATERMARK" ]; then
   WATERMARK="${ROOT}/docs/synova/coordination/号段水位.md"
 fi
 
+# ── 作废号段（水位文件人工段声明，机器读取）──
+# 语义: 已**正式释放**的号段不参与水位判定（例: 号段约定更正后作废的跨段号，
+#   其历史 commit 仍留在 refs 里，若不排除会永远把水位抬高 ⇒ 探针恒 DRIFT）。
+# 声明格式（每行一条，可多条）: `作废号段: D1008-D1013`
+# 设计: 作废属**人的决策**（对齐号段约定），故声明写在 MANUAL 段，由机器读取而非机器生成。
+VOID_SPEC=""
+SEGMENT_SPEC=""
+if [ -f "$WATERMARK" ]; then
+  VOID_SPEC="$(grep -E '^作废号段: D[0-9]+-D[0-9]+$' "$WATERMARK" \
+    | sed -E 's/^作废号段: D([0-9]+)-D([0-9]+)$/\1-\2/' | tr '\n' ',' | sed 's/,$//')"
+  # 本水位号段（结构性管辖范围）: `本水位号段: D900-D999`。缺省 = 不限号段（全库上确界）。
+  #   Mac 水位文件声明 Mac 段 ⇒ 落在 Win 段（D1000–D1099）的号**不参与** Mac 水位判定，
+  #   但仍打印其最高号（他段号）以保持可见 —— 不静默。
+  SEGMENT_SPEC="$(grep -E '^本水位号段: D[0-9]+-D[0-9]+$' "$WATERMARK" \
+    | sed -E 's/^本水位号段: D([0-9]+)-D([0-9]+)$/\1-\2/' | tr '\n' ',' | sed 's/,$//')"
+fi
+
 # ── 实测（单进程批读）──
-MEASURE="$("$PYBIN" - "$ROOT" "$FACE" "$WITH_PR" "$PR_PAGES" <<'PYEOF'
+MEASURE="$("$PYBIN" - "$ROOT" "$FACE" "$WITH_PR" "$PR_PAGES" "$VOID_SPEC" "$SEGMENT_SPEC" <<'PYEOF'
 import json, os, re, subprocess, sys, urllib.request
 
 root, face, with_pr, pr_pages = sys.argv[1], sys.argv[2], sys.argv[3] == "1", int(sys.argv[4])
@@ -150,10 +173,37 @@ def tree_entries(body):
         i = nul + 21
     return ents
 
+void_spec = sys.argv[5] if len(sys.argv) > 5 else ""
+segment_spec = sys.argv[6] if len(sys.argv) > 6 else ""
+
+def parse_ranges(spec):
+    out = []
+    for part in spec.split(","):
+        a, _, b = part.partition("-")
+        if a.isdigit() and b.isdigit():
+            out.append((int(a), int(b)))
+    return out
+
+void_ranges = parse_ranges(void_spec)
+segment_ranges = parse_ranges(segment_spec)
+
+def classify(n):
+    """号的水位归属分类（决定是否参与判定）:
+         void  — 作废号段（水位文件 MANUAL 声明）: 已正式释放，历史 commit 仍在 refs 也不抬高水位
+         out   — 他段号（本水位号段之外）: 归属别的号段，不属本水位管辖（例: Mac 水位文件遇 Win 段号）
+         in    — 参与判定
+    两类排除都由**人在 MANUAL 段声明**（属号段约定决策），探针只机械执行并打印命中数。"""
+    if any(lo <= n <= hi for lo, hi in void_ranges):
+        return "void"
+    if segment_ranges and not any(lo <= n <= hi for lo, hi in segment_ranges):
+        return "out"
+    return "in"
+
 def max_from_tips(tips):
-    """各 tip 的根树 → 找 task-state 子树 → 收集 D<n>.json 名，返回 (max, 计数)。"""
+    """各 tip 的根树 → task-state 子树 → 收集 D<n>.json 名。
+    返回 (in-scope max, 根树数, 树数, 条目数, 作废数, 他段数)。"""
     if not tips:
-        return 0, 0, 0, 0
+        return 0, 0, 0, 0, 0, 0
     commits = batch_objects(tips)
     root_trees = set()
     for sha, (typ, body) in commits.items():
@@ -169,7 +219,7 @@ def max_from_tips(tips):
         for name, esha in tree_entries(body):
             if name == "task-state":
                 ts_trees.add(esha)
-    mx, cnt = 0, 0
+    mx, cnt, voided, out_max = 0, 0, 0, 0
     for sha, (typ, body) in batch_objects(sorted(ts_trees)).items():
         if typ != "tree":
             continue
@@ -177,21 +227,35 @@ def max_from_tips(tips):
             m = ID_RE.match(name)
             if m:
                 cnt += 1
-                mx = max(mx, int(m.group(1)))
-    return mx, len(root_trees), len(ts_trees), cnt
+                n = int(m.group(1))
+                cls = classify(n)
+                if cls == "void":
+                    voided += 1
+                elif cls == "out":
+                    out_max = max(out_max, n)
+                else:
+                    mx = max(mx, n)
+    return mx, len(root_trees), len(ts_trees), cnt, voided, out_max
 
 def max_from_dir(d):
-    mx, cnt = 0, 0
+    mx, cnt, voided, out_max = 0, 0, 0, 0
     try:
         names = os.listdir(d)
     except OSError:
-        return 0, 0
+        return 0, 0, 0, 0
     for name in names:
         m = ID_RE.match(name)
         if m:
             cnt += 1
-            mx = max(mx, int(m.group(1)))
-    return mx, cnt
+            n = int(m.group(1))
+            cls = classify(n)
+            if cls == "void":
+                voided += 1
+            elif cls == "out":
+                out_max = max(out_max, n)
+            else:
+                mx = max(mx, n)
+    return mx, cnt, voided, out_max
 
 # ── 面 A: 全 refs ──
 allrefs = run_git("for-each-ref", "--format=%(objectname)", "refs/heads",
@@ -200,15 +264,15 @@ refs_listed = run_git("for-each-ref", "--format=%(refname)", "refs/heads",
                       "refs/remotes/origin", "refs/remotes/ssh")
 refs_scanned = len(refs_listed.split()) if refs_listed else 0
 tips = sorted(set(allrefs.split())) if allrefs else []
-fa_max, fa_root, fa_trees, fa_entries = max_from_tips(tips)
+fa_max, fa_root, fa_trees, fa_entries, fa_voided, fa_out = max_from_tips(tips)
 
 # ── 面 B: 仅 origin ──
 origin_refs = run_git("for-each-ref", "--format=%(objectname)", "refs/remotes/origin")
 origin_tips = sorted(set(origin_refs.split())) if origin_refs else []
-fb_max, _, _, _ = max_from_tips(origin_tips)
+fb_max = max_from_tips(origin_tips)[0]
 
 # ── 面 C: 当前工作树 ──
-fc_max, fc_files = max_from_dir(os.path.join(root, "task-state"))
+fc_max, fc_files, fc_voided, fc_out = max_from_dir(os.path.join(root, "task-state"))
 
 # ── 可选的 PR 标题面 ──
 pr_state = "off"
@@ -258,9 +322,15 @@ print("FACE_A_MAX=%d" % fa_max)
 print("FACE_A_ROOT_TREES=%d" % fa_root)
 print("FACE_A_TS_TREES=%d" % fa_trees)
 print("FACE_A_ENTRIES=%d" % fa_entries)
+print("FACE_A_VOIDED=%d" % fa_voided)
+print("FACE_A_OUTMAX=%d" % fa_out)
 print("FACE_B_MAX=%d" % fb_max)
 print("FACE_C_MAX=%d" % fc_max)
 print("FACE_C_FILES=%d" % fc_files)
+print("FACE_C_VOIDED=%d" % fc_voided)
+print("FACE_C_OUTMAX=%d" % fc_out)
+print("VOID_RANGES=%s" % (void_spec if void_spec else "none"))
+print("SEGMENT_RANGES=%s" % (segment_spec if segment_spec else "all"))
 print("PR_STATE=%s" % pr_state)
 print("PR_COUNT=%d" % pr_count)
 print("PR_MAX=%d" % pr_max)
@@ -286,9 +356,15 @@ FACE_A_MAX="$(getnum FACE_A_MAX)"
 FACE_A_ROOT_TREES="$(getnum FACE_A_ROOT_TREES)"
 FACE_A_TS_TREES="$(getnum FACE_A_TS_TREES)"
 FACE_A_ENTRIES="$(getnum FACE_A_ENTRIES)"
+FACE_A_VOIDED="$(getnum FACE_A_VOIDED)"
+FACE_A_OUTMAX="$(getnum FACE_A_OUTMAX)"
 FACE_B_MAX="$(getnum FACE_B_MAX)"
 FACE_C_MAX="$(getnum FACE_C_MAX)"
 FACE_C_FILES="$(getnum FACE_C_FILES)"
+FACE_C_VOIDED="$(getnum FACE_C_VOIDED)"
+FACE_C_OUTMAX="$(getnum FACE_C_OUTMAX)"
+VOID_RANGES="$(getnum VOID_RANGES)"
+SEGMENT_RANGES="$(getnum SEGMENT_RANGES)"
 PR_STATE="$(getnum PR_STATE)"
 PR_COUNT="$(getnum PR_COUNT)"
 PR_MAX="$(getnum PR_MAX)"
@@ -313,6 +389,8 @@ report_faces() {
   echo "  面 A（全 refs task-state/）= D${FACE_A_MAX}   根树=${FACE_A_ROOT_TREES} task-state 树=${FACE_A_TS_TREES} 条目=${FACE_A_ENTRIES}"
   echo "  面 B（仅 origin 已推）      = D${FACE_B_MAX}"
   echo "  面 C（当前工作树 task-state/）= D${FACE_C_MAX}   文件数=${FACE_C_FILES}"
+  echo "  本水位号段（MANUAL 段声明）= ${SEGMENT_RANGES}；段外/历史号最高 面A=D${FACE_A_OUTMAX} / 面C=D${FACE_C_OUTMAX}（不参与判定，但可见）"
+  echo "  作废号段（MANUAL 段声明，不参与判定）= ${VOID_RANGES}；本轮回放命中 面A=${FACE_A_VOIDED} 处 / 面C=${FACE_C_VOIDED} 处"
   if [ "${PR_STATE}" = "ok" ]; then
     echo "  PR 标题面                  = D${PR_MAX}   PR 数=${PR_COUNT}"
   else
@@ -364,14 +442,18 @@ if [ "${EMIT}" -eq 1 ]; then
     else
       echo "| PR 标题 | 本次未纳入（PR_STATE=${PR_STATE}，显式降级非静默） | 0 | — |"
     fi
-    echo "| **判定** | **面 ${FACE} 上确界** | — | **D${MEASURED}** |"
+    echo "| **判定** | **本水位号段 ${SEGMENT_RANGES} 内的面 ${FACE} 上确界**（已排除作废号段 ${VOID_RANGES}） | 段外最高 面A=D${FACE_A_OUTMAX}/面C=D${FACE_C_OUTMAX}；作废命中 面A=${FACE_A_VOIDED}/面C=${FACE_C_VOIDED} | **D${MEASURED}** |"
     echo ""
     echo "## 3. 判定面口径说明"
     echo ""
     echo "- 面 A 是**保守超集**：含本地未推分支 refs，宁可把水位抬高也不漏号。"
     echo "- 面 C 纳入判定：本批占号在未推前只存在于工作树 \`task-state/\`，只扫 refs 会漏掉"
-    echo "  正在途中的占号（D1013 卡就是这个场景）。"
+    echo "  正在途中的占号（D974 卡就是这个场景）。"
     echo "- 面 B 与 PR 面仅作对照，不作判定面（面 B 会漏本地未推号）。"
+    echo "- **本水位号段**由 MANUAL 段的 \`本水位号段: D<n>-D<n>\` 行声明（结构性管辖范围）："
+    echo "  段外的号（如 Win 段 D1000–D1099 落在 Mac 水位文件里）不参与判定，但仍打印最高号以保持可见。"
+    echo "- **作废号段**由 MANUAL 段的 \`作废号段: D<n>-D<n>\` 行声明（人的决策），探针读取后"
+    echo "  把该区间从实测最大号中排除 —— 否则已释放号的历史 commit 留在 refs 里会永远抬高水位。"
     echo ""
     echo "${MANUAL}"
   } > "$TMPF" && mv "$TMPF" "$WATERMARK"
