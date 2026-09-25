@@ -1845,3 +1845,14 @@ Binary file .claude/bypass.log matches
 2026-09-25T14:04:08+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/d962-2a-merge
 2026-09-25T14:04:08+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=18dc30faea8a0152fa882b2dd8e9bfcc4d5956be
 2026-09-25T14:04:53+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=ab87291816c68f4d1a43a1dba31e2a75f02123b3
+2026-09-25T14:07:42+0800 | COMMITTED | D962 merge candidate 一次性补记（rebase 改写 hash 后对账断裂，按 D451） | HASH=1048c0f48d819d25bcef450b61ce20d0ed8a8125
+2026-09-25T14:07:42+0800 | COMMITTED | D962 merge candidate 一次性补记（rebase 改写 hash 后对账断裂，按 D451） | HASH=d5fe2d59d81a5d3587d9e5b7b4151aa17b8ab52c
+2026-09-25T14:07:42+0800 | COMMITTED | D962 merge candidate 一次性补记（rebase 改写 hash 后对账断裂，按 D451） | HASH=7874cbf23da3ad6382ad46052d6a66aac59721ce
+2026-09-25T14:07:42+0800 | COMMITTED | D962 merge candidate 一次性补记（rebase 改写 hash 后对账断裂，按 D451） | HASH=e58b55fec21fbb144c6701ef4cd515f3063b3286
+2026-09-25T14:07:42+0800 | COMMITTED | D962 merge candidate 一次性补记（rebase 改写 hash 后对账断裂，按 D451） | HASH=d3e42f336cdbbd6c84fd73d87b7d372fbdca1cb9
+2026-09-25T14:07:42+0800 | COMMITTED | D962 merge candidate 一次性补记（rebase 改写 hash 后对账断裂，按 D451） | HASH=8f9179c65ccf02a3d7ff76b655618a2296480cc4
+2026-09-25T14:07:42+0800 | COMMITTED | D962 merge candidate 一次性补记（rebase 改写 hash 后对账断裂，按 D451） | HASH=7815fa5ba8e6c941b38ef68b68bf116fff0708b1
+2026-09-25T14:07:42+0800 | COMMITTED | D962 merge candidate 一次性补记（rebase 改写 hash 后对账断裂，按 D451） | HASH=ed817e4584eb9ef6e591e466b122f9cf623e392f
+2026-09-25T14:07:42+0800 | COMMITTED | D962 merge candidate 一次性补记（rebase 改写 hash 后对账断裂，按 D451） | HASH=4d506844171156df9a3bf3fb707c704f522e8eba
+2026-09-25T14:07:42+0800 | COMMITTED | D962 merge candidate 一次性补记（rebase 改写 hash 后对账断裂，按 D451） | HASH=db3099fa20ae66fb0921c6ab681bab6e27cbfaa5
+2026-09-25T14:07:43+0800 | COMMITTED | D962 merge candidate 一次性补记（rebase 改写 hash 后对账断裂，按 D451） | HASH=a3587d12bd1e9cbf752482d597010a7c92793b52
