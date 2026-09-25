@@ -61,8 +61,11 @@ REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 PC="$REPO/scripts/pre-commit-check.sh"
 CIY="$REPO/.github/workflows/ci.yml"
 PASS=0; FAIL=0
+FIRST_FAIL=""
 ok() { echo "  ✅ $1"; PASS=$((PASS+1)); }
-no() { echo "  ❌ $1"; FAIL=$((FAIL+1)); }
+# D938-CI-2(可见性): CI 注解 tail -8|cut -c1-450 会截掉末行摘要——FIRST_FAIL 压进**结果行本身**
+#   （#762 实证：本测试 ubuntu 红但断言名不可见）。与 alloc/scan-fullwidth 同款，叠加不替换。
+no() { echo "  ❌ $1"; FAIL=$((FAIL+1)); if [ -z "$FIRST_FAIL" ]; then FIRST_FAIL="$1"; fi; }
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 ESC="$(printf '\033')"
 
@@ -516,5 +519,10 @@ else
 fi
 
 echo ""
-echo "结果: $PASS 通过, $FAIL 失败"
+# D938-CI-2: FAIL>0 但 FIRST_FAIL 为空 = 夹具自身缺陷（记名机制失灵），显式红，不得静默
+if [ "$FAIL" -gt 0 ] && [ -z "$FIRST_FAIL" ]; then
+  echo "  ❌ SELF-CHECK: FAIL=$FAIL 但 FIRST_FAIL 为空（no() 记名机制缺陷）"
+  exit 2
+fi
+echo "结果: $PASS 通过, $FAIL 失败${FIRST_FAIL:+ FIRST_FAIL=${FIRST_FAIL}}"
 [ "$FAIL" -eq 0 ]

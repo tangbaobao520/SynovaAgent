@@ -81,6 +81,8 @@ L0 控制塔工具层（非 L1-L5 产品运行时）。对象 = `scripts/pre-com
 | `docs/synova/product-lines/evidence/D937-自验.md` | task（写者 d937-v，独立自验） |
 | `docs/synova/product-lines/evidence/D937-收尾与回执-20260924.md` | task（写者 lead，M6 收尾三件 + 团队运行记录，治理产物） |
 | `.claude/task-briefs/2026-09-24-D937-gate-failopen-fakegreen.md` | builtin（本 brief，队长治理产物） |
+| `docs/synova/product-lines/evidence/D937-CI-GNU-方言返修.md` | task（CI 方言返修证据，#762 返修，写者 coder-a） |
+| `.claude/task-briefs/2026-09-24-D937-gate-failopen-fakegreen.md` | task（本 brief 随卡演进：#762 返修补写集 include，写者 coder-a） |
 
 ## 架构层: scripts（控制塔门禁域，非 L1-L5）
 
