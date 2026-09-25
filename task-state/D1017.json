@@ -1,0 +1,62 @@
+{
+  "task_id": "D1017",
+  "title": "【P0】必需检查 `Control Tower Gate Tests (windows-latest)` 长挂 —— run 永不 completed ⇒ 所有 PR 合不了",
+  "status": "registered",
+  "risk": "critical",
+  "domain": "mac",
+  "owner": "mac-cto-parallel",
+  "executor": "待派（CI/控制塔域；ci.yml 归并行 CTO 唯一写者）",
+  "milestone": "阶段 2 并行 P0（CTO 2026-09-26 指令：答完「是否必需」即定级）",
+  "depends_on": [],
+  "blocked": "修复路径若涉及 ci.yml 改动 ⇒ 需 CTO 批 + K3 审（本批 ci.yml 已被 #836 冻结中）",
+  "target": "2026-W40",
+  "spec": "CTO 阶段 2 开工令 §二（最高优先问题）",
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "p0_finding": {
+    "question": "`Control Tower Gate Tests (windows-latest)` 是否在 12 个必需检查里？",
+    "answer": "是 —— 它就是 12 项里的第 4 项",
+    "required_checks_evidence": {
+      "endpoint": "GET /repos/tangbaobao520/SynovaAgent/branches/main/protection",
+      "count": 12,
+      "list": [
+        "Architecture Check",
+        "Checker Review (maker/checker)",
+        "Control Tower Gate Tests (ubuntu-latest)",
+        "Control Tower Gate Tests (windows-latest)",
+        "Golden Case F1 Gate",
+        "Integration Contract Check",
+        "Test-Kit Architecture Tests (ubuntu-latest)",
+        "Test-Kit Architecture Tests (windows-latest)",
+        "TypeScript + Lint + Iron Laws",
+        "Vitest (1/2)",
+        "Vitest (2/2)",
+        "npm audit"
+      ]
+    },
+    "impact": "该 job 长挂 ⇒ run 永不 completed ⇒ 该必需检查永不报告 ⇒ **全仓所有 PR 无法合并**（含 #832/#833/#834/#836）。影响面大于 N12。",
+    "hang_evidence": {
+      "runs_stuck": [
+        {"run": 36176522020, "job_id": 108208345228, "branch": "chore/D1009-stage0-log-archive", "started": "2026-09-25T19:37:17Z"},
+        {"run": 36182218912, "job_id": 108227059678, "branch": "chore/D1010-stage0-report", "started": "2026-09-25T19:51:44Z"},
+        {"run": 36177248370, "job_id": 108210733295, "branch": "chore/D1011-stage0-backlog-classification", "started": "2026-09-25T19:37:27Z"}
+      ],
+      "stuck_step": "Run hermetic control-tower gate tests",
+      "step_definition": ".github/workflows/ci.yml:214-（shell: bash；串行 for 循环 25+ 个密封测试；D560 曾把清单由 19 扩到 25）",
+      "not_runner_supply": "三个 job 均已有 runner 分配（runner_name=GitHub Actions 1000036362 / 1000036462 …）⇒ 不是排队等 runner，是 **job 内挂起**",
+      "control": "run 36182865555 的同一 job 17 秒内 completed/failure —— 但那是 **step2 checkout 失败 ⇒ hermetic 步被 skipped**（未执行），**不能作为『该步能跑通』的证据**",
+      "platform_specific": "同一 run 的 ubuntu 变体 job 已 completed ⇒ **Windows 专属**"
+    },
+    "candidate_mitigations": [
+      "（正解）定位并修掉在 Windows 下阻塞的那个密封测试；D560 新增项优先怀疑",
+      "（止血，需 CTO+K3 批）给该 step 加 timeout-minutes ⇒ 把『无限挂』变成『有界红』（仍红，但可见且不永久占用）",
+      "（降保护，最后手段）把该 job 移出必需检查 —— 属门禁语义变更，与『不削弱真保护』冲突，须 CTO+K3"
+    ]
+  },
+  "write_set": [
+    "task-state/D1017.json"
+  ],
+  "updated_at": "2026-09-26T04:30:00+08:00",
+  "updated_by": "CTO"
+}
