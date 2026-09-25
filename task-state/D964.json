@@ -27,7 +27,16 @@
     ".claude/task-briefs/**",
     "task-state/D964.json",
     "docs/synova/coordination/archive/**",
-    "docs/synova/research/archive/**"
+    "docs/synova/research/archive/**",
+    "docs/synova/coordination/派单-D483-D486-register-auth-20260828.md",
+    "docs/synova/coordination/派单-D522D523-P01-fix-20260825.md",
+    "docs/synova/coordination/派单-D544-leftbar-acceptance-20260828.md",
+    "docs/synova/coordination/派单-D548-l01-verification-backfill-20260828.md",
+    "docs/synova/coordination/派单-D556-ga-collab-e2e-20260829.md",
+    "docs/synova/coordination/派单-D583-P0专家名测试债-20260906.md",
+    "docs/synova/coordination/派单-D584-P1-DSH线测试债-20260906.md",
+    "docs/synova/coordination/派单-d504fix-20260823.md",
+    "docs/synova/coordination/派单-devdoc-20260823-D504-D505.md"
   ],
   "papers": [],
   "updated_at": "2026-09-25",
