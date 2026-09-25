@@ -4,7 +4,7 @@
 
 ## Q0: 定位 — 项目拼图 + 文件审计
 ### a) 项目拼图
-L0 控制塔/D SH 运行态治理面，不动 src/**。目标：把「预设载体」从已作废的 `$DSH_HOME/.agent-presets/<id>/`（legacy 目录）迁到 **bundle 声明行**形态；运行时侧已由 2026-09-23 的迁移完成（实测 16 条 bundles、12 个 @local 预设已装），本卡做**仓库侧收口 + legacy 退役清单 + B3 夹具适配 + 一致性对账**。
+L0 控制塔/D SH 运行态治理面，不动 src/**。目标：把「预设载体」从已作废的 `$DSH_HOME/.agent-presets/<id>/`（legacy 目录）迁到 **bundle 声明行**形态；运行时侧已由 2026-09-23 的迁移落地（实测 16 条 bundles、12 个 @local 预设已装），本卡做**仓库侧收口 + legacy 退役清单 + B3 夹具适配 + 一致性对账**。
 ### b) 文件审计（实测，2026-09-25 00:27 +0800）
 - 上游判据：`packages/preset/agent-preset/skills/editing-cordis-compositions/SKILL.md:70`「Nothing reads that directory any more」；`grep -rln "agent-presets" packages/*/src` = **0**
 - 运行时：`profiles/desktop/package.json` `dsh.profile.bundles` 16 条（含 `@local/dsh-preset-synova-{cto,devdoc,dsh,k3-audit,squad-lead}`）；`node_modules/@local/*` 12 个已装
@@ -17,7 +17,7 @@ L0 控制塔/D SH 运行态治理面，不动 src/**。目标：把「预设载�
 ## Q1: 调研 — 业界最佳实践 / Anthropic 决策链 / memory 历史教训
 - 第一性原理：**载体退役必须"新载体先验证、旧载体后移除"**（否则回退无路）——本卡据此只出清单+备份+退役时点条件。
 - Anthropic 工程基线：判据必须可执行且三分（正常/降级/边界），变异体"改坏即红"；V5 平台敏感命令须用 PYBIN 探针。
-- memory 历史：D313 M5（Windows UTF-8/编码）、D516「登记后必须等 CI 真跑通」、D931（预设副本漂移 = 迁移完成≠内容最新）、D937 组 7a（方言相关 fail-open）、M9 棘轮（跨平台判定陷阱）。
+- memory 历史：D313 M5（Windows UTF-8/编码）、D516「登记后必须等 CI 真跑通」、D931（预设副本漂移 = 迁移落地≠内容最新）、D937 组 7a（方言相关 fail-open）、M9 棘轮（跨平台判定陷阱）。
 - 参考：Anthropic/第一性原理 + 结论=「仓库为源 + bundle 为投递面 + 一致性对账兜住漂移」。
 
 ## Q2: 范围 — 正确的最简方案

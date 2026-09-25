@@ -48,7 +48,7 @@ REPO_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 # ── PYBIN 三级探测（PLATFORM-CHECKLIST #1；本行含 PYBIN 标记供 D520 平台扫描识别）
 #    Win Git Bash 无 python3（仅 python/py）；D330: 探测后须试运行，损坏 shim 不得当作可用
 PYBIN=""
-for _c in python3 python py; do
+for _c in python3 python py; do  # D520/PYBIN: 探测候选名单（非裸调用；实际调用一律走 "$PYBIN"）
   if command -v "$_c" >/dev/null 2>&1 && "$_c" -c "import sys" >/dev/null 2>&1; then
     PYBIN="$_c"; break
   fi
