@@ -1,24 +1,24 @@
 # Synova CTO 健康仪表盘（第③面）
 
-> 打开即真相。生成: 2026-09-25 04:06:02 | 数据源指纹: e36fdfccddda
+> 打开即真相。生成: 2026-09-25 14:03:26 | 数据源指纹: afbadcd2368f
 
 <!-- CTO-HEALTH:AUTO:START -->
 ## CTO 健康仪表盘（第③面）— 自动区
-> 生成: 2026-09-25 04:05:58 | 数据源: bypass.log / pre-commit-failures.log / AUDIT-FINDINGS-LEDGER
+> 生成: 2026-09-25 14:03:20 | 数据源: bypass.log / pre-commit-failures.log / AUDIT-FINDINGS-LEDGER
 
-**总体判定: 🟡 黄 — 历史有 M 模式复发记录 (见 §三; 多为 D328-D331 已闭环项, 需 CTO 确认无新增)**
+**总体判定: 🔴 红 — 24h 内有绕过 (detected-bypass), 防线被击穿, 升级创始人**
 
 ### 一、门禁执行（bypass.log 全历史）
 
 | 事件 | 全量 | 24h 内 |
 |------|:---:|:---:|
-| COMMITTED（正常提交） | 1332 | 43 |
-| BLOCKED（被门禁拒绝） | 161 | 3 |
+| COMMITTED（正常提交） | 1382 | 64 |
+| BLOCKED（被门禁拒绝） | 162 | 4 |
 | DEGRADED（降级放行） | 52 | 0 |
 | TIMEOUT（超时） | 3 | 0 |
-| **detected-bypass（真绕过）** | **19** | **0** |
+| **detected-bypass（真绕过）** | **21** | **2** |
 
-近 7 天事件: 2026-09-19:24 | 2026-09-20:28 | 2026-09-21:5 | 2026-09-22:19 | 2026-09-23:35 | 2026-09-24:40 | 2026-09-25:6
+近 7 天事件: 2026-09-19:24 | 2026-09-20:28 | 2026-09-21:5 | 2026-09-22:19 | 2026-09-23:35 | 2026-09-24:66 | 2026-09-25:33
 
 **绕过历史（全部）** — 集中在 07-26~28（旧 marker 时代），此后零绕过：
 - `2026-07-26T18:34:35Z` no-precommit-marker
@@ -40,10 +40,12 @@
 - `2026-09-17T07:29:03Z` head-mismatch marker=6d1f262eed072710df7e135600be58af24a63573 parent=aa6fa444e7c669e3a9c17e3187c32a5319025a3a
 - `2026-09-17T16:50:51Z` head-mismatch marker=a94c42472c589588b9996e591c25c1f2b4c828de parent=50d8a3d9453a5bedf93ebe846be6f5e86221dbaa
 - `2026-09-17T16:50:51Z` head-mismatch marker=a94c42472c589588b9996e591c25c1f2b4c828de parent=50d8a3d9453a5bedf93ebe846be6f5e86221dbaa
+- `2026-09-24T20:21:11Z` head-mismatch marker=114e129e7ae2d9888d3c9a719391de8c39a756c1 parent=da6a42f4150393c225ff6303541cf9a4e55964b2
+- `2026-09-25T00:56:43Z` head-mismatch marker=ce5b13b96c9b0b5b40ff065da7f1361bd6996a72 parent=2b38d1779aa31caf553ef481eb6f2e5479a3199c
 
 ### 二、门禁拒绝（pre-commit-failures.log）
 
-- 累计拒绝: **0** 次 | 最近: 无
+- 累计拒绝: **1** 次 | 最近: 2026-09-25
 - 阈值: >10 次/24h → 门禁过激警告（健康审计项）
 
 ### 三、M 模式复发（AUDIT-FINDINGS-LEDGER §二）
@@ -424,6 +426,9 @@
 | D941 | claimed | — | — | — |  |
 | D942 | impl_done | — | ✅ | — |  |
 | D943 | impl_done | — | ✅ | — |  |
+| D955 | impl_done | — | ✅ | — |  |
+| D962 | spec_done | ✅ | — | — |  |
+| D963 | impl_done | — | ✅ | — |  |
 | CT-64 | claimed | — | — | — |  |
 
 > 📦 历史任务（已折叠）: **190** 个（git log 全项目派生，非 task-state 登记；12 个有审计报告）
@@ -433,18 +438,21 @@
 
 | Run | 结论 | 分支 | 标题 |
 |-----|------|------|------|
-| #4278 | 🟡 pending | fix/d938-alloc-task-id | fix(D938): alloc-task-id 两缺陷 + A′ 反吞退出码（成功哨兵 fail- |
-| #4277 | 🟡 pending | feat/d955-pr2a-consignmen | docs(D955): 收件闸检查单（PR-2a，自 #748 按 D734 拆出） |
-| #4276 | 🟡 pending | feat/d955-pr2a-consignmen | Merge remote-tracking branch 'origin/main' into fe |
-| #4275 | 🟡 pending | main | Merge pull request #750 from tangbaobao520/feat/d9 |
-| #696 | 🟡 pending | main | Merge pull request #750 from tangbaobao520/feat/d9 |
-| #485 | 🟡 pending | main | Merge pull request #750 from tangbaobao520/feat/d9 |
-| #616 | 🟢 success | main | Merge pull request #750 from tangbaobao520/feat/d9 |
-| #606 | 🟢 success | main | pages build and deployment |
+| #4336 | 🟡 pending | chore/cto-doc-slim-ledger | docs(D964): 台账第五批 + K3 审计请求（门禁语义变更）+ 审计报告 INDEX 指针 |
+| #4335 | 🟡 pending | fix/m9-gate-trio-v2 | fix(M9-v2): 门禁三件套收口 — 恢复 ci.yml 接线 + M3 夹具假绿根治 + 棘 |
+| #4334 | 🟡 pending | feat/d962-2a-precommit-b | chore: bypass COMMITTED 登记 (auto hook, D521) |
+| #4333 | 🟡 pending | chore/cto-doc-slim-phase4 | chore(D964-P4): 归档 274 份零引用 briefs（2026-06/07 → ta |
+| #4332 | 🔴 failure | feat/d962-2a-precommit-b | chore: bypass COMMITTED 登记 (auto hook, D521) |
+| #4331 | 🟡 pending | chore/cto-doc-slim-phase1 | feat(D964-P1b): check-citations 加 archive/** 豁免根（归 |
+| #4330 | 🟡 pending | fix/m9-gate-trio-v2 | fix(M9-v2): 门禁三件套收口 — 恢复 ci.yml 接线 + M3 夹具假绿根治 + 棘 |
+| #4329 | 🔴 failure | feat/d962-2a-precommit-b | chore: bypass COMMITTED 登记 (auto hook, D521) |
+
+> CI 红灯监测: main 红 0.9h（<24h 阈值），暂不告警（CT-39）
 
 ### 九、worktree 收尾（2026-08-21 必修）
 
-- 🔴 **117 个孤儿 worktree 有待收尾**（独有提交未合并进 main，可能是未收尾的交付）
+- 🔴 **122 个孤儿 worktree 有待收尾**（独有提交未合并进 main，可能是未收尾的交付）
+  - /Users/wane/SynovaAgent (分支 refs/heads/chore/cto-doc-slim-phase1b-citations-archive, 4 个独有提交)
   - /private/tmp/w850 (分支 refs/heads/docs/d850-authority, 2 个独有提交)
   - /Users/wane/synova-wt-D508b (分支 refs/heads/fix/d505-wiring, 3 个独有提交)
   - /Users/wane/synova-wt-D510 (分支 refs/heads/feat/d510-audit-remediation, 10 个独有提交)
@@ -454,7 +462,6 @@
   - /Users/wane/synova-wt-D516 (分支 refs/heads/fix/d516-ci-strict, 2 个独有提交)
   - /Users/wane/synova-wt-d751-new-sentinel-e2e (分支 refs/heads/session/d751-new-sentinel-e2e, 2 个独有提交)
   - /Users/wane/synova-wt-d752-type-net-gate (分支 refs/heads/session/d752-type-net-gate, 2 个独有提交)
-  - /Users/wane/synova-wt-d754-runner-comment (分支 refs/heads/session/d754-runner-comment, 2 个独有提交)
 
 > 处理: 确认独有提交是否该合并（真交付）→ worktree-manager finish 或 merge 进 main；过时则删除。
 
