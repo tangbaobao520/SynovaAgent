@@ -215,15 +215,21 @@ else
   no "T3f 无缝合: 未武装时覆盖变量仍生效（生产可被覆盖 = fail-open）: ${L:-<无 7a 行>}"
 fi
 # 第二跑: 无 GITHUB_ACTIONS / 无 SYNO_DIFF_BASE → 走真实 `git diff --cached`
+# D937返修(#737 CI 实证): 原判据 `grep -q "降级"` 扫**全输出** —— 本测试自己注入的
+#   SYNO_GATEKEEPER_ACK=1 会让 GATEKEEPER 打出「已人工确认 — 降级为告警放行」横幅，
+#   该横幅含「降级」二字 → 本断言恒红（CI ubuntu 红 = 此，非方言、非产品 fail-open）。
+#   修法=判据收敛到**组 7a 行本身**（与第一跑同构）: 7a ✅ 且无 ❌ ⇒ 覆盖变量未被采纳；
+#   若覆盖真泄漏进生产，grep 编译期 exit 2 → 7a 必打「降级」且 ❌（判别力保留）。
 OUT=$( cd "$REPO" && env -u SYNO_TEST_ARM -u GITHUB_ACTIONS -u SYNO_DIFF_BASE \
         -u SYNO_GIT_CACHED_DIFF SYNO_CI=1 \
         SYNO_GATEKEEPER_ACK=1 SYNO_SKIP_PARALLEL_WARN=1 \
         SYNO_GATE_HITS_LOG="$(mktemp)" "SYNO_DIAG_EXCL_OVERRIDE=$OVR_UNLAWFUL" \
         bash "$PC" 2>&1 ); RC=$?
-if printf '%s' "$OUT" | grep -q "降级"; then
-  no "T3f 无缝合: 真实暂存区路径下覆盖变量生效（fail-open）"
-else
+L=$(seven_a_lines "$OUT")
+if has_ok "$L" && ! has_bad "$L"; then
   ok "T3f 无缝合: 真实暂存区路径下覆盖变量同样被忽略"
+else
+  no "T3f 无缝合: 真实暂存区路径下覆盖变量生效（fail-open）: ${L:-<无 7a 行>}"
 fi
 echo "      （无缝合依据: 非法覆盖='$OVR_UNLAWFUL' 若被采纳, grep 编译期即 exit 2 → 必出「降级」；该 exit 2 已由 T3p 在本平台实测）"
 
