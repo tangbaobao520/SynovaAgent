@@ -71,8 +71,11 @@ MARK="INJECTED""-RED"      # 拼接构造：本文件源码内不出现该字面
 #   GNU 上该坐标不再是违规 → 条目落 STALE 而非"待修违规" → 5 条断言连锁红
 #   （CI: PASS=50 FAIL=5 FIRST_FAIL=PATTERN 过期未触发；本机 GNU 仿真 shim 逐字复现同一组）。
 #   ^+++ 现仅保留给 PROBE_RE（方言探针）与真仓库 :991 的 STALE 双分支场景，**不参与 pass/fail**。
-BAD_RE='a('"b"              # 拼接构造: 本文件与扫描面内不出现该连续字面量
+BAD_RE='['"a"               # 拼接构造（未闭合方括号表达式 = POSIX 明确非法）: 本文件/扫描面内不出现该字面量
 PROBE_RE='^+'"++"           # 拼接构造方言探针模式（= ^+++；BSD rc=2 / GNU rc 0-1）——只作探针，不判 pass/fail
+# BAD_RE 本平台实测 rc（#774 windows 断案用）: 2 = 按预期非法 → 走「违规 + 过期」路径；
+#   0/1 = 本平台连未闭合方括号都容忍 → 条目落 STALE 路径，断言消息随之不同（见各断言载荷）。
+printf 'test\n' | grep -Ev -- "$BAD_RE" >/dev/null 2>&1; BADRE_RC=$?
 NAME_CN='门禁完整性（gate-integrity）检查 v1.2'   # 含中文/全角括号/点号 → 转义回归
 
 PASS=0; FAIL=0
@@ -89,6 +92,15 @@ no() {
   echo "  --------------------"
 }
 last_line() { printf '%s\n' "$1" | tail -1; }
+# ── 紧凑诊断载荷（#774 windows 红1）─────────────────────────────────────────
+#   为何需要: ci.yml 注解只取 `tail -8 | cut -c1-450`，而失败多发生在输出中段 →
+#   注解里看不到现场。故把「路径判别」短字段压进断言名：断言名会进 FIRST_FAIL →
+#   结果行 → 注解，等于把现场搬到末尾 8 行内。
+#   预算: 载荷一律 ≤120B，且只用 grep -oE 摘**定长片段**（绝不 head -c/cut -b 切多字节字符）。
+d_viol()   { printf '%s' "${OUT:-}" | grep -c 'VIOLATION' || true; }
+d_stale()  { printf '%s' "${OUT:-}" | grep -oE 'STALE\([a-z]+\)' | head -1; }
+d_counts() { printf '%s' "${OUT:-}" | grep -oE 'registered [0-9]+；STALE\([0-9]+\)' | head -1; }
+d_pt()     { printf '%s' "${OUT:-}" | grep -c 'm1-scan.sh:3' || true; }
 
 RUN() { # $1=scan $2=tests_dir $3=ci_yml $4=baseline $5=red_baseline $6=degraded_log ；其后 = 检查器参数
   local scan="$1" tests="$2" ciyml="$3" base="$4" redbase="$5" dlog="$6"
@@ -297,7 +309,7 @@ OUT="$(RUN "$SCAN_M1" "$SB/tests" "$SB/ci.yml" "$SB/baseline-pat-expired.txt" "$
 if [ "$rc" -eq 1 ] && printf '%s\n' "$OUT" | grep -q "VIOLATION: PATTERN 基线过期（须修或延期）"; then
   ok "棘轮: PATTERN 条目 expires 过期 → exit 1"
 else
-  no "PATTERN 过期未触发: rc=$rc"
+  no "PATTERN 过期未触发: rc=$rc [badre_rc=$BADRE_RC stale=$(d_stale) viol=$(d_viol)]"
 fi
 
 # ── 判别性 ① STALE 去平台陷阱: 修好副本（^\+\+\+ = GNU 下 :991 的等价合法形态）→ rc=0 + STALE(方言) ──
@@ -354,7 +366,7 @@ OUT="$(RUN "$SCAN_M1" "$SB/tests" "$SB/ci.yml" "$SB/baseline-mixed.txt" "$SB/red
 if [ "$rc" -eq 0 ] && printf '%s\n' "$OUT" | grep -q "PATTERN-BASELINE: registered 1；STALE(1)"; then
   ok "⑩ 混合: registered 1 + STALE 1 → rc=0（计数准确且 STALE 不入违规）"
 else
-  no "⑩ 混合计数断言失败: rc=$rc"
+  no "⑩ 混合计数断言失败: rc=$rc [badre_rc=$BADRE_RC $(d_counts)]"
 fi
 
 # ── 分段隔离 A: [R] 段里的 key 不给 [P] 面生效（新非法模式仍必红）──
@@ -370,7 +382,7 @@ OUT="$(RUN "$SCAN_M1" "$SB/tests" "$SB/ci.yml" "$SB/baseline-cross.txt" "$SB/red
 if [ "$rc" -eq 1 ] && printf '%s\n' "$OUT" | grep -q "VIOLATION: 非法 ERE 模式"; then
   ok "分段隔离: [R] 段条目不给 A 模式豁免 → 新非法模式仍必红（exit 1）"
 else
-  no "分段隔离 A 失败: rc=${rc}（跨段串行！）"
+  no "分段隔离 A 失败: rc=${rc} [badre_rc=$BADRE_RC viol=$(d_viol) stale=$(d_stale)]"
 fi
 
 # ── 分段隔离 B: [P] 段条目不给 registry 面生效（registry 仍按 [R] 判 → exit 0）──
@@ -388,7 +400,7 @@ OUT="$(RUN "$SCAN_M1" "$SB/tests" "$SB/ci.yml" "$SB/baseline-both.txt" "$SB/red-
 if [ "$rc" -eq 0 ] && printf '%s\n' "$OUT" | grep -q "PATTERN-BASELINE: registered 1；STALE(0)"; then
   ok "分段隔离: [P] 段条目正确豁免既有非法模式 → exit 0（registered 1 / STALE 0）"
 else
-  no "分段隔离([P] 豁免)失败: rc=$rc"
+  no "分段隔离([P] 豁免)失败: rc=$rc [badre_rc=$BADRE_RC $(d_counts)]"
 fi
 
 # ── 判别性 M1: 未登记的新非法 ERE（临时脚本）→ 必红 + 点名 file:line ──
@@ -397,7 +409,7 @@ if [ "$rc" -eq 1 ] && printf '%s\n' "$OUT" | grep -q "VIOLATION: 非法 ERE 模�
   && printf '%s\n' "$OUT" | grep -q "m1-scan.sh:3" && printf '%s\n' "$OUT" | grep -q -F "$BAD_RE"; then
   ok "M1: 新注入非法 ERE（未登记）→ exit 1 + 点名 m1-scan.sh:3 + 模式原文"
 else
-  no "M1 判别性失败: rc=${rc}（注入未被拦下）"
+  no "M1 判别性失败: rc=${rc} [badre_rc=$BADRE_RC viol=$(d_viol) pts=$(d_pt)]"
 fi
 
 # ── 判别性 M4: 哨兵核心置 return 0 → M1 场景必须不再红（证明夹具依赖真哨兵）──
