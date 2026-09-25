@@ -89,7 +89,7 @@
 #   g4  组 4/13  暂存新增 src/*.ts（带配对测试，排除组 2 干扰）       → 接线审计（未引用）
 #   g5  组 5/13  暂存新增 src/*.ts 引用 packages/engine-core          → 铁律 46 桥接
 #   g6  组 6/13  暂存代码 + 认领 brief 的 Q0/Q1/Q3/架构层/Done 全空   → 6 核心字段
-#   g7  组 7/13  暂存新增行含 DiagnosticModule（非注释）              → 禁止 DiagnosticModule
+#   g7  组 7/13  暂存新增行含 "Diagnostic"+"Module"（拼接，非注释）    → 禁止新 "Diagnostic"+"Module"
 #   g8  组 8/13  暂存新增 extensions/<新目录>/probe.txt（无 manifest）→ 目录结构
 #   g9  组 9/13  .codex/contracts/*.json 声明产出不在暂存区           → 契约门禁
 #   g10 组 10/13 端到端 brief + 无暂存 .test.ts                      → G10/G11 条件区域
@@ -104,6 +104,10 @@ set -uo pipefail
 
 # 拼接写法：夹具自身不含连续字面量（收尾 grep 不自命中）
 MARK="INJECTED""-RED"
+# 拼接写法（同 MARK 惯例）：源码内**不出现**该连续 token —— 否则本夹具的新增行会被
+#   pre-commit 组 7a「禁止新 "Diagnostic"+"Module"」按 PR diff 扫中 → 自误伤假红（#768 实测 2 处）。
+#   语义完全等价：运行时拼接出的串与原先的字面量逐字节相同（注入行为不变）。
+DM_TOKEN='Diagnostic''Module'
 
 TODAY="$(date +%Y-%m-%d)"
 
@@ -287,7 +291,7 @@ EOF
 inj_g7() {
   cat > "$CLONE/src/m9-fixture-g7.ts" <<EOF
 // $MARK group-7
-export const m9InjectG7 = 'DiagnosticModule';
+export const m9InjectG7 = '$DM_TOKEN';
 EOF
   git -C "$CLONE" add src/m9-fixture-g7.ts
 }
@@ -389,7 +393,7 @@ assert_g10_structural() {
   return 1
 }
 
-# 组 7：7a（DiagnosticModule）排除正则含 `^+++` = **非法 ERE** → `grep -Ev` 直接报错
+# 组 7：7a（"Diagnostic"+"Module"）排除正则含 `^+++` = **非法 ERE** → `grep -Ev` 直接报错
 #   （BSD grep 实测 rc=2: "repetition-operator operand invalid"）→ 管道输出为空、又有 `|| true`
 #   → NEW_DIAG 恒空 → 该子检查恒定"✅"（fail-open）。
 #   反例（防止把归因扩大到整个组）：7d（数据流）HAS_HARD 用的是 `\|` 交替，是**有效 BRE**，
@@ -402,7 +406,7 @@ assert_g7_structural() {
     echo "    [structural g7] 抽取 7a 排除正则失败 → 无法归因（判红）"
     return 1
   fi
-  out="$(printf '%s\n' "+export const F = 'DiagnosticModule';" | grep -Ev "$pat" 2>&1)"; rc=$?
+  out="$(printf '%s\n' "+export const F = '$DM_TOKEN';" | grep -Ev "$pat" 2>&1)"; rc=$?
   echo "    [structural g7] 7a 排除正则探针（判据）: rc=$rc 输出='${out}'"
   [ "$rc" -ne 0 ] && hit=1
   patd="$(grep -n 'HAS_HARD=' "$pc" | head -1 | sed -E 's/.*grep -c "([^"]*)".*/\1/')"
