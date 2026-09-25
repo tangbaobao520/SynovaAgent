@@ -7,15 +7,17 @@
 # synova-commit 的 COMMITTED 记录写入，导致版本锚点 tag 与执行证据链同时断裂
 # （tag V4.7.1 孤儿 f685fa0 + dc369fd 无 bypass.log 记录），无人发现（无对账方）。
 #
-# 对账: 对比 <base>..HEAD 全部提交与 .claude/bypass.log 的 HASH 条目；
-#       缺失 → 列出 + exit 1（新提交硬要求）；全部有记录 → exit 0。
+# 对账: 对比 <base>..HEAD 全部提交与账本各来源（union: 旧路径 + per-session + 冻结归档）
+#       的 HASH 条目；缺失 → 列出 + exit 1（新提交硬要求）；全部有记录 → exit 0。
 #
 # 用法: bash check-bypass-log.sh [base-ref]
 #       默认 base: origin/feat/prompt-architecture（D311 改基约定）
 # 注入: SYNO_BASE_REF 环境变量覆盖（测试隔离；显式给出则必须可解析）
 # 豁免: 历史提交一次性补记（D331 已对 ea1cb71/dc369fd 回填）；对账从 D331 起强制
-# 降级: 日志缺失 → exit 1（执行证据链缺失显式列出）；base 不可解析且非显式
-#       → fetch 一次后仍不可用 → 显式跳过 exit 2（fail-closed，不当作通过 — D414/U1c 修复 M1 假 PASS）
+# 降级(FIX-002/D331 读面): 本机**无任何账本来源**（新 clone / 账本出库后本机未产生登记）
+#       → exit 0「无绕过记录」（显式可见 + 记 degraded-events；非静默、非 || true 掩盖）；
+#       有来源但范围内提交缺记录 → exit 1；base 不可解析且非显式 → fetch 一次后仍不可用
+#       → 显式跳过 exit 2（fail-closed，不当作通过 — D414/U1c 修复 M1 假 PASS）
 # ═══════════════════════════════════════════════════════════════════════════════
 set -uo pipefail
 
@@ -45,18 +47,35 @@ if [ -n "$_base_remote" ] && [ "$_base_remote" != "$_base_branch" ] && [ "${SYNO
 fi
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RESET='\033[0m'
 
-if [[ ! -f "$LOG" ]]; then
-  echo -e "${RED}❌ bypass.log 不存在: $LOG${RESET}"
-  echo "  执行证据链缺失 — 请确认提交均经 synova-commit（含 COMMITTED 记录）或一次性补记"
+# base 可解析性（显式注入缝）: 显式 SYNO_BASE_REF 不可解析 → 硬错误（测试/调用方给错引用须
+# 显式暴露）。**先于「账本态」判定** —— 放行路径不得掩盖调用方 bug（D414/U1c 原语义保留）。
+if [[ -n "${SYNO_BASE_REF:-}" ]] && ! git rev-parse --verify "$BASE" >/dev/null 2>&1; then
+  echo -e "${RED}❌ base 不可解析: $BASE${RESET}"
   exit 1
 fi
 
-# base 可解析性: 显式 SYNO_BASE_REF 不可解析 → 硬错误（测试/调用方给错引用须显式暴露）
+# ── FIX-002 / D331 读面: 「账本不随仓走」后的新 clone 态 ──
+# #796 删 .claude/bypass.log、D970 Stage 2 停写旧路径 ⇒ 新 clone（或本机无残留）上
+#   **任何来源都不存在**。此态本机没有任何绕过登记可对账 —— 判「无绕过记录」放行 exit 0。
+#   与旧行为（日志缺失 → exit 1）的差别被**限制在这一态**：只要存在任一来源，下方红路径
+#   （范围提交缺记录 → 1；base 不可解析 → 1|2；git log 失败 → 2）全部原样 fail-closed。
+#   放行**显式可见**（列出已查来源 + 记 degraded-events），不静默、不用 `|| true` 掩盖。
+_source_exists() {
+  local f
+  # shellcheck disable=SC2086  # 有意分词: LEDGER_SOURCES 是换行分隔的多文件列表
+  for f in $LEDGER_SOURCES; do [ -f "$f" ] && return 0; done
+  return 1
+}
+if ! _source_exists; then
+  echo -e "${YELLOW}⚠️  本机无账本来源 — 判「无绕过记录」放行 (D331 读面 / FIX-002)${RESET}"
+  echo "  已查来源: $(printf '%s' "$LEDGER_SOURCES" | tr '\n' ' ')"
+  echo "  注: 账本不随仓走（#796 删除旧路径 + D970 Stage 2 停写）；本机零登记 = 零可对账证据"
+  echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) check-bypass-log vacuous-pass: 本机无账本来源, 对账无据可依（显式放行）" >> "$ROOT/.claude/degraded-events.log" 2>/dev/null || true
+  exit 0
+fi
+
+# base 可解析性（默认 base 防御刷新）: 非显式 → fetch 一次仍不可用 → 显式跳过 exit 2（fail-closed）
 if ! git rev-parse --verify "$BASE" >/dev/null 2>&1; then
-  if [[ -n "${SYNO_BASE_REF:-}" ]]; then
-    echo -e "${RED}❌ base 不可解析: $BASE${RESET}"
-    exit 1
-  fi
   git fetch origin >/dev/null 2>&1 || true
   if ! git rev-parse --verify "$BASE" >/dev/null 2>&1; then
     echo -e "${YELLOW}⚠️  base 引用缺失 ($BASE) — 对账无法执行（fail-closed，exit 2 不当作通过）${RESET}"
