@@ -27,7 +27,16 @@
     ".claude/task-briefs/**",
     "task-state/D964.json",
     "docs/synova/coordination/archive/**",
-    "docs/synova/research/archive/**"
+    "docs/synova/research/archive/**",
+    "docs/synova/coordination/编码指令-D590-20260908.md",
+    "docs/synova/coordination/编码指令-D593-20260908.md",
+    "docs/synova/coordination/编码指令-D602-20260909.md",
+    "docs/synova/coordination/编码指令-L1切片C-D527-D528-20260825.md",
+    "docs/synova/coordination/裁定记录-DSH逻辑四项-20260920.md",
+    "docs/synova/coordination/返修反馈-D522D523-merge事故-20260825.md",
+    "docs/synova/research/Harness研究与Synova战略再定位-20260816/开发转交方向-Harness借鉴与OpenViking应对-20260816.md",
+    "docs/synova/research/Harness研究与Synova战略再定位-20260816/研究方案-Harness与Synova战略再定位-20260816.md",
+    "docs/synova/research/Harness研究与Synova战略再定位-20260816/第七章-战略结论与路线图-20260816.md"
   ],
   "papers": [],
   "updated_at": "2026-09-25",
