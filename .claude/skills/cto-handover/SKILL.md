@@ -324,3 +324,24 @@ M1 fail-open 静默失效 / M2 声称vs事实 / M3 机制建成未接线 / M4 �
 **任何任务开工前，先读 `docs/synova/coordination/CTO-固化-最终方向与在制任务-20260924.md`。**
 它固化九件事：① 两侧分工与域归属唯一源（`ownership.yaml`）② 开发模式（**必须 Agent Teams 小队 + 先 plan 后执行 + WIP=1；严禁子代理代替小队**）③ 验收链（执行方不判通过；有条件通过=未通过）④ **五条口径纪律**（负面断言写范围／判断面用 git ls-files／计数带命令+口径+截至时刻／路径写全两层／引用可核验）⑤ 红线（含 worktree 名字带侧前缀防撞号、主树只同步、同类第二次升级）⑥ 在制五卡（D937 P0 门禁 fail-open 优先）⑦ 在飞 PR 收口清单 ⑧ 待创始人裁决 5 件 ⑨ DSH 断面判据（源码构建 0.1.7-alpha.2 @00102833）。
 **与本件冲突的做法，一律以固化件为准。**
+
+## 推送与开 PR —— **以实测为准（2026-09-25 更新，替换旧的「https 会超时，走 ssh」）**
+
+**实测事实（当日多次）**：
+- **SSH 会间歇失败**：`Permission denied (publickey)`（今天实测发生）
+- **https + 认证头可用**：`git -c http.extraheader="Authorization: Basic $(printf 'x-access-token:%s' "$TOKEN" | base64 | tr -d '\n')" push https://github.com/<org>/<repo>.git HEAD:<branch>`
+- **https 也会间歇 443 超时**：重试 1–3 次即可（今天遇到 2 次，第三次成功）
+⇒ **两个通道都会间歇失败 —— 所以不要"选通道"，要"验结果"。**
+
+**硬纪律（三核对，缺一不算推送成功）**：
+1. **认证 `ls-remote` 复核远端 sha**（**private 仓未认证会返回空 ⇒ 必须带认证**；比较前**统一长度**）
+2. **是否起了 workflow run**（`fix/**` 的 push 不触发 CI，靠 PR 事件；`feat/*` 触发）
+3. **PR 呈现状态**（head sha 是否更新）
+
+**开 PR 用 API**（会话内无 `gh` 时）：
+```bash
+curl -X POST -H "Authorization: token $TOKEN" -H "Accept: application/vnd.github+json" \
+  https://api.github.com/repos/<org>/<repo>/pulls \
+  -d '{"title":"…","head":"<branch>","base":"main","body":"…"}'
+```
+**若报 `Validation Failed` ⇒ 分支与 base 无差异（常见于"commit 被门禁拦下"）—— 回头查提交，不要反复重开 PR。**
