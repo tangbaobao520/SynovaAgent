@@ -35,7 +35,20 @@
 ```
 python scripts/control-tower/check-ownership.py --emit-codeowners > .github/CODEOWNERS
 ```
-预期产物变化：CODEOWNERS **+2 行**（`tests/electron/**` 与 `tests/ga-collab-*.test.ts` 各一行，均 `@tangbaobao520`），3420 B → 3420+ 对应增量。
+预期产物变化：CODEOWNERS **+2 行**（`tests/electron/**` 与 `tests/ga-collab-*.test.ts` 各一行，均 `tangbaobao520`），3420 B → 3420+ 对应增量。
+
+### §1-补 与被作废分支的差异声明（**K3 审计 M-6 的处置**）
+
+K3 `k3_audit.not_established` M-6 登记：「越权分支与建议件**非逐字**（规则本体一致，注释/source 不同）」。**该差异是刻意的，且为改号规则所要求**，声明如下：
+
+| 项 | 被作废分支 `fix/d949-ownership-electron-tests` | 本建议件 §1 | 判定 |
+|---|---|---|---|
+| **规则本体**（`glob` + `owner` 两字段） | `- glob: "tests/electron/**"` / `owner: "mac"`；`- glob: "tests/ga-collab-*.test.ts"` / `owner: "mac"` | **逐字相同** | ✅ 一致 |
+| **`source` 字段** | 含旧号 `D948` / `D949` | 改为 `D1000` + 重写 | ⚠️ **差异，且必须** —— D1000 §〇之二 一：「旧号**不得再用于本方任何新产物**」。若照抄旧文的 `source`，本建议件自身即违规 |
+| **注释文字** | 旧注释块 | 重写为面向 Mac-CTO 的采纳指引 | ⚠️ 差异，无害（注释不进机器语义） |
+
+**⇒ 结论**：差异**只**在 `source` 与注释；**规则本体逐字一致**。且该差异是改号后被**强制**的（旧号不得进新产物），不构成「建议件与分支不一致」的缺陷。
+**供 Mac-CTO 选择**：若倾向保留旧 `source` 文本，签收后可按 §8 选项 (ii)/(iii) 从分支取原文——但**须先把 `D948`/`D949` 改写为 `D1000`/`D1001`**，否则违反改号规则。
 
 ---
 
