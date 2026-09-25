@@ -1,0 +1,23 @@
+{
+  "task_id": "D975",
+  "title": "P0 三件合并阻塞根治（union 假冲突 / 必需检查 stack 缺席 / CT-40 配对测试缺失）",
+  "status": "in_progress",
+  "risk": "high",
+  "domain": "mac",
+  "owner": "synova-cto",
+  "executor": "cto",
+  "milestone": "解除全队 PR 阻塞",
+  "write_set": [
+    ".gitattributes",
+    "scripts/control-tower/synova-commit",
+    "tests/control-tower/daily-cto-board.test.sh",
+    ".github/workflows/ci.yml",
+    "memory/notes/implemented/2026-09-25-merge-blockers-root-fix.md",
+    "task-state/D975.json",
+    ".claude/task-briefs/2026-09-25-D975-merge-blockers-root.md",
+    ".gitignore"
+  ],
+  "updated_at": "2026-09-25",
+  "updated_by": "synova-cto",
+  "note": "根因: synova-commit D414 每次提交把 .claude/bypass.log 并入索引（GitHub 不执行 union driver ⇒ 全分支假冲突）；ci.yml pull_request.branches=[main] ⇒ base≠main 的 PR 拿不到必需检查 Vitest(1/2)(2/2)；daily-cto-board.sh 缺配对测试 ⇒ CT-40 堵全队本地合 main。三件本 PR 一次根治。\n\n【2026-09-26 改号】原 D969 与 feat/d969-daily-cto-board-paired-test（#796，17:41:44 先占）撞号 ⇒ 改 **D975**（Mac 段）。依据：独立复核 verifier task-6 §四（三条 ADD 提交）。分支名改为 fix/d975-merge-blockers-root（标识符层改号，历史叙述层标历史）。"
+}
