@@ -27,7 +27,12 @@
     ".claude/task-briefs/**",
     "task-state/D964.json",
     "docs/synova/coordination/archive/**",
-    "docs/synova/research/archive/**"
+    "docs/synova/research/archive/**",
+    "docs/synova/research/Harness研究与Synova战略再定位-20260816/第三章-其他类似开源项目与应用研究-20260816.md",
+    "docs/synova/research/Harness研究与Synova战略再定位-20260816/第二章-DSH开源插件市场生态研究-20260816.md",
+    "docs/synova/research/Harness研究与Synova战略再定位-20260816/第五章-三条路径评估-20260816.md",
+    "docs/synova/research/Harness研究与Synova战略再定位-20260816/第八章-OpenViking专项深挖-20260816.md",
+    "docs/synova/research/Harness研究与Synova战略再定位-20260816/第四章-Synova×Harness能力映射矩阵-20260816.md"
   ],
   "papers": [],
   "updated_at": "2026-09-25",
