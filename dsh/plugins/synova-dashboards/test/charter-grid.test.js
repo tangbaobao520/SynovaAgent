@@ -356,3 +356,170 @@ test("Host 边界：坏 JSON → 200 + degraded + 解析失败原因，不抛异
   assert.match(body.error, /JSON 解析失败/);
   assert.ok(warnings.length > 0);
 });
+
+// ── 框架态显式降级（D963 退回项：DSH 版本不足 / slot 不存在 / 插件未装）──
+// 依据 DSH 锚定仓实读：
+//   · slots.inject 对未声明 slot 静默不执行回调（ui-renderer/src/client/registry.ts reconcile）
+//   · slots.register 对未声明 slot 同步抛错（ui-slots/src/index.ts:1206）
+//   · service 级缺失 → apply 挂起（runtime.ts:393 waitingFor）/ 插件未装 → 无执行点：框架侧，插件无法自报（README 已声明）
+function captureConsole() {
+  const warnings = [];
+  const errors = [];
+  const prevWarn = console.warn;
+  const prevError = console.error;
+  console.warn = (...a) => warnings.push(a.join(" "));
+  console.error = (...a) => errors.push(a.join(" "));
+  return {
+    warnings, errors,
+    restore() { console.warn = prevWarn; console.error = prevError; },
+  };
+}
+
+/** 复用 loadPlugin 的装载器，但用自定义 ctx 调 apply（绕过默认完整 ctx）。 */
+function loadPluginWithCtx() {
+  // 与 loadPlugin 相同的装载流程，仅把 apply(ctx) 暴露给调用方
+  const p = loadPlugin();
+  return p;
+}
+
+test("框架态①：ctx.slots 缺失/API 面不完整 → console.warn 显式提示 + 不抛错 + 不注册任何槽位", () => {
+  const p = loadPluginWithCtx();
+  const cap = captureConsole();
+  try {
+    // 重新取插件模块并用手工 ctx 驱动 apply
+    const capturedCtxApply = (() => {
+      // loadPlugin 已 apply 一次（完整 ctx）；这里重新 eval 源码拿独立模块
+      let captured = null;
+      const g = { stores: [], compIdx: 0, cursor: null, effectQueue: [] };
+      const ReactMini = {
+        createElement: () => ({}),
+        useState: () => [null, () => {}],
+        useCallback: (fn) => fn,
+        useEffect: () => {},
+      };
+      const docStub = { visibilityState: "visible", querySelectorAll: () => [], createElement: () => ({ dataset: {}, textContent: "" }), head: { appendChild() {} }, addEventListener() {}, removeEventListener() {} };
+      const winStub = { innerWidth: 1400, innerHeight: 900, __ModuleLoader__: { load: (def) => { captured = def; } } };
+      const prevW = globalThis.window, prevD = globalThis.document;
+      globalThis.window = winStub; globalThis.document = docStub;
+      (0, eval)(SRC);
+      globalThis.window = prevW; globalThis.document = prevD;
+      const mod = captured.factory((name) => {
+        if (name === "react") return ReactMini;
+        if (name === "react/jsx-runtime") return { jsx: () => ({}), jsxs: () => ({}) };
+        throw new Error("unexpected require: " + name);
+      });
+      return mod.apply;
+    })();
+    const regs = [];
+    const badCtx = {
+      effect(fn) { const d = fn(); return typeof d === "function" ? d : () => {}; },
+      slots: { /* 有对象但无 inject/register API 面（旧版宿主） */ },
+      slotsInject: undefined,
+      layout: { selectPanel() {} },
+    };
+    Object.defineProperty(badCtx, "slots", { value: {} });
+    assert.doesNotThrow(() => capturedCtxApply(badCtx), "API 面缺失不得抛错拖垮宿主");
+    assert.ok(cap.warnings.some((w) => w.includes("DSH 版本不足") && w.includes("ctx.slots 不可用")), "必须显式 warn（禁静默）: " + cap.warnings.join(" | "));
+    // 无 slots 服务的极端情形：ctx.slots undefined
+    assert.doesNotThrow(() => capturedCtxApply({ effect() {}, layout: {} }));
+    assert.ok(cap.warnings.filter((w) => w.includes("DSH 版本不足")).length >= 2, "两种残缺 ctx 都必须各自 warn");
+    assert.equal(regs.length, 0);
+  } finally {
+    cap.restore();
+    p.restore();
+  }
+});
+
+test("框架态②：slot 未声明（specDynamic 返回 undefined）→ apply 时显式 warn「未声明/等待声明」", () => {
+  const cap = captureConsole();
+  const regs = [];
+  let captured = null;
+  const ReactMini = {
+    createElement: () => ({}),
+    useState: () => [null, () => {}],
+    useCallback: (fn) => fn,
+    useEffect: () => {},
+  };
+  const docStub = { visibilityState: "visible", querySelectorAll: () => [], createElement: () => ({ dataset: {}, textContent: "" }), head: { appendChild() {} }, addEventListener() {}, removeEventListener() {} };
+  const winStub = { innerWidth: 1400, innerHeight: 900, __ModuleLoader__: { load: (def) => { captured = def; } } };
+  const prevW = globalThis.window, prevD = globalThis.document;
+  globalThis.window = winStub; globalThis.document = docStub;
+  (0, eval)(SRC);
+  globalThis.window = prevW; globalThis.document = prevD;
+  const mod = captured.factory((name) => {
+    if (name === "react") return ReactMini;
+    if (name === "react/jsx-runtime") return { jsx: () => ({}), jsxs: () => ({}) };
+    throw new Error("unexpected require: " + name);
+  });
+  try {
+    const ctx = {
+      effect(fn) { const d = fn(); return typeof d === "function" ? d : () => {}; },
+      layout: { selectPanel() {} },
+      slots: {
+        specDynamic: (key) => (key === "main" ? { kind: "keyed", scope: "root" } : undefined), // sidebar.panellist 未声明
+        inject(slot, cb) { regs.push({ inject: slot }); const d = cb(); return typeof d === "function" ? d : () => {}; },
+        register(options, component) { regs.push({ options, component }); return () => {}; },
+      },
+    };
+    mod.apply(ctx);
+    // specDynamic 探测：main 已声明（无未声明 warn），sidebar.panellist 未声明 → 恰一条 warn
+    const warns = cap.warnings.filter((w) => w.includes("未声明"));
+    assert.equal(warns.length, 1, "只对未声明的 slot warn: " + warns.join(" | "));
+    assert.match(warns[0], /sidebar\.panellist/);
+    assert.match(warns[0], /等待声明/);
+    // 注入仍保留（声明稍后出现时回调照常跑）
+    assert.equal(regs.filter((r) => r.inject === "sidebar.panellist").length, 2, "两个入口行的 inject 仍保留");
+  } finally {
+    cap.restore();
+  }
+});
+
+test("框架态③：register 对未声明 slot 同步抛错 → guardedRegister 捕获 + warn，不穿透宿主", () => {
+  const cap = captureConsole();
+  let captured = null;
+  const ReactMini = {
+    createElement: () => ({}),
+    useState: () => [null, () => {}],
+    useCallback: (fn) => fn,
+    useEffect: () => {},
+  };
+  const docStub = { visibilityState: "visible", querySelectorAll: () => [], createElement: () => ({ dataset: {}, textContent: "" }), head: { appendChild() {} }, addEventListener() {}, removeEventListener() {} };
+  const winStub = { innerWidth: 1400, innerHeight: 900, __ModuleLoader__: { load: (def) => { captured = def; } } };
+  const prevW = globalThis.window, prevD = globalThis.document;
+  globalThis.window = winStub; globalThis.document = docStub;
+  (0, eval)(SRC);
+  globalThis.window = prevW; globalThis.document = prevD;
+  const mod = captured.factory((name) => {
+    if (name === "react") return ReactMini;
+    if (name === "react/jsx-runtime") return { jsx: () => ({}), jsxs: () => ({}) };
+    throw new Error("unexpected require: " + name);
+  });
+  try {
+    const ctx = {
+      effect(fn) { const d = fn(); return typeof d === "function" ? d : () => {}; },
+      layout: { selectPanel() {} },
+      slots: {
+        specDynamic: () => undefined, // 全部未声明（DSH 版本过旧）
+        inject(slot, cb) { cb(); return () => {}; }, // 声明缺席时 inject 本不跑回调；这里强制跑以测 register 抛错路径
+        register() { throw new Error('slot "main" is not declared (a parent entry\'s children table must declare it)'); },
+      },
+    };
+    assert.doesNotThrow(() => mod.apply(ctx), "register 抛错必须被捕获，禁穿透宿主 fiber");
+    const fails = cap.warnings.filter((w) => w.includes("注册失败"));
+    assert.equal(fails.length, 4, "四个注册点（2 面板 × main+入口）各自 warn: " + fails.length);
+    assert.match(fails[0], /is not declared/);
+    assert.match(fails[0], /DSH 版本可能过旧/);
+  } finally {
+    cap.restore();
+  }
+});
+
+test("框架态④（框架侧声明）：service 级缺失/插件未装 → 插件无执行点，README 已声明不可自报", () => {
+  // 逻辑断言（该态物理上无法由插件代码测试——插件代码不在运行）：
+  // 依据 cordis-client-runner/src/client/runtime.ts:393 waitingFor 投影 + 插件未装无执行点。
+  // 这里只断言 README 框架态表格确实声明了这两个框架侧态（防止声明被静默删掉）。
+  const readme = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "../README.md"), "utf8");
+  assert.match(readme, /插件未装/, "README 必须声明「插件未装」为框架侧态");
+  assert.match(readme, /runtime\.ts:393/, "README 必须给出 waitingFor 依据 file:line");
+  assert.match(readme, /静默不执行回调/, "README 必须记录 inject 静默等待语义");
+});

@@ -109,6 +109,20 @@
 账本与健康是两条独立请求，任一失败不影响另一块（`Promise.allSettled`）。
 「返回会话」走 `ctx.layout.selectPanel(null)`。
 
+### 框架态降级（D963：DSH 版本不足 / slot 不存在 / 插件未装）
+
+依据 DSH 锚定仓实读（不猜 API；file:line 相对 `/Users/wane/src/deepseek-harness-017`）：
+
+| 态 | 插件可否自报 | 行为 |
+|---|---|---|
+| `ctx.slots` API 面缺失（旧版宿主调用了 apply） | ✅ 可检测 | `console.warn` 显式提示「DSH 版本不足…两块面板均未注册」，apply 提前返回（lib/client.js `apply` 头部防御探测） |
+| slot 未声明（`main` / `sidebar.panellist` 不存在） | ✅ 可检测 | `slots.specDynamic`/`spec` 探测（SlotCore 公共查询面，api-catalog.ts SlotCore 声明；guard.ts:127 框架自身同样用法）→ 未声明则 `console.warn`；`slots.inject` 保留（声明稍后出现时回调照常跑）。`register` 对未声明 slot 同步抛错（client/ui-slots/src/index.ts:1206）→ `guardedRegister` 捕获 + warn，禁穿透宿主 fiber |
+| 插件 inject 声明的 service 缺失（DSH 版本不足，service 级） | ❌ 框架侧 | apply 挂起等待、根本不执行（cordis-client-runner/src/client/runtime.ts:393 `waitingFor` 投影）——插件无代码执行点，无法自报；由框架状态面呈现 |
+| 插件未装 | ❌ 框架侧 | 插件代码不在运行，逻辑上不可能由插件自报（无任何执行点）；「左栏无入口」即该态的唯一表现，宿主/用户侧判断 |
+
+另：`slots.inject` 对永不声明的 slot **静默不执行回调且不报错**（client/ui-renderer/src/client/registry.ts `inject()` 内 reconcile `if (spec === undefined) return`）——这正是插件必须在 apply 时主动探测并 warn 的原因（禁静默，铁律 24/31）。
+
+
 ## 安装
 
 ```bash

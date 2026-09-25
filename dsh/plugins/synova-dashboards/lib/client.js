@@ -777,8 +777,65 @@ window.__ModuleLoader__.load({
 		//   官方明确：选择未注册的 main key 会抛错并保留旧选中态 ⇒ 必须先注册 main，再注册入口行。
 		const PANEL_ID = "synova-project-overview";
 
+		// ── 框架态显式降级（D963；依据 DSH 锚定仓实读，禁猜 API）─────────────────
+		// 探测依据（file:line 为 DSH 仓 /Users/wane/src/deepseek-harness-017）：
+		//   · slots.inject 对未声明 slot **静默不执行回调**（packages/client/ui-renderer/src/client/registry.ts
+		//     inject(): reconcile `if (spec === undefined) return` —— 永不声明则回调永不跑、不报错）
+		//     → 插件必须在 apply 时用 specDynamic/spec 主动探测并显式 warn，否则静默无面板。
+		//   · slots.register 到未声明 slot **同步抛错**（packages/client/ui-slots/src/index.ts:1206
+		//     `slot "X" is not declared`）→ inject 回调内必须 try/catch，禁让异常穿透拖垮宿主 fiber。
+		//   · ctx.slots 上的 spec/specDynamic 是 SlotCore 公共查询面
+		//     （packages/extensions/cordis-client-runner/src/client/api-catalog.ts SlotCore 声明；
+		//     guard.ts:127 框架自身也用 slots.spec(slot) 探测），插件可安全调用。
+		//   · 插件 inject 声明的 service 缺失（DSH 版本不足/宿主未提供）→ apply 挂起等待、
+		//     根本不执行（cordis-client-runner/src/client/runtime.ts:393 waitingFor）→ 该态框架侧
+		//     已投影，插件无法自报（apply 没跑，无代码执行点）；apply 内能做的只剩防御性探测
+		//     ctx.slots 形状，覆盖「apply 被调用但 API 面缺失」的旧版本宿主。
+		//   · 「插件未装」态：插件代码不在运行，无任何执行点，逻辑上不可能由插件自报（框架侧）。
+		const TAG = "[synova-dashboards]";
+		function frameworkWarn(msg) {
+			// 铁律 24/31：禁静默——框架态降级必须留痕且可见（console.warn 是插件在
+			// 面板注册失败时唯一剩余的表达面；面板/入口不存在时无 UI 可挂）。
+			console.warn(TAG + " " + msg);
+		}
+		/** 探测 slot 是否已声明：specDynamic/spec 任一可用则查询；两者皆缺 → 无法探测(null)。 */
+		function slotDeclared(slots, key) {
+			try {
+				const probe = typeof slots.specDynamic === "function" ? slots.specDynamic
+					: typeof slots.spec === "function" ? slots.spec : null;
+				if (!probe) return null;
+				return probe.call(slots, key) !== undefined;
+			} catch (err) {
+				console.warn(TAG + " slot 声明探测失败(" + key + ")：" + (err && err.message ? err.message : err));
+				return null;
+			}
+		}
+		/** inject 回调包装：register 对未声明 slot 同步抛错 → 捕获 + 显式 warn，禁穿透宿主。 */
+		function guardedRegister(slotKey, label, doRegister) {
+			try {
+				return doRegister();
+			} catch (err) {
+				frameworkWarn(label + " 注册失败（slot \"" + slotKey + "\" 未声明？DSH 版本可能过旧）：" + (err && err.message ? err.message : err));
+				return () => {};
+			}
+		}
+
 		function apply(ctx) {
-			const slots = ctx.slots;
+			const slots = ctx && ctx.slots;
+			// 降级态①：DSH 版本不足——apply 被调用但 slots 服务/API 面缺失（防御性探测；
+			// service 整体缺失时 apply 不会跑，属框架侧 waitingFor 投影，见上方注释）。
+			if (!slots || typeof slots.inject !== "function" || typeof slots.register !== "function") {
+				frameworkWarn("DSH 版本不足或宿主异常：ctx.slots 不可用（inject=" + typeof (slots && slots.inject) + ", register=" + typeof (slots && slots.register) + "），两块面板均未注册。此态插件无法在 UI 内自报，请升级 DSH。");
+				return;
+			}
+			// 降级态②：slot 不存在——inject 对未声明 slot 静默不执行回调（registry.ts reconcile），
+			// 这里主动探测并显式 warn（注入仍保留：声明稍后出现时回调会照常运行）。
+			for (const key of ["main", "sidebar.panellist"]) {
+				const declared = slotDeclared(slots, key);
+				if (declared === false) {
+					frameworkWarn("slot \"" + key + "\" 当前未声明——slots.inject 将等待声明（回调暂不执行）。若 DSH 版本过旧导致该 slot 永不存在，面板将不出现且此处是唯一提示。");
+				}
+			}
 			// 样式注入：先移除本插件此前注入的所有 <style>，再插当前一份。
 			// 这样每次 apply 的样式表都恰好等于当前 CSS —— HMR 热更后不会残留旧规则
 			// （旧版按固定 key 判重会拒绝重注入，导致改过 CSS 仍跑旧样式）。
@@ -789,26 +846,27 @@ window.__ModuleLoader__.load({
 				tag.textContent = CSS;
 				document.head.appendChild(tag);
 			}
-			// ① 先注册 main keyed cell（选中入口行时由 layout 派发到此）
-			ctx.effect(() => slots.inject("main", () => slots.register(
+			// ① 先注册 main keyed cell（选中入口行时由 layout 派发到此）；register 对未声明
+			// slot 同步抛错 → guardedRegister 捕获 + 显式 warn（铁律 24/31，禁穿透宿主 fiber）
+			ctx.effect(() => slots.inject("main", () => guardedRegister("main", "项目总览 main cell", () => slots.register(
 				{ name: "main", key: PANEL_ID },
 				() => jsx(ProjectOverviewPanel, { onBack: () => ctx.layout.selectPanel(null) })
-			)), "synova-project-overview: main cell");
+			))), "synova-project-overview: main cell");
 			// ② 再注册左栏入口行（与「任务看板」同区：sidebar.panellist）
-			ctx.effect(() => slots.inject("sidebar.panellist", () => slots.register(
+			ctx.effect(() => slots.inject("sidebar.panellist", () => guardedRegister("sidebar.panellist", "项目总览 sidebar 入口", () => slots.register(
 				{ name: "sidebar.panellist", id: PANEL_ID, order: 50, label: "项目总览" },
 				ProjectOverviewIcon
-			)), "synova-project-overview: sidebar entry");
+			))), "synova-project-overview: sidebar entry");
 		// ③ 「宪章三问」第二面板（D963）：同样成对注册，先 main 后入口行；order 60 与项目总览(50)错开
 		const CHARTER_PANEL_ID = "synova-charter-grid";
-		ctx.effect(() => slots.inject("main", () => slots.register(
+		ctx.effect(() => slots.inject("main", () => guardedRegister("main", "宪章三问 main cell", () => slots.register(
 			{ name: "main", key: CHARTER_PANEL_ID },
 			() => jsx(CharterGridPanel, { onBack: () => ctx.layout.selectPanel(null) })
-		)), "synova-charter-grid: main cell");
-		ctx.effect(() => slots.inject("sidebar.panellist", () => slots.register(
+		))), "synova-charter-grid: main cell");
+		ctx.effect(() => slots.inject("sidebar.panellist", () => guardedRegister("sidebar.panellist", "宪章三问 sidebar 入口", () => slots.register(
 			{ name: "sidebar.panellist", id: CHARTER_PANEL_ID, order: 60, label: "宪章三问" },
 			CharterGridIcon
-		)), "synova-charter-grid: sidebar entry");
+		))), "synova-charter-grid: sidebar entry");
 		}
 
 		exports.apply = apply;
