@@ -73,11 +73,7 @@ export LC_ALL=C.UTF-8 2>/dev/null || true
  echo -e "${CYAN}--- Safety (max 10) ---${RESET}"
  check "check-architecture.sh 存在" 3 "[ -f '$ROOT/scripts/check-architecture.sh' ]"
  check "loop-context.sh (熔断器) 存在" 4 "[ -f '$ROOT/scripts/workflow/loop-context.sh' ]"
-<<<<<<< HEAD
  # D962-B2: check-deprecated-mapping.sh 退役（防护由 gate-hits/gate-stats 聚合观测承接），移除存在性打分项
-=======
- # D962 第二批: check-deprecated-mapping.sh 退役（防护由 gate-hits/gate-stats 聚合观测承接），移除存在性打分项
->>>>>>> 2177a0a0 (chore(d962): batch2 retire 6 scripts brief-parseable merged into plan-integrity. Note: memory/notes/proposed/2026-09-25-d962-batch2-retire.md)
  echo ""
  
  # ===== Operability (10) =====
