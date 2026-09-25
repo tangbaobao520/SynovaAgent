@@ -4,7 +4,22 @@ on:
   push:
     branches: [main, feat/*]
   pull_request:
-    branches: [main]
+    # D971 修复（真病根 2）: 原为 `branches: [main]` ⇒ **base≠main 的栈式 PR 零 run**
+    #   （实测 #769 base=feat/d947-middleware-default-posture → check-runs total_count=0）。
+    #   改为**不限 base**：任何 PR 都能拿到 CI，必需 context（Vitest (1/2)/(2/2)、Golden Case F1 Gate…）
+    #   在合入前就有据可查。
+    #   成本口径（D333）: 栈式 PR 数量少、寿命短，逐 PR 一次全量 run 的成本 < 「必需检查结构性
+    #   无法满足」造成的整队阻塞成本；叠加下方 concurrency（被取代的 run 自动取消）后增量可控。
+    #   （不采用 `branches: [main, "feat/**", "fix/**", ...]` 白名单：新前缀出现即静默失 CI，同型病根会复发。）
+  # 故意不设 workflow_dispatch：本卡不扩人工触发面（保持改动最小、可核）
+
+concurrency:
+  # D971 修复（真病根 4）: 队列吞吐极低——实测仓库级 27 个 run 同时 queued、单 run 排队 ≈50 分钟，
+  #   且**被后续提交取代的僵尸 run 仍占队列位**。同 (workflow, ref) 下新 run 取消旧 run。
+  #   **不误取消 main**：main 的 ref 恒为 `refs/heads/main`，故把 main 显式排除在取消之外——
+  #   main 每次 push 都要保留完整 check 记录（branch protection 与 tag 对账都读它）。
+  group: "${{ github.workflow }}-${{ github.ref }}"
+  cancel-in-progress: "${{ github.ref != 'refs/heads/main' }}"
 
 jobs:
   quality:
@@ -105,11 +120,28 @@ jobs:
   test:
     name: Vitest (${{ matrix.shard }})
     needs: quality
+    # D971 修复（真病根 1 — 必需检查结构性无法满足）:
+    #   默认 `needs` 语义在 quality 失败时**跳过本 job** ⇒ GitHub 上报的名字停在
+    #   **字面未展开**的 `Vitest (${{ matrix.shard }})`（conclusion=skipped），
+    #   而 branch protection 的必需 context 是**展开后**的 `Vitest (1/2)` / `Vitest (2/2)`
+    #   ⇒ 这两个必需检查**永不出现** → PR 永远 blocked（405 expected）。
+    #   改 `if: always()`: 无论 quality 结果如何，本 job 都实际执行 ⇒ 名字正常展开、必被上报
+    #   （success / failure 皆可；skipped / 不存在不可）。
+    if: always()
     runs-on: ubuntu-latest
     strategy:
       matrix:
         shard: [1/2, 2/2]
     steps:
+      - name: Quality gate (D971)
+        # 依赖语义不丢: quality 非 success → 显式失败 + 说明原因（降级可见，铁律 11），
+        # 且**不跑 vitest**（省稀缺队列位）。两个 shard 因此都会以 failure 被实际报告。
+        run: |
+          echo "quality result: ${{ needs.quality.result }}"
+          if [ "${{ needs.quality.result }}" != "success" ]; then
+            echo "::error::quality 未通过（${{ needs.quality.result }}）— 跳过 vitest，但本 job 显式失败以维持必需 context 可报告性"
+            exit 1
+          fi
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -331,8 +363,19 @@ jobs:
   golden-case:
     name: Golden Case F1 Gate
     needs: test
+    # D971 修复（真病根 1 的第二级）: 本 job 名是**必需 context**（branch protection 12 项之一）。
+    #   默认 `needs: test` 语义下，test 失败/被 skip ⇒ 本 job 被 skip ⇒ 必需 context 缺失，
+    #   与 Vitest 同型级联（只修 test 不够）。同改 `if: always()` + 首步显式 gate。
+    if: always()
     runs-on: ubuntu-latest
     steps:
+      - name: Test gate (D971)
+        run: |
+          echo "test result: ${{ needs.test.result }}"
+          if [ "${{ needs.test.result }}" != "success" ]; then
+            echo "::error::test 未通过（${{ needs.test.result }}）— 跳过 golden-case，但本 job 显式失败以维持必需 context 可报告性"
+            exit 1
+          fi
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: '22', cache: 'npm' }

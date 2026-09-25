@@ -1,0 +1,28 @@
+{
+  "task_id": "D971",
+  "title": "必需检查三路修复 + 队列并发控制 + 对账探针（needs 级联／栈式触发／归因表）",
+  "status": "in_progress",
+  "risk": "high",
+  "domain": "mac",
+  "owner": "mac-cto",
+  "executor": "coder-a（并行 CTO 小队 A，DSH session）",
+  "milestone": "M0 治理",
+  "depends_on": [],
+  "write_set": [
+    ".claude/bypass.log",
+    ".github/workflows/ci.yml",
+    "scripts/control-tower/probes/required-checks-probe.sh",
+    "tests/control-tower/required-checks-probe.test.sh",
+    "docs/synova/product-lines/evidence/D971-20260925-回执.md",
+    ".claude/task-briefs/2026-09-25-D971-required-checks.md",
+    "task-state/D971.json"
+  ],
+  "papers": [],
+  "updated_at": "2026-09-25",
+  "updated_by": "coder-a",
+  "note": "真病根：ci.yml 的 test(job) needs quality ⇒ quality 一红 test 被 skip ⇒ GitHub 上报字面未展开的 `Vitest (${{ matrix.shard }})`，而 branch protection 必需 context 是 `Vitest (1/2)`/`(2/2)` ⇒ 结构性无法满足（golden-case 同型第二级）。修法=乙：needs 保留 + `if: always()` + 首步显式 gate（失败可见、不白跑 vitest）。另：pull_request 放开 base（栈式 PR 零 run）、顶层 concurrency（cancel-in-progress 排除 main）。新增 probes/required-checks-probe.sh（三态 0/1/2，token 经 0600 临时文件传参、绝不打印）。write_set 覆盖本卡全部变更文件含 evidence 回执（D708 口径）。门禁/CI 语义变更 ⇒ K3 事前/事后审，本卡不写「通过」。 另：本支按 CTO 配方接受 `.claude/bypass.log` 删除侧（D970 出库后该文件不再随仓走）。",
+  "k3_required": [
+    ".github/workflows/ci.yml",
+    "scripts/control-tower/probes/required-checks-probe.sh"
+  ]
+}
