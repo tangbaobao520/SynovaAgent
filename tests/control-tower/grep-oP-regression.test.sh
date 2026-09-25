@@ -108,22 +108,25 @@ eqs '\K→grep -oE + sed (export 名提取)' "scripts/pre-commit-check.sh" \
 eqs '\K→… 同模式 const 分支' "scripts/pre-commit-check.sh" \
    'export (function|class|const) [A-Za-z_][A-Za-z0-9_]*' \
    'export const X_1 = 2' 'X_1' 's/^export (function|class|const) //'
+# (D962 2a① V5.3 密封同步: 判定体含全角冒号 [:=：]——组7a 增强，断言随语义更新)
 eqs '\K→grep -oE + sed (#CRITERIA)' "scripts/pre-commit-check.sh" \
-   '#CRITERIA[[:space:]]*[:=][[:space:]]*[A-D]' '#CRITERIA: B' 'B' \
-   's/.*[=:][[:space:]]*//'
+   '#CRITERIA[[:space:]]*[:=：][[:space:]]*[A-D]' '#CRITERIA: B' 'B' \
+   's/.*[=:：][[:space:]]*//'
 eqs '\K→… 无空格形式' "scripts/pre-commit-check.sh" \
-   '#CRITERIA[[:space:]]*[:=][[:space:]]*[A-D]' '#CRITERIA=C' 'C' \
-   's/.*[=:][[:space:]]*//'
-# 边界（行为等价保持）: 全角冒号原 PCRE 的 [:=\s] 本就不匹配 → 转译后同样不匹配，非本次回归
-eqs '\K 边界: 全角冒号不匹配（与原 PCRE 同）' "scripts/pre-commit-check.sh" \
-   '#CRITERIA[[:space:]]*[:=][[:space:]]*[A-D]' '#CRITERIA：C' '' \
-   's/.*[=:][[:space:]]*//'
+   '#CRITERIA[[:space:]]*[:=：][[:space:]]*[A-D]' '#CRITERIA=C' 'C' \
+   's/.*[=:：][[:space:]]*//'
+# V5.3 边界翻转: 全角冒号在组7a 增强后【应匹配】（原 PCRE [:=\s] 不匹配——转译语义演进，密封随迁）
+eqs '\K 边界: 全角冒号 V5.3 起匹配（组7a 增强）' "scripts/pre-commit-check.sh" \
+   '#CRITERIA[[:space:]]*[:=：][[:space:]]*[A-D]' '#CRITERIA：C' 'C' \
+   's/.*[=:：][[:space:]]*//'
 eqs '\K→grep -oE + sed (brief id)' "scripts/pre-commit-check.sh" \
    '\.claude/task-briefs/[^.]+' '.claude/task-briefs/2026-09-12-D664-x.md' \
    '2026-09-12-D664-x' 's|^\.claude/task-briefs/||'
 
 # ── 类 3: \d —— ERE 用 [0-9] / {n} 直译 ──
-eq '\d→[0-9] (brief 日期)' "scripts/pre-commit-check.sh" \
+# (合并候选: check-tech-debt.sh 已随 D962 第一批退役——\d 日期条目改指在库真身)
+# (D962 2a① V5.3: pre-commit 不再提取 brief 日期——\d 类覆盖改指在库真身 resolve-commit-brief.sh)
+eq '\d→[0-9] (brief 日期, resolve-commit-brief 真身)' "scripts/workflow/resolve-commit-brief.sh" \
    '[0-9]{4}-[0-9]{2}-[0-9]{2}' '2026-09-12-D664-x.md' '2026-09-12'
 
 # ── 类 4: 简单直译（-oP → -oE，语义本就 ERE 兼容）──
@@ -137,7 +140,9 @@ eq 'extensions 顶层目录' "scripts/check-file-driven.sh" '^extensions/[^/]+' 
 eq '记忆双链' "scripts/hooks/hook-check-memory.sh" '\[\[[^]]+\]\]' \
    'see [[D665-gitlink]] and [[X]]' '[[D665-gitlink]]
 [[X]]'
-eq 'match_file 前缀' "scripts/pre-commit-check.sh" '^[^:]+' 'src/a.ts:12:内容' 'src/a.ts'
+# (D962 2a① V5.3: pre-commit 不再做 match_file 前缀提取——覆盖改指在库真身 external-auditor.sh)
+eq 'match_file 前缀 (external-auditor 真身)' "scripts/control-tower/external-auditor.sh" '^[^:]+' 'src/a.ts:12:内容' 'src/a.ts'
+# (合并候选: checks/check-test-quality.sh 已随 D962 第一批退役——exports 提取条目随删，覆盖由上方 pre-commit export 条目保持)
 
 echo ""
 echo "=== D664: 转译形态静态守卫（防 sed 参数错位类）==="
