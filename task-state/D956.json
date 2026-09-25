@@ -1,0 +1,24 @@
+{
+  "task_id": "D956",
+  "title": "CI 失败消息观测性（失败行入窗+截断自报+三态）",
+  "status": "in_progress",
+  "write_set_comment": "3 文件 = git diff origin/main...origin/fix/d956-ci-failmsg --name-status（1A+2M）；D962-N 补声明（此前无本文件——缺失被译成通过的同族风险）",
+  "write_set": {
+    "added": [
+      "tests/control-tower/d956-failmsg.test.sh"
+    ],
+    "deleted": [],
+    "modified": [
+      ".github/workflows/ci.yml",
+      ".claude/bypass.log"
+    ]
+  },
+  "branches": {
+    "impl": "fix/d956-ci-failmsg @ 36b960e4"
+  },
+  "spec": {
+    "path": "(卡内联——CTO D956 开工令)"
+  },
+  "impl": null,
+  "audit": null
+}
