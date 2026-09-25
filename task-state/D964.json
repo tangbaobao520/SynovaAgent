@@ -27,7 +27,16 @@
     ".claude/task-briefs/**",
     "task-state/D964.json",
     "docs/synova/coordination/archive/**",
-    "docs/synova/research/archive/**"
+    "docs/synova/research/archive/**",
+    "docs/synova/coordination/A2-EVIDENCE-FOR-K3-20260818.md",
+    "docs/synova/coordination/CT-CI-RECOVERY-DISPATCH-20260823.md",
+    "docs/synova/coordination/D402-DISPATCH-20260818.md",
+    "docs/synova/coordination/DECISION-REFERENCE-决策权归属-20260817.md",
+    "docs/synova/coordination/DECISION-U5a-5min-window-20260817.md",
+    "docs/synova/coordination/K3审计派单-D502-D503-20260823.md",
+    "docs/synova/coordination/REVIEW-HANDOVER-20260817.md",
+    "docs/synova/coordination/Win侧测试模板-20260910.md",
+    "docs/synova/coordination/Win域代行安排-20260918.md"
   ],
   "papers": [],
   "updated_at": "2026-09-25",
