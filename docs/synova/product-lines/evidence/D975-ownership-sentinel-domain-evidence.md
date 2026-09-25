@@ -1,13 +1,14 @@
-# D969 补 `ownership.yaml` 哨兵域规则（2 条）— 交付证据
+# D975 补 `ownership.yaml` 哨兵域规则（2 条）— 交付证据
 
 | 项 | 值 |
 |---|---|
-| **任务** | task-6（D969）— 补 `ownership.yaml` 哨兵域规则，解 D965/D967/D968 跨域锁 |
+| **任务** | task-6（D975）— 补 `ownership.yaml` 哨兵域规则，解 D965/D967/D968 跨域锁 |
 | **执行者** | `sentinel-coder-a`（编码；自验不兼任） |
-| **卡号来源** | **D969**（Mac 段，**人工按 `号段水位.md` 取号**；**未走 `alloc-task-id.sh`** —— 实测该脚本 dry-run 给 **D1008**（Win 段），与分段口径冲突） |
-| **工作树/分支** | `.synova-wt-D969` ｜ `docs/D969-ownership-sentinel-domain` |
+| **卡号来源** | **D975**（Mac 段，**人工按 `号段水位.md` 取号**；**未走 `alloc-task-id.sh`** —— 实测该脚本 dry-run 给 **D1008**（Win 段），与分段口径冲突） |
+| **工作树/分支** | `.synova-wt-D975` ｜ `docs/D975-ownership-sentinel-domain` |
 | **基线** | `origin/main` = `ef2997466677324b94d7b2921a5b3de0b7ad57d3`（开工时实测 fetch） |
 | **批准** | CTO 2026-09-25 批准立卡；**改规则 ⇒ 必须 K3 复审** |
+| **改号记录** | 原 **D969** → **D975**。依据（队长实测）：`D969` 号已被 CTO 并行批次**两处占用** —— 分支 `feat/d969-daily-cto-board-paired-test`（卡 `daily-cto-board 配对测试…D969-FIX`）与分支 `fix/d969-merge-blockers-root`（卡 `P0 三件合并阻塞根治…`）；CTO 批次 D970–D974 亦已占完。**同一批提交搬支**（新分支 `docs/D975-ownership-sentinel-domain`，内容不变），旧分支 `docs/D969-ownership-sentinel-domain` 已删除（我方分支、未开 PR）。**规则内容与位置一字未动**，仅注释自指改号。 |
 
 ## 0. 效力声明（防误读）
 
@@ -28,14 +29,14 @@ $ git diff --stat
    - glob: "tests/sentinel/**"
      owner: mac
      source: "TASK-ROUTING.md §31（哨兵体系核心=Mac，其测试随域）"
-+  # D969 补漏（CTO 2026-09-25 批准立卡）：哨兵**本体目录**此前落 extensions/** = win，
++  # D975 补漏（CTO 2026-09-25 批准立卡）：哨兵**本体目录**此前落 extensions/** = win，
 +  # 与 TASK-ROUTING.md L31「哨兵体系核心 = Mac」相悖 ⇒ 任何真实哨兵改动必然跨域
 +  # （D734 ② 必红），且按域拆 PR 会留下 src/sentinel/types.ts 指向已移动路径的 TS2307 中间态。
 +  # 位置要求: 必须在本文件 L41 `extensions/**` 之后（注释自述「后匹配者胜出」）。
 +  - glob: "extensions/sentinels/**"
 +    owner: "mac"
 +    source: "补漏: TASK-ROUTING.md L31 哨兵体系核心（本体目录 manifest/aggregate/computes）；此前无规则 ⇒ 落 extensions/** = win"
-+  # D969 同源补漏：单复数不一致（tests/sentinel/** 有规则 = mac，tests/sentinels/** 无规则 = win 兜底）
++  # D975 同源补漏：单复数不一致（tests/sentinel/** 有规则 = mac，tests/sentinels/** 无规则 = win 兜底）
 +  # ⇒ 同一批哨兵测试因目录名单复数而分属两域。
 +  - glob: "tests/sentinels/**"
 +    owner: "mac"
@@ -70,7 +71,7 @@ win  tests/sentinels/shared/d62-me-sentinels.test.ts
 **② 加规则后 → 必须绿**
 
 ```
-$ check-ownership.py --yaml <D969 加规则后> <D965 45 文件>
+$ check-ownership.py --yaml <D975 加规则后> <D965 45 文件>
 mac  extensions/sentinels/_extinct/sentinel-forecast-accuracy/aggregate.ts
 mac  extensions/sentinels/_extinct/sentinel-forecast-accuracy/manifest.json
 mac  extensions/sentinels/_extinct/sentinel-pricing-strategy/aggregate.ts
@@ -106,7 +107,7 @@ $ check-ownership.py <D965 45 文件>
 ### Done 3 — D965 分支 PR 预算 ①②③ 全绿
 
 ```
-$ cp <D969 规则> docs/synova/coordination/ownership.yaml   # 在 D965 工作树内做可逆实验
+$ cp <D975 规则> docs/synova/coordination/ownership.yaml   # 在 D965 工作树内做可逆实验
 $ bash scripts/control-tower/check-pr-budget.sh
 ── PR 预算门禁（D734）: 基线=origin/main 上限=12 文件 / 落后阈值=20 ──
   ℹ️  D860 治理产物豁免: 33 件不计预算（brief/卡/Note/规格/自验证据，代码文件仍计数）
@@ -170,8 +171,8 @@ mac  tests/sentinel/measurements.test.ts
 ## 5. 未清项（诚实登记）
 
 1. **D967 跨域未解**（§3）——需 CTO 裁定，本卡不扩范围。
-2. **D969 未写入 `号段水位.md`**（红线：属 CTO 域）——由队长上报 CTO 更新水位表。
-3. **`alloc-task-id.sh` 不感知分段**：实测 dry-run 对本卡给出 **D1008（Win 段）**，而正确号是 **D969（Mac 段）**。⇒ 该脚本的"分段感知"缺口建议立卡（与 CTO 本人踩坑同源）。
+2. **D975 未写入 `号段水位.md`**（红线：属 CTO 域）——由队长上报 CTO 更新水位表。
+3. **`alloc-task-id.sh` 不感知分段**：实测 dry-run 对本卡给出 **D1008（Win 段）**，而正确号是 **D975（Mac 段）**。⇒ 该脚本的"分段感知"缺口建议立卡（与 CTO 本人踩坑同源）。
 4. **D965 分支落后 `origin/main` 1 个提交**（阈值内不阻断），开 PR 前需刷新。
 5. **本卡未跑全量 vitest / tsc**：改动为纯 YAML 规则文件，无代码路径；已跑的等价判据见 §2。若复核员/K3 要求，可另申请重型令牌。
 6. **规则变更的域语义**：本卡只解决"哨兵体系"两处缺口；**归属规则的整体口径**（如 `src/store/**` 是否应随哨兵线）**不在本卡判定范围**，需 CTO/K3 判断。
@@ -179,17 +180,17 @@ mac  tests/sentinel/measurements.test.ts
 ## 6. 复现步骤
 
 ```bash
-cd /Users/wane/SynovaAgent/.synova-wt-D969
+cd /Users/wane/SynovaAgent/.synova-wt-D975
 # 1) 改动形态（纯追加）
 git diff --stat && git diff
 
 # 2) 红侧：撤掉 2 条规则
 git checkout -- docs/synova/coordination/ownership.yaml
-python3 scripts/control-tower/check-ownership.py $(cat docs/synova/product-lines/evidence/D969-ownership-sentinel-domain/results/d965-files.txt | tr '\n' ' ')   # ❌ 跨域
+python3 scripts/control-tower/check-ownership.py $(cat docs/synova/product-lines/evidence/D975-ownership-sentinel-domain/results/d965-files.txt | tr '\n' ' ')   # ❌ 跨域
 
 # 3) 绿侧：加回
-#   （重新应用本卡 diff / git checkout docs/D969-ownership-sentinel-domain -- <file>）
-python3 scripts/control-tower/check-ownership.py $(cat docs/synova/product-lines/evidence/D969-ownership-sentinel-domain/results/d965-files.txt | tr '\n' ' ')   # ✅ 单域 mac
+#   （重新应用本卡 diff / git checkout docs/D975-ownership-sentinel-domain -- <file>）
+python3 scripts/control-tower/check-ownership.py $(cat docs/synova/product-lines/evidence/D975-ownership-sentinel-domain/results/d965-files.txt | tr '\n' ' ')   # ✅ 单域 mac
 
 # 4) 回归对照（基线版先导出到 /tmp）
 git show origin/main:docs/synova/coordination/ownership.yaml > /tmp/ownership-baseline.yaml

@@ -1,5 +1,5 @@
 {
-  "task_id": "D969",
+  "task_id": "D975",
   "title": "补 ownership.yaml 哨兵域规则（2 条）——解 D965 跨域锁",
   "status": "impl_done",
   "risk": "medium",
@@ -8,16 +8,23 @@
   "executor": "dsh-squad",
   "milestone": "哨兵体系整改（十环判据）",
   "spec": "task-6（CTO 2026-09-25 批准立卡）；判据见 task-6 描述",
-  "branch": "docs/D969-ownership-sentinel-domain",
-  "worktree": ".synova-wt-D969",
+  "branch": "docs/D975-ownership-sentinel-domain",
+  "worktree": ".synova-wt-D975",
   "base": "origin/main ef2997466677324b94d7b2921a5b3de0b7ad57d3",
-  "number_source": "D969（Mac 段，人工按水位表 docs/synova/coordination/号段水位.md 取号；**未走 alloc-task-id.sh**——该脚本只递增全局最大号、不感知分段，实测 dry-run 会给出 D1008=Win 段号，与队长/CTO 口径一致）",
+  "number_source": "D975（Mac 段，人工按水位表 docs/synova/coordination/号段水位.md 取号；**未走 alloc-task-id.sh**——该脚本只递增全局最大号、不感知分段，实测 dry-run 会给出 D1008=Win 段号，与队长/CTO 口径一致）",
+  "renumber": {
+    "from": "D969",
+    "to": "D975",
+    "reason": "D969 号**已被 CTO 并行批次两处占用**（队长 2026-09-25 实测）：① 分支 `feat/d969-daily-cto-board-paired-test`（task-state/D969.json = 'daily-cto-board 配对测试…D969-FIX'）② 分支 `fix/d969-merge-blockers-root`（task-state/D969.json = 'P0 三件合并阻塞根治…'）。CTO 并行批次 D970–D974 亦已占完。",
+    "scope": "同一批提交搬支：新分支 `docs/D975-ownership-sentinel-domain`（内容不变），文件与卡面自指全部改 D975；旧分支 `docs/D969-ownership-sentinel-domain` 已删除（我方、未开 PR）以避免被误开 PR。",
+    "rule_note": "**改号 ≠ 改规则**：ownership.yaml 的 2 条规则内容与位置一字未动，仅注释里的卡号自指 D969→D975。"
+  },
   "write_set": [
     "docs/synova/coordination/ownership.yaml",
-    "task-state/D969.json",
-    ".claude/task-briefs/2026-09-25-D969-ownership-sentinel-domain.md",
-    "docs/synova/product-lines/evidence/D969-ownership-sentinel-domain-evidence.md",
-    "docs/synova/product-lines/evidence/D969-ownership-sentinel-domain/**"
+    "task-state/D975.json",
+    ".claude/task-briefs/2026-09-25-D975-ownership-sentinel-domain.md",
+    "docs/synova/product-lines/evidence/D975-ownership-sentinel-domain-evidence.md",
+    "docs/synova/product-lines/evidence/D975-ownership-sentinel-domain/**"
   ],
   "verified_by_implementation": {
     "改坏即红_撤规则": "check-ownership.py <D965 45 文件> → ❌ FAIL 跨域 mac+win（5 个 win 文件复现）；撤规则后 grep 'extensions/sentinels|tests/sentinels' 命中数 = 0",

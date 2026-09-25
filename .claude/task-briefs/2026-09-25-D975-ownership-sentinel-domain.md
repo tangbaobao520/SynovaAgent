@@ -1,4 +1,4 @@
-# Task Brief — D969 补 ownership.yaml 哨兵域规则（2 条）
+# Task Brief — D975 补 ownership.yaml 哨兵域规则（2 条）
 
 #CRITERIA: A
 
@@ -9,10 +9,10 @@
 | 文件 | task/builtin（理由） |
 | --- | --- |
 | `docs/synova/coordination/ownership.yaml` | task（**唯一被改的规则文件**：追加 2 条 mac 例外规则） |
-| `task-state/D969.json` | task（本卡） |
-| `.claude/task-briefs/2026-09-25-D969-ownership-sentinel-domain.md` | task（本 brief） |
-| `docs/synova/product-lines/evidence/D969-ownership-sentinel-domain-evidence.md` | task（主证据） |
-| `docs/synova/product-lines/evidence/D969-ownership-sentinel-domain/**` | task（原始输出 results/） |
+| `task-state/D975.json` | task（本卡） |
+| `.claude/task-briefs/2026-09-25-D975-ownership-sentinel-domain.md` | task（本 brief） |
+| `docs/synova/product-lines/evidence/D975-ownership-sentinel-domain-evidence.md` | task（主证据） |
+| `docs/synova/product-lines/evidence/D975-ownership-sentinel-domain/**` | task（原始输出 results/） |
 | `.claude/bypass.log` | builtin（post-commit hook 运行期追加证据账本） |
 
 ## Q0: 定位 — 项目拼图 + 文件审计
@@ -39,7 +39,7 @@ L0 控制塔治理面（**规则文件**，非代码）。`docs/synova/coordinat
 - **第一性原理**：归属规则的判据是**语义边界**（"哨兵体系"），不是**目录名字面**。`extensions/sentinels/**` 是哨兵体系的**本体**，却因"住在 `extensions/` 下"而被判给 win —— 这是**规则按路径字面推不出意图**的经典错配。修法是让规则显式表达意图，而非让每张卡去绕。
 - **Anthropic 工程基线**：规则变更必须**可判别**（撤掉即红 / 加回即绿）+ **零副作用**（回归对照证明只有目标路径族改变）。
 - **memory 历史教训**：
-  - **D382 编号撞车 / D339 分散取号**：本卡取号**未走 `alloc-task-id.sh`**（该脚本只递增全局最大号、不感知分段，实测 dry-run 给 D1008=Win 段）——按队长裁定用 **D969（Mac 段水位 +1）**，并在卡面写明取号来源。
+  - **D382 编号撞车 / D339 分散取号**：本卡取号**未走 `alloc-task-id.sh`**（该脚本只递增全局最大号、不感知分段，实测 dry-run 给 D1008=Win 段）——按队长裁定用 **D975（Mac 段水位 +1）**，并在卡面写明取号来源。
   - **D335/D334 多机同步**：分支基于**开工时最新** `origin/main`（`ef299746`，非卡片里的过期值）。
   - **D965 本批教训**（我上一张卡）：`STAGED_SRC` 为空仍打 ✅ 的空洞绿 ⇒ 本卡全部判据都用**显式指定的文件表**（`--files`/位置参数）跑，不依赖"从 git 状态推导出的集合"。
 - **决策参考系**：参考 Anthropic/第一性原理 + 结论 = 「补规则让规则表达语义意图；变更必须零副作用并经回归对照证明」。
@@ -51,7 +51,7 @@ L0 控制塔治理面（**规则文件**，非代码）。`docs/synova/coordinat
   - `extensions/sentinels/**` → `owner: mac`（source 写明：补漏，本体目录此前落 `extensions/**` = win，与 TASK-ROUTING.md L31「哨兵体系核心 = Mac」相悖）
   - `tests/sentinels/**` → `owner: mac`（source 写明：单复数不一致导致同一批哨兵测试分属两域）
   - 位置：紧跟既有 `tests/sentinel/**` 之后 ⇒ 位于 `extensions/**`（L41）之后，满足「后匹配者胜出」
-- `task-state/D969.json`、本 brief、evidence md + results/**（交付三件套）
+- `task-state/D975.json`、本 brief、evidence md + results/**（交付三件套）
 
 不做什么（含文件路径）：
 - **不改** `docs/synova/coordination/号段水位.md`（CTO 域；由队长上报 CTO 更新）
