@@ -63,8 +63,8 @@ tests/control-tower/task-id-watermark-probe.test.sh     — ❌ 新建（U7/CT-4
 - 不改 scripts/control-tower/alloc-task-id.sh （取号器缺陷只登记不修，属另卡）
 - 不改 scripts/control-tower/daily-cto-board.sh （D1008 单写者，已排他）
 - 不改 .github/workflows/ci.yml （D1010 写集）
-- 不改 docs/authority/DOCS-REGISTRY.yaml （D1012 写集）
-- 不改 tests/control-tower/check-ownership.test.sh （D1011 写集）
+- 不改 docs/authority/DOCS-REGISTRY.yaml （D973 写集）
+- 不改 tests/control-tower/check-ownership.test.sh （D972 写集）
 - 不改 scripts/audit/** （K3 域，红线）
 - 不擅自改本批号映射（分段约定冲突已升级队长/CTO 裁决）
 
