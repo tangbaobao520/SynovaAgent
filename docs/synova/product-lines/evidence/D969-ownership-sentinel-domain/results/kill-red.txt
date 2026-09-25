@@ -1,0 +1,2 @@
+$ # 撤掉 2 条规则（git checkout 基线）后重跑 —— 改坏即红
+$ grep -c 'extensions/sentinels\|tests/sentinels' docs/synova/coordination/ownership.yaml  → 0（规则已撤）

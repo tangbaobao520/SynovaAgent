@@ -58,6 +58,18 @@ rules:
   - glob: "tests/sentinel/**"
     owner: mac
     source: "TASK-ROUTING.md §31（哨兵体系核心=Mac，其测试随域）"
+  # D969 补漏（CTO 2026-09-25 批准立卡）：哨兵**本体目录**此前落 extensions/** = win，
+  # 与 TASK-ROUTING.md L31「哨兵体系核心 = Mac」相悖 ⇒ 任何真实哨兵改动必然跨域
+  # （D734 ② 必红），且按域拆 PR 会留下 src/sentinel/types.ts 指向已移动路径的 TS2307 中间态。
+  # 位置要求: 必须在本文件 L41 `extensions/**` 之后（注释自述「后匹配者胜出」）。
+  - glob: "extensions/sentinels/**"
+    owner: "mac"
+    source: "补漏: TASK-ROUTING.md L31 哨兵体系核心（本体目录 manifest/aggregate/computes）；此前无规则 ⇒ 落 extensions/** = win"
+  # D969 同源补漏：单复数不一致（tests/sentinel/** 有规则 = mac，tests/sentinels/** 无规则 = win 兜底）
+  # ⇒ 同一批哨兵测试因目录名单复数而分属两域。
+  - glob: "tests/sentinels/**"
+    owner: "mac"
+    source: "补漏: TASK-ROUTING.md §31 哨兵体系核心=Mac，其测试随域（单复数不一致导致分属两域）"
   - glob: "src/cron/**"
     owner: "mac"
     source: "TASK-ROUTING.md L31"

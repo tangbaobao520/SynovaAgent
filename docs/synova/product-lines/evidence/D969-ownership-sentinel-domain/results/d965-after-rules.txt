@@ -1,0 +1,48 @@
+$ check-ownership.py --yaml <D969 加规则后> <D965 45 文件>
+·   domain-neutral  .claude/bypass.log
+·   domain-neutral  .claude/task-briefs/2026-09-25-D965-sentinel-stub-cut.md
+·   domain-neutral  docs/synova/product-lines/evidence/D965-sentinel-stub-cut-evidence.md
+·   domain-neutral  docs/synova/product-lines/evidence/D965-sentinel-stub-cut/probes/assert-D965-stub-cut.mts
+·   domain-neutral  docs/synova/product-lines/evidence/D965-sentinel-stub-cut/probes/probe-D965-sentinels.mts
+·   domain-neutral  docs/synova/product-lines/evidence/D965-sentinel-stub-cut/results/ack-audit.txt
+·   domain-neutral  docs/synova/product-lines/evidence/D965-sentinel-stub-cut/results/assert-D965-FINAL.txt
+·   domain-neutral  docs/synova/product-lines/evidence/D965-sentinel-stub-cut/results/assert-RED-RESTORED.txt
+·   domain-neutral  docs/synova/product-lines/evidence/D965-sentinel-stub-cut/results/assert-on-AFTER43.txt
+·   domain-neutral  docs/synova/product-lines/evidence/D965-sentinel-stub-cut/results/assert-on-BASELINE45.txt
+·   domain-neutral  docs/synova/product-lines/evidence/D965-sentinel-stub-cut/results/ci-tsc-filter.txt
+·   domain-neutral  docs/synova/product-lines/evidence/D965-sentinel-stub-cut/results/env-blockers-raw.txt
+·   domain-neutral  docs/synova/product-lines/evidence/D965-sentinel-stub-cut/results/extinct-registration-ls.txt
+·   domain-neutral  docs/synova/product-lines/evidence/D965-sentinel-stub-cut/results/findings-diff-before-after.txt
+·   domain-neutral  docs/synova/product-lines/evidence/D965-sentinel-stub-cut/results/gate-sh-test-after-fix.txt
+·   domain-neutral  docs/synova/product-lines/evidence/D965-sentinel-stub-cut/results/git-diff-stat.txt
+·   domain-neutral  docs/synova/product-lines/evidence/D965-sentinel-stub-cut/results/post-closeout.txt
+·   domain-neutral  docs/synova/product-lines/evidence/D965-sentinel-stub-cut/results/pr-budget-after-remove.txt
+·   domain-neutral  docs/synova/product-lines/evidence/D965-sentinel-stub-cut/results/pr-budget-fail.txt
+·   domain-neutral  docs/synova/product-lines/evidence/D965-sentinel-stub-cut/results/precommit-authoritative.txt
+·   domain-neutral  docs/synova/product-lines/evidence/D965-sentinel-stub-cut/results/precommit-ci-strict.txt
+·   domain-neutral  docs/synova/product-lines/evidence/D965-sentinel-stub-cut/results/precommit-local-mode.txt
+·   domain-neutral  docs/synova/product-lines/evidence/D965-sentinel-stub-cut/results/precommit-nonvacuous.txt
+·   domain-neutral  docs/synova/product-lines/evidence/D965-sentinel-stub-cut/results/precommit-vacuous.txt
+·   domain-neutral  docs/synova/product-lines/evidence/D965-sentinel-stub-cut/results/probe-AFTER43.json
+·   domain-neutral  docs/synova/product-lines/evidence/D965-sentinel-stub-cut/results/probe-BASELINE45-summary.txt
+·   domain-neutral  docs/synova/product-lines/evidence/D965-sentinel-stub-cut/results/probe-BASELINE45.json
+·   domain-neutral  docs/synova/product-lines/evidence/D965-sentinel-stub-cut/results/probe-D965-FINAL-summary.txt
+·   domain-neutral  docs/synova/product-lines/evidence/D965-sentinel-stub-cut/results/probe-D965-FINAL.json
+·   domain-neutral  docs/synova/product-lines/evidence/D965-sentinel-stub-cut/results/probe-RED-RESTORED.json
+·   domain-neutral  docs/synova/product-lines/evidence/D965-sentinel-stub-cut/results/self-check-raw.txt
+·   domain-neutral  docs/synova/product-lines/evidence/D965-sentinel-stub-cut/results/tsc-AFTER-CUT.txt
+·   domain-neutral  docs/synova/product-lines/evidence/D965-sentinel-stub-cut/results/tsc-AFTER-FIX.txt
+·   domain-neutral  docs/synova/product-lines/evidence/D965-sentinel-stub-cut/results/tsc-BASELINE.txt
+·   domain-neutral  docs/synova/product-lines/evidence/D965-sentinel-stub-cut/results/vitest-targeted-AFTER-FIX.txt
+·   domain-neutral  task-state/D965.json
+mac  extensions/sentinels/_extinct/sentinel-forecast-accuracy/aggregate.ts
+mac  extensions/sentinels/_extinct/sentinel-forecast-accuracy/manifest.json
+mac  extensions/sentinels/_extinct/sentinel-pricing-strategy/aggregate.ts
+mac  extensions/sentinels/_extinct/sentinel-pricing-strategy/manifest.json
+mac  src/sentinel/types.ts
+mac  tests/control-tower/check-sentinel-type-net.test.sh
+mac  tests/sentinel/d752-type-net-gate.integration.test.ts
+mac  tests/sentinel/path-dependency-sentinel.test.ts
+mac  tests/sentinels/shared/d62-me-sentinels.test.ts
+
+✅ PASS 9 个文件同域: mac（无归属 0，域判定豁免 36）

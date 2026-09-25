@@ -1,0 +1,38 @@
+{
+  "task_id": "D969",
+  "title": "补 ownership.yaml 哨兵域规则（2 条）——解 D965 跨域锁",
+  "status": "impl_done",
+  "risk": "medium",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": "dsh-squad",
+  "milestone": "哨兵体系整改（十环判据）",
+  "spec": "task-6（CTO 2026-09-25 批准立卡）；判据见 task-6 描述",
+  "branch": "docs/D969-ownership-sentinel-domain",
+  "worktree": ".synova-wt-D969",
+  "base": "origin/main ef2997466677324b94d7b2921a5b3de0b7ad57d3",
+  "number_source": "D969（Mac 段，人工按水位表 docs/synova/coordination/号段水位.md 取号；**未走 alloc-task-id.sh**——该脚本只递增全局最大号、不感知分段，实测 dry-run 会给出 D1008=Win 段号，与队长/CTO 口径一致）",
+  "write_set": [
+    "docs/synova/coordination/ownership.yaml",
+    "task-state/D969.json",
+    ".claude/task-briefs/2026-09-25-D969-ownership-sentinel-domain.md",
+    "docs/synova/product-lines/evidence/D969-ownership-sentinel-domain-evidence.md",
+    "docs/synova/product-lines/evidence/D969-ownership-sentinel-domain/**"
+  ],
+  "verified_by_implementation": {
+    "改坏即红_撤规则": "check-ownership.py <D965 45 文件> → ❌ FAIL 跨域 mac+win（5 个 win 文件复现）；撤规则后 grep 'extensions/sentinels|tests/sentinels' 命中数 = 0",
+    "改坏即红_加回": "check-ownership.py <D965 45 文件> → ✅ PASS 9 个文件同域 mac",
+    "D965_预算": "check-pr-budget.sh（D965 分支 + 本卡规则）→ ✅① 12≤12 ✅② 单域 mac ✅③ 落后 1≤20 → PASS PR 预算内（12 文件）",
+    "回归": "代表路径 17 个：14 个归属**不变**，恰 3 个**按设计变更**（tests/sentinels/**、extensions/sentinels/**：win→mac）",
+    "diff_形态": "git diff --stat → 1 file changed, 12 insertions(+), 0 deletions（纯追加，零删改）"
+  },
+  "new_finding": {
+    "topic": "D967 跨域锁**未被本卡解开**（前提不成立，已上报）",
+    "evidence": "check-ownership.py <D967 预期写集> → ❌ FAIL 跨域 mac+win：win = src/store/**（3）+ src/agent/post-diagnosis-processor.ts + src/agent/synova-agent.ts + tests/store/**；mac = src/sentinel/**（2）+ src/agent/sentinel-health-service.ts + tests/sentinel/measurements.test.ts",
+    "note": "本卡只按 red line 追加 2 条规则（哨兵本体/复数测试），**未擅自为 D967 追加规则**。D967 的跨域来自另一处不同的规则缺口（src/store/** 兜底=win × src/sentinel/**=mac），需 CTO 另行裁定（补规则 or 改卡拆法）。"
+  },
+  "k3_required": ["改规则 ⇒ 必须 K3 复审（本卡只能给『可提请独立审计』，不得自称通过）"],
+  "updated_at": "2026-09-25",
+  "updated_by": "sentinel-coder-a",
+  "note": "红线遵守：只改 docs/synova/coordination/ownership.yaml 一个文件；未动 --max-files 上限；未动 scripts/control-tower/**；未动 docs/synova/coordination/号段水位.md（属 CTO 域）。规则位置：紧跟既有 tests/sentinel/** 之后，位于 L41 extensions/** 之后（文件注释自述『后匹配者胜出』）。"
+}

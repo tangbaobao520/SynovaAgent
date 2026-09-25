@@ -1,0 +1,37 @@
+$ check-ownership.py <代表路径集> --yaml <基线 origin/main 版>
+mac  src/sentinel/types.ts
+mac  src/sentinel/runner.ts
+mac  src/sentinel/baseline-store.ts
+mac  tests/sentinel/foo.test.ts
+win  tests/sentinels/shared/foo.test.ts
+win  extensions/sentinels/cost-health/manifest.json
+win  extensions/sentinels/cost-health/aggregate.ts
+win  extensions/industries/x.json
+win  extensions/expert/host.yaml
+win  packages/logger/src/index.ts
+win  src/store/measurements.ts
+win  src/init/file-driven-loaders.ts
+win  src/agent/synova-agent.ts
+win  tests/store/x.test.ts
+mac  docs/synova/coordination/ownership.yaml
+
+❌ FAIL 跨域: 变更落在 2 个域 ['mac', 'win'] —— 单个 PR 只许一个域（无归属 0，域判定豁免 0）
+
+$ check-ownership.py <同一代表路径集> --yaml <D969 加规则后版>
+mac  src/sentinel/types.ts
+mac  src/sentinel/runner.ts
+mac  src/sentinel/baseline-store.ts
+mac  tests/sentinel/foo.test.ts
+mac  tests/sentinels/shared/foo.test.ts
+mac  extensions/sentinels/cost-health/manifest.json
+mac  extensions/sentinels/cost-health/aggregate.ts
+win  extensions/industries/x.json
+win  extensions/expert/host.yaml
+win  packages/logger/src/index.ts
+win  src/store/measurements.ts
+win  src/init/file-driven-loaders.ts
+win  src/agent/synova-agent.ts
+win  tests/store/x.test.ts
+mac  docs/synova/coordination/ownership.yaml
+
+❌ FAIL 跨域: 变更落在 2 个域 ['mac', 'win'] —— 单个 PR 只许一个域（无归属 0，域判定豁免 0）
