@@ -229,6 +229,13 @@ jobs:
             tests/control-tower/ct-test-gate.test.sh \
             tests/control-tower/task-start-parallel.test.sh \
             tests/control-tower/fastlane-bypass-only.test.sh \
+            tests/control-tower/g5-architecture.test.sh \
+            tests/control-tower/g8-file-driven.test.sh \
+            tests/control-tower/g9-contract.test.sh \
+            tests/control-tower/g10-cp3.test.sh \
+            tests/control-tower/ct-health.test.sh \
+            tests/control-tower/check-brief-vs-code.test.sh \
+            tests/control-tower/loop-score.test.sh \
             tests/control-tower/gate-stats.test.sh \
             tests/control-tower/q2-error-locating.test.sh \
             tests/control-tower/platform-checklist.test.sh \
