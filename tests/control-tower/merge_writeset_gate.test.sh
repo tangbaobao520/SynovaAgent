@@ -23,6 +23,17 @@ export LC_ALL=C.UTF-8 2>/dev/null || true
 # ═══════════════════════════════════════════════════════════════
 set -uo pipefail
 unset GIT_DIR GIT_WORK_TREE
+# ── 平台方言硬约束（windows-compat 模式 1/2）: **禁裸 python3** ──
+#   Win Git Bash 常无 python3（仅 python/py），且损坏 shim 须试运行才可判可用（D330）。
+#   探测失败 → 显式 exit 2（夹具无法判定 ≠ 通过）。
+PYBIN=""
+for _c in python3 python py; do
+  if command -v "$_c" >/dev/null 2>&1 && "$_c" -c "import sys" >/dev/null 2>&1; then PYBIN="$_c"; break; fi
+done
+if [ -z "$PYBIN" ]; then
+  echo "  ❌ PYBIN 不可用（python3/python/py 均缺失或不可运行）—— 夹具无法判定，显式失败而非静默跳过" >&2
+  exit 2
+fi
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 GATE="$REPO/scripts/control-tower/merge_writeset_gate.py"
 PASS=0; FAIL=0
@@ -59,7 +70,7 @@ mkbrief() { # $1 = 额外段落（写 brief 文件）
   } > "$SB/.claude/task-briefs/2026-09-12-D708-sandbox.md"
 }
 run_gate() { # $@ = 额外 gate 参数
-  (cd "$SB" && python3 "$SB/scripts/control-tower/merge_writeset_gate.py" \
+  (cd "$SB" && "$PYBIN" "$SB/scripts/control-tower/merge_writeset_gate.py" \
      --repo-root "$SB" --base "$BASE" --head HEAD --branch "${BRANCH:-fix/D708-sandbox}" "$@" 2>&1)
 }
 
@@ -76,7 +87,15 @@ reset_sandbox() { # $1 = 豁免段落（可空）; $2 = --no-brief 表示删掉 
   git -C "$SB" commit -q -m "chore: scaffold"
   BASE=$(git -C "$SB" rev-parse HEAD)
 }
-commit_it() { git -C "$SB" add -A >/dev/null 2>&1; git -C "$SB" commit -q -m "$1"; }
+commit_it() { # 提交**必须真的产生变更** —— 否则 git 静默失败（无差异），BASE..HEAD 变空，
+              # 后续断言会落进 gate 的"变更集为空 → exit 0"早期分支而**恒绿**（假信心）。
+              # D954 实测: ⑨b 第二段曾因重复写同内容触发此坑。
+  git -C "$SB" add -A >/dev/null 2>&1
+  if ! git -C "$SB" commit -q -m "$1"; then
+    no "commit_it 未产生提交（无差异或提交失败）: $1 —— 后续断言将失去判别性"
+    return 1
+  fi
+}
 
 # ── ① 正常放行 ──
 reset_sandbox ""
@@ -162,7 +181,7 @@ BRANCH="main" OUT=$(run_gate); rc=$?
 BRANCH="fix/D708-sandbox"
 
 # ── ⑦ 判定失败 → exit 2（不假装通过）──
-OUT=$(cd "$SB" && python3 "$SB/scripts/control-tower/merge_writeset_gate.py" \
+OUT=$(cd "$SB" && "$PYBIN" "$SB/scripts/control-tower/merge_writeset_gate.py" \
         --repo-root "$SB" --base no-such-ref-xyz --head HEAD --branch fix/D708-sandbox 2>&1); rc=$?
 [ "$rc" -eq 2 ] && ok "⑦ 取不到 merge-base → exit 2" || no "⑦ 期望 exit 2，实得 $rc"
 
@@ -186,14 +205,20 @@ else
   no "⑨b CJK 文件名处理异常: rc=$rc :: $(echo "$OUT" | grep -a 夹带 | head -2)"
 fi
 # 声明里加入该中文路径 → 必须转绿（证明匹配而非转义串比较）
+# D954 修复: 原实现在此**重复写入与上一段相同的 'z'** → 无差异 → commit_it 静默失败 →
+#   BASE==HEAD → 变更集为空 → gate 在"变更集为空"分支返回 0 ⇒ 本断言此前是**恒绿**
+#   （实测 BASE=HEAD、变更集为空）。改写为不同内容使变更真实存在。
 reset_sandbox $'## 写集豁免\n- docs/synova/coordination/D708-中文设计稿-20260912.md — CJK 路径匹配演示'
-printf 'z\n' > "$SB/docs/synova/coordination/D708-中文设计稿-20260912.md"; commit_it "docs(D708): cjk declared"
+printf 'z-declared\n' > "$SB/docs/synova/coordination/D708-中文设计稿-20260912.md"; commit_it "docs(D708): cjk declared"
+# 非空变更守卫: 本断言的前提是"确有变更可比"（否则又会退回恒绿）
+[ -n "$(git -C "$SB" diff --name-only "$BASE"..HEAD)" ] \
+  && ok "⑨b 前提: 变更集非空（断言有判别性）" || no "⑨b 前提不成立: 变更集为空 → 后续断言恒绿"
 OUT=$(run_gate); rc=$?
 [ "$rc" -eq 0 ] && ok "⑨b CJK 路径加入声明后转绿（匹配语义正确）" || no "⑨b CJK 路径声明未生效: rc=$rc"
 
 # ── ⑨ JSON 输出契约（CI 消费）──
 OUT=$(run_gate --json | tail -1)
-echo "$OUT" | python3 -c "
+echo "$OUT" | "$PYBIN" -c "
 import json,sys
 d=json.load(sys.stdin)
 assert d['component']=='merge-writeset-gate', d
@@ -205,7 +230,7 @@ echo ""
 echo "=== D708 复核修复: D# 推断 ==="
 
 # ⑩ parse_did 大小写不敏感 + 归一化大写（真实输入，主 CTO 复现命令同款）
-DID_OUT=$(python3 - "$REPO" <<'PYEOF'
+DID_OUT=$("$PYBIN" - "$REPO" <<'PYEOF'
 import importlib.util as u, sys
 sp = u.spec_from_file_location("g", sys.argv[1] + "/scripts/control-tower/merge_writeset_gate.py")
 m = u.module_from_spec(sp); sp.loader.exec_module(m)
@@ -232,10 +257,10 @@ git -C "$SB2" commit -q -m "chore: base"; B2=$(git -C "$SB2" rev-parse HEAD)
 printf 'a\n' > "$SB2/src/a.ts"; git -C "$SB2" add -A >/dev/null 2>&1
 git -C "$SB2" commit -q -m "feat(win-d712): declared file"
 git -C "$SB2" commit -q --allow-empty -m "chore: bypass COMMITTED 登记 (auto hook, D521)"
-OUT=$(cd "$SB2" && python3 "$SB2/scripts/control-tower/merge_writeset_gate.py" \
+OUT=$(cd "$SB2" && "$PYBIN" "$SB2/scripts/control-tower/merge_writeset_gate.py" \
         --repo-root "$SB2" --base "$B2" --head HEAD \
         --branch feat/win-write-op-no-swallow --json 2>&1 | tail -1)
-TID=$(echo "$OUT" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('task_id') or 'NONE', d.get('task_id_source'), d['status'])" 2>/dev/null || echo "PARSE-FAIL")
+TID=$(echo "$OUT" | "$PYBIN" -c "import json,sys; d=json.load(sys.stdin); print(d.get('task_id') or 'NONE', d.get('task_id_source'), d['status'])" 2>/dev/null || echo "PARSE-FAIL")
 case "$TID" in
   "D712 commit-subject pass") ok "⑪ 回退链跳过登记提交 → D712（非 D521）且判定 pass" ;;
   *) no "⑪ 回退链错配: '$TID'（期望 'D712 commit-subject pass'）" ;;
@@ -253,11 +278,133 @@ git -C "$SB3" add -A >/dev/null 2>&1; git -C "$SB3" commit -q -m "feat(D708): ou
 cat > "$TMPD/event.json" <<'JSONEOF'
 {"pull_request": {"body": "## 写集豁免\n- src/outside.ts — 并行线只读引用（PR 正文声明演示）"}}
 JSONEOF
-OUT=$(cd "$SB3" && GITHUB_EVENT_PATH="$TMPD/event.json" python3 "$SB3/scripts/control-tower/merge_writeset_gate.py" \
+OUT=$(cd "$SB3" && GITHUB_EVENT_PATH="$TMPD/event.json" "$PYBIN" "$SB3/scripts/control-tower/merge_writeset_gate.py" \
         --repo-root "$SB3" --base "$B3" --head HEAD --branch fix/D708-pb 2>&1); rc=$?
 { [ "$rc" -eq 0 ] && echo "$OUT" | grep -q 'PR 正文声明演示'; } \
   && ok "⑫ PR 正文（GITHUB_EVENT_PATH）声明源生效 → exit 0 且打印理由" \
   || no "⑫ PR 正文声明源未生效: rc=$rc"
+
+# ═══ D954: --did 显式覆盖 + infer_did 回退诊断（K3 判 #741 建议项）═══
+echo ""
+echo "=== D954: --did 覆盖 / infer_did 回退诊断 ==="
+
+# 共同地形: **分支名无 D# + 提交 subject 无 D#** → D# 只能来自 --did 或文件声明源。
+#   这样才真正压到"推断失败"路径（既有沙箱用 fix/D708-sandbox 分支，分支名自带 D#，压不到）。
+mk_sb_nodid() { # $1=目录 [$2=brief 文件名（省略=不写 brief）]
+  local d="$1" bf="${2:-}"
+  mkdir -p "$d/scripts/control-tower" "$d/.claude/task-briefs" "$d/src" "$d/docs"
+  cp "$REPO/scripts/control-tower/merge_writeset_gate.py" "$d/scripts/control-tower/"
+  cp "$REPO/scripts/control-tower/brief_parser.py" "$d/scripts/control-tower/"
+  cp "$REPO/scripts/control-tower/devdoc_writeset.py" "$d/scripts/control-tower/"
+  git -C "$d" init -q
+  git -C "$d" config user.email t@t.local
+  git -C "$d" config user.name t
+  if [ -n "$bf" ]; then
+    { printf '#CRITERIA: A\n\n# Task Brief: D945 sandbox\n> 认领: 🛠 编码 session\n\n'
+      printf '## Q0: 定位\n### a) 拼图\n控制塔。\n\n## Q1: 调研\n铁律 35。\n\n'
+      printf '## Q2: 范围 — 最简方案\n做什么:\n- src/a.ts\n不做什么:\n- 不改 scripts/audit/audit-rules.sh\n\n'
+      printf '## Q3: 验收\n入口: CI。\n\n## 架构层:\nscripts（控制塔域）\n\n## Done 标准\n- [x] verify: x\n'
+    } > "$d/.claude/task-briefs/$bf"
+  fi
+  printf 'seed\n' > "$d/seed.txt"
+  git -C "$d" add -A >/dev/null 2>&1
+  git -C "$d" commit -q -m "chore: base"        # subject 刻意无 D#
+}
+
+# ── ⑬ --did 显式覆盖 ──
+SB4="$TMPD/did-override"
+mk_sb_nodid "$SB4" "2026-09-25-D945-sandbox.md"
+B4=$(git -C "$SB4" rev-parse HEAD)
+printf 'a\n' > "$SB4/src/a.ts"
+git -C "$SB4" add -A >/dev/null 2>&1
+git -C "$SB4" commit -q -m "feat: declared file"          # subject 刻意无 D#
+# ⑬-1 判别性对照: 不给 --did → D# 推不出 → 三源全空 → fail-closed
+#      （这条证明下面的绿**真的来自 --did**，而不是恒真）
+OUT=$(cd "$SB4" && "$PYBIN" "$SB4/scripts/control-tower/merge_writeset_gate.py" \
+        --repo-root "$SB4" --base "$B4" --head HEAD --branch fix/no-did-anywhere 2>&1); rc=$?
+[ "$rc" -eq 2 ] && ok "⑬-1 对照: 无 --did → fail-closed exit 2（D# 推不出）" \
+                || no "⑬-1 对照: 期望 exit 2，实得 $rc"
+# ⑬-2 给 --did D945 → 来源记为 explicit，声明命中 → exit 0
+OUT=$(cd "$SB4" && "$PYBIN" "$SB4/scripts/control-tower/merge_writeset_gate.py" \
+        --repo-root "$SB4" --base "$B4" --head HEAD --branch fix/no-did-anywhere \
+        --did D945 --json 2>&1 | tail -1)
+PARSED=$(echo "$OUT" | "$PYBIN" -c "import json,sys;d=json.load(sys.stdin);print(d.get('task_id'),d.get('task_id_source'),d.get('status'))" 2>/dev/null || echo "PARSE-FAIL")
+case "$PARSED" in
+  "D945 explicit pass") ok "⑬-2 --did D945 → task_id=D945 / source=explicit / pass" ;;
+  *) no "⑬-2 --did 覆盖未生效: '$PARSED'（期望 'D945 explicit pass'）" ;;
+esac
+# ⑬-3 --did 取小写须归一化为大写（与 parse_did/brief 文件名口径一致）
+OUT=$(cd "$SB4" && "$PYBIN" "$SB4/scripts/control-tower/merge_writeset_gate.py" \
+        --repo-root "$SB4" --base "$B4" --head HEAD --branch fix/no-did-anywhere \
+        --did d945 --json 2>&1 | tail -1)
+PARSED=$(echo "$OUT" | "$PYBIN" -c "import json,sys;d=json.load(sys.stdin);print(d.get('task_id'),d.get('task_id_source'))" 2>/dev/null || echo "PARSE-FAIL")
+[ "$PARSED" = "D945 explicit" ] && ok "⑬-3 --did 小写 d945 归一化为 D945" \
+                                || no "⑬-3 大小写未归一化: '$PARSED'"
+# ⑬-4 人类可读输出必须打印来源（"同时打印来源便于诊断"）
+OUT=$(cd "$SB4" && "$PYBIN" "$SB4/scripts/control-tower/merge_writeset_gate.py" \
+        --repo-root "$SB4" --base "$B4" --head HEAD --branch fix/no-did-anywhere --did D945 2>&1); rc=$?
+{ [ "$rc" -eq 0 ] && echo "$OUT" | grep -q 'D# 推断来源: explicit'; } \
+  && ok "⑬-4 打印 D# 推断来源 = explicit（来源可见）" \
+  || no "⑬-4 未打印 explicit 来源: rc=$rc"
+# ⑬-5 反例: --did 值不合法 → fail-closed exit 2（**拒绝静默改用其它来源推断出的 D#**）
+#      自建沙箱（不复用 $SB：⑨b 后 $SB 的 BASE==HEAD，变更集为空 → 会在早期分支返回 0，
+#      根本走不到 D# 推断，断言会变成恒绿）。
+#      地形刻意让"分支名本身带 D# 且声明齐备"→ 不设此保护就会静默回退到 D708 并 rc=0；
+#      设了保护则 rc=2 ⇒ 该断言对保护本身敏感（下方 ⑬-5a 即是"无保护时会绿"的基线证明）。
+SB6="$TMPD/did-invalid"
+mk_sb_nodid "$SB6" "2026-09-12-D708-guard.md"
+B6=$(git -C "$SB6" rev-parse HEAD)
+printf 'a\n' > "$SB6/src/a.ts"
+git -C "$SB6" add -A >/dev/null 2>&1
+git -C "$SB6" commit -q -m "feat: declared file"          # subject 无 D#；D# 只能来自分支名
+# ⑬-5a 基线: 不给 --did → 分支名推断出 D708 + 声明齐备 → exit 0（证明本场景"本来会绿"）
+OUT=$(cd "$SB6" && "$PYBIN" "$SB6/scripts/control-tower/merge_writeset_gate.py" \
+        --repo-root "$SB6" --base "$B6" --head HEAD --branch fix/D708-guard --json 2>&1 | tail -1)
+PARSED=$(echo "$OUT" | "$PYBIN" -c "import json,sys;d=json.load(sys.stdin);print(d.get('task_id'),d.get('task_id_source'),d.get('status'))" 2>/dev/null || echo "PARSE-FAIL")
+case "$PARSED" in
+  "D708 branch pass") ok "⑬-5a 基线: 分支名推断 D708 且声明命中 → pass（场景本来会绿）" ;;
+  *) no "⑬-5a 基线不成立: '$PARSED'（期望 'D708 branch pass'；本用例失去判别性）" ;;
+esac
+# ⑬-5b 给非法 --did → 必须 exit 2，绝不静默回退到 D708
+OUT=$(cd "$SB6" && "$PYBIN" "$SB6/scripts/control-tower/merge_writeset_gate.py" \
+        --repo-root "$SB6" --base "$B6" --head HEAD --branch fix/D708-guard \
+        --did oops-no-digit 2>&1); rc=$?
+[ "$rc" -eq 2 ] && ok "⑬-5b --did 值不含 D# → exit 2（不静默改用其它来源）" \
+                || no "⑬-5b --did 非法值被静默忽略（实得 rc=${rc}，期望 2）"
+echo "$OUT" | grep -q '不含 D# 形态' \
+  && ok "⑬-5b 诊断点名 --did 值不合法" || no "⑬-5b 未诊断非法 --did"
+
+# ── ⑭ 回退诊断: 三源全空 → 退试 commit subject + 诊断打印 + 仍不放行 ──
+SB5="$TMPD/did-fallback"
+mk_sb_nodid "$SB5"                       # 无 brief
+B5=$(git -C "$SB5" rev-parse HEAD)
+printf 'c\n' > "$SB5/src/c_undeclared.ts"
+git -C "$SB5" add -A >/dev/null 2>&1
+git -C "$SB5" commit -q -m "feat: no did anywhere"        # subject 刻意无 D#
+OUT=$(cd "$SB5" && "$PYBIN" "$SB5/scripts/control-tower/merge_writeset_gate.py" \
+        --repo-root "$SB5" --base "$B5" --head HEAD --branch fix/no-did-anywhere 2>&1); rc=$?
+[ "$rc" -eq 2 ] && ok "⑭ 三源全空 + 源码变更 → exit 2（fail-closed，绝不静默通过）" \
+                || no "⑭ 期望 exit 2（不放行），实得 $rc"
+echo "$OUT" | grep -q '源 explicit: 未提供 --did' \
+  && ok "⑭ 诊断: explicit 源已尝试并说明未提供" || no "⑭ 诊断缺 explicit 源说明"
+echo "$OUT" | grep -q '源 branch:' \
+  && ok "⑭ 诊断: 分支名源已尝试" || no "⑭ 诊断缺 branch 源"
+echo "$OUT" | grep -q '源 commit-subject:' \
+  && ok "⑭ 诊断: **退试 commit subject** 已尝试" || no "⑭ 诊断缺 commit-subject 回退"
+echo "$OUT" | grep -q '全部来源皆空' \
+  && ok "⑭ 诊断: 明示全部来源皆空" || no "⑭ 诊断未明示全空"
+echo "$OUT" | grep -q 'fail-closed' \
+  && ok "⑭ 明示 fail-closed 语义（不放行）" || no "⑭ 未明示 fail-closed"
+echo "$OUT" | grep -q '登记影子提交' \
+  && ok "⑭ 诊断: 保留「跳过自动登记影子提交」既有保护说明" || no "⑭ 诊断未说明登记影子提交保护"
+echo "$OUT" | grep -qE '扫过 [0-9]+ 条非登记提交' \
+  && ok "⑭ 诊断: 给出实际扫描提交数（可核，非空话）" || no "⑭ 诊断未给扫描计数"
+# ⑭ 反例（防"诊断恒打印"）: 能推断出 D# 时不该走诊断块
+OUT=$(cd "$SB4" && "$PYBIN" "$SB4/scripts/control-tower/merge_writeset_gate.py" \
+        --repo-root "$SB4" --base "$B4" --head HEAD --branch fix/no-did-anywhere --did D945 2>&1)
+echo "$OUT" | grep -q 'S1 task-state / S2 dev doc / S3 brief 声明源为空' \
+  && no "⑭ 反例: 已命中声明仍打印「声明源为空」诊断（诊断块条件写错）" \
+  || ok "⑭ 反例: 命中声明时不打印全空诊断（诊断非恒真）"
 
 echo ""
 echo "  结果: $PASS 通过, $FAIL 失败"

@@ -141,26 +141,71 @@ def parse_did(text: str) -> Optional[str]:
     return m.group(0).upper() if m else None
 
 
-def infer_did(repo: str, branch: str, head: str) -> Tuple[Optional[str], str]:
-    """推断任务 D#。返回 (D#|None, 来源)。来源用于诊断输出（可审计）。
+def infer_did(repo: str, branch: str, head: str,
+              override: Optional[str] = None) -> Tuple[Optional[str], str, List[str]]:
+    """推断任务 D#。返回 (D#|None, 来源, 诊断行列表)。
 
-    顺序: ① 分支名 → ② 向前遍历提交 subject（跳过自动登记影子提交）。
+    顺序（D954）：⓪ `--did` 显式覆盖 → ① 分支名 → ② 向前遍历提交 subject
+    （跳过自动登记影子提交，保留既有保护）。
+
+    来源取值: `explicit` | `branch` | `commit-subject` | `none`。
+    `diag` 逐条记录**试过哪些源、为何空** —— 三源全空时由调用方打印，
+    使 fail-closed 可诊断（K3 判 #741：推断失败此前是静默的）。
+
+    注: D814「改用 `--first-parent` 只扫分支自身提交」**仍未落地**
+    （`task-state/D814.json` status=claimed / impl=null，全仓 grep `first-parent` = 0），
+    故此处**无该语义可回退**；一旦 D814 落地，只需把下方 `git log` 调用加 `--first-parent`。
+
+    契约: 绝不因推断失败而放行 —— 失败一律返回 `(None, "none", diag)`，
+    由调用方维持既有 fail-closed 拒绝路径。
     """
+    diag: List[str] = []
+
+    # ⓪ --did 显式覆盖（最高优先级）
+    if override:
+        d = parse_did(override)
+        if d:
+            diag.append(f"源 explicit: --did {override!r} → {d}（显式覆盖，优先级最高）")
+            return d, "explicit", diag
+        # 显式给了 --did 但不成 D# 形态 → **不静默改用别的来源**（否则 `--did D94` 这类
+        # 笔误会悄悄落回分支/提交推断出的另一个 D#，把声明对到错的任务上）。
+        # 归 fail-closed：调用方见 explicit-invalid 即 exit 2。
+        diag.append(f"源 explicit: --did {override!r} 不含 D# 形态 → 显式覆盖无效")
+        diag.append("显式指定了 --did 但值不合法 → fail-closed（拒绝静默改用其它来源的 D#）")
+        return None, "explicit-invalid", diag
+    diag.append("源 explicit: 未提供 --did")
+
+    # ① 分支名
     d = parse_did(branch or "")
     if d:
-        return d, "branch"
+        diag.append(f"源 branch: 分支名 {branch!r} → {d}")
+        return d, "branch", diag
+    diag.append(f"源 branch: 分支名 {branch!r} 不含 D#")
+
+    # ② 提交 subject 回退（跳过自动登记影子提交）
     try:
         out = run_git(["log", f"--max-count={FALLBACK_SCAN_DEPTH}", "--format=%s", head], repo)
-    except GateError:
-        return None, "none"
+    except GateError as exc:
+        diag.append(f"源 commit-subject: 无法读取提交历史（{exc}）→ 回退不可用")
+        return None, "none", diag
+    scanned = skipped = 0
     for subj in out.splitlines():
         subj = subj.strip()
-        if not subj or REGISTRATION_SUBJECT_RE.search(subj):
+        if not subj:
             continue
+        if REGISTRATION_SUBJECT_RE.search(subj):
+            skipped += 1
+            continue
+        scanned += 1
         d = parse_did(subj)
         if d:
-            return d, "commit-subject"
-    return None, "none"
+            diag.append(f"源 commit-subject: 扫过 {scanned} 条非登记提交后命中 {subj!r} → {d}"
+                        f"（已跳过 {skipped} 条自动登记影子提交）")
+            return d, "commit-subject", diag
+    diag.append(f"源 commit-subject: 最近 {FALLBACK_SCAN_DEPTH} 条内扫过 {scanned} 条非登记提交"
+                f"（跳过 {skipped} 条登记影子提交），均不含 D# → 回退空")
+    diag.append("全部来源皆空 → D# 推断失败（fail-closed：维持既有拒绝路径，不静默放行）")
+    return None, "none", diag
 
 
 def find_declaration_files(repo: str, did: Optional[str]) -> Tuple[Optional[str], Optional[str], Optional[str]]:
@@ -325,6 +370,9 @@ def main() -> int:
     ap.add_argument("--branch", default="")
     ap.add_argument("--repo-root", default="")
     ap.add_argument("--pr-body", default="")
+    ap.add_argument("--did", default="",
+                    help="显式指定任务 D#（最高优先级，来源记为 explicit）；"
+                         "缺省时按 分支名 → 提交 subject 回退推断")
     ap.add_argument("--json", action="store_true")
     args = ap.parse_args()
 
@@ -365,10 +413,18 @@ def main() -> int:
         _emit(result, args.json)
         return 0
 
-    # ── D# 推断: 分支名优先，回退最近提交 scope ──
-    did, did_src = infer_did(repo, branch, args.head)
+    # ── D# 推断: --did 显式覆盖 → 分支名 → 回退最近提交 scope（D954）──
+    did, did_src, did_diag = infer_did(repo, branch, args.head, args.did)
     result["task_id"] = did
     result["task_id_source"] = did_src
+    result["task_id_diag"] = did_diag
+    if did_src == "explicit-invalid":
+        result["status"] = "degraded"
+        result["reason"] = (f"--did {args.did!r} 不含 D# 形态 → fail-closed"
+                            f"（拒绝静默改用其它来源推断出的 D#：那会把声明对到错的任务上）")
+        _emit(result, args.json)
+        _log_degraded(repo, result["reason"])
+        return 2
 
     ts, dd, bf = find_declaration_files(repo, did)
     declared, warns = collect_declared(repo, ts, dd, bf)
@@ -459,6 +515,16 @@ def _emit(result: dict, as_json: bool) -> None:
     print(f"{icon} 结论: {st} — {result.get('reason','')}")
     if result.get("task_id"):
         print(f"   任务: {result['task_id']} | 分支: {result.get('branch','')}")
+    # D954: D# 推断来源必打印（--did 覆盖可见）；声明源为空时打印诊断
+    #   —— 推断失败此前完全静默（K3 判 #741），此处让 fail-closed 可诊断。
+    _src = result.get("task_id_source")
+    if _src:
+        print(f"   D# 推断来源: {_src} → {result.get('task_id') or '未推断出'}")
+    _decl_empty = not any((result.get("sources") or {}).values())
+    if result.get("task_id_diag") and (_src == "none" or _decl_empty):
+        print("   D# 推断诊断（S1 task-state / S2 dev doc / S3 brief 声明源为空）:")
+        for _line in result["task_id_diag"]:
+            print(f"     · {_line}")
     if "changed_count" in result:
         print(f"   变更集: {result['changed_count']} 个文件（merge-base {str(result.get('merge_base',''))[:8]}）")
     if result.get("declared"):
