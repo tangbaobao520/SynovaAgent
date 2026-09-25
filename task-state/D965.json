@@ -20,7 +20,6 @@
     "tests/sentinel/path-dependency-sentinel.test.ts",
     "tests/sentinel/d752-type-net-gate.integration.test.ts",
     "tests/control-tower/check-sentinel-type-net.test.sh",
-    "docs/authority/DOCS-REGISTRY.yaml",
     "task-state/D965.json",
     ".claude/task-briefs/2026-09-25-D965-sentinel-stub-cut.md",
     "docs/synova/product-lines/evidence/D965-sentinel-stub-cut-evidence.md",
@@ -75,5 +74,6 @@
   },
   "updated_at": "2026-09-25",
   "updated_by": "sentinel-coder-a",
+  "registry_disposition": "docs/authority/DOCS-REGISTRY.yaml 已按队长裁定**从本卡拆出**（D965 原 13 文件 > D734 上限 12；拆掉此 1 件回到 12）。本卡对该文件**净零改动**（相对 origin/main diff 为空）⇒ 不进本 PR diff、不占预算、不与 D973 争同一文件。DOC-0035/0036 两条登记的落点改由独立登记支/D973 承接（见证据 §6-7）。",
   "note": "派单原写集含 path-dependency（前提不成立：其 entryPoint=./computes/detect.ts 存在且 check() 返回 SentinelFinding[]，loader 尊重 entryPoint —— CTO 探针硬编码 aggregate.ts 才报模块找不到），已由队长实测拦下并改卡，本卡对 path-dependency 哨兵目录 0 改动。另原写集未覆盖裁撤的 5 处连带断裂（src/sentinel/types.ts + 4 个测试文件），已报队长并经 CTO 批准 A 方案扩写集；其中 3 处硬编码计数 45 一律改动态取数（非改成 43）。自验不由编码兼任，独立复核归 sentinel-verifier。"
 }

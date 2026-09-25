@@ -1,0 +1,38 @@
+=== D965 提交后收尾取证 ===
+2026-09-25T19:40:32+0800
+
+$ git log --oneline -2
+3d0232a0 chore: bypass COMMITTED 登记 (auto hook, D521)
+50ce89d3 fix(D965): 裁撤 2 个硬编码桩哨兵并登记 _extinct/ + 连带 5 处修绿
+
+$ git ls-remote --heads origin | grep fix/D965-sentinel-stub-cut
+3d0232a0e18337d79ae537730b88232d67ff14f5	refs/heads/fix/D965-sentinel-stub-cut
+
+$ git rev-parse HEAD
+3d0232a0e18337d79ae537730b88232d67ff14f5
+$ git rev-parse origin/fix/D965-sentinel-stub-cut
+3d0232a0e18337d79ae537730b88232d67ff14f5
+
+$ git status --short   # 工作树干净
+(空)
+
+$ grep -c '2026-09-25.*detected-bypass' .claude/bypass.log   # 提交后（ACK 审计第二数）
+1
+
+$ grep -c 'GATEKEEPER_ACK\|SYNO_GATEKEEPER_ACK' .codex/control-tower/logs/degraded-events.log 2>/dev/null
+7
+
+$ tail -3 .codex/control-tower/logs/degraded-events.log
+{"time": "2026-09-25T11:38:47Z", "component": "gatekeeper", "reason": "SYNO_GATEKEEPER_ACK=1 放行 1 次 detected-bypass"}
+{"time": "2026-09-25T11:38:59Z", "component": "gatekeeper", "reason": "SYNO_GATEKEEPER_ACK=1 放行 1 次 detected-bypass"}
+{"time": "2026-09-25T11:39:04Z", "component": "gatekeeper", "reason": "SYNO_GATEKEEPER_ACK=1 放行 1 次 detected-bypass"}
+
+$ git show --stat --oneline 50ce89d3 | head -8
+50ce89d3 fix(D965): 裁撤 2 个硬编码桩哨兵并登记 _extinct/ + 连带 5 处修绿
+ .../2026-09-25-D965-sentinel-stub-cut.md           | 105 +++
+ docs/authority/DOCS-REGISTRY.yaml                  |  17 +
+ .../evidence/D965-sentinel-stub-cut-evidence.md    | 587 +++++++++++++
+ .../probes/assert-D965-stub-cut.mts                | 130 +++
+ .../probes/probe-D965-sentinels.mts                | 207 +++++
+ .../D965-sentinel-stub-cut/results/ack-audit.txt   |  28 +
+ .../results/assert-D965-FINAL.txt                  |  14 +

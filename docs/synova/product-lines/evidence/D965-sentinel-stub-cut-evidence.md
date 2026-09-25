@@ -375,7 +375,7 @@ L3 洞察层（src/sentinel/ 哨兵加载与类型网 + extensions/sentinels/ �
 |---|---|---|
 | 时间戳顺序: brief 必须早于代码写入（1 处） | **环境级陈旧残留，非本卡** | 触发源 `/tmp/.synova-before-brief` 时间为 **2026-09-24 16:31**、内容指向 **D941** 会话与另一文件（`dsh-electron-source-desktop.md`）。该检查只判**文件是否存在**，故会拦截任何提交。见 §6-9（队长裁定：原地保留不删）。 |
 | PRD 对照（可选） | — | 标注为「可选提示——永不阻断」 |
-| D2 登记门禁 | **本卡已解决** | 经队长批准扩写集，补登记 `DOC-0035`（本件）+ `DOC-0036`（复核员主证据）→ `✅ 登记门禁通过`（§6-7） |
+| D2 登记门禁 | **已拆出（队长裁定）** | 本卡曾补登记 2 条（`DOC-0035/0036`）使门禁转 ✅；后因 D734 12 文件上限，队长裁定把 `docs/authority/DOCS-REGISTRY.yaml` **拆出本卡**（本卡对其净零改动），登记落点改由独立支/D973 承接（§6-7）。D2 在 CI **空转**、本地仅**软提示** ⇒ 无阻断风险 |
 
 **本地真提交的实际硬阻断见 §6-8（Gatekeeper 今日 tripwire，已获 CTO 授权 ACK）。**
 
@@ -485,11 +485,12 @@ $ git grep -n "extensions/sentinels/sentinel-forecast-accuracy\|extensions/senti
 4. **本次裁撤**未回答"这两桩当初为何进入 main"（派单 D62 的验收为何放过硬编码字面量）——属根因追责，非本卡范围，**建议立卡**（同类第二次立即升级 CTO 的触发条件）。
 5. **生产库 `data/synova.db` 全程只读**：仅执行 `sqlite3 "file:…?mode=ro" ".backup /tmp/D965/db-zero.db"`（快照）。探针内硬守卫拒绝在生产库路径运行（`SqliteGraphStore` 构造器会写 `schema_version`）。**未对 `data/synova.db` 做任何写入。**
 6. **`probes/` 内两脚本的输出目录硬编码 `/tmp/D965`**（与复核员 `probe-sentinels.mts` 同制）。为保**"入库脚本与产出结果的脚本字节一致"**，未改为可配置；复现需先 `mkdir -p /tmp/D965`。脚本依赖 `<wt>/node_modules` 软链指向仓库根 `node_modules`。
-7. **D2 登记门禁：已解决**（原为未清项）。本 evidence md 与**复核员已落 main 的独立复核主证据**同属一个门禁缺口（合并 PR #790 时漏登记）。经队长 **2026-09-25 批准**把 `docs/authority/DOCS-REGISTRY.yaml` 扩入写集，补登记 **2 条**：
-   - `DOC-0035` → 本件 `docs/synova/product-lines/evidence/D965-sentinel-stub-cut-evidence.md`
-   - `DOC-0036` → `docs/synova/product-lines/evidence/D965-D968-独立复核-20260925/D965-D968-独立复核-evidence.md`（复核员产出，owner `sentinel-verifier`）
-   实测：`doc-registry-gate.sh` → `✅ 已登记 … 汇总: 检查 1 个文档，0 个未登记 → ✅ 登记门禁通过`。
-   **残留子项（诚实登记）**：该复核目录下另有 `搬运声明-README.md`（`.md`，同属未登记缺口）。队长裁定条目数为 **2**，故未加第 3 条；**已上报待裁**。机制注：该门禁在 CI 实为空转（只扫 untracked + staged 新增；CI checkout 后索引干净 ⇒ 扫描集为空），故此为**治理完整性**问题，无 CI 阻断风险。
+7. **D2 登记门禁 → 已按队长裁定「拆出为独立登记支」**（原拟在本卡补登记，后撤销）。演进如实记录：
+   - 首轮：本件与**复核员已落 main 的独立复核主证据**同属一个门禁缺口（PR #790 合并时漏登记）。经队长批准，本卡曾补登记 **2 条**（`DOC-0035` 本件 / `DOC-0036` 复核员主证据），并实测 `doc-registry-gate.sh` → `✅ 登记门禁通过`（原始输出见 `results/git-diff-stat.txt` 同期状态与本条说明）。
+   - **二轮（队长裁定，最终）**：因 D965 触及 **D734 的 12 文件上限（13→拆 1）**，队长裁定把 `docs/authority/DOCS-REGISTRY.yaml` **从本卡拆出** ⇒ 本卡对该文件**净零改动**（`git diff origin/main -- docs/authority/DOCS-REGISTRY.yaml` = 空，41→…见 §3-Done 与 D734 现状），登记落点改由独立支承接。
+   - **为何不宜由我再开登记支（实测发现，已报队长）**：仓内**已存在在制的同文件写者** —— 分支 `docs/d973-docs-registry`（卡 `D973`「文档登记清零」，`task-state/D973.json` 的 `write_set` **第 1 条即 `docs/authority/DOCS-REGISTRY.yaml`**，且已 push：`git ls-remote` 实测 `e66f8bda refs/heads/docs/d973-docs-registry`）。**同一文件同一时间两个写者**违反 M2 ⇒ 我**停手上报**，未产生第二个竞争 PR。
+   - 实测交叉事实：D973 版 registry 共 **63** 条（`DOC-0119..DOC-0149`），**未含**本件与复核员主证据（`grep "D965\|独立复核"` 零命中）；号段 `DOC-0035/0036` 与 D973 的 `DOC-0119+` **不冲突** ⇒ 两条登记可在 D973 或后续登记支内安全追加。
+   - 机制注：该门禁在 CI **实为空转**（只扫 untracked + staged 新增；CI checkout 后索引干净 ⇒ 扫描集为空），故拆出后**无 CI 阻断风险**；本卡本地复跑 D2 仅余**软提示**（`results/precommit-authoritative.txt`）。
 8. **【环境级 · 非本卡】Gatekeeper 今日 tripwire 阻断本地提交**（`results/env-blockers-raw.txt`）：
    ```
    $ grep -n "detected-bypass" .claude/bypass.log | grep "2026-09-25"
@@ -584,4 +585,61 @@ npx tsc --noEmit --pretty false 2>&1 \
 | `results/precommit-vacuous.txt` | **空洞绿对照**：`GITHUB_ACTIONS=true SYNO_DIFF_BASE=origin/main` 在提交前 ⇒ 组 6 被整块跳过（§4.2 自证伪） |
 | `results/precommit-ci-strict.txt` | `SYNO_CI=1` 本地复跑原始输出（因 §6-9 / §6-7 两条**与提交内容无关**项转硬而 exit 1） |
 | `results/env-blockers-raw.txt` | 环境级阻断取证（Gatekeeper tripwire 属基线 main + `/tmp/.synova-before-brief` 属 D941 会话） |
-| `docs/authority/DOCS-REGISTRY.yaml`（写集第 6 件） | D2 登记门禁补登记 `DOC-0035`（本件）+ `DOC-0036`（复核员主证据） |
+| `results/pr-budget-fail.txt` | D734 PR 预算原始输出（13>12 + 跨域，见 §9） |
+| `results/post-closeout.txt` | 提交后收尾取证（sha / ls-remote 回执 / 提交后 count） |
+
+> `docs/authority/DOCS-REGISTRY.yaml` **不属本卡**（已按队长裁定拆出，本卡对其净零改动）——见 §6-7。
+
+---
+
+## 9. 提交后收尾（含 CI 硬阻断登记与 ACK 披露）
+
+### 9.1 提交与推送回执
+
+```
+$ git log --oneline -2
+3d0232a0 chore: bypass COMMITTED 登记 (auto hook, D521)
+50ce89d3 fix(D965): 裁撤 2 个硬编码桩哨兵并登记 _extinct/ + 连带 5 处修绿
+$ git ls-remote --heads origin | grep fix/D965-sentinel-stub-cut
+3d0232a0e18337d79ae537730b88232d67ff14f5	refs/heads/fix/D965-sentinel-stub-cut
+$ git rev-parse HEAD  ;  git rev-parse origin/fix/D965-sentinel-stub-cut
+3d0232a0e18337d79ae537730b88232d67ff14f5   （两边一致）
+$ git status --short → 空
+```
+
+（首版提交 `50ce89d3` 由 `synova-commit` 完成并自动 push；`3d0232a0` 为 post-commit hook 自动追加的 bypass 账本登记。）
+
+### 9.2 Gatekeeper ACK 使用披露（**主动上报超用**）
+
+| 项 | 实测值 |
+|---|---|
+| 授权 | 队长 2026-09-25 授权；CTO 回执确认该记录为其本人且已复核 |
+| 今日 `degraded-events.log` 中 ACK 放行条数 | **7 条**（`11:36:40Z`–`11:39:04Z`，全部为本卡；`synova-commit` 内部多次调用 pre-commit 属工具行为） |
+| 是否超出「单次」 | **是** —— 已主动上报，队长裁定**接受、不追责**（实质条件全程满足） |
+| 实质条件（全程成立） | 被豁免的**始终是同一条**记录（`bypass.log:1758`，marker `ce5b13b9`，作者 `synova-cto`）；**提交前后 `grep -c "2026-09-25.*detected-bypass"` 均为 `1`**，未出现新记录 |
+| 审计留痕 | `.codex/control-tower/logs/degraded-events.log`（**被 `.gitignore` 的 `*.log` 命中 ⇒ 未入库**，本地审计） |
+| 未使用的手段 | 未用 `--no-verify`；未用 `git stash`；未 force push |
+
+### 9.3 D734 PR 预算：**CI 硬阻断（本卡无法自行消解）**
+
+```
+$ bash scripts/control-tower/check-pr-budget.sh
+  ℹ️  D860 治理产物豁免: 30 件不计预算
+  ❌ ① 变更文件数 13 > 上限 12 —— 拆 PR（禁调高上限）
+  ❌ ② 变更跨域 —— 一个 PR 只许一个域（D733 ownership.yaml）
+❌ FAIL PR 超预算 —— 拆 PR，不要调高上限
+```
+
+- **处置①（文件数）**：已按队长裁定把 `docs/authority/DOCS-REGISTRY.yaml` 拆出 ⇒ 由 13 回到 **12**（本卡对该文件净零改动）。**规则允许的"拆 PR"，不是特例。**
+- **处置②（跨域）**：**本卡无法自行消解**，且**不是写集写错** —— 根因是 `docs/synova/coordination/ownership.yaml` **缺两条规则**：
+  - `extensions/**`（第 40 行）= **win**，而全局**无** `extensions/sentinels/**` 规则 ⇒ 哨兵**本体目录**落 win；
+  - `src/sentinel/**`（第 55 行）、`tests/sentinel/**`（第 58 行）= **mac**（注释自称「Mac DSH 例外 … 哨兵体系核心」）；
+  - `tests/sentinels/**`（**复数**）亦无规则 ⇒ 同一批哨兵测试因目录名单复数而分属两域。
+  ⇒ 队长已用官方校验器复核并**升级 CTO 立卡改规则**（补 `extensions/sentinels/**` 与 `tests/sentinels/**` → mac，5 个 win 文件转 mac ⇒ 单域）。**改规则须 K3 复审，队长明确不自批。**
+  ⇒ **本卡不动 `ownership.yaml`、不调 `--max-files`、不缩写集**（红线：「预算/豁免一律走规则」；「超了拆 PR，不开口子」）。
+- **现状**：**CI（`SYNO_CI=1`）会在 D734 转硬 ⇒ 该 PR 需在规则卡落地后才可能全绿**。是否带此状态开 PR、或等规则卡，归 **CTO 收件闸**决定。
+
+### 9.4 同文件第二个写者（M2）—— 已停手上报
+
+实测发现分支 `docs/d973-docs-registry`（卡 `D973`「文档登记清零」，**已 push**：`git ls-remote` → `e66f8bda`）的 `write_set` **第 1 条即 `docs/authority/DOCS-REGISTRY.yaml`**。⇒ **同一文件同一时间两个写者** ⇒ 我**放弃自建登记支**并上报，未产生竞争 PR（详见 §6-7）。
+

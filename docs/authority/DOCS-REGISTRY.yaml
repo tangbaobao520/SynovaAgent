@@ -279,20 +279,3 @@ documents:
     path: .dsh/skills/squad-discipline/SKILL.md
     status: active
     owner: DSH
-
-  # ---- D965 哨兵整改批：D2 登记门禁补登记（队长 2026-09-25 批准扩写集；reason 见各条 note）----
-  - id: DOC-0035
-    type: research
-    path: docs/synova/product-lines/evidence/D965-sentinel-stub-cut-evidence.md
-    status: active
-    owner: sentinel-coder-a
-    note: "D965 交付证据（本批 task-1）：裁撤 2 个硬编码桩哨兵 sentinel-forecast-accuracy / sentinel-pricing-strategy 并登记 extensions/sentinels/_extinct/，附自研探针 + 判别性夹具（改坏即红）+ 全部原始输出。是本批「哨兵体系整改」卡的可核证据件，非泛化治理产物。"
-    verified-by: docs/synova/product-lines/evidence/D965-sentinel-stub-cut/probes/assert-D965-stub-cut.mts (运行时断言 exit 0 绿 / exit 1 红，含 3 金丝雀防假绿)
-
-  - id: DOC-0036
-    type: research
-    path: docs/synova/product-lines/evidence/D965-D968-独立复核-20260925/D965-D968-独立复核-evidence.md
-    status: active
-    owner: sentinel-verifier
-    note: "D965-D968 批次独立复核主证据（task-4 阶段一，PR #790 已合并进 main）：异人异工作树自研探针对 45 哨兵逐条运行时复现，含 canary 红/绿双态与 6 口径对照。属同一 D2 门禁缺口（合并时漏登记），本次一并补齐，避免只修一半。"
-    verified-by: docs/synova/product-lines/evidence/D965-D968-独立复核-20260925/probes/probe-sentinels.mts (独立复跑；原始结果同目录 results/)

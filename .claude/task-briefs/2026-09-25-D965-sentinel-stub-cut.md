@@ -22,7 +22,6 @@
 | `tests/sentinel/path-dependency-sentinel.test.ts` | task（连带：硬编码 45 → 动态取数） |
 | `tests/sentinel/d752-type-net-gate.integration.test.ts` | task（连带：硬编码 45 → 动态取数） |
 | `tests/control-tower/check-sentinel-type-net.test.sh` | task（连带：硬编码 45 → 动态取数） |
-| `docs/authority/DOCS-REGISTRY.yaml` | task（D2 登记门禁：补登记本卡 evidence md + 复核员已落 main 证据 md 共 2 条；队长 2026-09-25 批准扩写集） |
 | `.claude/task-briefs/2026-09-25-D965-sentinel-stub-cut.md` | task（本 brief） |
 | `task-state/D965.json` | task（卡 + write_set 同步） |
 | `docs/synova/product-lines/evidence/D965-sentinel-stub-cut-evidence.md` | task（主证据） |
@@ -70,8 +69,7 @@ L3 洞察层 · 哨兵体系（文件驱动扩展点 `extensions/sentinels/**` �
 - `tests/sentinels/shared/d62-me-sentinels.test.ts:93-104` — import 随迁 + 显式标注「已归档」
 - `tests/sentinel/path-dependency-sentinel.test.ts:82` — `toBe(45)` → `toBe(loadSentinels().sentinels.length)`（+ `>0` 防空载假绿）
 - `tests/sentinel/d752-type-net-gate.integration.test.ts:57-60` — 解析门禁输出数字 × 独立按目录口径重算，断言相等
-- `tests/control-tower/check-sentinel-type-net.test.sh:37` — 期望计数按 loader 同口径实时计算
-- `docs/authority/DOCS-REGISTRY.yaml` — 补登记 2 条（`DOC-0035` 本卡 evidence md；`DOC-0036` 复核员已落 main 的独立复核主证据，同门禁同缺口一并补齐）
+- `tests/control-tower/check-sentinel-type-net.test.sh:37` — 期望计数按 loader 同口径实时计算（**注**：原含 `docs/authority/DOCS-REGISTRY.yaml` 登记 2 条，已按队长裁定**拆出为独立登记支**——D965 需回到 D734 的 12 文件预算内；本卡对该文件净零改动）
 - `.claude/task-briefs/2026-09-25-D965-sentinel-stub-cut.md` — 本 brief
 - `task-state/D965.json` — 卡 + `write_set` 同步
 - `docs/synova/product-lines/evidence/D965-sentinel-stub-cut-evidence.md` + `docs/synova/product-lines/evidence/D965-sentinel-stub-cut/**` — 主证据 + 自研探针/夹具 + 全部原始输出
