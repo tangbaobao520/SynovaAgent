@@ -1,0 +1,12 @@
+$ git diff --stat -M HEAD
+ src/sentinel/baseline-store.ts        | 26 +++++++++--
+ src/sentinel/runner.ts                | 42 +++++++++++++++++
+ tests/sentinel/baseline-store.test.ts | 88 +++++++++++++++++++++++++++++++++--
+ 3 files changed, 148 insertions(+), 8 deletions(-)
+
+$ git status --short
+ M src/sentinel/baseline-store.ts
+ M src/sentinel/runner.ts
+ M tests/sentinel/baseline-store.test.ts
+?? docs/synova/product-lines/evidence/D967b-sentinel-alert-stats/
+?? tests/sentinel/measurements-wiring.test.ts

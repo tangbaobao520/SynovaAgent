@@ -16,7 +16,12 @@
       "domain": "win",
       "base": "origin/main",
       "scope": "src/store/measurements.ts、src/store/migrations/**、src/store/schema-migration.ts、src/agent/post-diagnosis-processor.ts、tests/store/**",
-      "done_items": ["① measurements 表 + 索引 + store API", "② append-only（UPDATE/DELETE=0）", "⑥ P7 graph_triples 整表重建 + 验收三条", "⑦ 测试只用内存/临时库（禁动 data/synova.db）"]
+      "done_items": [
+        "① measurements 表 + 索引 + store API",
+        "② append-only（UPDATE/DELETE=0）",
+        "⑥ P7 graph_triples 整表重建 + 验收三条",
+        "⑦ 测试只用内存/临时库（禁动 data/synova.db）"
+      ]
     },
     "PR-B": {
       "branch": "feat/D967b-sentinel-alert-stats",
@@ -24,7 +29,11 @@
       "domain": "mac",
       "base": "feat/D967a-measurements-store（栈式）",
       "scope": "src/sentinel/baseline-store.ts、src/sentinel/runner.ts、src/agent/sentinel-health-service.ts、tests/sentinel/measurements*.test.ts",
-      "done_items": ["③ 跑一次哨兵 ⇒ measurements 有行（**跨 PR 联合验收**，依赖 PR-A 先合）", "④ sentinel_baselines → sentinel_alert_stats 改名 + 5 消费点全绿", "⑤ 产品价值：同 metric 两个 computed_at 可相减"]
+      "done_items": [
+        "③ 跑一次哨兵 ⇒ measurements 有行（**跨 PR 联合验收**，依赖 PR-A 先合）",
+        "④ sentinel_baselines → sentinel_alert_stats 改名 + 5 消费点全绿",
+        "⑤ 产品价值：同 metric 两个 computed_at 可相减"
+      ]
     }
   },
   "write_set": [
@@ -36,6 +45,7 @@
     "src/sentinel/baseline-store.ts",
     "src/sentinel/runner.ts",
     "src/agent/sentinel-health-service.ts",
+    "tests/sentinel/baseline-store.test.ts",
     "tests/sentinel/measurements*.test.ts",
     "task-state/D967.json",
     ".claude/task-briefs/2026-09-25-D967a-measurements-store.md",
@@ -45,7 +55,7 @@
     "docs/synova/product-lines/evidence/D967a-measurements-store/**",
     "docs/synova/product-lines/evidence/D967b-sentinel-alert-stats/**"
   ],
-  "write_set_note": "按 CTO 硬要求 ②：写集 = **两 PR 的并集**。D708 判据是『变更 ⊆ 声明』（超集安全）⇒ 分 PR 后每支都能过对账。",
+  "write_set_note": "按 CTO 硬要求 ②：写集 = **两 PR 的并集**。D708 判据是『变更 ⊆ 声明』（超集安全）⇒ 分 PR 后每支都能过对账。 【PR-B 写集扩展（已上报队长）】改名 sentinel_baselines → sentinel_alert_stats 连带其断言表名的测试 tests/sentinel/baseline-store.test.ts（同域 mac）；原派单 PR-B 清单只列了 tests/sentinel/measurements*.test.ts。",
   "cross_line_note": "按 CTO 硬要求 ⑥：PR-A 的文件属 **win 域**，由 **mac 小队代做**（跨线代做 + CTO 已批）。已在 PR-A 的 evidence 与 brief 中显式声明，不使其看起来像越域偷做。",
   "updated_at": "2026-09-25",
   "updated_by": "sentinel-coder-a",

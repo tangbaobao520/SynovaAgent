@@ -1,0 +1,16 @@
+$ # 改坏即红：撤掉 runner 里的 recordMeasurements 调用
+$ vitest run tests/sentinel/measurements-wiring.test.ts
+     × ① 跑一次哨兵 → measurements 出现该哨兵的 3 个 metric 行 16ms
+     × ② 行内容与 findings 一致（finding/critical/warning 三类计数） 1ms
+     × ③ 产品价值: 两次运行 ⇒ 同 metric 两个 computed_at 可相减 1ms
+     × ④ 边界: 零 finding 的运行也落盘（0 = "测到 0"，不是"没测"） 1ms
+     ✓ ⑤ 时序落盘失败不阻断运行结果（铁律 31: 降级可观测且不阻断） 1ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  tests/sentinel/measurements-wiring.test.ts > D967 ③/⑤ — runner 接线 measurements（跨 PR 联合验收） > ① 跑一次哨兵 → measurements 出现该哨兵的 3 个 metric 行
+AssertionError: expected [] to have a length of 1 but got +0
+ FAIL  tests/sentinel/measurements-wiring.test.ts > D967 ③/⑤ — runner 接线 measurements（跨 PR 联合验收） > ② 行内容与 findings 一致（finding/critical/warning 三类计数）
+ FAIL  tests/sentinel/measurements-wiring.test.ts > D967 ③/⑤ — runner 接线 measurements（跨 PR 联合验收） > ③ 产品价值: 两次运行 ⇒ 同 metric 两个 computed_at 可相减
+ FAIL  tests/sentinel/measurements-wiring.test.ts > D967 ③/⑤ — runner 接线 measurements（跨 PR 联合验收） > ④ 边界: 零 finding 的运行也落盘（0 = "测到 0"，不是"没测"）
+AssertionError: expected [] to have a length of 1 but got +0
+ Test Files  1 failed (1)
+      Tests  4 failed | 1 passed (5)

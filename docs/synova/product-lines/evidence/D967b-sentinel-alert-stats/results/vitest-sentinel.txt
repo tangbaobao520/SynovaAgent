@@ -1,0 +1,3 @@
+$ vitest run tests/sentinel/
+ Test Files  33 passed | 1 skipped (34)
+      Tests  236 passed | 1 skipped (237)

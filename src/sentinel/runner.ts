@@ -17,6 +17,8 @@ import type { Sentinel, SentinelCheckResult, SentinelFinding } from './types';
 import type { Evidence } from '../evidence/types';
 import { getSentinelRegistry } from './registry';
 import { getBaselineStore } from './baseline-store';
+// D967 ③/⑤: 哨兵时序落点 —— 复用 L5 的 measurements API（PR-A 已交付该 API + 建表迁移）
+import { recordMeasurements } from '../store/measurements';
 import { HEALTH_REGISTRY_RATIO_WARNING, HEALTH_FAILURES_WARNING, HEALTH_FAILURES_CRITICAL, HEALTH_UPTIME_IDLE_MS, HEALTH_STALENESS_MULTIPLIER, evaluateSentinelHealth,
   estimateCronIntervalMs,
   SELF_CHECK_SENTINEL_ID,
@@ -1451,6 +1453,46 @@ export class SentinelRunner {
         }
       } catch (baselineErr: any) {
         log.debug({ err: baselineErr.message }, '[runner] 基线记录失败 (非阻断)');
+      }
+
+      // D967 ③/⑤: 时序落点 —— 把本次运行的三类计数写成 append-only 测量
+      //   与上面的 baseline 记录**互补而非重复**：baseline 是"最近 30 次"的内存窗口
+      //   （超窗即丢、重启靠 DB 重放），measurements 是**不可变时序**，用于回答
+      //   "上月 X、本月 Y"这类**跨时点比较**问题（`diffMeasurement`）。
+      try {
+        const db = this.db as Database.Database;
+        // 与事件流 runKey 同源，便于两侧互相追溯
+        const runId = `${record.sentinelId}@${record.result.checkedAt}`;
+        const criticalCount = result.findings.filter(f => f.severity === 'critical').length;
+        const warningCount = result.findings.filter(f => f.severity === 'warning').length;
+        // ⚠ inputDigest 语义（诚实登记，勿误读）：本层拿不到"喂给哨兵的图输入原文"，
+        //   故用**运行指纹**（哨兵 id + ok/degraded + finding id 有序集）代替 ——
+        //   它可稳定复现、可用于"同输入同输出"追溯，但**不等于输入内容的哈希**。
+        const runFingerprint = [
+          record.sentinelId,
+          result.ok ? 'ok' : 'fail',
+          result.degraded ? 'degraded' : 'normal',
+          result.findings.map(f => f.id).sort().join(','),
+        ].join('|');
+        // 口径版本常量：判定口径变更时递增（不同定义的值不应被直接相减）
+        const DEF_VERSION = 'sentinel-counters/v1';
+        const base = {
+          entityId: '',
+          computedAt: record.result.checkedAt,
+          runId,
+          source: 'sentinel',
+          inputDigest: runFingerprint,
+          defVersion: DEF_VERSION,
+        };
+        recordMeasurements(db, [
+          { ...base, metricId: `${record.sentinelId}:finding_count`, value: result.findings.length },
+          { ...base, metricId: `${record.sentinelId}:critical_count`, value: criticalCount },
+          { ...base, metricId: `${record.sentinelId}:warning_count`, value: warningCount },
+        ]);
+      } catch (measErr: unknown) {
+        const msg = measErr instanceof Error ? measErr.message : String(measErr);
+        log.warn({ err: msg, sentinelId: record.sentinelId },
+          '[runner] measurements 时序落盘失败 — 降级（不影响本次运行结果）');
       }
 
       if (result.findings.length > 0) {

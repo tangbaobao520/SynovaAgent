@@ -117,7 +117,7 @@ export class BaselineStore {
     if (this.db) {
       try {
         this.db.prepare(
-          `INSERT INTO sentinel_baselines (sentinel_id, finding_count, critical_count, warning_count, checked_at)
+          `INSERT INTO sentinel_alert_stats (sentinel_id, finding_count, critical_count, warning_count, checked_at)
            VALUES (?, ?, ?, ?, ?)`
         ).run(sentinelId, record.findingCount, record.criticalCount, record.warningCount, record.checkedAt);
       } catch (err: any) { log.debug({ err: err.message }, '[baseline] 持久化失败 (非阻断)'); }
@@ -194,8 +194,26 @@ export class BaselineStore {
   private initSchema(): void {
     if (!this.db) return;
     try {
+      // D967 ④: 表改名 `sentinel_baselines` → `sentinel_alert_stats`
+      //   —— 旧名与「基线（baseline）」语义不符：该表实际存的是**告警统计**
+      //   （每次运行的 finding/critical/warning 计数），是"告警历史"而非"基线本身"。
+      //   改名策略：旧表存在且新表不存在 → 原地 RENAME（**保数据**）；否则直接建新表。
+      //   （不变量：本方法可重复调用 —— RENAME 只在"旧有新无"时触发一次。）
+      const hasOld = this.db
+        .prepare("SELECT 1 AS x FROM sqlite_master WHERE type='table' AND name='sentinel_baselines'")
+        .get();
+      const hasNew = this.db
+        .prepare("SELECT 1 AS x FROM sqlite_master WHERE type='table' AND name='sentinel_alert_stats'")
+        .get();
+      if (hasOld && !hasNew) {
+        this.db.exec('ALTER TABLE sentinel_baselines RENAME TO sentinel_alert_stats');
+        // RENAME 保留索引**名字**（只改其绑定表）⇒ 显式丢弃旧名索引，避免与新名索引并存
+        this.db.exec('DROP INDEX IF EXISTS idx_sentinel_baselines_sid');
+        log.info({}, '[baseline] 表已改名 sentinel_baselines → sentinel_alert_stats（原地保数据）');
+      }
+
       this.db.exec(`
-        CREATE TABLE IF NOT EXISTS sentinel_baselines (
+        CREATE TABLE IF NOT EXISTS sentinel_alert_stats (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           sentinel_id TEXT NOT NULL,
           finding_count INTEGER NOT NULL DEFAULT 0,
@@ -203,7 +221,7 @@ export class BaselineStore {
           warning_count INTEGER NOT NULL DEFAULT 0,
           checked_at TEXT NOT NULL
         );
-        CREATE INDEX IF NOT EXISTS idx_sentinel_baselines_sid ON sentinel_baselines(sentinel_id, checked_at);
+        CREATE INDEX IF NOT EXISTS idx_sentinel_alert_stats_sid ON sentinel_alert_stats(sentinel_id, checked_at);
       `);
     } catch (err: any) { log.debug({ err: err.message }, '[baseline] schema 初始化失败 (可能已存在)'); }
   }
@@ -214,7 +232,7 @@ export class BaselineStore {
       const rows = this.db.prepare(
         `SELECT sentinel_id AS sentinelId, finding_count AS findingCount, critical_count AS criticalCount,
                 warning_count AS warningCount, checked_at AS checkedAt
-         FROM sentinel_baselines ORDER BY sentinel_id, checked_at ASC`
+         FROM sentinel_alert_stats ORDER BY sentinel_id, checked_at ASC`
       ).all() as BaselineRecord[];
       if (!rows || rows.length === 0) return;
 

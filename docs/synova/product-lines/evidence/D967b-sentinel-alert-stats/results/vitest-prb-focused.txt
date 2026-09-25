@@ -1,0 +1,5 @@
+$ vitest run tests/sentinel/measurements-wiring.test.ts tests/sentinel/baseline-store.test.ts
+ ✓ tests/sentinel/baseline-store.test.ts (15 tests) 13ms
+ ✓ tests/sentinel/measurements-wiring.test.ts (5 tests) 29ms
+ Test Files  2 passed (2)
+      Tests  20 passed (20)

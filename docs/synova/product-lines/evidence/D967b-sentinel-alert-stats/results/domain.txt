@@ -1,0 +1,8 @@
+$ check-ownership.py <PR-B 文件表>
+·   domain-neutral  docs/synova/product-lines/evidence/D967b-sentinel-alert-stats/
+mac  src/sentinel/baseline-store.ts
+mac  src/sentinel/runner.ts
+mac  tests/sentinel/baseline-store.test.ts
+mac  tests/sentinel/measurements-wiring.test.ts
+
+✅ PASS 4 个文件同域: mac（无归属 0，域判定豁免 1）

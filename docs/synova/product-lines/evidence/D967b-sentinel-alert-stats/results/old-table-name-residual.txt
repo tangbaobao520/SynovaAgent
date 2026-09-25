@@ -1,0 +1,14 @@
+$ grep -rn 'sentinel_baselines' -- src/ tests/   # 应只剩改名逻辑与注释
+src/sentinel/baseline-store.ts:197:      // D967 ④: 表改名 `sentinel_baselines` → `sentinel_alert_stats`
+src/sentinel/baseline-store.ts:203:        .prepare("SELECT 1 AS x FROM sqlite_master WHERE type='table' AND name='sentinel_baselines'")
+src/sentinel/baseline-store.ts:209:        this.db.exec('ALTER TABLE sentinel_baselines RENAME TO sentinel_alert_stats');
+src/sentinel/baseline-store.ts:211:        this.db.exec('DROP INDEX IF EXISTS idx_sentinel_baselines_sid');
+src/sentinel/baseline-store.ts:212:        log.info({}, '[baseline] 表已改名 sentinel_baselines → sentinel_alert_stats（原地保数据）');
+tests/sentinel/baseline-store.test.ts:117:// ═══ D967 ④: 表改名 sentinel_baselines → sentinel_alert_stats ═══
+tests/sentinel/baseline-store.test.ts:124:      CREATE TABLE sentinel_baselines (
+tests/sentinel/baseline-store.test.ts:132:      CREATE INDEX idx_sentinel_baselines_sid ON sentinel_baselines(sentinel_id, checked_at);
+tests/sentinel/baseline-store.test.ts:135:      'INSERT INTO sentinel_baselines (sentinel_id, finding_count, critical_count, warning_count, checked_at) VALUES (?, ?, ?, ?, ?)',
+tests/sentinel/baseline-store.test.ts:147:    expect(tableExists(db, 'sentinel_baselines')).toBe(true);
+tests/sentinel/baseline-store.test.ts:152:    expect(tableExists(db, 'sentinel_baselines')).toBe(false); // 旧名不再存在
+tests/sentinel/baseline-store.test.ts:173:    expect(names).not.toContain('idx_sentinel_baselines_sid');
+tests/sentinel/baseline-store.test.ts:192:    expect(tableExists(db, 'sentinel_baselines')).toBe(false);
