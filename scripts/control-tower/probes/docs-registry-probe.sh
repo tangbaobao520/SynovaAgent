@@ -26,7 +26,7 @@
 # 判定面 v1（D973 定义，D333 参考系见交付回执）:
 #   1. docs/authority/                                  治理锚点核心（台账自述的权威层）
 #   2. docs/synova/coordination/CTO-                    控制塔/CTO 产出面
-#   3. docs/synova/coordination/号段水位.md             号段水位锚点（D1013）
+#   3. docs/synova/coordination/号段水位.md             号段水位锚点（D974）
 #   4. docs/synova/product-lines/evidence/              交付回执面（M5 强制落点）
 #   —— 排除正则与门禁 EXCLUDE 同款（audit-reports / chronicle-drafts / archive 等）
 #   —— **为什么不取全仓**: 全仓 tracked .md/.yaml 有 2188 份，全量登记既不现实也不承载治理语义；

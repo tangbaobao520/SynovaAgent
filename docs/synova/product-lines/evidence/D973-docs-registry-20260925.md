@@ -151,7 +151,7 @@ PARSE OK documents = 69                              ← 修后：合法（js-ya
 2. **登记门禁扫描面更正**：门禁实际是 **untracked 新增 ∪ staged 新增**（`doc-registry-gate.sh:41-43`），
    非卡面所述「仅 untracked」。卡面「工作树 untracked=0 ⇒ 检查 0 个文档」只在**无暂存**时成立。
 3. **CI 会硬拦未登记新增 `.md`**：`ci.yml:84-87` 以 `SYNO_CI=1` 跑 `pre-commit-check.sh` ⇒ D2 软提示在 CI 转硬。
-   ⇒ **D1013 的 `号段水位.md` 与两份 evidence 回执（D1011/D1013）必须登记**，否则其 PR 的 CI 会红。
+   ⇒ **D974 的 `号段水位.md` 与两份 evidence 回执（D972/D974）必须登记**，否则其 PR 的 CI 会红。
    本卡已**前瞻登记** `docs/synova/coordination/号段水位.md`（DOC-0146），但 D1011/D1013 的 evidence 回执
    在**各自分支上新建**，其登记需按分支补 —— **合并顺序影响 CI 是否变红，已报队长**。
 4. **M5/M6 与登记门禁的摩擦（待 CTO 决策）**：M5 要求每任务落 evidence 回执，而 D2 要求每个新增 `.md` 登记
