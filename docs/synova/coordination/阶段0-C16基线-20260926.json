@@ -50,30 +50,112 @@
   "lane_B_delta": {
    "worktrees": "+72",
    "commits": "+752"
+  },
+  "attribution": {
+   "method": "同一 worktree 集合（320 个，as_of 01:22:19）下只换断面",
+   "worktree_set_growth": {
+    "worktrees": "+16 (165-149)",
+    "commits": "+473 (1888-1415)",
+    "source": "报告 §2.2 / 附录 A L768–L770"
+   },
+   "section_advance": {
+    "worktrees": "-3 (162-165)",
+    "commits": "-215 (1673-1888)",
+    "source": "报告 §2.2 / 附录 A L763–L765"
+   },
+   "net_vs_snapshot": {
+    "worktrees": "+9 (158-149)",
+    "commits": "+131 (1546-1415)",
+    "source": "JSON metrics.lane_A vs 派单 §二"
+   }
   }
  },
  "cross_section_fixture": {
-  "note": "同一脚本、同一 worktree 快照，仅改基准断面（证明数字随断面变、非硬编码）",
+  "note": "同一脚本、同一 worktree 快照，只换基准断面（证明数字随断面变、非硬编码）；数字与报告附录 A 夹具块逐字一致，两侧各自带 as_of",
+  "command": "count_at_base.py <base>（附录 A 夹具块逐字）",
+  "as_of": "2026-09-26T01:22:19+08:00",
   "ef299746": {
+   "as_of": "2026-09-26T01:22:19+08:00",
+   "worktree_set_size": 320,
+   "detached": 102,
    "lane_A": {
-    "worktrees": 162,
-    "commits": 1731
+    "worktrees": 165,
+    "commits": 1888
    },
    "lane_B": {
-    "worktrees": 227,
-    "commits": 2388
-   }
+    "worktrees": 231,
+    "commits": 2636
+   },
+   "evidence": "报告附录 A L768–L770"
   },
   "ee721b0a": {
+   "as_of": "2026-09-26T01:22:19+08:00",
+   "worktree_set_size": 320,
+   "detached": 102,
    "lane_A": {
-    "worktrees": 159,
-    "commits": 1552
+    "worktrees": 162,
+    "commits": 1673
    },
    "lane_B": {
-    "worktrees": 222,
-    "commits": 2173
+    "worktrees": 226,
+    "commits": 2367
+   },
+   "evidence": "报告附录 A L763–L765"
+  },
+  "same_run_note": "同一次运行内，蓝图命令块（附录 A L752）先于夹具块数秒运行，报 162/1,671；夹具块报 162/1,673（秒级漂移，均已标注）",
+  "readings_history": [
+   {
+    "as_of": "2026-09-26T01:16:32+08:00",
+    "base": "ef299746",
+    "lane_A": {
+     "worktrees": 162,
+     "commits": 1731
+    },
+    "worktree_set_size": 316,
+    "evidence": "报告附录 A.2（A.2.1）"
+   },
+   {
+    "as_of": "2026-09-26T01:16:32+08:00",
+    "base": "ee721b0a",
+    "lane_A": {
+     "worktrees": 159,
+     "commits": 1552
+    },
+    "worktree_set_size": 316,
+    "evidence": "报告附录 A.2（A.2.1）"
+   },
+   {
+    "as_of": "2026-09-26T01:18:47+08:00",
+    "base": "ee721b0a",
+    "lane_A": {
+     "worktrees": 160,
+     "commits": 1572
+    },
+    "worktree_set_size": 316,
+    "evidence": "报告附录 A.2（A.2.2）"
+   },
+   {
+    "as_of": "2026-09-26T01:20:00+08:00",
+    "base": "ef299746",
+    "lane_A": {
+     "worktrees": 165,
+     "commits": 1843
+    },
+    "worktree_set_size": 321,
+    "evidence": "报告附录 A.2（A.2.3）"
+   },
+   {
+    "as_of": "2026-09-26T01:20:00+08:00",
+    "base": "ee721b0a",
+    "lane_A": {
+     "worktrees": 161,
+     "commits": 1614
+    },
+    "worktree_set_size": 321,
+    "evidence": "报告附录 A.2（A.2.3）"
    }
-  }
+  ],
+  "reconciliation_note": "归因分解（工作树集增长 +16/+473；断面推进 −3/−215）以本 fixture 的两组 01:22:19 读数为准"
  },
  "drift": {
   "note": "采集窗口内积压仍在增长：同日 01:13:03 快照 lane_A=158/1546，01:16:32 复跑 lane_A=159/1552（+1 工作树 / +6 提交，约 3 分钟）→ 工作树数会漂移，不作判据；只有未合并提交总数单调下降是判据"
