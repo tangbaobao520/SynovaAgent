@@ -1813,3 +1813,4 @@ Binary file .claude/bypass.log matches
 2026-09-25T16:48:18+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=ee64932351ff02be7cde41d6c01a38d0d7ad56e1
 2026-09-25T16:33:57Z | COMMITTED | 一次性补记（D451 跨机登记缺口；本机与全部可达 blob 无该提交 hook 原文，源提交仅改 task-state/D969.json） | HASH=41b97740ac1d2d869c1db9334f77859e9d8cf4de
 2026-09-26T00:35:03+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=FIX-002 | AGENT=fix-coder-a
+2026-09-26T00:35:22+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=caa12cd8302a9e7f8fd49db72334c109a8e399db
