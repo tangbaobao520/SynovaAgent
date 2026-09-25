@@ -1,0 +1,21 @@
+{
+  "task_id": "D1011",
+  "title": "ownership 测试 58→60 用例（缩卡：落表已交付）+ CODEOWNERS 无 BOM 核查",
+  "status": "in_progress",
+  "risk": "low",
+  "domain": "mac",
+  "owner": "mac-cto",
+  "executor": "并行 CTO 小队（DSH session，coder-b 编码）",
+  "milestone": "M0 治理",
+  "depends_on": [],
+  "write_set": [
+    "tests/control-tower/check-ownership.test.sh",
+    ".claude/task-briefs/2026-09-25-D1011-ownership-60-cases.md",
+    "task-state/D1011.json"
+  ],
+  "papers": [],
+  "updated_at": "2026-09-25",
+  "updated_by": "coder-b",
+  "note": "缩卡：实测 origin/main 的 ownership.yaml 已含 docs/synova/presets/**（L148）与 .dsh/**（L169），卡面「两条 glob 未落」前提已被推翻 ⇒ 不重做落表。.github/CODEOWNERS 实测首 3 字节 23 20 2e（非 ef bb bf）⇒ 无 BOM，未纳入本次 diff。新增覆盖落在真正零覆盖的 .dsh/**（grep 零结果），沿用 §5b D935 判别性夹具同范式（沙箱副本删规则 → 同一断言必红）。presets/** 已被 §5b 覆盖 14 处，故不重复堆用例。",
+  "k3_required": []
+}
