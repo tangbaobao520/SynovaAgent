@@ -2,7 +2,7 @@
   "task_id": "D962",
   "title": "pre-commit/check-* 门禁收敛（V5.3 + 46→22 + 组级测试 + 合并候选）",
   "status": "in_progress",
-  "write_set_comment": "36A+29D+43M 共 108 文件逐条 = git diff --name-status --no-renames $(git merge-base origin/main HEAD)..HEAD（task-26 并入 2b 后重算，与 .claude/task-briefs/2026-09-25-D962-2a1-precommit.md Q2 逐条一致；D962-N 自举：声明件自身入集）",
+  "write_set_comment": "37A+29D+43M 共 109 文件逐条 = git diff --name-status --no-renames $(git merge-base origin/main HEAD)..HEAD（task-26 并入 2b 后重算，与 .claude/task-briefs/2026-09-25-D962-2a1-precommit.md Q2 逐条一致；D962-N 自举：声明件自身入集）",
   "write_set": {
     "added": [
       ".claude/task-briefs/2026-09-25-D962-2a-scripts.md",
@@ -23,6 +23,7 @@
       "docs/synova/product-lines/evidence/D962-task26-回执.md",
       "docs/synova/product-lines/evidence/D962-task28-selfverify.md",
       "docs/synova/product-lines/evidence/D962-task28-回执.md",
+      "docs/synova/product-lines/evidence/D962-task30-selfverify.md",
       "docs/synova/product-lines/evidence/D962-task30-回执.md",
       "docs/synova/product-lines/evidence/FIX-013-20260926-回执.md",
       "memory/notes/proposed/2026-09-25-d962-2a1-precommit.md",
