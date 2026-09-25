@@ -1,10 +1,10 @@
 # Synova CTO 健康仪表盘（第③面）
 
-> 打开即真相。生成: 2026-09-25 14:03:26 | 数据源指纹: afbadcd2368f
+> 打开即真相。生成: 2026-09-25 15:06:52 | 数据源指纹: b8be244a6a47
 
 <!-- CTO-HEALTH:AUTO:START -->
 ## CTO 健康仪表盘（第③面）— 自动区
-> 生成: 2026-09-25 14:03:20 | 数据源: bypass.log / pre-commit-failures.log / AUDIT-FINDINGS-LEDGER
+> 生成: 2026-09-25 15:06:49 | 数据源: bypass.log / pre-commit-failures.log / AUDIT-FINDINGS-LEDGER
 
 **总体判定: 🔴 红 — 24h 内有绕过 (detected-bypass), 防线被击穿, 升级创始人**
 
@@ -12,13 +12,13 @@
 
 | 事件 | 全量 | 24h 内 |
 |------|:---:|:---:|
-| COMMITTED（正常提交） | 1382 | 64 |
-| BLOCKED（被门禁拒绝） | 162 | 4 |
+| COMMITTED（正常提交） | 1406 | 84 |
+| BLOCKED（被门禁拒绝） | 164 | 6 |
 | DEGRADED（降级放行） | 52 | 0 |
 | TIMEOUT（超时） | 3 | 0 |
 | **detected-bypass（真绕过）** | **21** | **2** |
 
-近 7 天事件: 2026-09-19:24 | 2026-09-20:28 | 2026-09-21:5 | 2026-09-22:19 | 2026-09-23:35 | 2026-09-24:66 | 2026-09-25:33
+近 7 天事件: 2026-09-19:24 | 2026-09-20:28 | 2026-09-21:5 | 2026-09-22:19 | 2026-09-23:35 | 2026-09-24:66 | 2026-09-25:59
 
 **绕过历史（全部）** — 集中在 07-26~28（旧 marker 时代），此后零绕过：
 - `2026-07-26T18:34:35Z` no-precommit-marker
@@ -45,7 +45,7 @@
 
 ### 二、门禁拒绝（pre-commit-failures.log）
 
-- 累计拒绝: **1** 次 | 最近: 2026-09-25
+- 累计拒绝: **2** 次 | 最近: 2026-09-25
 - 阈值: >10 次/24h → 门禁过激警告（健康审计项）
 
 ### 三、M 模式复发（AUDIT-FINDINGS-LEDGER §二）
@@ -403,22 +403,22 @@
 | D915 | impl_done | — | ✅ | — |  |
 | D916 | impl_done | — | ✅ | — |  |
 | D917 | impl_done | — | ✅ | — |  |
-| D918 | impl_done | — | ✅ | — |  |
-| D919 | impl_done | — | ✅ | — |  |
-| D920 | impl_done | — | ✅ | — |  |
+| D918 | audited | — | ✅ | CONDITIONAL_PASS |  |
+| D919 | audited | — | ✅ | CONDITIONAL_PASS |  |
+| D920 | audited | — | ✅ | CONDITIONAL_PASS |  |
 | D921 | impl_done | — | ✅ | — |  |
-| D922 | impl_done | — | ✅ | — |  |
+| D922 | audited | — | ✅ | CONDITIONAL_PASS |  |
 | D923 | impl_done | — | ✅ | — |  |
-| D924 | impl_done | — | ✅ | — |  |
-| D925 | impl_done | — | ✅ | — |  |
-| D926 | impl_done | — | ✅ | — |  |
+| D924 | audited | — | ✅ | CONDITIONAL_PASS |  |
+| D925 | audited | — | ✅ | CONDITIONAL_PASS |  |
+| D926 | audited | — | ✅ | CONDITIONAL_PASS |  |
 | D928 | impl_done | — | ✅ | — |  |
 | D930 | impl_done | — | ✅ | — |  |
-| D931 | impl_done | — | ✅ | — |  |
+| D931 | audited | — | ✅ | CONDITIONAL_PASS |  |
 | D933 | impl_done | ✅ | ✅ | — |  |
 | D934 | impl_done | — | ✅ | — |  |
-| D935 | impl_done | — | ✅ | — |  |
-| D936 | impl_done | — | ✅ | — |  |
+| D935 | audited | — | ✅ | CONDITIONAL_PASS |  |
+| D936 | audited | — | ✅ | CONDITIONAL_PASS |  |
 | D937 | impl_done | — | ✅ | — |  |
 | D938 | impl_done | — | ✅ | — |  |
 | D939 | claimed | — | — | — |  |
@@ -427,32 +427,32 @@
 | D942 | impl_done | — | ✅ | — |  |
 | D943 | impl_done | — | ✅ | — |  |
 | D955 | impl_done | — | ✅ | — |  |
+| D956 | claimed | — | — | — |  |
 | D962 | spec_done | ✅ | — | — |  |
 | D963 | impl_done | — | ✅ | — |  |
+| D964 | impl_done | — | ✅ | — |  |
 | CT-64 | claimed | — | — | — |  |
 
-> 📦 历史任务（已折叠）: **190** 个（git log 全项目派生，非 task-state 登记；12 个有审计报告）
+> 📦 历史任务（已折叠）: **189** 个（git log 全项目派生，非 task-state 登记；12 个有审计报告）
 > 这些是 task-state 未登记、但 git 里确有提交的全项目任务（D5~D398 早期 + Win/Codex 侧），状态按 impl 派生。
 
 ### 六、CI 状态（CT-41①, GitHub API）
 
 | Run | 结论 | 分支 | 标题 |
 |-----|------|------|------|
-| #4336 | 🟡 pending | chore/cto-doc-slim-ledger | docs(D964): 台账第五批 + K3 审计请求（门禁语义变更）+ 审计报告 INDEX 指针 |
-| #4335 | 🟡 pending | fix/m9-gate-trio-v2 | fix(M9-v2): 门禁三件套收口 — 恢复 ci.yml 接线 + M3 夹具假绿根治 + 棘 |
-| #4334 | 🟡 pending | feat/d962-2a-precommit-b | chore: bypass COMMITTED 登记 (auto hook, D521) |
-| #4333 | 🟡 pending | chore/cto-doc-slim-phase4 | chore(D964-P4): 归档 274 份零引用 briefs（2026-06/07 → ta |
-| #4332 | 🔴 failure | feat/d962-2a-precommit-b | chore: bypass COMMITTED 登记 (auto hook, D521) |
-| #4331 | 🟡 pending | chore/cto-doc-slim-phase1 | feat(D964-P1b): check-citations 加 archive/** 豁免根（归 |
-| #4330 | 🟡 pending | fix/m9-gate-trio-v2 | fix(M9-v2): 门禁三件套收口 — 恢复 ci.yml 接线 + M3 夹具假绿根治 + 棘 |
-| #4329 | 🔴 failure | feat/d962-2a-precommit-b | chore: bypass COMMITTED 登记 (auto hook, D521) |
-
-> CI 红灯监测: main 红 0.9h（<24h 阈值），暂不告警（CT-39）
+| #4357 | 🟡 pending | feat/d962-2a-merge | chore: bypass COMMITTED 登记 (auto hook, D521) |
+| #4356 | 🟡 pending | feat/d963-charter-grid-pa | chore: bypass COMMITTED 登记 (auto hook, D521) |
+| #4355 | 🟡 pending | chore/cto-doc-slim-phase3 | feat(D964-P3): 同类文档唯一性并入 doc-registry-gate（改坏即红） |
+| #4354 | 🟡 pending | chore/cto-doc-slim-phase1 | feat(D964): merge-writeset-gate 内置豁免 audit-reports |
+| #4353 | 🟡 pending | chore/cto-doc-slim-phase1 | feat(D964-P1b): check-citations 加 archive/** 豁免根（归 |
+| #4352 | 🟡 pending | chore/cto-doc-slim-ledger | docs(D964): 台账第五批 + K3 审计请求（门禁语义变更）+ 审计报告 INDEX 指针 |
+| #4351 | 🟡 pending | chore/cto-doc-slim-phase4 | chore(D964-P4): 归档 50 份零引用文档 + 登记归档根 DOC-0119 |
+| #4350 | 🟡 pending | chore/cto-doc-slim-phase5 | feat(D964-P5): 日报加「文档:代码 比」指标（旁路不阻断） |
 
 ### 九、worktree 收尾（2026-08-21 必修）
 
-- 🔴 **122 个孤儿 worktree 有待收尾**（独有提交未合并进 main，可能是未收尾的交付）
-  - /Users/wane/SynovaAgent (分支 refs/heads/chore/cto-doc-slim-phase1b-citations-archive, 4 个独有提交)
+- 🔴 **123 个孤儿 worktree 有待收尾**（独有提交未合并进 main，可能是未收尾的交付）
+  - /Users/wane/SynovaAgent (分支 refs/heads/chore/cto-doc-slim-phase3-dup-rule, 7 个独有提交)
   - /private/tmp/w850 (分支 refs/heads/docs/d850-authority, 2 个独有提交)
   - /Users/wane/synova-wt-D508b (分支 refs/heads/fix/d505-wiring, 3 个独有提交)
   - /Users/wane/synova-wt-D510 (分支 refs/heads/feat/d510-audit-remediation, 10 个独有提交)
