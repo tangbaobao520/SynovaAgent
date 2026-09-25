@@ -33,3 +33,4 @@
 - [ ] INDEX.md 行数与 audit-reports 内报告数一致（148）
 - [ ] K3 请求含可复跑命令与必答问题
 - [ ] 台账行落盘且可检索（grep 第五批）
+- 不改 scripts/audit/audit-rules.sh、scripts/pre-commit-check.sh、tests/control-tower/gate-stats.test.sh（明确不动这些具体文件）
