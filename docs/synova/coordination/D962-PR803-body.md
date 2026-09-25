@@ -3,16 +3,18 @@
 > 产出：d962-coder-b（task-23）起草 → **d962-coder-c 于 task-26 全面刷新**（并入 2b + 项3 A 档四点 + 2a② 四处 `|| true`）。
 > 落库方式：GitHub PR 正文由 task-26 经 API 同步（`gh` CLI 本机不可用；本文件为可审版本）。
 > **真 CI 状态：队列积压（`9fd034dd` / `25e1b414` 的 CI 全 `queued`，无结论）⇒ 本正文 ⒞ 均为本地 CI 等价复跑，真 run ⒞ 标注「待补」。**
+> **V2 自验收口（F1-F5）已并入**：F1 反引号（stderr 2→0）、③ 8 件 D962 自验证据迁入 track 路径、F2/F3/F4/F5 回执修订。
 
 ## ① 卡号 + 分支 + sha
 - 卡：**D962**（2a① 门禁瘦身 + 2a② 收口 + 2a③ 接线断言 + 2b iron-laws 并入；CTO 裁决 A：**#803 完成标准包含 2b**）
-- 分支：`feat/d962-2a-merge` @ **（本次推送回执 sha，见 §推送）**，base = `main@ee721b0a`
+- 分支：`feat/d962-2a-merge` @ **b8396a5b**，base = `main@ee721b0a`（入档前快照 e74aae55 / 88 文件；随证据入库升至 97）
 - 关联：`chore/d962-2a-scripts`（已并入）/ `feat/d962-2a-precommit-b`（已并入）/ `feat/d962-2b-iron-laws-wiring`（**已并入本 PR**；`fix/d962-2b-wiring-merge` 为并入前再同步 main 的中间分支）/ `chore/d964-linter-wiring`（**不在本 PR**，入 main 后 rebase 重验）
 
 ## ② 写集声明
-**87 文件逐条 = 24A+26D+37M**（`task-state/D962.json#write_set` ⟷ brief Q2 双源一致，含声明件自身）。
-- 双向对账（本机原始输出）：`变更集=87 声明集=87` → **方向A 夹带=0 / 方向B 多余=0**
+**97 文件逐条 = 33A+26D+38M**（`task-state/D962.json#write_set` ⟷ brief Q2 双源一致，含声明件自身）。
+- 双向对账（本机原始输出）：`变更集=97 声明集=97` → **方向A 夹带=0 / 方向B 多余=0**
 - `merge_writeset_gate --base origin/main --head HEAD --branch feat/d962-2a-merge` → `✅ pass — 提交文件集 ⊆ 声明写集（无夹带）`
+- **证据入库（V2 §③ 系统性修复）**：`docs/synova/coordination/evidence/` 被 `.gitignore:76` 忽略（**0 文件 tracked**）⇒ 8 件 `D962-*` 自验记录此前从未入库（M6 违规），本轮全部迁入豁免跟踪路径 `docs/synova/product-lines/evidence/`（**同名、逐字节 sha256 一致**，`git check-ignore` 复核为空=未忽略）
 - G12（pre-commit CI 权威区）→ `✅ 所有文件均在 Q2 范围内`
 
 ## ③ 逐条判据（本次重跑，非旧绿）
@@ -45,13 +47,15 @@
 | `ct-test-gate.test.sh` | PASS | ❌ `接线: ct-test-gate.sh 未接入 pre-commit` | 2a 移除组 2d 接线后**无 CI 落点**（待 CTO 裁 wire/retire） |
 | `platform-checklist.test.sh` | PASS | ❌ `pre-commit 接线缺失` + `❌ 未点名` | D520 平台软检查被移除，无落点（待裁） |
 | `claim-regex-narrow.test.sh` | PASS | ❌ `T1 收窄后正则缺失` | **重写期真丢失**（V5.2.x `pre-commit-check.sh:775` 原文在、现全仓 0 命中；plan §一 无该条目）待裁 |
-| `check-k3-report.test.sh` | PASS | ❌ `T1 合格 = OK 期望 0 实得 1` | 夹具引用 `pre-commit-check.sh:991`，重写后文件仅 564 行 ⇒ **行号越界判 VIOLATION**（同 A4 族） |
+| ~~`check-k3-report.test.sh`~~ | PASS | ✅ **本轮已修**（`T1 合格 = OK (rc=0)`，8/0） | 夹具引用 `pre-commit-check.sh:991`，重写后文件仅 564 行 ⇒ 行号越界；已改指在库行（T4 负向对照未动） |
 | `simulate-ci.test.sh` | PASS | ❌ | **级联**（其断言=整套清单必须 exit 0），非独立缺陷 |
 ### 5.2 既存红（非本 PR 引入）
 - **Vitest 2/2 @main**（main push 全量集红 vs PR changed 集绿的口径差）——**卡 D1008** 登记于分支 `chore/d1008-ratchet-card` @ `1837773d`（本 PR 不修）
 ### 5.3 合规声明
 未碰 `scripts/audit/**`、`docs/synova/audit-reports/**`、`src/**`；**未用 `force push`、未用 `--no-verify`**。D331 bypass 对账按 **D451 一次性补记**路径闭合（8 条 rebase 改写 hash 的 COMMITTED 记录，commit `ac0ad90a`）。
-### 5.4 真 run 状态
+### 5.4 F1（V2 必修）与 stderr
+`pre-commit-check.sh` G12 内联 python 注释里的反引号 `` `|| true` `` 落在双引号命令替换内 ⇒ `SYNO_CI=1` 每跑 G12 打 2 行 stderr。**已去反引号**：修前 `stderr 行数=2`（`syntax error near unexpected token \`||'`），修后 **`stderr 行数=0`**，G12 仍 ✅、清单 rc=0。
+### 5.5 真 run 状态
 **⚠️ 真 CI 队列积压**：`36168743118` / `36168749183`（sha 9fd034dd）与 `36170408913` / `36170416178`（sha 25e1b414）**全部 `queued`、无结论** ⇒ 上表判据均为**本地 CI 等价复跑**；**真 run ⒞ 待队列恢复后补**（不以本地等价冒充实跑）。
 
 ## ⑥ 未清项登记
@@ -62,3 +66,7 @@
 5. `D964 rebase`（等本 PR 合入）。
 6. 小瑕疵登记：`tests/doc-system/doc-registry-gate.test.sh` 首行 BOM（测试仍过）；`loop-score.test.sh` 内层 `ROOT: unbound variable` stderr 噪音；D2 登记门禁在 CI checkout 下输入集为空（空转，已在脚本注释如实登记）。
 7. D721（main push 上存量红放行分支不可达）仍为独立 FIX 条目，本 PR 不动。
+8. **L8**：ARM 注入缝 `102/104/105` 的 `|| true` 属 D390 设计内测试缝（生产路径不进入）——如实登记，不清。
+9. **L9**：G10 降级后仍打印 `✅ …(跳过)` 行，建议改「降级即止」。
+10. **L10（本轮已修）**：证据目录必须在 track 路径（建议立为门禁防复发）。
+11. **L11（待 CTO 裁）**：迁入的 `D962-2a2-selfverify.md:35` 含 secrets 门禁**夹具假 key**，暂存该文件即判红（CI 不暂存不受影响）；二选一：① 脱敏该串 ② 给证据目录加显式豁免规则。本卡回执 L11 行初稿曾逐字引用该串而自身判红，**已就地脱敏**。
