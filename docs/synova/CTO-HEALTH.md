@@ -1,10 +1,10 @@
 # Synova CTO 健康仪表盘（第③面）
 
-> 打开即真相。生成: 2026-09-26 04:25:01 | 数据源指纹: 561900ea2ee4
+> 打开即真相。生成: 2026-09-26 05:25:49 | 数据源指纹: b7d83388f276
 
 <!-- CTO-HEALTH:AUTO:START -->
 ## CTO 健康仪表盘（第③面）— 自动区
-> 生成: 2026-09-26 04:24:57 | 数据源: bypass.log / pre-commit-failures.log / AUDIT-FINDINGS-LEDGER
+> 生成: 2026-09-26 05:25:45 | 数据源: bypass.log / pre-commit-failures.log / AUDIT-FINDINGS-LEDGER
 
 **总体判定: 🔴 红 — 24h 内有绕过 (detected-bypass), 防线被击穿, 升级创始人**
 
@@ -12,13 +12,13 @@
 
 | 事件 | 全量 | 24h 内 |
 |------|:---:|:---:|
-| COMMITTED（正常提交） | 1478 | 106 |
+| COMMITTED（正常提交） | 1482 | 108 |
 | BLOCKED（被门禁拒绝） | 168 | 4 |
 | DEGRADED（降级放行） | 52 | 0 |
 | TIMEOUT（超时） | 3 | 0 |
 | **detected-bypass（真绕过）** | **22** | **2** |
 
-近 7 天事件: 2026-09-20:28 | 2026-09-21:5 | 2026-09-22:19 | 2026-09-23:35 | 2026-09-24:66 | 2026-09-25:97 | 2026-09-26:39
+近 7 天事件: 2026-09-20:28 | 2026-09-21:5 | 2026-09-22:19 | 2026-09-23:35 | 2026-09-24:66 | 2026-09-25:97 | 2026-09-26:43
 
 **绕过历史（全部）** — 集中在 07-26~28（旧 marker 时代），此后零绕过：
 - `2026-07-26T18:34:35Z` no-precommit-marker
@@ -448,30 +448,28 @@
 
 | Run | 结论 | 分支 | 标题 |
 |-----|------|------|------|
-| #4591 | 🟡 pending | chore/D1009-stage0-log-ar | 阶段0-②(D1009) 归档 3 个未入库门禁日志 — CI artifact(≥90d) + 日 |
-| #4590 | 🟡 pending | chore/D1017-windows-hang | docs(D1017): P0 立卡 — 必需检查 Control Tower Gate Tests |
-| #4589 | 🔴 failure | chore/D1015-checkstar-cal | docs(D1015): 阶段1-A check-* 计数口径定版（唯一来源 = origin/ma |
-| #4588 | 🟡 pending | chore/D1016-k3-input-repr | 阶段1-B(D1016) K3 最小输入集异机复跑验证 — 匿名 clone 实测 + 蓝图 §九  |
-| #4587 | 🟡 pending | chore/D1012-stage0-selfve | docs(stage0): 阶段0 独立自验报告（① 重装 hook ／ ② 日志归档 ／ ③ 积压 |
-| #4586 | 🟡 pending | chore/D1015-k3-input-repr | 阶段1-B(D1015) K3 最小输入集异机复跑验证 — 匿名 clone 实测 + 蓝图 §九  |
-| #4585 | 🔴 failure | chore/D1015-checkstar-cal | docs(D1015): 阶段1-A check-* 计数口径定版（唯一来源 = origin/ma |
-| #4584 | 🟡 pending | audit/k3-20260926-d979 | Audit/k3 20260926 d979 |
-
-> CI 红灯监测: main 红 3.4h（<24h 阈值），暂不告警（CT-39）
+| #4605 | 🔴 failure | feat/d962-2a-merge | chore: bypass COMMITTED 登记 (auto hook, D521) |
+| #4604 | 🔴 failure | feat/d962-2a-merge | chore: bypass COMMITTED 登记 (auto hook, D521) |
+| #631 | 🟢 success | main | pages build and deployment |
+| #510 | 🟢 success | main | ci(D1014): N12 根治 — ci.yml 加 concurrency + push 触发 |
+| #4603 | 🟡 pending | main | ci(D1014): N12 根治 — ci.yml 加 concurrency + push 触发 |
+| #641 | 🟢 success | main | ci(D1014): N12 根治 — ci.yml 加 concurrency + push 触发 |
+| #722 | 🟢 success | main | ci(D1014): N12 根治 — ci.yml 加 concurrency + push 触发 |
+| #4602 | 🟡 pending | chore/d964-p4-archive-b2- | chore(D964-P4): 归档批次2 全量 50 份（单 PR 承载 · 省 5/6 CI） |
 
 ### 九、worktree 收尾（2026-08-21 必修）
 
-- 🔴 **171 个孤儿 worktree 有待收尾**（独有提交未合并进 main，可能是未收尾的交付）
+- 🔴 **174 个孤儿 worktree 有待收尾**（独有提交未合并进 main，可能是未收尾的交付）
   - /private/tmp/synova-wt-cto-ci (分支 refs/heads/chore/D1014-ci-concurrency, 12 个独有提交)
-  - /private/tmp/synova-wt-cto-d1017 (分支 refs/heads/chore/D1017-windows-hang, 2 个独有提交)
+  - /private/tmp/synova-wt-cto-d1017 (分支 refs/heads/chore/D1017-windows-hang, 8 个独有提交)
   - /private/tmp/synova-wt-cto-stage0 (分支 refs/heads/chore/D1010-stage0-report, 10 个独有提交)
   - /private/tmp/synova-wt-squad-backlog (分支 refs/heads/chore/D1011-stage0-backlog-classification, 16 个独有提交)
-  - /private/tmp/synova-wt-squad-checkstar (分支 refs/heads/chore/D1015-checkstar-caliber, 4 个独有提交)
+  - /private/tmp/synova-wt-squad-checkstar (分支 refs/heads/chore/D1015-checkstar-caliber, 8 个独有提交)
   - /private/tmp/synova-wt-squad-ci (分支 refs/heads/chore/D1009-stage0-log-archive, 18 个独有提交)
   - /private/tmp/synova-wt-squad-hang (分支 refs/heads/chore/D1018-hang-triage, 2 个独有提交)
   - /private/tmp/synova-wt-squad-k3in (分支 refs/heads/chore/D1016-k3-input-repro, 4 个独有提交)
+  - /private/tmp/synova-wt-squad-out (分支 refs/heads/chore/D1021-tests-output-evict, 2 个独有提交)
   - /private/tmp/synova-wt-squad-verify (分支 refs/heads/chore/D1012-stage0-selfverify, 34 个独有提交)
-  - /private/tmp/w850 (分支 refs/heads/docs/d850-authority, 2 个独有提交)
 
 > 处理: 确认独有提交是否该合并（真交付）→ worktree-manager finish 或 merge 进 main；过时则删除。
 

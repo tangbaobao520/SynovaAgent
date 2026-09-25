@@ -351,11 +351,14 @@ if [ -f "$CRITERIA_MAP" ] && [ -n "$BRIEF_FILE" ] && [ -f "$ROOT/$BRIEF_FILE" ];
   if [ -n "$CRITERIA" ]; then
     # task-26 2a②: 原 `… || true` 使 python 失败时 glob 集为空 ⇒ G10 静默走「无映射跳过」= fail-open。
     #   改为捕获 rc：非 0 ⇒ 显式降级（CI strict 转硬），不当作「无映射」。
-    CRITERIA_GLOBS=$(CRITERIA_MAP_PY="$(_TO_PY "$CRITERIA_MAP")" CRITERIA_KEY="$CRITERIA" "$PYBIN" -c "
-import json, os
-try: print('\n'.join(json.load(open(os.environ['CRITERIA_MAP_PY'])).get('criteria',{}).get(os.environ['CRITERIA_KEY'],{}).get('glob',[])))
+    # task-32（Windows 二修）: 原「把路径喂给 python」在 Windows 仍失败（native python 打不开 Git-Bash
+    #   POSIX 路径；cygpath 前置探测在 CI 腿未生效）。改 **stdin 喂 JSON**：bash 自己开文件
+    #   （Git-Bash 路径语义 ✓），python 只读 stdin ⇒ 彻底无路径跨界，三平台同一行为。
+    CRITERIA_GLOBS=$(CRITERIA_KEY="$CRITERIA" "$PYBIN" -c "
+import json, os, sys
+try: print('\n'.join(json.load(sys.stdin).get('criteria',{}).get(os.environ['CRITERIA_KEY'],{}).get('glob',[])))
 except Exception: pass
-" 2>/dev/null); _CG_RC=$?
+" < "$CRITERIA_MAP" 2>/dev/null); _CG_RC=$?
     if [ "$_CG_RC" -ne 0 ]; then
       soft_check "G10: criteria-map 解析降级（$PYBIN rc=${_CG_RC}，不当作无映射）" "1"
       echo "{\"time\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\", \"component\": \"pre-commit-g10-criteria-globs\", \"reason\": \"python rc=${_CG_RC} (degraded, 非通过)\"}" >> "$ROOT/.codex/control-tower/logs/degraded-events.log" 2>/dev/null || true

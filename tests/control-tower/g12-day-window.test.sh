@@ -18,11 +18,24 @@ bad()  { echo "  ❌ $1"; FAIL=$((FAIL+1)); }
 # 用临时目录模拟 .claude/task-briefs/，直接提取并运行脚本的认领逻辑（不改生产文件）
 TMP="$(mktemp -d /tmp/g12win.XXXXXX)"
 mkdir -p "$TMP/briefs"
-D0=$(date +%Y-%m-%d)
-D1=$(date -v-1d +%Y-%m-%d 2>/dev/null || date -d "yesterday" +%Y-%m-%d 2>/dev/null || echo "$D0")
-D2=$(date -v+1d +%Y-%m-%d 2>/dev/null || date -d "tomorrow" +%Y-%m-%d 2>/dev/null || echo "$D0")
-D3=$(date -v-2d +%Y-%m-%d 2>/dev/null || date -d "2 days ago" +%Y-%m-%d 2>/dev/null || echo "$D0")
-D4=$(date -v+2d +%Y-%m-%d 2>/dev/null || date -d "2 days" +%Y-%m-%d 2>/dev/null || echo "$D0")
+# task-32（Windows 二修）: 期望集须与**生产实现同源**取日（生产用 python datetime）。
+#   原用 bash `date -v-1d || date -d ...` 链：跨工具取日 ⇒ 在 Windows 腿可能与 python 不同日
+#   （或 fallback 链把 D1/D2/D3/D4 全塌成 D0 ⇒ 夹具文件名重复、期望集含重复项）⇒ 假红。
+#   改为 python 取日（同源），无 python 时退回 date 链（保持降级可见）。
+_DATES=$("${PYBIN_TP:-$(command -v python3 2>/dev/null || command -v python 2>/dev/null)}" -c "
+import datetime
+t=datetime.date.today()
+print(' '.join((t+datetime.timedelta(days=k)).isoformat() for k in (0,-1,1,-2,2)))" 2>/dev/null || true)
+if [ -n "$_DATES" ]; then
+  set -- $_DATES; D0="$1"; D1="$2"; D2="$3"; D3="$4"; D4="$5"
+else
+  echo "  ⚠️  未取到 python 日期，退回 date 链（跨工具取日，Windows 可能不同日）" >&2
+  D0=$(date +%Y-%m-%d)
+  D1=$(date -v-1d +%Y-%m-%d 2>/dev/null || date -d "yesterday" +%Y-%m-%d 2>/dev/null || echo "$D0")
+  D2=$(date -v+1d +%Y-%m-%d 2>/dev/null || date -d "tomorrow" +%Y-%m-%d 2>/dev/null || echo "$D0")
+  D3=$(date -v-2d +%Y-%m-%d 2>/dev/null || date -d "2 days ago" +%Y-%m-%d 2>/dev/null || echo "$D0")
+  D4=$(date -v+2d +%Y-%m-%d 2>/dev/null || date -d "2 days" +%Y-%m-%d 2>/dev/null || echo "$D0")
+fi
 
 # 三日内 brief + 窗口外 brief + 非 md
 touch "$TMP/briefs/${D1}-D100-x.md" "$TMP/briefs/${D0}-D101-y.md" "$TMP/briefs/${D2}-D102-z.md"
