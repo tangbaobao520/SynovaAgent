@@ -36,6 +36,7 @@ jobs:
       # 注: main push 合并后 diff 为空 → 按纯文档跳过（PR 门已验证，避免空跑）。
       - name: Detect docs-only change (D515)
         id: docsonly
+        shell: bash   # Windows 上默认 pwsh ⇒ 必须显式 bash（本 detect 是 bash 语法）
         run: |
           if git diff --name-only origin/main...HEAD | grep -qvE '\.(md|json)$|task-state/|\.claude/'; then
             echo "docs_only=false" >> "$GITHUB_OUTPUT"
@@ -136,6 +137,7 @@ jobs:
           fetch-depth: 0
       - name: Detect docs-only change (D515)
         id: docsonly
+        shell: bash   # Windows 上默认 pwsh ⇒ 必须显式 bash（本 detect 是 bash 语法）
         run: |
           if ! git rev-parse --verify -q origin/main >/dev/null 2>&1; then
             # fail-safe: origin/main 不可解析 ⇒ 按非 docs-only 处理（全量跑，绝不误跳）
@@ -211,6 +213,7 @@ jobs:
           fetch-depth: 0
       - name: Detect docs-only change (D515)
         id: docsonly
+        shell: bash   # Windows 上默认 pwsh ⇒ 必须显式 bash（本 detect 是 bash 语法）
         run: |
           if ! git rev-parse --verify -q origin/main >/dev/null 2>&1; then
             # fail-safe: origin/main 不可解析 ⇒ 按非 docs-only 处理（全量跑，绝不误跳）
@@ -253,6 +256,7 @@ jobs:
           fetch-depth: 0
       - name: Detect docs-only change (D515)
         id: docsonly
+        shell: bash   # Windows 上默认 pwsh ⇒ 必须显式 bash（本 detect 是 bash 语法）
         run: |
           if ! git rev-parse --verify -q origin/main >/dev/null 2>&1; then
             # fail-safe: origin/main 不可解析 ⇒ 按非 docs-only 处理（全量跑，绝不误跳）
@@ -298,6 +302,7 @@ jobs:
           fetch-depth: 0  # D520: verify-parallel 豁免逻辑依赖 origin/main ref（depth=1 时缺失→误红）
       - name: Detect docs-only change (D515)
         id: docsonly
+        shell: bash   # Windows 上默认 pwsh ⇒ 必须显式 bash（本 detect 是 bash 语法）
         run: |
           if ! git rev-parse --verify -q origin/main >/dev/null 2>&1; then
             # fail-safe: origin/main 不可解析 ⇒ 按非 docs-only 处理（全量跑，绝不误跳）
@@ -422,6 +427,7 @@ jobs:
           fetch-depth: 0
       - name: Detect docs-only change (D515)
         id: docsonly
+        shell: bash   # Windows 上默认 pwsh ⇒ 必须显式 bash（本 detect 是 bash 语法）
         run: |
           if ! git rev-parse --verify -q origin/main >/dev/null 2>&1; then
             # fail-safe: origin/main 不可解析 ⇒ 按非 docs-only 处理（全量跑，绝不误跳）
@@ -455,6 +461,7 @@ jobs:
           fetch-depth: 0
       - name: Detect docs-only change (D515)
         id: docsonly
+        shell: bash   # Windows 上默认 pwsh ⇒ 必须显式 bash（本 detect 是 bash 语法）
         run: |
           if ! git rev-parse --verify -q origin/main >/dev/null 2>&1; then
             # fail-safe: origin/main 不可解析 ⇒ 按非 docs-only 处理（全量跑，绝不误跳）
@@ -494,6 +501,7 @@ jobs:
           fetch-depth: 0
       - name: Detect docs-only change (D515)
         id: docsonly
+        shell: bash   # Windows 上默认 pwsh ⇒ 必须显式 bash（本 detect 是 bash 语法）
         run: |
           if ! git rev-parse --verify -q origin/main >/dev/null 2>&1; then
             # fail-safe: origin/main 不可解析 ⇒ 按非 docs-only 处理（全量跑，绝不误跳）
@@ -521,6 +529,7 @@ jobs:
           fetch-depth: 0
       - name: Detect docs-only change (D515)
         id: docsonly
+        shell: bash   # Windows 上默认 pwsh ⇒ 必须显式 bash（本 detect 是 bash 语法）
         run: |
           if ! git rev-parse --verify -q origin/main >/dev/null 2>&1; then
             # fail-safe: origin/main 不可解析 ⇒ 按非 docs-only 处理（全量跑，绝不误跳）
@@ -568,6 +577,7 @@ jobs:
       #   棘轮只减不增：到期即强制清理，豁免不得续期式常驻。
       - name: Detect docs-only change (D515)
         id: docsonly
+        shell: bash   # Windows 上默认 pwsh ⇒ 必须显式 bash（本 detect 是 bash 语法）
         run: |
           if ! git rev-parse --verify -q origin/main >/dev/null 2>&1; then
             # fail-safe: origin/main 不可解析 ⇒ 按非 docs-only 处理（全量跑，绝不误跳）
