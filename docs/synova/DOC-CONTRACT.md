@@ -1,9 +1,9 @@
 ---
 title: "SynovaAgent 文档契约"
 version: "1.0.0"
-status: proposed（待 K3 复审 + 创始人批准）
-proposed_at: "2026-09-26"
-effective: 待定（K3 通过后）
+status: implemented（已生效）
+approved_at: "2026-09-27"
+effective: "2026-09-27"
 owner: CTO
 supersedes:
   - docs/synova/DOCUMENT-CONVENTIONS.md
@@ -106,7 +106,7 @@ decisions/{lifecycle}/{class}/YYYY-MM-DD-topic-title.md
 | `bug-fix` | 缺陷修复及其教训 |
 | `simplification` | 删除 / 简化（不新增能力） |
 
-**文件格式（门禁强制，**六段**缺一不可 —— 2026-09-26 按 K3 判据③定版）**：
+**文件格式（门禁强制：六段缺一不可 —— 2026-09-26 按 K3 判据③定版）**：
 ```markdown
 # 决策: <标题>
 
@@ -191,7 +191,6 @@ decisions/{lifecycle}/{class}/YYYY-MM-DD-topic-title.md
 | **闸 3 · 入库闸** | **新增 `.md` 必须命中白名单**，否则阻断 | pre-commit + CI | 阻断 |
 
 **闸 3 白名单**：
-```
 ✅ 入口四份：README.md / AGENTS.md / CLAUDE.md / docs/synova/STATE.md
 ✅ docs/**/*.md                    （C 层长期）
 ✅ decisions/**/*.md               （B 层决策）
@@ -207,10 +206,12 @@ decisions/{lifecycle}/{class}/YYYY-MM-DD-topic-title.md
    | `theory/**/*.md` | 5 | 理论基础 |
    | `scripts/golden-scenarios/**/*.md` | 9 | GSS 契约要求 git 跟踪 |
    | **合计** | **194** | —— |
+
+> ⚠️ 上表 7 个数字为 **as_of 2026-09-26 的快照（来源 K3 R2 实测），非判据**。
+> 现行值请跑枚举命令（`git ls-files <路径> | grep -c "\.md$"`）。
 ✅ 证据类路径（P0-2 修复）：**证据 md 一律走 `docs/**/evidence/**`**
    ⇒ 特例：`scripts/golden-scenarios/evidence/**`（GSS 契约要求 git 跟踪，见 .gitignore:82）**放行**
 ❌ 其余一律阻断（coordination/ · task-briefs/ · reports/ · 派单 · 纪要 · 分类 · 看板 · 探针留档）
-```
 
 ---
 
@@ -230,7 +231,7 @@ decisions/{lifecycle}/{class}/YYYY-MM-DD-topic-title.md
 
 | 动作 | 直接效果 |
 |---|---|
-| D 层停产出过程 md | **砍掉 65% 的 PR 来源**（实测 90 个 open PR 中 59 个是治理文档） |
+| D 层停产出过程 md | **砍掉大部分 PR 来源** |
 | 闸 3 入库闸 | 从机制上消灭「顺手加一份 md」 |
 | 过程走 PR 正文 | **CI 负载下降** |
 | 取代链 | 根治「同一决定多份文档」（我们反复重议的根因） |
@@ -277,9 +278,13 @@ decisions/{lifecycle}/{class}/YYYY-MM-DD-topic-title.md
 
 ## 8. 生效与修订
 
-- **当前状态**：**proposed（提案）** —— 按流程，**撰写者不得自宣生效**
+- **当前状态**：**implemented（已生效）** —— K3 复审 R3 判定通过（2026-09-27）
 - **生效条件**：**K3 复审通过 + CTO 收件闸**；生效后同批翻 `implemented` 并附**批准凭据**（PR 链接 + 决策文件）
-- **批准凭据**：本契约的决策记录见 `decisions/process/2026-09-26-doc-contract.md`；创始人批准见 PR #853 讨论
+- **批准凭据**（三项，缺一不可）：
+  ① **K3 独立审计**：`docs/synova/audit-reports/2026-09-26-K3-DOC-CONTRACT-PR853.md`（R1 不通过）
+     + `…-R2.md`（不通过）+ **`…-R3.md`（✅ 通过）**
+  ② **CTO 收件闸**：PR #853
+  ③ **创始人批准**：2026-09-26 逐项批准（见 PR #853 描述）
 - **修订**：本契约的变更走决策流程 —— 在 `decisions/process/` 下写一份新决策，并**在本文件头 `supersedes` 链中登记**
 - **执法**：闸 1–3 由门禁治理线实现（见 `docs/synova/coordination/` 下的工程派单）；**CTO 不得豁免本契约**
 
@@ -293,11 +298,46 @@ decisions/{lifecycle}/{class}/YYYY-MM-DD-topic-title.md
 |---|---|---|
 | **铁律 49 / M7**（commit-msg 要求引用 `memory/notes/**`） | 契约方向是把 `memory/notes/` **迁往 `decisions/`** ⇒ 按契约做事反而被拦 | **契约生效时必须同批改 commit-msg 门禁**：要求从 `memory/notes/**` **扩到 `decisions/**`**（两者皆可）<br>⇒ **落地前**：允许写**指针式 `memory/notes/` note**（只写"见 decisions/…"）作为兼容
    🔴 **过渡期白名单补充（R2 修复）**：`memory/notes/**/*.md` **在过渡期内纳入闸 3 白名单**
+   · **退出判据**：`memory/notes/**` 迁移完成（该目录下 md 归零）⇒ 本条自动失效，白名单同步移除
    （否则按 §9 写的指针 note 会被 §3 闸 3 自己拦死 —— 这是 R2 抓出的自相矛盾） |
-| **doc-registry-gate**（`scripts/control-tower/doc-registry.json` 要求登记） | 契约的「出库」会删/移文档 ⇒ 注册表不一致 ⇒ 报红<br>（实测：`pre-commit-check.sh:1457-1486`） | **"出库"动作必须与注册表同步同批做**；契约的存量迁移（§7）开始时，**第一批即同步注册表** |
-| **组 13 · 技能同步**（`.claude/skills` ↔ `.dsh/skills` 漂移检查）<br>（实测：`pre-commit-check.sh:1435-1440`） | 契约若把 skills 纳入"出库/迁移"，**两份会漂移** ⇒ 报红 | **skills 属豁免类（见 §3 闸 3）⇒ 永不出库、不迁移**；任何改动**必须双份同批** |
-| **D1 · 文档真相防线**（`check-doc-truth.sh`，C1–C4 导航文档 vs 代码事实）<br>（实测：`pre-commit-check.sh:1486`） | 契约说"数量不写进定义"，而该防线**要求导航文档与代码事实一致** | **两者不冲突**（契约要求"以事实为准"），但**契约生效时须复核 C1–C4 的判据与 §1 一问是否同一取向** |
+| **doc-registry-gate**（`scripts/control-tower/doc-registry.json` 要求登记） | 契约的「出库」会删/移文档 ⇒ 注册表不一致 ⇒ 报红<br> | **"出库"动作必须与注册表同步同批做**；契约的存量迁移（§7）开始时，**第一批即同步注册表** |
+| **组 13 · 技能同步**（`.claude/skills` ↔ `.dsh/skills` 漂移检查）<br> | 契约若把 skills 纳入"出库/迁移"，**两份会漂移** ⇒ 报红 | **skills 属豁免类（见 §3 闸 3）⇒ 永不出库、不迁移**；任何改动**必须双份同批** |
+| **D1 · 文档真相防线**（`check-doc-truth.sh`，C1–C4 导航文档 vs 代码事实）<br> | 契约说"数量不写进定义"，而该防线**要求导航文档与代码事实一致** | **两者不冲突**（契约要求"以事实为准"），但**契约生效时须复核 C1–C4 的判据与 §1 一问是否同一取向** |
 
 **⇒ 一条总原则**（已在多处适用）：**「移出」必与「接手」同批** —— 移走一个机制之前，接手它的机制必须先就位。
 
 **⇒ 这也是契约自身的第一个实战教训**：契约不能只定义"想要的终态"，还必须定义"**从现状到终态的路上，与既有机制如何共存**"。
+
+---
+
+## 10. 审计与证据类产物的归属（S1 · 2026-09-27 生效）
+
+> 来源：CTO 与创始人 2026-09-26 讨论，创始人批准；K3 R2 判"成立，不新增层"。
+
+### 10.1 三种产物分开归属（**五层不动，不新增层**）
+
+| 产物 | 归属 | 位置 |
+|---|---|---|
+| **① 报告本体**（叙述："我查了什么、发现什么"） | **D 过程（不入库）** | **产生它的独立仓库**（如 K3 独立仓）/ **PR 正文** |
+| **② 结论/判决**（一行 + 依据） | **B 决策 或 卡 note** | `task-state/<D>.json` 的 `note`（**一卡一文件，不新增 md**）；无卡则 `decisions/` |
+| **③a 证据·小件**（<100KB 文本/json） | **可入库** | `docs/**/evidence/**`，**须配 `--check` 对账** |
+| **③b 证据·大件**（截图/长日志/二进制） | **不入库** | CI artifact / 独立仓 **+ tag 锚定** |
+| **③c 证据指针** | **B 决策 / 卡 note 的字段** | `sha256 + 位置 + as_of + 怎么重跑`，**不新增文件** |
+
+### 10.2 核心：**证据放「指针」，不放「本体」**
+
+**三条理由**：① 防膨胀（证据动辄 MB–GB）② 可核（sha + 路径 + as_of ⇒ 任何人可重跑比对）
+③ **借 DSH 的 `.i18n.yaml` 范式**（它记的是两侧 git blob hash，不是内容）—— **不发明新机制**。
+
+### 10.3 🔴 主仓库唯一红线
+
+**不得新增"报告类 md"**。存量（`docs/synova/audit-reports/`）按 **§7 归档线**出库。
+
+### 10.4 ⚠️ 采纳时的同批动作（K3 R2 前提 2，**最容易漏**）
+
+**必须同批修 `docs/synova/coordination/AUDIT-PROTOCOL.md` 的报告落点**
+（它现规定报告落 `docs/synova/audit-reports/`，与本条"不入库"冲突）——
+这是本契约 §9「**移出必与接手同批**」原则对自己的一次适用。
+
+**⚠️ 归属**：`AUDIT-PROTOCOL.md` 是**审计标准** ⇒ **CTO 不写审计标准（红线）**
+⇒ **本条的同批修改须由 K3 执行**（或创始人授权）；**CTO 只登记，不代改**。
