@@ -1,8 +1,9 @@
 ---
 title: "SynovaAgent 文档契约"
 version: "1.0.0"
-status: 生效
-effective: "2026-09-26"
+status: proposed（待 K3 复审 + 创始人批准）
+proposed_at: "2026-09-26"
+effective: 待定（K3 通过后）
 owner: CTO
 supersedes:
   - docs/synova/DOCUMENT-CONVENTIONS.md
@@ -52,7 +53,8 @@ supersedes:
 > **✅ 是** ⇒ 写入 **B 决策层**（`decisions/`）
 > **❌ 否** ⇒ **不写进仓库**（写 PR 正文 / commit message / 卡 note）
 
-**这一问就砍掉我们 83% 的 md**（现有：brief 711 / coordination 601 / plans 335 = 均为「痕迹」）。
+**这一问就砍掉我们约 83% 的 md** —— ⚠️ **具体数字不写在本契约**（本契约只定规则）；
+**现行数字见 `docs/synova/STATE.md` §4（那里每值带 as_of 与取数命令）。**
 
 ---
 
@@ -104,7 +106,7 @@ decisions/{lifecycle}/{class}/YYYY-MM-DD-topic-title.md
 | `bug-fix` | 缺陷修复及其教训 |
 | `simplification` | 删除 / 简化（不新增能力） |
 
-**文件格式（门禁强制，五段缺一不可）**：
+**文件格式（门禁强制，**六段**缺一不可 —— 2026-09-26 按 K3 判据③定版）**：
 ```markdown
 # 决策: <标题>
 
@@ -190,10 +192,15 @@ decisions/{lifecycle}/{class}/YYYY-MM-DD-topic-title.md
 
 **闸 3 白名单**：
 ```
-✅ README.md / AGENTS.md / CLAUDE.md
-✅ docs/synova/STATE.md
-✅ docs/**/*.md          （C 层长期）
-✅ decisions/**/*.md     （B 层决策）
+✅ 入口四份：README.md / AGENTS.md / CLAUDE.md / docs/synova/STATE.md
+✅ docs/**/*.md                    （C 层长期）
+✅ decisions/**/*.md               （B 层决策）
+✅ expert/**/*.md  ·  skills/**/*.md
+   🔴 **豁免类（P0-1 修复）**：**文件驱动扩展资产** ——
+   加了专家/技能 = 新建目录 + SKILL.md/知识文件就自动注册（见 CLAUDE.md「文件驱动扩展」），
+   **这些是产品运行时的资产，不是「过程文档」** ⇒ **必须放行**，否则契约生效即阻断扩展机制。
+✅ 证据类路径（P0-2 修复）：**证据 md 一律走 `docs/**/evidence/**`**
+   ⇒ 特例：`scripts/golden-scenarios/evidence/**`（GSS 契约要求 git 跟踪，见 .gitignore:82）**放行**
 ❌ 其余一律阻断（coordination/ · task-briefs/ · reports/ · 派单 · 纪要 · 分类 · 看板 · 探针留档）
 ```
 
@@ -219,19 +226,20 @@ decisions/{lifecycle}/{class}/YYYY-MM-DD-topic-title.md
 | 闸 3 入库闸 | 从机制上消灭「顺手加一份 md」 |
 | 过程走 PR 正文 | **CI 负载下降**（实测 doc/chore/audit 占 run 52–83%） |
 | 取代链 | 根治「同一决定多份文档」（我们反复重议的根因） |
-| 必需检查收敛为 1 个聚合名 | PR 中位生命周期 ≤48h（详见门禁治理阶段 4） |
 
 ---
 
-## 6. 验收（可机器核）
+## 6. 验收（可机器核 —— ③④⑥ 按本表定义生效）
 
 ```
 ① 入口四份齐备：README / AGENTS / CLAUDE / STATE（STATE ≤200 行）
 ② 新增 md 全部命中白名单（闸 3）⇒ 连续两周「新增过程 md = 0」
-③ 每个决策含五段（一句话/问题/决定/其他方案/后果/取代）
-④ 取代链可核：grep -rn '取代' decisions/ | wc -l ≥ 声称的对数
-⑤ 生成物未入库（git ls-files 查不到）且各有 --check
-⑥ 新人 30 分钟路径可跑通（§2.1 五步，每步文件存在且不过期）
+③ 每个决策含 **六段**（一句话/问题/决定/考虑过的其他方案/后果/取代）
+④ 取代链可核：**解析 `## 取代` 段内的相对链接数 = 对账数**（链接存在性由闸 2 验证）
+   ⚠️ 不用 `grep '取代'` 计数（会把正文里出现的"取代"二字都算进去 = 坏代理）
+⑤ 生成物未入库（`git ls-files` 查不到）且各有 `--check` —— **E 层生成物名单**（哪几份 + 各自生成命令）登记在 `decisions/` 或本节附表
+⑥ 新人 30 分钟路径可跑通（§2.1 五步）—— **"不过期"定义**：front-matter `updated:` 距今天数 ≤ 90
+   （STATE.md 已有 `updated` 字段；decisions 有 `日期:`）
 ```
 
 ---
@@ -260,6 +268,23 @@ decisions/{lifecycle}/{class}/YYYY-MM-DD-topic-title.md
 
 ## 8. 生效与修订
 
-- **生效**：2026-09-26（创始人批准）
+- **当前状态**：**proposed（提案）** —— 按流程，**撰写者不得自宣生效**
+- **生效条件**：**K3 复审通过 + CTO 收件闸**；生效后同批翻 `implemented` 并附**批准凭据**（PR 链接 + 决策文件）
+- **批准凭据**：本契约的决策记录见 `decisions/process/2026-09-26-doc-contract.md`；创始人批准见 PR #853 讨论
 - **修订**：本契约的变更走决策流程 —— 在 `decisions/process/` 下写一份新决策，并**在本文件头 `supersedes` 链中登记**
 - **执法**：闸 1–3 由门禁治理线实现（见 `docs/synova/coordination/` 下的工程派单）；**CTO 不得豁免本契约**
+
+---
+
+## 9. 与既有门禁的过渡规则（2026-09-26 新增）
+
+**背景**：本契约落地会与**两道既有门禁**冲突，必须显式处理，否则「按契约做事」的提交会被拦住。
+
+| 既有门禁 | 冲突 | 过渡规则 |
+|---|---|---|
+| **铁律 49 / M7**（commit-msg 要求引用 `memory/notes/**`） | 契约方向是把 `memory/notes/` **迁往 `decisions/`** ⇒ 按契约做事反而被拦 | **契约生效时必须同批改 commit-msg 门禁**：要求从 `memory/notes/**` **扩到 `decisions/**`**（两者皆可）<br>⇒ **落地前**：允许写**指针式 `memory/notes/` note**（只写"见 decisions/…"）作为兼容 |
+| **doc-registry-gate**（`scripts/control-tower/doc-registry.json` 要求登记） | 契约的「出库」会删/移文档 ⇒ 注册表不一致 ⇒ 报红 | **"出库"动作必须与注册表同步同批做**；契约的存量迁移（§7）开始时，**第一批即同步注册表** |
+
+**⇒ 一条总原则**（已在多处适用）：**「移出」必与「接手」同批** —— 移走一个机制之前，接手它的机制必须先就位。
+
+**⇒ 这也是契约自身的第一个实战教训**：契约不能只定义"想要的终态"，还必须定义"**从现状到终态的路上，与既有机制如何共存**"。
