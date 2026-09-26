@@ -1,5 +1,7 @@
 # D1023 — commit-msg 门禁扩 `decisions/**`（契约 §9 的同批接手）
 
+#CRITERIA: C
+
 ## Q0: 定位 — 项目拼图 + 文件审计
 ### a) 项目拼图
 治理/门禁层（非五层架构内）。本任务改 `scripts/commit-msg-check.sh` 一处引用检查。
@@ -35,9 +37,9 @@ grep `memory/notes/` 在 `scripts/commit-msg-check.sh`（唯一目标）；无�
 ## 架构层: N/A（治理层，非 L1–L5）
 
 ## Done 标准
-- `grep -c 'decisions' scripts/commit-msg-check.sh` > 0（原为 0）
-- 用 `decisions/process/xxx.md` 形式的 canary 提交 message 能通过（不验证则用 grep 证据）
-- CI G12 与 D708 均放行
+- [ ] `grep -c 'decisions' scripts/commit-msg-check.sh` > 0（原为 0）—— verify: `grep -c decisions scripts/commit-msg-check.sh`
+- [ ] commit message 含 `decisions/<lifecycle>/<date>-<topic>.md` 时 commit-msg 门禁放行 —— verify: 用本地 canary 提交验证，或 grep 证据
+- [ ] CI 的 G12 / G12b / D708 三道均放行 —— verify: PR #859 的 check-runs 全绿
 
 ## 写集声明（单一事实源）
 ```
