@@ -155,7 +155,7 @@ LLM       → providers/ (DeepSeek, OpenAI, Gateway)
 v2.5 的 38 项 pre-commit + 12 脚本 + 3 次 tsc/vitest 重跑，
 导致 `--no-verify` 泛滥——一个被绕过的门禁 = 没有门禁。
 
-v3.0 只设 5 项物理阻断 → V4.4.2 扩展到 7 项 → V5.1.1 扩展到 13 组（D515 起本地软提示 + CI 权威，D516 SYNO_CI strict）。新增：契约优先（铁律47）、测试非空壳（铁律48）。
+v3.0 只设 5 项物理阻断 → V4.4.2 扩展到 7 项 → V5.1.1 扩展到 **12 组**（D515 起本地软提示 + CI 权威，D516 SYNO_CI strict）。新增：契约优先（铁律47）、测试非空壳（铁律48）。
 **从代码规范执法 → 行为契约执法。测试不是写完代码后的验证——在代码被写出来之前，对和错的标准已经被定义。**
 
 ### 执法架构: 五层精简
@@ -164,8 +164,8 @@ v3.0 只设 5 项物理阻断 → V4.4.2 扩展到 7 项 → V5.1.1 扩展到 13
 📋 任务启动 (人工)   →  task-start.sh — 3 问翻译意图→规格
 🧠 写前注入 (自动)    →  hook-check-memory.sh — 历史教训
 ✍️ 写后验证 (自动)    →  verify-incremental.sh — L1 oxlint → L2 tsc → L3 vitest → L4 接线
-🔴 提交阻断 (自动)    →  pre-commit 13 组 — 本地软提示，CI 权威（SYNO_CI strict）
-🚀 推送阻断 (自动)    →  pre-push 门禁 0-5 — 多机同步 + secrets + golden-case + vitest + tag 校验
+🔴 提交阻断 (自动)    →  pre-commit **12 组**（枚举命令见上表） — 本地软提示，CI 权威（SYNO_CI strict）
+🚀 推送阻断 (自动)    →  pre-push **门禁 0–7（共 8 道）** — 多机同步 + secrets + golden-case + vitest + tag 校验
 ```
 
 | 时机 | 脚本 | 阻断 | 耗时 |
@@ -174,10 +174,10 @@ v3.0 只设 5 项物理阻断 → V4.4.2 扩展到 7 项 → V5.1.1 扩展到 13
 | PreToolUse | hook-block-write.sh (task brief 字段) | 🔴 阻断 | <1s |
 | PreToolUse | hook-enforce-v25.sh (loop-state) | 🔴 阻断 | <1s |
 | PostToolUse | verify-incremental.sh (L1→L4) + baseline-check.sh (L5) | 🔴 阻断 | 5-30s |
-| pre-commit | pre-commit-check.sh (13 组) | 本地 ⚠️ 软提示（D515）；CI 权威硬阻断（SYNO_CI strict，D516） | <10s |
-| pre-push | pre-push-check.sh (门禁 0-5) | 🔴 阻断 | <3s |
+| pre-commit | pre-commit-check.sh (**12 组**) | 本地 ⚠️ 软提示（D515）；CI 权威硬阻断（SYNO_CI strict，D516） | <10s |
+| pre-push | pre-push-check.sh (**门禁 0–7 / 8 道**) | 🔴 阻断 | <3s |
 
-### pre-commit 13 组 (V5.1.1, 组号沿用脚本 echo) — 本地软提示，CI 权威（SYNO_CI=1 时转硬阻断）
+### pre-commit **12 组**（枚举命令见上表） (V5.1.1, 组号沿用脚本 echo) — 本地软提示，CI 权威（SYNO_CI=1 时转硬阻断）
 
 | # | 检查 | 历史事故 | 耗时 |
 |---|------|---------|------|
@@ -254,16 +254,16 @@ npm run workflow:deploy   # 部署后验证
 ```
 ① 任务开始 → pre-commit 强制 (Gate 0: task brief 不存在 + 未填写 → 拒绝提交)
 ② 设计完成 → pre-commit 强制 (Gate 1: SPEC.md + 设计文档不存在 → 拒绝提交)
-③ 实现完成 → pre-commit 强制 (Gate 2: 13 组 + task brief 完整；本地软提示，CI 权威)
-④ 提交前   → Git Hook (.git/hooks/pre-commit) 13 组（本地软提示，CI 权威硬阻断）
-⑤ 推送前   → Git Hook (.git/hooks/pre-push) 门禁 0-5（D334 多机同步/防覆盖 + secrets + golden-case F1 + vitest --changed + D331 tag 校验/对账）
+③ 实现完成 → pre-commit 强制 (Gate 2: **12 组** + task brief 完整；本地软提示，CI 权威)
+④ 提交前   → Git Hook (.git/hooks/pre-commit) **12 组**（本地软提示，CI 权威硬阻断）
+⑤ 推送前   → Git Hook (.git/hooks/pre-push) 门禁 0–7【共 8 道·枚举：`grep -oE '门禁 ?[0-9]' scripts/pre-push-check.sh | sort -u | wc -l`】（D334 多机同步/防覆盖 + secrets + golden-case F1 + vitest --changed + D331 tag 校验/对账）
 ⑥ 部署后   → 人工触发 (checkpoint-deploy.sh)
 ⑦ 线上     → Cron
 ```
 
 ### 物理强制说明
 
-> pre-commit 是唯一物理阻断点。①②③ 的产出物检查已全部集成到 pre-commit（13 组硬阻断）：
+> pre-commit 是唯一物理阻断点。①②③ 的产出物检查已全部集成到 pre-commit（**12 组**硬阻断）：
 > - 无 task brief → 不准 commit
 > - 无 SPEC.md / 设计文档 → 不准 commit
 > - 新 export 未接线 → 不准 commit
@@ -308,7 +308,7 @@ crontab -e  # 添加: */30 * * * * bash /path/to/scripts/workflow/checkpoint-run
 
 | Hook | 触发时机 | 内容 |
 |------|---------|------|
-| pre-commit | `git commit` | 13 组（本地软提示；CI SYNO_CI strict 硬阻断） |
+| pre-commit | `git commit` | **12 组**（本地软提示；CI SYNO_CI strict 硬阻断） |
 | commit-msg | `git commit` | Conventional Commits 格式强制（D328 merge 提交 MERGE_HEAD 豁免） |
 | post-commit | `git commit` | bypass 检测（D366 三判 + CT-45 merge 提交豁免）+ 外部审计器（D210/D256）+ 决策流程建议 |
 | pre-push | `git push` | 门禁 0-5：D334 多机同步/防覆盖 + secrets 终扫 + golden-case F1 + vitest --changed + D331 tag 校验/对账 |

@@ -49,9 +49,9 @@ Step 5 WIRE CHECK 是硬门禁：`grep -rn "新函数名" src/` — 零结果 = 
 历史：4 次接线失败（组件通过单元测试但从未被生产代码调用）。
 
 **铁律 0-3. 多机 PR 工作流（D334，2026-08-14 创始人定）。**
-main 是唯一真相。一人一事一分支。合并走 PR。禁止直接 push main（pre-push 门禁 0-2 硬阻断）。
+main 是唯一真相。一人一事一分支。合并走 PR。禁止直接 push main（pre-push **门禁 0–7 / 8 道**硬阻断）。
 开工前必须 `git fetch --all && git pull --ff-only`；禁止在 `[behind N]` 状态开工或 push
-（pre-push 门禁 0-1 + 提交端 D335 check-branch-sync 双端硬阻断）。禁止 force push 共享分支。规范全文:
+（pre-push **门禁 0–7 / 8 道** + 提交端 D335 check-branch-sync 双端硬阻断）。禁止 force push 共享分支。规范全文:
 `docs/synova/coordination/MULTI-MACHINE-PR-WORKFLOW.md`；skill: `git-sync-pr`。
 历史：2026-08-11~13 双机同分支交替 push，Mac tracking ref 过期 4 天误报 ahead、实际落后
 11 commit，险些互相覆盖。
@@ -223,7 +223,7 @@ pre-commit 硬阻断：新测试文件无 expect() → 第 2 组拒绝提交。
 
 **Why**：2026-05~06，engine-core 拆分被反复声称完成，实际全部是桥接文件——538 文件原封不动，20 个桥接文件伪装成迁移。tsc 被骗过（import 路径合法），但运行时 17 处 CJS require() 在 ESM 下崩溃。一个月反复承诺零实质进展。
 
-pre-commit 硬阻断：`bash scripts/pre-commit-check.sh` — 非白名单 src/ 文件引用 `packages/engine-core` → 第 5 组硬阻断，拒绝提交。
+pre-commit 硬阻断：`bash scripts/pre-commit-check.sh` — 非白名单 src/ 文件引用 `packages/engine-core` → 第 **12 组**硬阻断，拒绝提交。
 
 **铁律 47. "拆完了"必须由 grep 物理证明。**
 
@@ -248,7 +248,7 @@ Agent，不是 ChatBot。驻扎企业，持续观测，主动发现，自动诊�
 **目标**: 成为组织诊断的 AWS。每个新客户、新行业、新数据源 → 加文件即可，不改代码。
 能文件化的必须文件化。不能文件化的必须有明确的扩展点。
 
-**流程约束: V4.5.1 — task brief 6字段 + 免疫系统 + plan.json + 13组物理阻断 + Plan-Actual闭合 + engine-core清零 + 时间戳顺序检查 + Q2排除项验证 + verify执行 + 全仓库engine-core扫描 + 壳包检测 + vitest --changed 增量回归 + grep 物理门禁 + 决策参考四步框架
+**流程约束: V4.5.1 — task brief 6字段 + 免疫系统 + plan.json + **12 组**物理阻断 + Plan-Actual闭合 + engine-core清零 + 时间戳顺序检查 + Q2排除项验证 + verify执行 + 全仓库engine-core扫描 + 壳包检测 + vitest --changed 增量回归 + grep 物理门禁 + 决策参考四步框架
 
 **决策参考框架 (D333, 2026-08-13 创始人定)**: 遇到难决策/多选项/架构取舍/最佳实践选择/实现与文档声称冲突时，按 [DECISION-REFERENCE.md](docs/synova/coordination/DECISION-REFERENCE.md) 四步执行（①第一性原理 ②Anthropic 工程基线 ③开源实证 ④收敛检查），并在 task brief Q1c 决策参考系记录: `参考：Anthropic/DeepSeek/第一性原理 + 结论`（K3 审计可核）。task-start 自动生成 Q1c 字段 + 注入器全文注入框架。
 
@@ -463,8 +463,8 @@ compute 函数签名统一为 `(store: GraphStoreReader, teamId: string) => Comp
 📋 任务启动 (人工)   →  task-start.sh — 6 核心字段 + 可选 plan.json
 🧠 写前注入 (自动)    →  hook-check-memory.sh — 历史教训
 ✍️ 写后验证 (自动)    →  verify-incremental.sh — L1 oxlint → L2 tsc → L3 vitest → L4 接线
-🔴 提交阻断 (自动)    →  pre-commit 13 组 — 本地软提示，CI 权威（SYNO_CI strict）
-🚀 推送阻断 (自动)    →  pre-push 1 项 — secrets 终扫
+🔴 提交阻断 (自动)    →  pre-commit **12 组**（枚举命令见上表） — 本地软提示，CI 权威（SYNO_CI strict）
+🚀 推送阻断 (自动)    →  pre-push **8 道** — secrets 终扫
 🎯 提交后检测 (自动)  →  post-commit — --no-verify 绕过检测 + 决策建议
 ```
 
@@ -474,11 +474,11 @@ compute 函数签名统一为 `(store: GraphStoreReader, teamId: string) => Comp
 | PreToolUse | hook-block-write.sh | 🔴 阻断 | <1s |
 | PreToolUse | hook-enforce-loop.sh | 🔴 阻断 | <1s |
 | PostToolUse | verify-incremental.sh (L1→L4) | 🔴 阻断 | 5-30s |
-| pre-commit | pre-commit-check.sh (13 组) | 本地 ⚠️ 软提示（D515）；CI 权威硬阻断（SYNO_CI strict，D516） | <10s |
+| pre-commit | pre-commit-check.sh (**12 组**) | 本地 ⚠️ 软提示（D515）；CI 权威硬阻断（SYNO_CI strict，D516） | <10s |
 | post-commit | post-commit (bypass 检测) | 不阻断 | <1s |
-| pre-push | pre-push-check.sh (secrets 终扫) | 🔴 阻断 | <3s |
+| pre-push | pre-push-check.sh (**8 道**，含 secrets 终扫) | 🔴 阻断 | <3s |
 
-### pre-commit 8 组硬阻断（V3.7 — bash 只做物理验证）
+### pre-commit **12 组**硬阻断（V3.7 — bash 只做物理验证）
 
 | 组 | 检查内容 | bash 判断 | agent 自检判断 |
 |----|---------|----------|--------------|
@@ -579,7 +579,7 @@ grep 关键词在 expert/ sentinel/ extensions/ 中。复用/扩展/新建/冲�
 
 ### Windows 兼容性
 
-- pre-commit 8 组合并 grep（<8s），不含 tsc/vitest（已由 PostToolUse 跑）
+- pre-commit **12 组**合并 grep（<8s），不含 tsc/vitest（已由 PostToolUse 跑）
 - 严禁 `taskkill //IM node.exe` — 会杀死所有 Node 进程（含其他 Claude Code 实例）
 - `--no-verify` 在 V4.1 下不应再需要（pre-commit <8s）
 - 轻量变更（≤5 行或纯非 TS 文件）跳过 tsc/vitest，仍跑 oxlint + 接线审计
@@ -632,8 +632,8 @@ npm run workflow:deploy   # 部署后验证
 ```
 ① 任务开始 → pre-commit 强制 (Gate 0: task brief 不存在 + 未填写 → 拒绝提交)
 ② 设计完成 → pre-commit 强制 (Gate 1: SPEC.md + 设计文档不存在 → 拒绝提交)
-③ 实现完成 → pre-commit 强制 (Gate 2: 13 组物理阻断 + task brief 完整)
-④ 提交前   → Git Hook (.git/hooks/pre-commit) 13 组（本地软提示，CI 权威硬阻断）
+③ 实现完成 → pre-commit 强制 (Gate 2: **12 组**物理阻断 + task brief 完整)
+④ 提交前   → Git Hook (.git/hooks/pre-commit) **12 组**（本地软提示，CI 权威硬阻断）
 ⑤ 推送前   → Git Hook (.git/hooks/pre-push) 1 道门禁（secrets 终扫）
 ⑥ 部署后   → 人工触发 (checkpoint-deploy.sh)
 ⑦ 线上     → Cron
@@ -641,7 +641,7 @@ npm run workflow:deploy   # 部署后验证
 
 ### 物理强制说明
 
-> pre-commit 是唯一物理阻断点。①②③ 的产出物检查已全部集成到 pre-commit（13 组硬阻断）：
+> pre-commit 是唯一物理阻断点。①②③ 的产出物检查已全部集成到 pre-commit（**12 组**硬阻断）：
 > - 无 task brief → 不准 commit
 > - 无 SPEC.md / 设计文档 → 不准 commit
 > - 新 export 未接线 → 不准 commit
@@ -686,7 +686,7 @@ crontab -e  # 添加: */30 * * * * bash /path/to/scripts/workflow/checkpoint-run
 
 | Hook | 触发时机 | 内容 |
 |------|---------|------|
-| pre-commit | `git commit` | 13 组（本地软提示；CI SYNO_CI strict 硬阻断） |
+| pre-commit | `git commit` | **12 组**（本地软提示；CI SYNO_CI strict 硬阻断） |
 | commit-msg | `git commit` | Conventional Commits 格式强制 |
 | post-commit | `git commit` | 决策流程建议 (decide-next.sh) |
 | pre-push | `git push` | 1 道门禁 (secrets 终扫) |
