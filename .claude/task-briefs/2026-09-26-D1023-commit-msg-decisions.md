@@ -19,15 +19,20 @@ grep `memory/notes/` 在 `scripts/commit-msg-check.sh`（唯一目标）；无�
 - 决策参考：本改动是 K3 R4 的**合并条件 P1-A**（它实测该改动未落地）
 
 ## Q2: 范围 — 正确的最简方案
-做什么（**写集**）：
-- `scripts/commit-msg-check.sh` —— 引用检查 `memory/notes/` → `memory/notes/|decisions/`；Note 路径正则同步扩；两条提示文案更新
-- `memory/notes/implemented/process/2026-09-27-commit-msg-decisions.md` —— 决策 Note（铁律 49/M7 要求 commit 引用）
-- `.claude/task-briefs/2026-09-27-D1023-commit-msg-decisions.md` —— 本 brief（G12 认领所需）
-- `.claude/bypass.log` —— post-commit hook 自动登记（非人工改动）
 
-不做什么（含文件路径）：
-- 不改 `scripts/pre-commit-check.sh`；不改 `scripts/control-tower/**`；不动任何 `src/**`
-- 不在本 PR 引入任何新的白名单/门禁规则
+做什么（**纯路径，一行一条** —— brief_parser --q2-include 按整行精确匹配）：
+```
+scripts/commit-msg-check.sh
+memory/notes/implemented/process/2026-09-27-commit-msg-decisions.md
+.claude/task-briefs/2026-09-26-D1023-commit-msg-decisions.md
+.claude/bypass.log
+```
+
+不做什么（纯路径，一行一条）：
+```
+scripts/pre-commit-check.sh
+scripts/control-tower/merge_writeset_gate.py
+```
 
 ## Q3: 验收 — 入口 → 交互 → 结果
 入口：`git commit`（commit-msg hook）
