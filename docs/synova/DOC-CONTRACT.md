@@ -53,7 +53,7 @@ supersedes:
 > **✅ 是** ⇒ 写入 **B 决策层**（`decisions/`）
 > **❌ 否** ⇒ **不写进仓库**（写 PR 正文 / commit message / 卡 note）
 
-**这一问就砍掉我们约 83% 的 md** —— ⚠️ **具体数字不写在本契约**（本契约只定规则）；
+**这一问就砍掉我们大部分 md** —— ⚠️ **具体数字不写在本契约**（本契约只定规则）；
 **现行数字见 `docs/synova/STATE.md` §4（那里每值带 as_of 与取数命令）。**
 
 ---
@@ -154,7 +154,7 @@ decisions/{lifecycle}/{class}/YYYY-MM-DD-topic-title.md
 - **一主题一份**；发现重复 ⇒ **合并**，不新增
 - **禁止中央索引**
 - 允许子目录：`architecture/`、`implementation/`、`runbooks/`、`setup/`、`research/` 等
-- 现有 `docs/synova/**`(601) 按 §7 迁移
+- 现有 `docs/synova/**` 按 §7 迁移（**数量不写在此** —— 见 `STATE.md` §4 或跑枚举命令）
 
 ### 2.4 D 层：过程（**不入库**）
 
@@ -186,7 +186,7 @@ decisions/{lifecycle}/{class}/YYYY-MM-DD-topic-title.md
 
 | 闸 | 检查 | 触发点 | 不过的后果 |
 |---|---|---|---|
-| **闸 1 · 格式闸** | 决策文件：头三行（标题/状态/日期）+ 五段齐全 + 状态与所在目录交叉校验 | pre-commit + CI | 阻断 |
+| **闸 1 · 格式闸** | 决策文件：头三行（标题/状态/日期）+ **六段**齐全 + 状态与所在目录交叉校验 | pre-commit + CI | 阻断 |
 | **闸 2 · 取代闸** | 新增决策必须输出「同主题候选 + 全/部分取代判定」 | PR 模板 + CI | 阻断 |
 | **闸 3 · 入库闸** | **新增 `.md` 必须命中白名单**，否则阻断 | pre-commit + CI | 阻断 |
 
@@ -195,10 +195,18 @@ decisions/{lifecycle}/{class}/YYYY-MM-DD-topic-title.md
 ✅ 入口四份：README.md / AGENTS.md / CLAUDE.md / docs/synova/STATE.md
 ✅ docs/**/*.md                    （C 层长期）
 ✅ decisions/**/*.md               （B 层决策）
-✅ expert/**/*.md  ·  skills/**/*.md
-   🔴 **豁免类（P0-1 修复）**：**文件驱动扩展资产** ——
-   加了专家/技能 = 新建目录 + SKILL.md/知识文件就自动注册（见 CLAUDE.md「文件驱动扩展」），
+🔴 **豁免类（P0-1 修复 · 2026-09-26 R2 补全 5 类）**：**文件驱动扩展资产 + 知识资产**
+   —— 加了专家/技能/知识 = 新建目录 + 文件就自动注册（见 CLAUDE.md「文件驱动扩展」），
    **这些是产品运行时的资产，不是「过程文档」** ⇒ **必须放行**，否则契约生效即阻断扩展机制。
+   | 路径 | 实测 md 数 | 为什么放行 |
+   |---|---|---|
+   | `expert/**/*.md` | 95 | 专家方法论（文件驱动） |
+   | `extensions/skills/**/*.md` | 41 | 扩展技能（文件驱动） |
+   | `.claude/skills/**/*.md` · `.dsh/skills/**/*.md` | 34 | **技能本体**（非纯文档；组 13 要求两份一致） |
+   | `knowledge/**/*.md` | 10 | 共享知识单源 |
+   | `theory/**/*.md` | 5 | 理论基础 |
+   | `scripts/golden-scenarios/**/*.md` | 9 | GSS 契约要求 git 跟踪 |
+   | **合计** | **194** | —— |
 ✅ 证据类路径（P0-2 修复）：**证据 md 一律走 `docs/**/evidence/**`**
    ⇒ 特例：`scripts/golden-scenarios/evidence/**`（GSS 契约要求 git 跟踪，见 .gitignore:82）**放行**
 ❌ 其余一律阻断（coordination/ · task-briefs/ · reports/ · 派单 · 纪要 · 分类 · 看板 · 探针留档）
@@ -224,7 +232,7 @@ decisions/{lifecycle}/{class}/YYYY-MM-DD-topic-title.md
 |---|---|
 | D 层停产出过程 md | **砍掉 65% 的 PR 来源**（实测 90 个 open PR 中 59 个是治理文档） |
 | 闸 3 入库闸 | 从机制上消灭「顺手加一份 md」 |
-| 过程走 PR 正文 | **CI 负载下降**（实测 doc/chore/audit 占 run 52–83%） |
+| 过程走 PR 正文 | **CI 负载下降** |
 | 取代链 | 根治「同一决定多份文档」（我们反复重议的根因） |
 
 ---
@@ -247,13 +255,14 @@ decisions/{lifecycle}/{class}/YYYY-MM-DD-topic-title.md
 ## 7. 存量迁移（不返工、不搬家式消耗）
 
 | 存量 | 数量 | 处置 |
+| ⚠️ **数量列一律填 `—`** —— 数字**不写进契约**（会过期）；现行值见 `STATE.md` §4 |  |  |
 |---|---|---|
-| `memory/notes/` | 151 | **迁 `decisions/`**：先补 `class` 与取代链，再逐步补五段；**不重写内容** |
-| `.claude/task-briefs/` | 711 | **立即停产出**；存量分流：含决策 ⇒ 抽成决策文件；不含 ⇒ **出库** |
-| `docs/synova/coordination/` | 601 | 三类分流：长期有效 ⇒ `docs/`；决策性 ⇒ `decisions/`；过程性 ⇒ **出库** |
-| `docs/plans/` | 335 | 同分流 |
-| `task-state/` 卡 | 374 | **保留**（机器可读状态，非文档）；**不再由它派生 md** |
-| 归档区（archive） | 725 | **不再继续归档**（归档只是搬家）⇒ 按白名单判定后**出库** |
+| `memory/notes/` | — | **迁 `decisions/`**：先补 `class` 与取代链，再逐步补**六段**；**不重写内容** |
+| `.claude/task-briefs/` | — | **立即停产出**；存量分流：含决策 ⇒ 抽成决策文件；不含 ⇒ **出库** |
+| `docs/synova/coordination/` | — | 三类分流：长期有效 ⇒ `docs/`；决策性 ⇒ `decisions/`；过程性 ⇒ **出库** |
+| `docs/plans/` | — | 同分流 |
+| `task-state/` 卡 | — | **保留**（机器可读状态，非文档）；**不再由它派生 md** |
+| 归档区（archive） | — | **不再继续归档**（归档只是搬家）⇒ 按白名单判定后**出库** |
 
 > **出库 ≠ 删除历史**：内容永远在 git 历史与 PR 中可查；只是不再参与每次 checkout、每次 CI、每次搜索。
 
@@ -282,8 +291,12 @@ decisions/{lifecycle}/{class}/YYYY-MM-DD-topic-title.md
 
 | 既有门禁 | 冲突 | 过渡规则 |
 |---|---|---|
-| **铁律 49 / M7**（commit-msg 要求引用 `memory/notes/**`） | 契约方向是把 `memory/notes/` **迁往 `decisions/`** ⇒ 按契约做事反而被拦 | **契约生效时必须同批改 commit-msg 门禁**：要求从 `memory/notes/**` **扩到 `decisions/**`**（两者皆可）<br>⇒ **落地前**：允许写**指针式 `memory/notes/` note**（只写"见 decisions/…"）作为兼容 |
-| **doc-registry-gate**（`scripts/control-tower/doc-registry.json` 要求登记） | 契约的「出库」会删/移文档 ⇒ 注册表不一致 ⇒ 报红 | **"出库"动作必须与注册表同步同批做**；契约的存量迁移（§7）开始时，**第一批即同步注册表** |
+| **铁律 49 / M7**（commit-msg 要求引用 `memory/notes/**`） | 契约方向是把 `memory/notes/` **迁往 `decisions/`** ⇒ 按契约做事反而被拦 | **契约生效时必须同批改 commit-msg 门禁**：要求从 `memory/notes/**` **扩到 `decisions/**`**（两者皆可）<br>⇒ **落地前**：允许写**指针式 `memory/notes/` note**（只写"见 decisions/…"）作为兼容
+   🔴 **过渡期白名单补充（R2 修复）**：`memory/notes/**/*.md` **在过渡期内纳入闸 3 白名单**
+   （否则按 §9 写的指针 note 会被 §3 闸 3 自己拦死 —— 这是 R2 抓出的自相矛盾） |
+| **doc-registry-gate**（`scripts/control-tower/doc-registry.json` 要求登记） | 契约的「出库」会删/移文档 ⇒ 注册表不一致 ⇒ 报红<br>（实测：`pre-commit-check.sh:1457-1486`） | **"出库"动作必须与注册表同步同批做**；契约的存量迁移（§7）开始时，**第一批即同步注册表** |
+| **组 13 · 技能同步**（`.claude/skills` ↔ `.dsh/skills` 漂移检查）<br>（实测：`pre-commit-check.sh:1435-1440`） | 契约若把 skills 纳入"出库/迁移"，**两份会漂移** ⇒ 报红 | **skills 属豁免类（见 §3 闸 3）⇒ 永不出库、不迁移**；任何改动**必须双份同批** |
+| **D1 · 文档真相防线**（`check-doc-truth.sh`，C1–C4 导航文档 vs 代码事实）<br>（实测：`pre-commit-check.sh:1486`） | 契约说"数量不写进定义"，而该防线**要求导航文档与代码事实一致** | **两者不冲突**（契约要求"以事实为准"），但**契约生效时须复核 C1–C4 的判据与 §1 一问是否同一取向** |
 
 **⇒ 一条总原则**（已在多处适用）：**「移出」必与「接手」同批** —— 移走一个机制之前，接手它的机制必须先就位。
 
